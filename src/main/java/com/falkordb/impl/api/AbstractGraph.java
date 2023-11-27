@@ -59,6 +59,7 @@ public abstract class AbstractGraph implements Graph {
      * @param query Cypher query
      * @return a result set
      */
+    @Override    
     public ResultSet query(String graphId, String query) {
         return sendQuery(graphId, query);
     }
@@ -69,6 +70,7 @@ public abstract class AbstractGraph implements Graph {
      * @param query Cypher query
      * @return a result set
      */
+    @Override
     public ResultSet readOnlyQuery(String graphId, String query) {
         return sendReadOnlyQuery(graphId, query);
     }
@@ -130,6 +132,7 @@ public abstract class AbstractGraph implements Graph {
      * @param params parameters map.
      * @return a result set.
      */
+    @Override
     public ResultSet readOnlyQuery(String graphId, String query, Map<String, Object> params) {
         String preparedQuery = Utils.prepareQuery(query, params);
         return sendReadOnlyQuery(graphId, preparedQuery);
@@ -163,14 +166,17 @@ public abstract class AbstractGraph implements Graph {
         return sendReadOnlyQuery(graphId, preparedQuery, timeout);
     }
 
+    @Override
     public ResultSet callProcedure(String graphId, String procedure){
         return callProcedure(graphId, procedure, Utils.DUMMY_LIST, Utils.DUMMY_MAP);
     }
 
+    @Override
     public ResultSet callProcedure(String graphId, String procedure, List<String> args){
         return callProcedure(graphId, procedure, args, Utils.DUMMY_MAP);
     }
 
+    @Override
     public ResultSet callProcedure(String graphId, String procedure, List<String> args  , Map<String, List<String>> kwargs){
 
         String preparedProcedure = Utils.prepareProcedure(procedure, args, kwargs);

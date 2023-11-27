@@ -205,6 +205,7 @@ public class GraphPipeline extends Pipeline implements com.falkordb.GraphPipelin
      * @param procedure procedure name to invoke
      * @return response with result set with the procedure data
      */
+    @Override
     public Response<ResultSet> callProcedure(String graphId, String procedure){
         return callProcedure(graphId, procedure, Utils.DUMMY_LIST, Utils.DUMMY_MAP);
     }
@@ -216,10 +217,10 @@ public class GraphPipeline extends Pipeline implements com.falkordb.GraphPipelin
      * @param args procedure arguments
      * @return response with result set with the procedure data
      */
+    @Override
     public Response<ResultSet> callProcedure(String graphId, String procedure, List<String> args  ){
         return callProcedure(graphId, procedure, args, Utils.DUMMY_MAP);
     }
-
 
     /**
      * Invoke a stored procedure
@@ -229,6 +230,7 @@ public class GraphPipeline extends Pipeline implements com.falkordb.GraphPipelin
      * @param kwargs - procedure output arguments
      * @return response with result set with the procedure data
      */
+    @Override
     public Response<ResultSet> callProcedure(String graphId, String procedure, List<String> args,
                                                   Map<String, List<String>> kwargs) {
         String preparedProcedure = Utils.prepareProcedure(procedure, args, kwargs);
@@ -241,6 +243,7 @@ public class GraphPipeline extends Pipeline implements com.falkordb.GraphPipelin
      * @param graphId graph to delete
      * @return response with the deletion running time statistics
      */
+    @Override
     public Response<String> deleteGraph(String graphId){
 
         client.sendCommand(GraphCommand.DELETE, graphId);
