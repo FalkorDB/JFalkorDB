@@ -19,6 +19,16 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    # Service containers to run with `test-job`
+    services:
+      # Label used to access the service container
+      falkordb:
+        # Docker Hub image
+        image: falkordb/falkordb:latest
+        # Map port 6379 on the Docker host to port 6379 on the FalkorDB container
+        ports:
+          - 6379:6379
+
     steps:
     - uses: actions/checkout@v3
     - name: Set up JDK 17
