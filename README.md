@@ -1,33 +1,29 @@
-[![license](https://img.shields.io/github/license/RedisGraph/JRedisGraph.svg)](https://github.com/RedisGraph/JRedisGraph/blob/master/LICENSE)
-[![GitHub issues](https://img.shields.io/github/release/RedisGraph/JRedisGraph.svg)](https://github.com/RedisGraph/JRedisGraph/releases/latest)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.redislabs/jredisgraph/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.redislabs/jredisgraph)
-[![Javadocs](https://www.javadoc.io/badge/com.redislabs/jredisgraph.svg)](https://www.javadoc.io/doc/com.redislabs/jredisgraph)
-[![Codecov](https://codecov.io/gh/RedisGraph/JRedisGraph/branch/master/graph/badge.svg)](https://codecov.io/gh/RedisGraph/JRedisGraph)
-[![Known Vulnerabilities](https://snyk.io/test/github/RedisGraph/JRedisGraph/badge.svg?targetFile=pom.xml)](https://snyk.io/test/github/RedisGraph/JRedisGraph?targetFile=pom.xml)
+[![license](https://img.shields.io/github/license/FalkorDB/JFalkorDB.svg)](https://github.com/FalkorDB/JFalkorDB/blob/master/LICENSE)
+[![Release](https://img.shields.io/github/release/FalkorDB/JFalkorDB.svg)](https://github.com/FalkorDB/JFalkorDB/releases/latest)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.falkordb/jfalkordb/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.falkordb/jfalkordb)
+[![Javadocs](https://www.javadoc.io/badge/com.falkordb/jfalkordb.svg)](https://www.javadoc.io/doc/com.falkordb/jfalkordb)
+[![Codecov](https://codecov.io/gh/FalkorDB/JFalkorDB/branch/master/graph/badge.svg)](https://codecov.io/gh/FalkorDB/JFalkorDB)
+[![Known Vulnerabilities](https://snyk.io/test/github/FalkorDB/JFalkorDB/badge.svg?targetFile=pom.xml)](https://snyk.io/test/github/FalkorDB/JFalkorDB?targetFile=pom.xml)
 
-# JRedisGraph
-[![Forum](https://img.shields.io/badge/Forum-RedisGraph-blue)](https://forum.redislabs.com/c/modules/redisgraph)
-[![Discord](https://img.shields.io/discord/697882427875393627?style=flat-square)](https://discord.gg/gWBRT6P)
+# JFalkorDB
+[![Discord](https://img.shields.io/discord/1146782921294884966?style=flat-square)](https://discord.gg/ErBEqN9E)
 
-RedisGraph Java client
+FalkorDB Java client
 
-## Deprecation notice
-
-As of [Jedis](https://github.com/redis/jedis) version 4.2.0, this library is deprecated. Its features have been merged into Jedis. Please either install it from [maven](https://mvnrepository.com/artifact/redis.clients/jedis) or [the repo](https://github.com/redis/jedis).
-
-### Official Releases
+## Official Releases
 
 ```xml
   <dependencies>
     <dependency>
-      <groupId>com.redislabs</groupId>
-      <artifactId>jredisgraph</artifactId>
-      <version>2.5.1</version>
+      <groupId>com.falkordb</groupId>
+      <artifactId>jfalkordb</artifactId>
+      <version>0.0.1</version>
     </dependency>
   </dependencies>
 ```
 
-### Snapshots
+## Snapshots
+
 ```xml
   <repositories>
     <repository>
@@ -42,28 +38,30 @@ and
 ```xml
   <dependencies>
     <dependency>
-      <groupId>com.redislabs</groupId>
-      <artifactId>jredisgraph</artifactId>
-      <version>2.6.0-SNAPSHOT</version>
+      <groupId>com.falkordb</groupId>
+      <artifactId>jfalkordb</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
     </dependency>
   </dependencies>
 ```
 
 ## Example: Using the Java Client
-```java
-package com.redislabs.redisgraph;
 
-import com.redislabs.redisgraph.graph_entities.Edge;
-import com.redislabs.redisgraph.graph_entities.Node;
-import com.redislabs.redisgraph.graph_entities.Path;
-import com.redislabs.redisgraph.impl.api.RedisGraph;
+```java
+package com.falkordb;
+
+import com.falkordb.graph_entities.Edge;
+import com.falkordb.graph_entities.Node;
+import com.falkordb.graph_entities.Path;
+import com.falkordb.impl.api.Graph;
 
 import java.util.List;
 
-public class RedisGraphExample {
+public class GraphExample {
     public static void main(String[] args) {
+
         // general context api. Not bound to graph key or connection
-        RedisGraph graph = new RedisGraph();
+        Graph graph = new Graph();
 
         Map<String, Object> params = new HashMap<>();
         params.put("age", 30);
@@ -98,13 +96,14 @@ public class RedisGraphExample {
         graph.deleteGraph("social");
 
         // get connection context - closable object
-        try(RedisGraphContext context = graph.getContext()) {
+        try(GraphContext context = graph.getContext()) {
             context.query("contextSocial","CREATE (:person{name:'roi',age:32})");
             context.query("social","CREATE (:person{name:$name,age:$age})", params);
             context.query("contextSocial", "MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit') CREATE (a)-[:knows]->(b)");
             // WATCH/MULTI/EXEC
             context.watch("contextSocial");
-            RedisGraphTransaction t = context.multi();
+
+            GraphTransaction t = context.multi();
             t.query("contextSocial", "MATCH (a:person)-[r:knows]->(b:person{name:$name,age:$age}) RETURN a, r, b", params);
             // support for Redis/Jedis native commands in transaction
             t.set("x", "1");
@@ -121,4 +120,5 @@ public class RedisGraphExample {
 ```
 
 ## License
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FRedisGraph%2FJRedisGraph.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FRedisGraph%2FJRedisGraph?ref=badge_large)
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FFalkorDB%2FJFalkorDB.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FFalkorDB%2FJFalkorDB?ref=badge_large)
