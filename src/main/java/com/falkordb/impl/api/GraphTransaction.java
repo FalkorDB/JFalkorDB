@@ -111,29 +111,6 @@ public class GraphTransaction extends Transaction
     }
 
     /**
-     * Execute a Cypher query with arguments
-     *
-     * @param graphId a graph to perform the query on
-     * @param query Cypher query
-     * @param args
-     * @return response with a result set
-     * @deprecated use {@link #query(String, String, Map)} instead.
-     */
-    @Deprecated
-    @Override
-    public Response<ResultSet> query(String graphId, String query, Object... args) {
-        String preparedQuery = Utils.prepareQuery(query, args);
-        client.sendCommand(GraphCommand.QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
-        return getResponse(new Builder<ResultSet>() {
-            @SuppressWarnings("unchecked")
-            @Override
-            public ResultSet build(Object o) {
-                return new ResultSetImpl((List<Object>) o, graph, caches.getGraphCache(graphId));
-            }
-        });
-    }
-
-    /**
      * Executes a cypher query with parameters.
      * @param graphId a graph to perform the query on.
      * @param query Cypher query.

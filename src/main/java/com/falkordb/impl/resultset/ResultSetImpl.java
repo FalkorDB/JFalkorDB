@@ -19,8 +19,6 @@ public class ResultSetImpl implements ResultSet {
     private final Header header;
     private final Statistics statistics;
     private final List<Record> results;
-
-    private int position = 0;
     private final Graph graph;
     private final GraphCache cache;
 
@@ -299,21 +297,6 @@ public class ResultSetImpl implements ResultSet {
      */
     private ResultSetScalarTypes getValueTypeFromObject(Object rawScalarType) {
         return ResultSetScalarTypes.getValue(((Long) rawScalarType).intValue());
-    }
-
-    @Override
-    @Deprecated
-    public boolean hasNext() {
-        return position < results.size();
-    }
-
-    @Override
-    @Deprecated
-    public Record next() {
-        if (!hasNext()) {
-            throw new NoSuchElementException();
-        }
-        return results.get(position++);
     }
 
     @Override

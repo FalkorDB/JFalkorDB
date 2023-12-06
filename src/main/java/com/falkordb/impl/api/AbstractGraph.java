@@ -100,20 +100,6 @@ public abstract class AbstractGraph implements Graph {
     }
 
     /**
-     * Execute a Cypher query with arguments
-     * @param graphId a graph to perform the query on
-     * @param query Cypher query
-     * @param args
-     * @return a result set
-     * @deprecated use {@link #query(String, String, Map)} instead.
-     */
-    @Deprecated
-    public ResultSet query(String graphId, String query, Object ...args) {
-        String preparedQuery = Utils.prepareQuery(query, args);
-        return sendQuery(graphId, preparedQuery);
-    }
-
-    /**
      * Executes a cypher query with parameters.
      * @param graphId a graph to perform the query on.
      * @param query Cypher query.

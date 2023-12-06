@@ -39,27 +39,6 @@ public class Utils {
         return sb.toString();
     }
 
-
-    /**
-     * Prepare and formats a query and query arguments
-     * @param query - query
-     * @param args - query arguments
-     * @return formatted query
-     * @deprecated use {@link #prepareQuery(String, Map)} instead.
-     */
-    @Deprecated
-    public static String prepareQuery(String query, Object ...args){
-        if(args.length > 0) {
-            for(int i=0; i<args.length; ++i) {
-                if(args[i] instanceof String) {
-                    args[i] = "\'" + ESCAPE_CHYPER.translate((String)args[i]) + "\'";
-                }
-            }
-            query = String.format(query, args);
-        }
-        return query;
-    }
-
     /**
      * Prepare and formats a query and query arguments
      * @param query - query
