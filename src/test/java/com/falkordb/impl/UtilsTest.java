@@ -29,17 +29,6 @@ public class UtilsTest {
         Assert.assertEquals("CALL prc()ka,kb", Utils.prepareProcedure("prc", Arrays.asList(new String[]{}), kwargs));
     }
 
-    @SuppressWarnings("deprecation")
-    @Test
-    public void prepareQuery() {
-        Assert.assertEquals("query %s %d end of query", Utils.prepareQuery("query %s %d end of query"));
-
-        Assert.assertEquals("query 'a' 33 end of query", Utils.prepareQuery("query %s %d end of query", "a", 33));
-
-        assertThrows(IllegalFormatConversionException.class,
-                () -> Utils.prepareQuery("query %s %d end of query", "a", "b"));
-    }
-
     @Test
     public void testParamsPrep() {
         Map<String, Object> params = new HashMap<>();

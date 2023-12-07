@@ -29,8 +29,7 @@ public class IterableTest {
 
         ResultSet rs = api.query("social", "MATCH(n) RETURN n");
         int count = 0;
-        while (rs.hasNext()) {
-            rs.next();
+        for (Record record : rs) {
             count++;
         }
         assertEquals(rs.size(), count);
@@ -54,7 +53,7 @@ public class IterableTest {
         api.query("social", "UNWIND(range(0,50)) as i CREATE(:N{i:i})");
 
         ResultSet rs = api.query("social", "MATCH(n) RETURN n");
-        rs.next();
+        rs.iterator().next();
         int count = 0;
         for (@SuppressWarnings("unused")
         Record row : rs) {
