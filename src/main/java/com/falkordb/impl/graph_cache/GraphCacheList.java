@@ -53,8 +53,7 @@ class GraphCacheList {
         ResultSet resultSet = graph.callProcedure(graphId, procedure);
         List<String> newData = new ArrayList<>();
         int i = 0;
-        while (resultSet.hasNext()) {
-            Record record = resultSet.next();
+        for(Record record : resultSet){
             if(i >= data.size()){
                 newData.add(record.getString(0));
             }

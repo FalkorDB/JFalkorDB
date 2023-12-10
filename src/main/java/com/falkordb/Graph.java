@@ -8,7 +8,7 @@ import redis.clients.jedis.Jedis;
 
 public interface Graph extends Closeable {
 
-    public static Graph with(Jedis jedis) {
+    static Graph with(Jedis jedis) {
       return new com.falkordb.impl.api.Graph(jedis);
     }
 
@@ -32,7 +32,7 @@ public interface Graph extends Closeable {
      * Execute a Cypher query with timeout.
      * @param graphId a graph to perform the query on
      * @param query Cypher query
-     * @param timeout
+     * @param timeout timeout in milliseconds
      * @return a result set
      */
     ResultSet query(String graphId, String query, long timeout);
@@ -41,23 +41,10 @@ public interface Graph extends Closeable {
      * Execute a Cypher read-only query with timeout.
      * @param graphId a graph to perform the query on
      * @param query Cypher query
-     * @param timeout
+     * @param timeout timeout in milliseconds
      * @return a result set
      */
     ResultSet readOnlyQuery(String graphId, String query, long timeout);
-
-
-    /**
-     * Execute a Cypher query with arguments
-     * @param graphId a graph to perform the query on
-     * @param query Cypher query
-     * @param args
-     * @return a result set
-     * @deprecated use {@link #query(String, String, Map)} instead.
-     */
-    @Deprecated
-    ResultSet query(String graphId, String query, Object ...args);
-
 
     /**
      * Executes a cypher query with parameters.

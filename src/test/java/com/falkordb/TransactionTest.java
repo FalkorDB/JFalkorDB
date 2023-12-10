@@ -2,6 +2,7 @@ package com.falkordb;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -93,9 +94,11 @@ public class TransactionTest {
             expectedNode.addProperty(nameProperty);
             // see that the result were pulled from the right graph
             Assert.assertEquals(1, resultSet.size());
-            Assert.assertTrue(resultSet.hasNext());
-            Record record = resultSet.next();
-            Assert.assertFalse(resultSet.hasNext());
+
+            Iterator<Record> iterator = resultSet.iterator();
+            Assert.assertTrue(iterator.hasNext());
+            Record record = iterator.next();
+            Assert.assertFalse(iterator.hasNext());
             Assert.assertEquals(Arrays.asList("n"), record.keys());
             Assert.assertEquals(expectedNode, record.getValue("n"));
 
@@ -112,9 +115,11 @@ public class TransactionTest {
             Assert.assertEquals("label", schemaNames.get(0));
 
             Assert.assertEquals(1, resultSet.size());
-            Assert.assertTrue(resultSet.hasNext());
-            record = resultSet.next();
-            Assert.assertFalse(resultSet.hasNext());
+
+            iterator = resultSet.iterator();
+            Assert.assertTrue(iterator.hasNext());
+            record = iterator.next();
+            Assert.assertFalse(iterator.hasNext());
             Assert.assertEquals(Arrays.asList("label"), record.keys());
             Assert.assertEquals("Person", record.getValue("label"));
         }
@@ -208,9 +213,11 @@ public class TransactionTest {
             expectedNode.addProperty(nameProperty);
             // see that the result were pulled from the right graph
             Assert.assertEquals(1, resultSet.size());
-            Assert.assertTrue(resultSet.hasNext());
-            Record record = resultSet.next();
-            Assert.assertFalse(resultSet.hasNext());
+
+            Iterator<Record> iterator = resultSet.iterator();
+            Assert.assertTrue(iterator.hasNext());
+            Record record = iterator.next();
+            Assert.assertFalse(iterator.hasNext());
             Assert.assertEquals(Arrays.asList("n"), record.keys());
             Assert.assertEquals(expectedNode, record.getValue("n"));
 
@@ -226,9 +233,11 @@ public class TransactionTest {
             Assert.assertEquals("label", schemaNames.get(0));
 
             Assert.assertEquals(1, resultSet.size());
-            Assert.assertTrue(resultSet.hasNext());
-            record = resultSet.next();
-            Assert.assertFalse(resultSet.hasNext());
+
+            iterator = resultSet.iterator();
+            Assert.assertTrue(iterator.hasNext());
+            record = iterator.next();
+            Assert.assertFalse(iterator.hasNext());
             Assert.assertEquals(Arrays.asList("label"), record.keys());
             Assert.assertEquals("Person", record.getValue("label"));
         }
