@@ -25,12 +25,12 @@ public class TransactionTest {
 
     @Before
     public void createApi(){
-        api = new Graph();
+        api = FalkorDB.driver().graph("social");
     }
 
     @After
     public void deleteGraph() {
-        api.deleteGraph("social");
+        api.deleteGraph();
         api.close();
     }
 
@@ -40,13 +40,12 @@ public class TransactionTest {
             GraphTransaction transaction = c.multi();
 
             transaction.set("x", "1");
-            transaction.query("social", "CREATE (:Person {name:'a'})");
-            transaction.query("g", "CREATE (:Person {name:'a'})");
+            transaction.query("CREATE (:Person {name:'a'})");
+            transaction.query("CREATE (:Person {name:'b'})");
             transaction.incr("x");
             transaction.get("x");
-            transaction.query("social", "MATCH (n:Person) RETURN n");
-            transaction.deleteGraph("g");
-            transaction.callProcedure("social", "db.labels");
+            transaction.query("MATCH (n:Person{name:'a'}) RETURN n");
+            transaction.callProcedure("db.labels");
             List<Object> results = transaction.exec();
 
             // Redis set command
@@ -102,8 +101,8 @@ public class TransactionTest {
             Assert.assertEquals(Arrays.asList("n"), record.keys());
             Assert.assertEquals(expectedNode, record.getValue("n"));
 
-            Assert.assertEquals(ResultSetImpl.class, results.get(7).getClass());
-            resultSet = (ResultSet) results.get(7);
+            Assert.assertEquals(ResultSetImpl.class, results.get(6).getClass());
+            resultSet = (ResultSet) results.get(6);
 
             Assert.assertNotNull(resultSet.getHeader());
             header = resultSet.getHeader();
@@ -135,8 +134,8 @@ public class TransactionTest {
         GraphTransaction t1 = c1.multi();
 
 
-        t1.query("social", "CREATE (:Person {name:'a'})");
-        c2.query("social", "CREATE (:Person {name:'b'})");
+        t1.query("CREATE (:Person {name:'a'})");
+        c2.query("CREATE (:Person {name:'b'})");
         List<Object> returnValue = t1.exec();
         Assert.assertNull(returnValue);
         c1.close();
@@ -148,15 +147,15 @@ public class TransactionTest {
 
         GraphContext c1 = api.getContext();
         GraphContext c2 = api.getContext();
-        Assert.assertNotEquals(c1.getConnectionContext(), c2.getConnectionContext());
-        c1.query("social", "CREATE (:Person {name:'a'})");
+        Assert.assertNotEquals(c1, c2);
+        c1.query("CREATE (:Person {name:'a'})");
         c1.watch("social");
         GraphTransaction t1 = c1.multi();
 
         Map<String, Object> params = new HashMap<>();
         params.put("name", 'b');
-        t1.query("social", "CREATE (:Person {name:$name})", params);
-        c2.query("social", "MATCH (n) return n");
+        t1.query("CREATE (:Person {name:$name})", params);
+        c2.query("MATCH (n) return n");
         List<Object> returnValue = t1.exec();
 
         Assert.assertNotNull(returnValue);
@@ -170,11 +169,10 @@ public class TransactionTest {
             GraphTransaction transaction = c.multi();
 
             transaction.set("x", "1");
-            transaction.query("social", "CREATE (:Person {name:'a'})");
-            transaction.query("g", "CREATE (:Person {name:'a'})");
-            transaction.readOnlyQuery("social", "MATCH (n:Person) RETURN n");
-            transaction.deleteGraph("g");
-            transaction.callProcedure("social", "db.labels");
+            transaction.query("CREATE (:Person {name:'a'})");
+            transaction.query("CREATE (:Person {name:'b'})");
+            transaction.readOnlyQuery("MATCH (n:Person{name:'a'}) RETURN n");
+            transaction.callProcedure("db.labels");
             List<Object> results = transaction.exec();
 
             // Redis set command
@@ -194,7 +192,7 @@ public class TransactionTest {
             Assert.assertEquals(1, resultSet.getStatistics().propertiesSet());
 
             // Graph read-only query result
-            Assert.assertEquals(ResultSetImpl.class, results.get(5).getClass());
+            Assert.assertEquals(ResultSetImpl.class, results.get(4).getClass());
             resultSet = (ResultSet) results.get(3);
 
             Assert.assertNotNull(resultSet.getHeader());
@@ -221,8 +219,8 @@ public class TransactionTest {
             Assert.assertEquals(Arrays.asList("n"), record.keys());
             Assert.assertEquals(expectedNode, record.getValue("n"));
 
-            Assert.assertEquals(ResultSetImpl.class, results.get(5).getClass());
-            resultSet = (ResultSet) results.get(5);
+            Assert.assertEquals(ResultSetImpl.class, results.get(4).getClass());
+            resultSet = (ResultSet) results.get(4);
 
             Assert.assertNotNull(resultSet.getHeader());
             header = resultSet.getHeader();

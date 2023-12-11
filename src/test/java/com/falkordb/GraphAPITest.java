@@ -17,7 +17,6 @@ import com.falkordb.graph_entities.Node;
 import com.falkordb.graph_entities.Path;
 import com.falkordb.graph_entities.Point;
 import com.falkordb.graph_entities.Property;
-import com.falkordb.impl.api.Graph;
 import com.falkordb.test.utils.PathBuilder;
 
 public class GraphAPITest {
@@ -26,19 +25,19 @@ public class GraphAPITest {
 
     @Before
     public void createApi() {
-        client = new Graph();
+        client = FalkorDB.driver().graph("social");
     }
 
     @After
     public void deleteGraph() {
-        client.deleteGraph("social");
+        client.deleteGraph();
         client.close();
     }
 
     @Test
     public void testCreateNode() {
         // Create a node
-        ResultSet resultSet = client.query("social", "CREATE ({name:'roi',age:32})");
+        ResultSet resultSet = client.query("CREATE ({name:'roi',age:32})");
 
         Assert.assertEquals(1, resultSet.getStatistics().nodesCreated());
         Assert.assertNull(resultSet.getStatistics().getStringValue(Label.NODES_DELETED));
@@ -60,7 +59,7 @@ public class GraphAPITest {
     @Test
     public void testCreateLabeledNode() {
         // Create a node with a label
-        ResultSet resultSet = client.query("social", "CREATE (:human{name:'danny',age:12})");
+        ResultSet resultSet = client.query("CREATE (:human{name:'danny',age:12})");
         Assert.assertFalse(resultSet.iterator().hasNext());
         Assert.assertEquals("1", resultSet.getStatistics().getStringValue(Label.NODES_CREATED));
         Assert.assertEquals("2", resultSet.getStatistics().getStringValue(Label.PROPERTIES_SET));
@@ -70,12 +69,11 @@ public class GraphAPITest {
     @Test
     public void testConnectNodes() {
         // Create both source and destination nodes
-        Assert.assertNotNull(client.query("social", "CREATE (:person{name:'roi',age:32})"));
-        Assert.assertNotNull(client.query("social", "CREATE (:person{name:'amit',age:30})"));
+        Assert.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
+        Assert.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
 
         // Connect source and destination nodes.
-        ResultSet resultSet = client.query("social",
-                "MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  CREATE (a)-[:knows]->(b)");
+        ResultSet resultSet = client.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  CREATE (a)-[:knows]->(b)");
 
         Assert.assertFalse(resultSet.iterator().hasNext());
         Assert.assertNull(resultSet.getStatistics().getStringValue(Label.NODES_CREATED));
@@ -87,9 +85,9 @@ public class GraphAPITest {
 
     @Test
     public void testDeleteNodes() {
-        Assert.assertNotNull(client.query("social", "CREATE (:person{name:'roi',age:32})"));
-        Assert.assertNotNull(client.query("social", "CREATE (:person{name:'amit',age:30})"));
-        ResultSet deleteResult = client.query("social", "MATCH (a:person) WHERE (a.name = 'roi') DELETE a");
+        Assert.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
+        Assert.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
+        ResultSet deleteResult = client.query("MATCH (a:person) WHERE (a.name = 'roi') DELETE a");
 
         Assert.assertFalse(deleteResult.iterator().hasNext());
         Assert.assertNull(deleteResult.getStatistics().getStringValue(Label.NODES_CREATED));
@@ -100,10 +98,9 @@ public class GraphAPITest {
         Assert.assertEquals(1, deleteResult.getStatistics().nodesDeleted());
         Assert.assertNotNull(deleteResult.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
 
-        Assert.assertNotNull(client.query("social", "CREATE (:person{name:'roi',age:32})"));
-        Assert.assertNotNull(client.query("social",
-                "MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  CREATE (a)-[:knows]->(a)"));
-        deleteResult = client.query("social", "MATCH (a:person) WHERE (a.name = 'roi') DELETE a");
+        Assert.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
+        Assert.assertNotNull(client.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  CREATE (a)-[:knows]->(a)"));
+        deleteResult = client.query("MATCH (a:person) WHERE (a.name = 'roi') DELETE a");
 
         Assert.assertFalse(deleteResult.iterator().hasNext());
         Assert.assertNull(deleteResult.getStatistics().getStringValue(Label.NODES_CREATED));
@@ -120,11 +117,10 @@ public class GraphAPITest {
     @Test
     public void testDeleteRelationship() {
 
-        Assert.assertNotNull(client.query("social", "CREATE (:person{name:'roi',age:32})"));
-        Assert.assertNotNull(client.query("social", "CREATE (:person{name:'amit',age:30})"));
-        Assert.assertNotNull(client.query("social",
-                "MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  CREATE (a)-[:knows]->(a)"));
-        ResultSet deleteResult = client.query("social", "MATCH (a:person)-[e]->() WHERE (a.name = 'roi') DELETE e");
+        Assert.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
+        Assert.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
+        Assert.assertNotNull(client.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  CREATE (a)-[:knows]->(a)"));
+        ResultSet deleteResult = client.query("MATCH (a:person)-[e]->() WHERE (a.name = 'roi') DELETE e");
 
         Assert.assertFalse(deleteResult.iterator().hasNext());
         Assert.assertNull(deleteResult.getStatistics().getStringValue(Label.NODES_CREATED));
@@ -141,27 +137,27 @@ public class GraphAPITest {
     @Test
     public void testIndex() {
         // Create both source and destination nodes
-        Assert.assertNotNull(client.query("social", "CREATE (:person{name:'roi',age:32})"));
+        Assert.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
 
-        ResultSet createIndexResult = client.query("social", "CREATE INDEX ON :person(age)");
+        ResultSet createIndexResult = client.query("CREATE INDEX ON :person(age)");
         Assert.assertFalse(createIndexResult.iterator().hasNext());
         Assert.assertEquals(1, createIndexResult.getStatistics().indicesAdded());
 
         // since RediSearch as index, those action are allowed
-        ResultSet createNonExistingIndexResult = client.query("social", "CREATE INDEX ON :person(age1)");
+        ResultSet createNonExistingIndexResult = client.query("CREATE INDEX ON :person(age1)");
         Assert.assertFalse(createNonExistingIndexResult.iterator().hasNext());
         Assert.assertNotNull(createNonExistingIndexResult.getStatistics().getStringValue(Label.INDICES_ADDED));
         Assert.assertEquals(1, createNonExistingIndexResult.getStatistics().indicesAdded());
 
 
         try {
-            client.query("social", "CREATE INDEX ON :person(age)");
+            client.query("CREATE INDEX ON :person(age)");
             fail();
         } catch (Exception e) {
             // TODO: handle exception
         }
 
-        ResultSet deleteExistingIndexResult = client.query("social", "DROP INDEX ON :person(age)");
+        ResultSet deleteExistingIndexResult = client.query("DROP INDEX ON :person(age)");
         Assert.assertFalse(deleteExistingIndexResult.iterator().hasNext());
         Assert.assertNotNull(deleteExistingIndexResult.getStatistics().getStringValue(Label.INDICES_DELETED));
         Assert.assertEquals(1, deleteExistingIndexResult.getStatistics().indicesDeleted());
@@ -171,12 +167,11 @@ public class GraphAPITest {
     @Test
     public void testHeader() {
 
-        Assert.assertNotNull(client.query("social", "CREATE (:person{name:'roi',age:32})"));
-        Assert.assertNotNull(client.query("social", "CREATE (:person{name:'amit',age:30})"));
-        Assert.assertNotNull(client.query("social",
-                "MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  CREATE (a)-[:knows]->(a)"));
+        Assert.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
+        Assert.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
+        Assert.assertNotNull(client.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  CREATE (a)-[:knows]->(a)"));
 
-        ResultSet queryResult = client.query("social", "MATCH (a:person)-[r:knows]->(b:person) RETURN a,r, a.age");
+        ResultSet queryResult = client.query("MATCH (a:person)-[r:knows]->(b:person) RETURN a,r, a.age");
 
         Header header = queryResult.getHeader();
         Assert.assertNotNull(header);
@@ -250,14 +245,13 @@ public class GraphAPITest {
         params.put("boolValue", boolValue);
         params.put("doubleValue", doubleValue);
 
-        Assert.assertNotNull(client.query("social",
-                "CREATE (:person{name:$name,age:$age, doubleValue:$doubleValue, boolValue:$boolValue})", params));
-        Assert.assertNotNull(client.query("social", "CREATE (:person{name:'amit',age:30})"));
+        Assert.assertNotNull(client.query("CREATE (:person{name:$name,age:$age, doubleValue:$doubleValue, boolValue:$boolValue})", params));
+        Assert.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
         Assert.assertNotNull(
-                client.query("social", "MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  " +
+                client.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  " +
                         "CREATE (a)-[:knows{place:'TLV', since:2000,doubleValue:3.14, boolValue:false}]->(b)"));
 
-        ResultSet resultSet = client.query("social", "MATCH (a:person)-[r:knows]->(b:person) RETURN a,r, " +
+        ResultSet resultSet = client.query("MATCH (a:person)-[r:knows]->(b:person) RETURN a,r, " +
                 "a.name, a.age, a.doubleValue, a.boolValue, " +
                 "r.place, r.since, r.doubleValue, r.boolValue");
         Assert.assertNotNull(resultSet);
@@ -317,11 +311,10 @@ public class GraphAPITest {
     @Test
     public void testMultiThread() {
 
-        Assert.assertNotNull(client.query("social",
-                "CREATE (:person {name:'roi', age:32})-[:knows]->(:person {name:'amit',age:30}) "));
+        Assert.assertNotNull(client.query("CREATE (:person {name:'roi', age:32})-[:knows]->(:person {name:'amit',age:30}) "));
 
         List<ResultSet> resultSets = IntStream.range(0, 16).parallel()
-                .mapToObj(i -> client.query("social", "MATCH (a:person)-[r:knows]->(b:person) RETURN a,r, a.age"))
+                .mapToObj(i -> client.query("MATCH (a:person)-[r:knows]->(b:person) RETURN a,r, a.age"))
                 .collect(Collectors.toList());
 
         Property<String> nameProperty = new Property<>("name", "roi");
@@ -372,13 +365,12 @@ public class GraphAPITest {
         expectedEdge.setDestination(3);
         expectedEdge.setId(1);
 
-        Assert.assertNotNull(client.query("social", "CREATE (:worker{lastName:'a'})"));
-        Assert.assertNotNull(client.query("social", "CREATE (:worker{lastName:'b'})"));
-        Assert.assertNotNull(client.query("social",
-                "MATCH (a:worker), (b:worker) WHERE (a.lastName = 'a' AND b.lastName='b')  CREATE (a)-[:worksWith]->(b)"));
+        Assert.assertNotNull(client.query("CREATE (:worker{lastName:'a'})"));
+        Assert.assertNotNull(client.query("CREATE (:worker{lastName:'b'})"));
+        Assert.assertNotNull(client.query("MATCH (a:worker), (b:worker) WHERE (a.lastName = 'a' AND b.lastName='b')  CREATE (a)-[:worksWith]->(b)"));
 
         resultSets = IntStream.range(0, 16).parallel()
-                .mapToObj(i -> client.query("social", "MATCH (a:worker)-[r:worksWith]->(b:worker) RETURN a,r"))
+                .mapToObj(i -> client.query("MATCH (a:worker)-[r:worksWith]->(b:worker) RETURN a,r"))
                 .collect(Collectors.toList());
 
         for (ResultSet resultSet : resultSets) {
@@ -403,10 +395,9 @@ public class GraphAPITest {
     @Test
     public void testAdditionToProcedures() {
 
-        Assert.assertNotNull(client.query("social", "CREATE (:person{name:'roi',age:32})"));
-        Assert.assertNotNull(client.query("social", "CREATE (:person{name:'amit',age:30})"));
-        Assert.assertNotNull(client.query("social",
-                "MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  CREATE (a)-[:knows]->(b)"));
+        Assert.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
+        Assert.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
+        Assert.assertNotNull(client.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  CREATE (a)-[:knows]->(b)"));
 
         // expected objects init
         Property<String> nameProperty = new Property<>("name", "roi");
@@ -425,7 +416,7 @@ public class GraphAPITest {
         expectedEdge.setDestination(1);
         expectedEdge.setRelationshipType("knows");
 
-        ResultSet resultSet = client.query("social", "MATCH (a:person)-[r:knows]->(b:person) RETURN a,r");
+        ResultSet resultSet = client.query("MATCH (a:person)-[r:knows]->(b:person) RETURN a,r");
         Assert.assertNotNull(resultSet.getHeader());
         Header header = resultSet.getHeader();
         List<String> schemaNames = header.getSchemaNames();
@@ -454,11 +445,10 @@ public class GraphAPITest {
         expectedEdge.setSource(2);
         expectedEdge.setDestination(3);
         expectedEdge.setId(1);
-        Assert.assertNotNull(client.query("social", "CREATE (:worker{lastName:'a'})"));
-        Assert.assertNotNull(client.query("social", "CREATE (:worker{lastName:'b'})"));
-        Assert.assertNotNull(client.query("social",
-                "MATCH (a:worker), (b:worker) WHERE (a.lastName = 'a' AND b.lastName='b')  CREATE (a)-[:worksWith]->(b)"));
-        resultSet = client.query("social", "MATCH (a:worker)-[r:worksWith]->(b:worker) RETURN a,r");
+        Assert.assertNotNull(client.query("CREATE (:worker{lastName:'a'})"));
+        Assert.assertNotNull(client.query("CREATE (:worker{lastName:'b'})"));
+        Assert.assertNotNull(client.query("MATCH (a:worker), (b:worker) WHERE (a.lastName = 'a' AND b.lastName='b')  CREATE (a)-[:worksWith]->(b)"));
+        resultSet = client.query("MATCH (a:worker)-[r:worksWith]->(b:worker) RETURN a,r");
         Assert.assertNotNull(resultSet.getHeader());
         header = resultSet.getHeader();
         schemaNames = header.getSchemaNames();
@@ -482,14 +472,14 @@ public class GraphAPITest {
         Map<String, Object> params1 = new HashMap<String, Object>();
         params1.put("s1", "S\"'");
         params1.put("s2", "S'\"");
-        Assert.assertNotNull(client.query("social", "CREATE (:escaped{s1:$s1,s2:$s2})", params1));
+        Assert.assertNotNull(client.query("CREATE (:escaped{s1:$s1,s2:$s2})", params1));
 
         Map<String, Object> params2 = new HashMap<String, Object>();
         params2.put("s1", "S\"'");
         params2.put("s2", "S'\"");
-        Assert.assertNotNull(client.query("social", "MATCH (n) where n.s1=$s1 and n.s2=$s2 RETURN n", params2));
+        Assert.assertNotNull(client.query("MATCH (n) where n.s1=$s1 and n.s2=$s2 RETURN n", params2));
 
-        Assert.assertNotNull(client.query("social", "MATCH (n) where n.s1='S\"' RETURN n"));
+        Assert.assertNotNull(client.query("MATCH (n) where n.s1='S\"' RETURN n"));
 
     }
 
@@ -537,14 +527,13 @@ public class GraphAPITest {
         params.put("boolValue", boolValue);
         params.put("doubleValue", doubleValue);
         try (GraphContext c = client.getContext()) {
-            Assert.assertNotNull(c.query("social",
-                    "CREATE (:person{name:$name, age:$age, doubleValue:$doubleValue, boolValue:$boolValue})", params));
-            Assert.assertNotNull(c.query("social", "CREATE (:person{name:'amit',age:30})"));
+            Assert.assertNotNull(c.query("CREATE (:person{name:$name, age:$age, doubleValue:$doubleValue, boolValue:$boolValue})", params));
+            Assert.assertNotNull(c.query("CREATE (:person{name:'amit',age:30})"));
             Assert.assertNotNull(
-                    c.query("social", "MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  " +
+                    c.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  " +
                             "CREATE (a)-[:knows{place:'TLV', since:2000,doubleValue:3.14, boolValue:false}]->(b)"));
 
-            ResultSet resultSet = c.query("social", "MATCH (a:person)-[r:knows]->(b:person) RETURN a,r, " +
+            ResultSet resultSet = c.query("MATCH (a:person)-[r:knows]->(b:person) RETURN a,r, " +
                     "a.name, a.age, a.doubleValue, a.boolValue, " +
                     "r.place, r.since, r.doubleValue, r.boolValue");
             Assert.assertNotNull(resultSet);
@@ -624,12 +613,12 @@ public class GraphAPITest {
         expectedBNode.addProperty(bAgeProperty);
         expectedBNode.addProperty(bListProperty);
 
-        Assert.assertNotNull(client.query("social", "CREATE (:person{name:'a',age:32,array:[0,1,2]})"));
-        Assert.assertNotNull(client.query("social", "CREATE (:person{name:'b',age:30,array:[3,4,5]})"));
+        Assert.assertNotNull(client.query("CREATE (:person{name:'a',age:32,array:[0,1,2]})"));
+        Assert.assertNotNull(client.query("CREATE (:person{name:'b',age:30,array:[3,4,5]})"));
 
         // test array
 
-        ResultSet resultSet = client.query("social", "WITH [0,1,2] as x return x");
+        ResultSet resultSet = client.query("WITH [0,1,2] as x return x");
 
         // check header
         Assert.assertNotNull(resultSet.getHeader());
@@ -653,7 +642,7 @@ public class GraphAPITest {
         Assert.assertEquals(Arrays.asList(0L, 1L, 2L), x);
 
         // test collect
-        resultSet = client.query("social", "MATCH(n) return collect(n) as x");
+        resultSet = client.query("MATCH(n) return collect(n) as x");
 
         Assert.assertNotNull(resultSet.getHeader());
         header = resultSet.getHeader();
@@ -675,7 +664,7 @@ public class GraphAPITest {
         Assert.assertEquals(Arrays.asList(expectedANode, expectedBNode), x);
 
         // test unwind
-        resultSet = client.query("social", "unwind([0,1,2]) as x return x");
+        resultSet = client.query("unwind([0,1,2]) as x return x");
 
         Assert.assertNotNull(resultSet.getHeader());
         header = resultSet.getHeader();
@@ -730,9 +719,9 @@ public class GraphAPITest {
         expectedPaths.add(path12);
         expectedPaths.add(path02);
 
-        client.query("social", "CREATE (:L1)-[:R1]->(:L1)-[:R1]->(:L1)");
+        client.query("CREATE (:L1)-[:R1]->(:L1)-[:R1]->(:L1)");
 
-        ResultSet resultSet = client.query("social", "MATCH p = (:L1)-[:R1*]->(:L1) RETURN p");
+        ResultSet resultSet = client.query("MATCH p = (:L1)-[:R1*]->(:L1) RETURN p");
 
         Assert.assertEquals(expectedPaths.size(), resultSet.size());
         for (Record record : resultSet) {
@@ -746,9 +735,9 @@ public class GraphAPITest {
     @Test
     public void testNullGraphEntities() {
         // Create two nodes connected by a single outgoing edge.
-        Assert.assertNotNull(client.query("social", "CREATE (:L)-[:E]->(:L2)"));
+        Assert.assertNotNull(client.query("CREATE (:L)-[:E]->(:L2)"));
         // Test a query that produces 1 record with 3 null values.
-        ResultSet resultSet = client.query("social", "OPTIONAL MATCH (a:NONEXISTENT)-[e]->(b) RETURN a, e, b");
+        ResultSet resultSet = client.query("OPTIONAL MATCH (a:NONEXISTENT)-[e]->(b) RETURN a, e, b");
         Assert.assertEquals(1, resultSet.size());
 
         Iterator<Record> iterator = resultSet.iterator();
@@ -758,7 +747,7 @@ public class GraphAPITest {
         Assert.assertEquals(Arrays.asList(null, null, null), record.values());
 
         // Test a query that produces 2 records, with 2 null values in the second.
-        resultSet = client.query("social", "MATCH (a) OPTIONAL MATCH (a)-[e]->(b) RETURN a, e, b ORDER BY ID(a)");
+        resultSet = client.query("MATCH (a) OPTIONAL MATCH (a)-[e]->(b) RETURN a, e, b ORDER BY ID(a)");
         Assert.assertEquals(2, resultSet.size());
 
         iterator = resultSet.iterator();
@@ -778,7 +767,7 @@ public class GraphAPITest {
 
         // Test a query that produces 2 records, the first containing a path and the
         // second containing a null value.
-        resultSet = client.query("social", "MATCH (a) OPTIONAL MATCH p = (a)-[e]->(b) RETURN p");
+        resultSet = client.query("MATCH (a) OPTIONAL MATCH p = (a)-[e]->(b) RETURN p");
         Assert.assertEquals(2, resultSet.size());
 
         iterator = resultSet.iterator();
@@ -796,7 +785,7 @@ public class GraphAPITest {
         long value = 1 << 40;
         Map<String, Object> params = new HashMap<>();
         params.put("val", value);
-        ResultSet resultSet = client.query("social", "CREATE (n {val:$val}) RETURN n.val", params);
+        ResultSet resultSet = client.query("CREATE (n {val:$val}) RETURN n.val", params);
         Assert.assertEquals(1, resultSet.size());
         Record r = resultSet.iterator().next();
         Assert.assertEquals(Long.valueOf(value), r.getValue(0));
@@ -804,12 +793,12 @@ public class GraphAPITest {
 
     @Test
     public void testCachedExecution() {
-        client.query("social", "CREATE (:N {val:1}), (:N {val:2})");
+        client.query("CREATE (:N {val:1}), (:N {val:2})");
 
         // First time should not be loaded from execution cache
         Map<String, Object> params = new HashMap<>();
         params.put("val", 1L);
-        ResultSet resultSet = client.query("social", "MATCH (n:N {val:$val}) RETURN n.val", params);
+        ResultSet resultSet = client.query("MATCH (n:N {val:$val}) RETURN n.val", params);
         Assert.assertEquals(1, resultSet.size());
         Record r = resultSet.iterator().next();
         Assert.assertEquals(params.get("val"), r.getValue(0));
@@ -818,7 +807,7 @@ public class GraphAPITest {
         // Run in loop many times to make sure the query will be loaded
         // from cache at least once
         for (int i = 0; i < 64; i++) {
-            resultSet = client.query("social", "MATCH (n:N {val:$val}) RETURN n.val", params);
+            resultSet = client.query("MATCH (n:N {val:$val}) RETURN n.val", params);
         }
         Assert.assertEquals(1, resultSet.size());
         r = resultSet.iterator().next();
@@ -842,7 +831,7 @@ public class GraphAPITest {
         f.put("x", (long) 1);
         f.put("y", (long) 2);
         expected.put("f", f);
-        ResultSet res = client.query("social", "RETURN {a:1, b:'str', c:NULL, d:[1,2,3], e:True, f:{x:1, y:2}}");
+        ResultSet res = client.query("RETURN {a:1, b:'str', c:NULL, d:[1,2,3], e:True, f:{x:1, y:2}}");
         Assert.assertEquals(1, res.size());
         Record r = res.iterator().next();
         Map<String, Object> actual = r.getValue(0);
@@ -851,7 +840,7 @@ public class GraphAPITest {
 
     @Test
     public void testGeoPointLatLon() {
-        ResultSet rs = client.query("social", "CREATE (:restaurant"
+        ResultSet rs = client.query("CREATE (:restaurant"
                 + " {location: point({latitude:30.27822306, longitude:-97.75134723})})");
         Assert.assertEquals(1, rs.getStatistics().nodesCreated());
         Assert.assertEquals(1, rs.getStatistics().propertiesSet());
@@ -861,7 +850,7 @@ public class GraphAPITest {
 
     @Test
     public void testGeoPointLonLat() {
-        ResultSet rs = client.query("social", "CREATE (:restaurant"
+        ResultSet rs = client.query("CREATE (:restaurant"
                 + " {location: point({longitude:-97.75134723, latitude:30.27822306})})");
         Assert.assertEquals(1, rs.getStatistics().nodesCreated());
         Assert.assertEquals(1, rs.getStatistics().propertiesSet());
@@ -870,7 +859,7 @@ public class GraphAPITest {
     }
 
     private void assertTestGeoPoint() {
-        ResultSet results = client.query("social", "MATCH (restaurant) RETURN restaurant");
+        ResultSet results = client.query("MATCH (restaurant) RETURN restaurant");
         Assert.assertEquals(1, results.size());
         Record record = results.iterator().next();
         Assert.assertEquals(1, record.size());
@@ -882,7 +871,7 @@ public class GraphAPITest {
 
     @Test
     public void timeoutArgument() {
-        ResultSet rs = client.query("social", "UNWIND range(0,100) AS x WITH x AS x WHERE x = 100 RETURN x", 1L);
+        ResultSet rs = client.query("UNWIND range(0,100) AS x WITH x AS x WHERE x = 100 RETURN x", 1L);
         Assert.assertEquals(1, rs.size());
         Record r = rs.iterator().next();
         Assert.assertEquals(Long.valueOf(100), r.getValue(0));
@@ -890,12 +879,12 @@ public class GraphAPITest {
 
     @Test
     public void testCachedExecutionReadOnly() {
-        client.query("social", "CREATE (:N {val:1}), (:N {val:2})");
+        client.query("CREATE (:N {val:1}), (:N {val:2})");
 
         // First time should not be loaded from execution cache
         Map<String, Object> params = new HashMap<>();
         params.put("val", 1L);
-        ResultSet resultSet = client.readOnlyQuery("social", "MATCH (n:N {val:$val}) RETURN n.val", params);
+        ResultSet resultSet = client.readOnlyQuery("MATCH (n:N {val:$val}) RETURN n.val", params);
         Assert.assertEquals(1, resultSet.size());
         Record r = resultSet.iterator().next();
         Assert.assertEquals(params.get("val"), r.getValue(0));
@@ -904,7 +893,7 @@ public class GraphAPITest {
         // Run in loop many times to make sure the query will be loaded
         // from cache at least once
         for (int i = 0; i < 64; i++) {
-            resultSet = client.readOnlyQuery("social", "MATCH (n:N {val:$val}) RETURN n.val", params);
+            resultSet = client.readOnlyQuery("MATCH (n:N {val:$val}) RETURN n.val", params);
         }
         Assert.assertEquals(1, resultSet.size());
         r = resultSet.iterator().next();
@@ -914,8 +903,8 @@ public class GraphAPITest {
 
     @Test
     public void testSimpleReadOnly() {
-        client.query("social", "CREATE (:person{name:'filipe',age:30})");
-        ResultSet rsRo = client.readOnlyQuery("social", "MATCH (a:person) WHERE (a.name = 'filipe') RETURN a.age");
+        client.query("CREATE (:person{name:'filipe',age:30})");
+        ResultSet rsRo = client.readOnlyQuery("MATCH (a:person) WHERE (a.name = 'filipe') RETURN a.age");
         Assert.assertEquals(1, rsRo.size());
         Record r = rsRo.iterator().next();
         Assert.assertEquals(Long.valueOf(30), r.getValue(0));
