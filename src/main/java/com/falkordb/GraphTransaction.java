@@ -40,7 +40,7 @@ public interface GraphTransaction extends
     /**
      * Execute a Cypher query with timeout.
      * @param query Cypher query
-     * @param timeout
+     * @param timeout timeout in milliseconds
      * @return a response which builds the result set with the query answer.
      */
     Response<ResultSet> query(String query, long timeout);
@@ -48,7 +48,7 @@ public interface GraphTransaction extends
     /**
      * Execute a Cypher read-only query with timeout.
      * @param query Cypher query
-     * @param timeout
+     * @param timeout timeout in milliseconds
      * @return a response which builds the result set with the query answer.
      */
     Response<ResultSet> readOnlyQuery(String query, long timeout);
@@ -73,7 +73,7 @@ public interface GraphTransaction extends
      * Executes a cypher query with parameters and timeout.
      * @param query Cypher query.
      * @param params parameters map.
-     * @param timeout
+     * @param timeout timeout in milliseconds
      * @return  a response which builds the result set with the query answer.
      */
     Response<ResultSet> query(String query, Map<String, Object> params, long timeout);
@@ -82,7 +82,7 @@ public interface GraphTransaction extends
      * Executes a cypher read-only query with parameters and timeout.
      * @param query Cypher query.
      * @param params parameters map.
-     * @param timeout
+     * @param timeout timeout in milliseconds
      * @return  a response which builds the result set with the query answer.
      */
     Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params, long timeout);
@@ -131,8 +131,8 @@ public interface GraphTransaction extends
     void clear();
 
     /**
-     *
-     * @return
+     * Executes the transaction and returns a list of the executed transaction commands answers
+     * @return a list of the executed transaction commands answers
      */
     List<Response<?>> execGetResponse();
 

@@ -15,15 +15,15 @@ public interface GraphContext extends Graph {
     GraphPipeline pipelined();
 
     /**
-     * Perform watch over given Redis keys
-     * @param keys
+     * Perform watch over given Redis keys (Graphs names)
+     * @param keys Redis keys (Graphs names)
      * @return "OK"
      */
     String watch(String... keys);
 
     /**
      * Removes watch from all keys
-     * @return
+     * @return "OK"
      */
     String unwatch();
 }

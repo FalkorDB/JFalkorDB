@@ -92,7 +92,7 @@ public class GraphTransaction extends Transaction
      *
      * NOTE: timeout is simply sent to DB. Socket timeout will not be changed.
      * @param query Cypher query
-     * @param timeout
+     * @param timeout timeout in milliseconds
      * @return a response which builds the result set with the query answer.
      */
     @Override
@@ -152,7 +152,7 @@ public class GraphTransaction extends Transaction
      * NOTE: timeout is simply sent to DB. Socket timeout will not be changed.
      * @param query Cypher query.
      * @param params parameters map.
-     * @param timeout
+     * @param timeout timeout in milliseconds
      * @return a response which builds the result set with the query answer.
      */
     @Override
@@ -175,7 +175,7 @@ public class GraphTransaction extends Transaction
      * NOTE: timeout is simply sent to DB. Socket timeout will not be changed.
      * @param query Cypher query.
      * @param params parameters map.
-     * @param timeout
+     * @param timeout timeout in milliseconds
      * @return a response which builds the result set with the query answer.
      */
     @Override

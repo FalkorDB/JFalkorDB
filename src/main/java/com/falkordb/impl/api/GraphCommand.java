@@ -3,7 +3,7 @@ import redis.clients.jedis.util.SafeEncoder;
 import redis.clients.jedis.commands.ProtocolCommand;
 
 /**
- * 
+ * An enum which aligned to FalkorDB Graph commands
  */
 public enum GraphCommand implements ProtocolCommand {
     QUERY("graph.QUERY"),
@@ -12,10 +12,17 @@ public enum GraphCommand implements ProtocolCommand {
 
     private final byte[] raw;
 
+    /**
+     * Generates a new instance with a specific command
+     * @param alt command
+     */
     GraphCommand(String alt) {
         raw = SafeEncoder.encode(alt);
     }
 
+    /**
+     * Returns the raw command
+     */
     public byte[] getRaw() {
         return raw;
     }

@@ -14,8 +14,8 @@ public final class Point {
     private final double longitude;
 
     /**
-     * @param latitude
-     * @param longitude 
+     * @param latitude The latitude in degrees. It must be in the range [-90.0, +90.0]
+     * @param longitude The longitude in degrees. It must be in the range [-180.0, +180.0]
      */
     public Point(double latitude, double longitude) {
         this.latitude = latitude;
@@ -33,18 +33,30 @@ public final class Point {
         this.longitude = values.get(1);
     }
 
+    /**
+     * Get the latitude in degrees
+     * @return latitude
+     */
     public double getLatitude() {
         return latitude;
     }
 
+    /**
+     * Get the longitude in degrees
+     * @return longitude
+     */
     public double getLongitude() {
         return longitude;
     }
 
     @Override
     public boolean equals(Object other) {
-        if (this == other) return true;
-        if (!(other instanceof Point)) return false;
+        if (this == other){ 
+            return true;
+        } 
+        if (!(other instanceof Point)){
+            return false;  
+        } 
         Point o = (Point) other;
         return Math.abs(latitude - o.latitude) < EPSILON &&
                 Math.abs(longitude - o.longitude) < EPSILON;

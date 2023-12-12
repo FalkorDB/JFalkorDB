@@ -13,6 +13,7 @@ public interface Record {
    * The value at the given field index
    * 
    * @param index field index
+   * @param <T> return value type
    * 
    * @return the value
    */
@@ -22,6 +23,7 @@ public interface Record {
    * The value at the given field
    * 
    * @param key header key 
+   * @param <T> return value type
    * 
    * @return the value
    */
@@ -30,7 +32,7 @@ public interface Record {
   /**
    * The value at the given field index (represented as String)
    * 
-   * @param index
+   * @param index field index
    * @return string representation of the value
    */
   String getString(int index);
