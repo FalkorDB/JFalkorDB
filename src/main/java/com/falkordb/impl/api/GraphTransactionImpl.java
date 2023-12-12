@@ -17,14 +17,14 @@ import java.util.Map;
 /**
  * This class is extending Jedis Transaction
  */
-public class GraphTransaction extends Transaction
+public class GraphTransactionImpl extends Transaction
         implements com.falkordb.GraphTransaction {
 
     private final Graph graph;
     private final String graphId;
     private GraphCache cache;
 
-    public GraphTransaction(Client client, Graph graph, GraphCache cache, String graphId) {
+    public GraphTransactionImpl(Client client, Graph graph, GraphCache cache, String graphId) {
         // init as in Jedis
         super(client);
         this.graph = graph;
@@ -71,7 +71,7 @@ public class GraphTransaction extends Transaction
      *
      * NOTE: timeout is simply sent to DB. Socket timeout will not be changed.
      * @param query Cypher query
-     * @param timeout
+     * @param timeout timeout in milliseconds
      * @return a response which builds the result set with the query answer.
      */
     @Override

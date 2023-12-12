@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.falkordb.GraphContext;
 import com.falkordb.GraphPipeline;
+import com.falkordb.GraphTransaction;
 import com.falkordb.ResultSet;
 import com.falkordb.exceptions.GraphException;
 import com.falkordb.impl.Utils;
@@ -75,8 +76,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
 
     /**
      * Sends the query over the instance only connection
-     * @param timeout
      * @param preparedQuery prepared query
+     * @param timeout timeout in milliseconds 
      * @return Result set with the query answer
      */
     @Override
@@ -95,8 +96,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
 
     /**
      * Sends the read-only query over the instance only connection
-     * @param timeout
      * @param preparedQuery prepared query
+     * @param timeout timeout in milliseconds 
      * @return Result set with the query answer
      */
     @Override
@@ -122,7 +123,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
         Client client = connection.getClient();
         client.multi();
         client.getOne();
-        return new GraphTransaction(client, this, this.cache, this.graphId);
+        return new GraphTransactionImpl(client, this, this.cache, this.graphId);
     }
 
     /**
