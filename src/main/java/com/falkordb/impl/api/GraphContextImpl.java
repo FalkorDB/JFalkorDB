@@ -180,6 +180,11 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     }
 
     @Override
+    public int hashCode() {
+       return this.connection.hashCode();
+    }
+
+    @Override
     public boolean equals(Object o) {
 
         if (o == this) {
