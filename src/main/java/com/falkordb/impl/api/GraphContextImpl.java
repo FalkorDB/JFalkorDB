@@ -19,7 +19,7 @@ import redis.clients.jedis.util.SafeEncoder;
  * An implementation of GraphContext. Allows sending Graph and some Redis commands,
  * within a specific connection context
  */
-public class ContextedGraph extends AbstractGraph implements GraphContext {
+public class GraphContextImpl extends AbstractGraph implements GraphContext {
 
     private final Jedis connection;
     private final String graphId;
@@ -29,7 +29,7 @@ public class ContextedGraph extends AbstractGraph implements GraphContext {
      * Generates a new instance with a specific Jedis connection
      * @param connectionContext
      */
-    public ContextedGraph(Jedis connection, GraphCache cache, String graphId) {
+    public GraphContextImpl(Jedis connection, GraphCache cache, String graphId) {
         this.connection = connection;
         this.graphId = graphId;
         this.cache = cache;
@@ -186,11 +186,11 @@ public class ContextedGraph extends AbstractGraph implements GraphContext {
             return true;
         }
 
-        if (!(o instanceof ContextedGraph)) {
+        if (!(o instanceof GraphContextImpl)) {
             return false;
         }
 
-        final ContextedGraph other = (ContextedGraph) o;
+        final GraphContextImpl other = (GraphContextImpl) o;
         return this.connection == other.connection;
     }
 }

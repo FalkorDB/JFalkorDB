@@ -35,8 +35,8 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendQuery(String preparedQuery) {
-        try (ContextedGraph contextedGraph = new ContextedGraph(driver.getConnection(), this.cache, this.graphId)) {
-            return contextedGraph.sendQuery(preparedQuery);
+        try (GraphContext contextedGraph = new GraphContextImpl(driver.getConnection(), this.cache, this.graphId)) {
+            return contextedGraph.query(preparedQuery);
         }
     }
 
@@ -50,8 +50,8 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendReadOnlyQuery(String preparedQuery) {
-        try (ContextedGraph contextedGraph = new ContextedGraph(driver.getConnection(), this.cache, this.graphId)) {
-            return contextedGraph.sendReadOnlyQuery(preparedQuery);
+        try (GraphContext contextedGraph = new GraphContextImpl(driver.getConnection(), this.cache, this.graphId)) {
+            return contextedGraph.readOnlyQuery(preparedQuery);
         }
     }
 
@@ -66,8 +66,8 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendQuery(String preparedQuery, long timeout) {
-        try (ContextedGraph contextedGraph = new ContextedGraph(driver.getConnection(), this.cache, this.graphId)) {
-            return contextedGraph.sendQuery(preparedQuery, timeout);
+        try (GraphContext contextedGraph = new GraphContextImpl(driver.getConnection(), this.cache, this.graphId)) {
+            return contextedGraph.query(preparedQuery, timeout);
         }
     }
 
@@ -82,8 +82,8 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendReadOnlyQuery(String preparedQuery, long timeout) {
-        try (ContextedGraph contextedGraph = new ContextedGraph(driver.getConnection(), this.cache, this.graphId)) {
-            return contextedGraph.sendReadOnlyQuery(preparedQuery, timeout);
+        try (GraphContext contextedGraph = new GraphContextImpl(driver.getConnection(), this.cache, this.graphId)) {
+            return contextedGraph.readOnlyQuery(preparedQuery, timeout);
         }
     }
 
@@ -110,7 +110,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     public GraphContext getContext() {
-        return new ContextedGraph(driver.getConnection(), this.cache, this.graphId);
+        return new GraphContextImpl(driver.getConnection(), this.cache, this.graphId);
     }
 
     @Override
