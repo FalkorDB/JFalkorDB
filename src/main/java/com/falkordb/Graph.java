@@ -56,7 +56,7 @@ public interface Graph extends Closeable {
      * Executes a cypher query with parameters and timeout.
      * @param query Cypher query.
      * @param params parameters map.
-     * @param timeout
+     * @param timeout timeout in milliseconds
      * @return a result set.
      */
     ResultSet query(String query, Map<String, Object> params, long timeout);
@@ -65,7 +65,7 @@ public interface Graph extends Closeable {
      * Executes a cypher read-only query with parameters and timeout.
      * @param query Cypher query.
      * @param params parameters map.
-     * @param timeout
+     * @param timeout timeout in milliseconds
      * @return a result set.
      */
     ResultSet readOnlyQuery(String query, Map<String, Object> params, long timeout);

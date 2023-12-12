@@ -74,6 +74,7 @@ public final class Path {
 
     /**
      * Returns a node with specified index in the path.
+     * @param index index of the node.
      * @return Node.
      * @throws IndexOutOfBoundsException if the index is out of range
      *         ({@code index < 0 || index >= nodesCount()})
@@ -84,6 +85,7 @@ public final class Path {
 
     /**
      * Returns an edge with specified index in the path.
+     * @param index index of the edge.
      * @return Edge.
      * @throws IndexOutOfBoundsException if the index is out of range
      *         ({@code index < 0 || index >= length()})

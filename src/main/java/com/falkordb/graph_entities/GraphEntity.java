@@ -45,8 +45,8 @@ public abstract class GraphEntity {
     /**
      * Adds a property to the entity, by composing name, type and value to a property object
      *
-     * @param name
-     * @param value
+     * @param name property name
+     * @param value property value
      */
     public void addProperty(String name, Object value) {
         addProperty(new Property(name, value));
@@ -62,11 +62,9 @@ public abstract class GraphEntity {
     /**
      * Add a property to the entity
      *
-     * @param property
+     * @param property property object
      */
     public void addProperty(Property property) {
-
-
         propertyMap.put(property.getName(), property);
     }
 

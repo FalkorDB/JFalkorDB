@@ -11,27 +11,16 @@ public class Property <T> {
     private String name;
     private T value;
 
-
-    /**
-     * Default constructor
-     */
-    public Property() {
-
-    }
-
     /**
      * Parameterized constructor
      *
-     * @param name
-     * @param value
+     * @param name property name
+     * @param value property value
      */
     public Property(String name, T value) {
         this.name = name;
         this.value = value;
     }
-
-
-    //getters & setters
 
     /**
      * @return property name
@@ -41,7 +30,7 @@ public class Property <T> {
     }
 
     /**
-     * @param name - property name to be set
+     * @param name property name to be set
      */
     public void setName(String name) {
         this.name = name;
@@ -85,7 +74,7 @@ public class Property <T> {
 
     /**
      * Default toString implementation
-     * @return
+     * @return string representation of the property
      */
     @Override
     public String toString() {
