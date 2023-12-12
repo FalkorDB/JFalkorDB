@@ -1,15 +1,6 @@
 package com.falkordb;
 
-import redis.clients.jedis.Jedis;
-
 public interface GraphContext extends Graph {
-
-
-    /**
-     * Returns implementing class connection context
-     * @return Jedis connection
-     */
-    Jedis getConnectionContext();
 
     /**
      * Returns a Redis transactional object, over the connection context, with graph API capabilities

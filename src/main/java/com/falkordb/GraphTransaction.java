@@ -25,109 +25,97 @@ public interface GraphTransaction extends
 
     /**
      * Execute a Cypher query.
-     * @param graphId a graph to perform the query on
      * @param query Cypher query
      * @return a response which builds the result set with the query answer.
      */
-    Response<ResultSet> query(String graphId, String query);
+    Response<ResultSet> query(String query);
 
     /**
      * Execute a Cypher read-only query.
-     * @param graphId a graph to perform the query on
      * @param query Cypher query
      * @return a response which builds the result set with the query answer.
      */
-    Response<ResultSet> readOnlyQuery(String graphId, String query);
+    Response<ResultSet> readOnlyQuery(String query);
 
     /**
      * Execute a Cypher query with timeout.
-     * @param graphId a graph to perform the query on
      * @param query Cypher query
      * @param timeout
      * @return a response which builds the result set with the query answer.
      */
-    Response<ResultSet> query(String graphId, String query, long timeout);
+    Response<ResultSet> query(String query, long timeout);
 
     /**
      * Execute a Cypher read-only query with timeout.
-     * @param graphId a graph to perform the query on
      * @param query Cypher query
      * @param timeout
      * @return a response which builds the result set with the query answer.
      */
-    Response<ResultSet> readOnlyQuery(String graphId, String query, long timeout);
+    Response<ResultSet> readOnlyQuery(String query, long timeout);
 
     /**
      * Executes a cypher query with parameters.
-     * @param graphId a graph to perform the query on.
      * @param query Cypher query.
      * @param params parameters map.
      * @return  a response which builds the result set with the query answer.
      */
-    Response<ResultSet> query(String graphId, String query, Map<String, Object> params);
+    Response<ResultSet> query(String query, Map<String, Object> params);
 
     /**
      * Executes a cypher read-only query with parameters.
-     * @param graphId a graph to perform the query on.
      * @param query Cypher query.
      * @param params parameters map.
      * @return  a response which builds the result set with the query answer.
      */
-    Response<ResultSet> readOnlyQuery(String graphId, String query, Map<String, Object> params);
+    Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params);
 
     /**
      * Executes a cypher query with parameters and timeout.
-     * @param graphId a graph to perform the query on.
      * @param query Cypher query.
      * @param params parameters map.
      * @param timeout
      * @return  a response which builds the result set with the query answer.
      */
-    Response<ResultSet> query(String graphId, String query, Map<String, Object> params, long timeout);
+    Response<ResultSet> query(String query, Map<String, Object> params, long timeout);
 
     /**
      * Executes a cypher read-only query with parameters and timeout.
-     * @param graphId a graph to perform the query on.
      * @param query Cypher query.
      * @param params parameters map.
      * @param timeout
      * @return  a response which builds the result set with the query answer.
      */
-    Response<ResultSet> readOnlyQuery(String graphId, String query, Map<String, Object> params, long timeout);
+    Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params, long timeout);
 
     /**
      * Invokes stored procedures without arguments
-     * @param graphId a graph to perform the query on
      * @param procedure procedure name to invoke
      * @return a response which builds result set with the procedure data
      */
-    Response<ResultSet> callProcedure(String graphId, String procedure);
+    Response<ResultSet> callProcedure(String procedure);
 
     /**
      * Invokes stored procedure with arguments
-     * @param graphId a graph to perform the query on
      * @param procedure procedure name to invoke
      * @param args procedure arguments
      * @return a response which builds result set with the procedure data
      */
-    Response<ResultSet> callProcedure(String graphId, String procedure, List<String> args);
+    Response<ResultSet> callProcedure(String procedure, List<String> args);
 
     /**
      * Invoke a stored procedure
-     * @param graphId a graph to perform the query on
      * @param procedure - procedure to execute
      * @param args - procedure arguments
      * @param kwargs - procedure output arguments
      * @return a response which builds result set with the procedure data
      */
-    Response<ResultSet> callProcedure(String graphId, String procedure, List<String> args  , Map<String, List<String>> kwargs);
+    Response<ResultSet> callProcedure(String procedure, List<String> args  , Map<String, List<String>> kwargs);
 
     /**
      * Deletes the entire graph
-     * @param graphId graph to delete
      * @return a response which builds the delete running time statistics
      */
-    Response<String> deleteGraph(String graphId);
+    Response<String> deleteGraph();
 
 
     /**

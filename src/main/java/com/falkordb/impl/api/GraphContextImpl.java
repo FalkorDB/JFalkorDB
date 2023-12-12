@@ -3,10 +3,11 @@ package com.falkordb.impl.api;
 import java.util.List;
 
 import com.falkordb.GraphContext;
+import com.falkordb.GraphPipeline;
 import com.falkordb.ResultSet;
 import com.falkordb.exceptions.GraphException;
 import com.falkordb.impl.Utils;
-import com.falkordb.impl.graph_cache.GraphCaches;
+import com.falkordb.impl.graph_cache.GraphCache;
 import com.falkordb.impl.resultset.ResultSetImpl;
 
 import redis.clients.jedis.Client;
@@ -18,41 +19,33 @@ import redis.clients.jedis.util.SafeEncoder;
  * An implementation of GraphContext. Allows sending Graph and some Redis commands,
  * within a specific connection context
  */
-public class ContextedGraph extends AbstractGraph implements GraphContext, GraphCacheHolder {
+public class GraphContextImpl extends AbstractGraph implements GraphContext {
 
-    private final Jedis connectionContext;
-    private GraphCaches caches;
+    private final Jedis connection;
+    private final String graphId;
+    private GraphCache cache;
 
     /**
      * Generates a new instance with a specific Jedis connection
      * @param connectionContext
      */
-    public ContextedGraph(Jedis connectionContext) {
-        this.connectionContext = connectionContext;
-    }
-
-    /**
-     * Overrides the abstract method. Return the instance only connection
-     * @return
-     */
-    @Override
-    protected Jedis getConnection() {
-        return this.connectionContext;
+    public GraphContextImpl(Jedis connection, GraphCache cache, String graphId) {
+        this.connection = connection;
+        this.graphId = graphId;
+        this.cache = cache;
     }
 
     /**
      * Sends the query over the instance only connection
-     * @param graphId graph to be queried
      * @param preparedQuery prepared query
      * @return Result set with the query answer
      */
     @Override
-    protected ResultSet sendQuery(String graphId, String preparedQuery) {
-        Jedis conn = getConnection();
+    protected ResultSet sendQuery(String preparedQuery) {
         try {
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>) conn.sendCommand(GraphCommand.QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
-            return new ResultSetImpl(rawResponse, this, caches.getGraphCache(graphId));
+            List<Object> rawResponse = (List<Object>) connection.sendCommand(GraphCommand.QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
+            return new ResultSetImpl(rawResponse, this, this.cache);
         } catch (GraphException rt) {
             throw rt;
         } catch (JedisDataException j) {
@@ -62,17 +55,15 @@ public class ContextedGraph extends AbstractGraph implements GraphContext, Graph
 
     /**
      * Sends the read-only query over the instance only connection
-     * @param graphId graph to be queried
      * @param preparedQuery prepared query
      * @return Result set with the query answer
      */
     @Override
-    protected ResultSet sendReadOnlyQuery(String graphId, String preparedQuery) {
-        Jedis conn = getConnection();
+    protected ResultSet sendReadOnlyQuery(String preparedQuery) {
         try {
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>) conn.sendCommand(GraphCommand.RO_QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
-            return new ResultSetImpl(rawResponse, this, caches.getGraphCache(graphId));
+            List<Object> rawResponse = (List<Object>) connection.sendCommand(GraphCommand.RO_QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
+            return new ResultSetImpl(rawResponse, this, this.cache);
         } catch (GraphException ge) {
             throw ge;
         } catch (JedisDataException de) {
@@ -82,19 +73,17 @@ public class ContextedGraph extends AbstractGraph implements GraphContext, Graph
 
     /**
      * Sends the query over the instance only connection
-     * @param graphId graph to be queried
      * @param timeout
      * @param preparedQuery prepared query
      * @return Result set with the query answer
      */
     @Override
-    protected ResultSet sendQuery(String graphId, String preparedQuery, long timeout) {
-        Jedis conn = getConnection();
+    protected ResultSet sendQuery(String preparedQuery, long timeout) {
         try {
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>) conn.sendBlockingCommand(GraphCommand.QUERY,
+            List<Object> rawResponse = (List<Object>) connection.sendBlockingCommand(GraphCommand.QUERY,
                     graphId, preparedQuery, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout));
-            return new ResultSetImpl(rawResponse, this, caches.getGraphCache(graphId));
+            return new ResultSetImpl(rawResponse, this, this.cache);
         } catch (GraphException rt) {
             throw rt;
         } catch (JedisDataException j) {
@@ -104,32 +93,22 @@ public class ContextedGraph extends AbstractGraph implements GraphContext, Graph
 
     /**
      * Sends the read-only query over the instance only connection
-     * @param graphId graph to be queried
      * @param timeout
      * @param preparedQuery prepared query
      * @return Result set with the query answer
      */
     @Override
-    protected ResultSet sendReadOnlyQuery(String graphId, String preparedQuery, long timeout) {
-        Jedis conn = getConnection();
+    protected ResultSet sendReadOnlyQuery(String preparedQuery, long timeout) {
         try {
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>) conn.sendBlockingCommand(GraphCommand.RO_QUERY,
+            List<Object> rawResponse = (List<Object>) connection.sendBlockingCommand(GraphCommand.RO_QUERY,
                     graphId, preparedQuery, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout));
-            return new ResultSetImpl(rawResponse, this, caches.getGraphCache(graphId));
+            return new ResultSetImpl(rawResponse, this, this.cache);
         } catch (GraphException ge) {
             throw ge;
         } catch (JedisDataException de) {
             throw new GraphException(de);
         }
-    }
-
-    /**
-     * @return Returns the instance Jedis connection.
-     */
-    @Override
-    public Jedis getConnectionContext() {
-        return this.connectionContext;
     }
 
     /**
@@ -138,13 +117,10 @@ public class ContextedGraph extends AbstractGraph implements GraphContext, Graph
      */
     @Override
     public GraphTransaction multi() {
-        Jedis jedis = getConnection();
-        Client client = jedis.getClient();
+        Client client = connection.getClient();
         client.multi();
         client.getOne();
-        GraphTransaction transaction = new GraphTransaction(client, this);
-        transaction.setGraphCaches(caches);
-        return transaction;
+        return new GraphTransaction(client, this, this.cache, this.graphId);
     }
 
     /**
@@ -153,11 +129,8 @@ public class ContextedGraph extends AbstractGraph implements GraphContext, Graph
      */
     @Override
     public GraphPipeline pipelined() {
-        Jedis jedis = getConnection();
-        Client client = jedis.getClient();
-        GraphPipeline pipeline = new GraphPipeline(client, this);
-        pipeline.setGraphCaches(caches);
-        return pipeline;
+        Client client = connection.getClient();
+        return new GraphPipelineImpl(client, this, this.cache, this.graphId);
     }
 
     /**
@@ -167,7 +140,7 @@ public class ContextedGraph extends AbstractGraph implements GraphContext, Graph
      */
     @Override
     public String watch(String... keys) {
-        return this.getConnection().watch(keys);
+        return connection.watch(keys);
     }
 
     /**
@@ -176,26 +149,25 @@ public class ContextedGraph extends AbstractGraph implements GraphContext, Graph
      */
     @Override
     public String unwatch() {
-        return this.getConnection().unwatch();
+        return connection.unwatch();
     }
 
     /**
      * Deletes the entire graph
-     * @param graphId graph to delete
      * @return delete running time statistics
      */
     @Override
-    public String deleteGraph(String graphId) {
-        Jedis conn = getConnection();
+    public String deleteGraph() {
         Object response;
         try {
-            response = conn.sendCommand(GraphCommand.DELETE, graphId);
+            response = connection.sendCommand(GraphCommand.DELETE, graphId);
         } catch (Exception e) {
-            conn.close();
+            connection.close();
             throw e;
         }
         //clear local state
-        caches.removeGraphCache(graphId);
+        this.cache.clear();
+        // caches.removeGraphCache(graphId);
         return SafeEncoder.encode((byte[]) response);
     }
 
@@ -204,13 +176,26 @@ public class ContextedGraph extends AbstractGraph implements GraphContext, Graph
      */
     @Override
     public void close() {
-        this.connectionContext.close();
-
+        this.connection.close();
     }
 
     @Override
-    public void setGraphCaches(GraphCaches caches) {
-        this.caches = caches;
+    public int hashCode() {
+       return this.connection.hashCode();
     }
 
+    @Override
+    public boolean equals(Object o) {
+
+        if (o == this) {
+            return true;
+        }
+
+        if (!(o instanceof GraphContextImpl)) {
+            return false;
+        }
+
+        final GraphContextImpl other = (GraphContextImpl) o;
+        return this.connection == other.connection;
+    }
 }

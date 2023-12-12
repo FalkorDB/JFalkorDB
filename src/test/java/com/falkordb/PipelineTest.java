@@ -11,7 +11,6 @@ import org.junit.Test;
 
 import com.falkordb.graph_entities.Node;
 import com.falkordb.graph_entities.Property;
-import com.falkordb.impl.api.Graph;
 import com.falkordb.impl.resultset.ResultSetImpl;
 
 public class PipelineTest {
@@ -20,12 +19,13 @@ public class PipelineTest {
 
     @Before
     public void createApi() {
-        api = new Graph();
+        api = FalkorDB.driver().graph("social");
+
     }
 
     @After
     public void deleteGraph() {
-        api.deleteGraph("social");
+        api.deleteGraph();
         api.close();
     }
 
@@ -34,13 +34,12 @@ public class PipelineTest {
         try (GraphContext c = api.getContext()) {
             GraphPipeline pipeline = c.pipelined();
             pipeline.set("x", "1");
-            pipeline.query("social", "CREATE (:Person {name:'a'})");
-            pipeline.query("g", "CREATE (:Person {name:'a'})");
+            pipeline.query("CREATE (:Person {name:'a'})");
+            pipeline.query("CREATE (:Person {name:'b'})");
             pipeline.incr("x");
             pipeline.get("x");
-            pipeline.query("social", "MATCH (n:Person) RETURN n");
-            pipeline.deleteGraph("g");
-            pipeline.callProcedure("social", "db.labels");
+            pipeline.query("MATCH (n:Person{name:'a'}) RETURN n");
+            pipeline.callProcedure("db.labels");
             List<Object> results = pipeline.syncAndReturnAll();
 
             // Redis set command
@@ -94,8 +93,8 @@ public class PipelineTest {
             Assert.assertEquals(Arrays.asList("n"), record.keys());
             Assert.assertEquals(expectedNode, record.getValue("n"));
 
-            Assert.assertEquals(ResultSetImpl.class, results.get(7).getClass());
-            resultSet = (ResultSet) results.get(7);
+            Assert.assertEquals(ResultSetImpl.class, results.get(6).getClass());
+            resultSet = (ResultSet) results.get(6);
 
             Assert.assertNotNull(resultSet.getHeader());
             header = resultSet.getHeader();
@@ -122,11 +121,10 @@ public class PipelineTest {
             GraphPipeline pipeline = c.pipelined();
 
             pipeline.set("x", "1");
-            pipeline.query("social", "CREATE (:Person {name:'a'})");
-            pipeline.query("g", "CREATE (:Person {name:'a'})");
-            pipeline.readOnlyQuery("social", "MATCH (n:Person) RETURN n");
-            pipeline.deleteGraph("g");
-            pipeline.callProcedure("social", "db.labels");
+            pipeline.query("CREATE (:Person {name:'a'})");
+            pipeline.query("CREATE (:Person {name:'b'})");
+            pipeline.readOnlyQuery("MATCH (n:Person{name:'a'}) RETURN n");
+            pipeline.callProcedure("db.labels");
             List<Object> results = pipeline.syncAndReturnAll();
 
             // Redis set command
@@ -145,7 +143,7 @@ public class PipelineTest {
             Assert.assertEquals(1, resultSet.getStatistics().propertiesSet());
 
             // Graph read-only query result
-            Assert.assertEquals(ResultSetImpl.class, results.get(5).getClass());
+            Assert.assertEquals(ResultSetImpl.class, results.get(4).getClass());
             resultSet = (ResultSet) results.get(3);
 
             Assert.assertNotNull(resultSet.getHeader());
@@ -172,8 +170,8 @@ public class PipelineTest {
             Assert.assertEquals(Arrays.asList("n"), record.keys());
             Assert.assertEquals(expectedNode, record.getValue("n"));
 
-            Assert.assertEquals(ResultSetImpl.class, results.get(5).getClass());
-            resultSet = (ResultSet) results.get(5);
+            Assert.assertEquals(ResultSetImpl.class, results.get(4).getClass());
+            resultSet = (ResultSet) results.get(4);
 
             Assert.assertNotNull(resultSet.getHeader());
             header = resultSet.getHeader();
@@ -199,8 +197,8 @@ public class PipelineTest {
         try (GraphContext c = api.getContext()) {
             GraphPipeline pipeline = c.pipelined();
             pipeline.set("x", "1");
-            pipeline.query("social", "CREATE (:Person {name:'a'})");
-            pipeline.query("g", "CREATE (:Person {name:'a'})");
+            pipeline.query("CREATE (:Person {name:'a'})");
+            pipeline.query("CREATE (:Person {name:'b'})");
             pipeline.waitReplicas(0, 100L);
             List<Object> results = pipeline.syncAndReturnAll();
             Assert.assertEquals(0L, results.get(3));

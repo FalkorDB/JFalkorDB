@@ -14,12 +14,11 @@ public class GraphCache {
 
     /**
      *
-     * @param graphId - graph Id
      */
-    public GraphCache(String graphId) {
-        this.labels = new GraphCacheList(graphId, "db.labels");
-        this.propertyNames = new GraphCacheList(graphId, "db.propertyKeys");
-        this.relationshipTypes = new GraphCacheList(graphId, "db.relationshipTypes");
+    public GraphCache() {
+        this.labels = new GraphCacheList("db.labels");
+        this.propertyNames = new GraphCacheList("db.propertyKeys");
+        this.relationshipTypes = new GraphCacheList("db.relationshipTypes");
     }
 
     /**
@@ -43,7 +42,12 @@ public class GraphCache {
      * @return requested property
      */
     public String getPropertyName(int index, Graph graph) {
-
         return propertyNames.getCachedData(index, graph);
     }
+
+    public void clear() {
+        labels.clear();
+        propertyNames.clear();
+        relationshipTypes.clear();
+    }   
 }

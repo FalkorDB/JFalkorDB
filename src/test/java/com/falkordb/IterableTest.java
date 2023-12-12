@@ -1,33 +1,31 @@
 package com.falkordb;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
+ 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.falkordb.impl.api.Graph;
 public class IterableTest {
 
     private GraphContextGenerator api;
 
     @Before
     public void createApi() {
-        api = new Graph();
+        api = FalkorDB.driver().graph("social");
     }
 
     @After
     public void deleteGraph() {
-
-        api.deleteGraph("social");
+        api.deleteGraph();
         api.close();
     }
 
     @Test
     public void testRecordsIterator() {
-        api.query("social", "UNWIND(range(0,50)) as i CREATE(:N{i:i})");
+        api.query("UNWIND(range(0,50)) as i CREATE(:N{i:i})");
 
-        ResultSet rs = api.query("social", "MATCH(n) RETURN n");
+        ResultSet rs = api.query("MATCH(n) RETURN n");
         int count = 0;
         for (Record record : rs) {
             count++;
@@ -37,9 +35,9 @@ public class IterableTest {
 
     @Test
     public void testRecordsIterable() {
-        api.query("social", "UNWIND(range(0,50)) as i CREATE(:N{i:i})");
+        api.query("UNWIND(range(0,50)) as i CREATE(:N{i:i})");
 
-        ResultSet rs = api.query("social", "MATCH(n) RETURN n");
+        ResultSet rs = api.query("MATCH(n) RETURN n");
         int count = 0;
         for (@SuppressWarnings("unused")
         Record row : rs) {
@@ -50,9 +48,9 @@ public class IterableTest {
 
     @Test
     public void testRecordsIteratorAndIterable() {
-        api.query("social", "UNWIND(range(0,50)) as i CREATE(:N{i:i})");
+        api.query("UNWIND(range(0,50)) as i CREATE(:N{i:i})");
 
-        ResultSet rs = api.query("social", "MATCH(n) RETURN n");
+        ResultSet rs = api.query("MATCH(n) RETURN n");
         rs.iterator().next();
         int count = 0;
         for (@SuppressWarnings("unused")

@@ -53,7 +53,9 @@ package com.falkordb;
 import com.falkordb.graph_entities.Edge;
 import com.falkordb.graph_entities.Node;
 import com.falkordb.graph_entities.Path;
-import com.falkordb.impl.api.Graph;
+import com.falkordb.Graph;
+import com.falkordb.FalkorDB;
+import com.falkordb.Driver;
 
 import java.util.List;
 
@@ -61,18 +63,19 @@ public class GraphExample {
     public static void main(String[] args) {
 
         // general context api. Not bound to graph key or connection
-        Graph graph = new Graph();
+        Driver driver = FalkorDB.driver();
+        Graph graph = driver.graph("social");
 
         Map<String, Object> params = new HashMap<>();
         params.put("age", 30);
         params.put("name", "amit");
 
         // send queries to a specific graph called "social"
-        graph.query("social","CREATE (:person{name:'roi',age:32})");
-        graph.query("social","CREATE (:person{name:$name,age:$age})", params);
-        graph.query("social","MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit') CREATE (a)-[:knows]->(b)");
+        graph.query("CREATE (:person{name:'roi',age:32})");
+        graph.query("CREATE (:person{name:$name,age:$age})", params);
+        graph.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit') CREATE (a)-[:knows]->(b)");
 
-        ResultSet resultSet = graph.query("social", "MATCH (a:person)-[r:knows]->(b:person) RETURN a, r, b");
+        ResultSet resultSet = graph.query("MATCH (a:person)-[r:knows]->(b:person) RETURN a, r, b");
         while(resultSet.hasNext()) {
             Record record = resultSet.next();
             // get values
@@ -83,7 +86,7 @@ public class GraphExample {
             System.out.println(record.toString());
         }
 
-        resultSet = graph.query("social", "MATCH p = (:person)-[:knows]->(:person) RETURN p");
+        resultSet = graph.query("MATCH p = (:person)-[:knows]->(:person) RETURN p");
         while(resultSet.hasNext()) {
             Record record = resultSet.next();
             Path p = record.getValue("p");
@@ -93,18 +96,18 @@ public class GraphExample {
         }
 
         // delete graph
-        graph.deleteGraph("social");
+        graph.deleteGraph();
 
+        Graph contextGraph = driver.graph("contextSocial");
         // get connection context - closable object
-        try(GraphContext context = graph.getContext()) {
-            context.query("contextSocial","CREATE (:person{name:'roi',age:32})");
-            context.query("social","CREATE (:person{name:$name,age:$age})", params);
-            context.query("contextSocial", "MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit') CREATE (a)-[:knows]->(b)");
+        try(GraphContext context = contextGraph.getContext()) {
+            context.query("CREATE (:person{name:'roi',age:32})");
+            context.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit') CREATE (a)-[:knows]->(b)");
             // WATCH/MULTI/EXEC
-            context.watch("contextSocial");
+            context.watch();
 
             GraphTransaction t = context.multi();
-            t.query("contextSocial", "MATCH (a:person)-[r:knows]->(b:person{name:$name,age:$age}) RETURN a, r, b", params);
+            t.query("MATCH (a:person)-[r:knows]->(b:person{name:$name,age:$age}) RETURN a, r, b", params);
             // support for Redis/Jedis native commands in transaction
             t.set("x", "1");
             t.get("x");
@@ -112,7 +115,7 @@ public class GraphExample {
             List<Object> execResults =  t.exec();
             System.out.println(execResults.toString());
 
-            context.deleteGraph("contextSocial");
+            context.deleteGraph();
         }
     }
 }
