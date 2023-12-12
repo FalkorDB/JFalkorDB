@@ -27,7 +27,9 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
 
     /**
      * Generates a new instance with a specific Jedis connection
-     * @param connectionContext
+     * @param connection Jedis connection
+     * @param cache GraphCache
+     * @param graphId graph id 
      */
     public GraphContextImpl(Jedis connection, GraphCache cache, String graphId) {
         this.connection = connection;

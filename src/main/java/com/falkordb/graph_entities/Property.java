@@ -12,6 +12,11 @@ public class Property <T> {
     private T value;
 
     /**
+     * Default constructor
+     */
+    public Property() {}
+    
+    /**
      * Parameterized constructor
      *
      * @param name property name

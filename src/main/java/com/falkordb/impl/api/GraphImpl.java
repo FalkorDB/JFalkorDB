@@ -8,7 +8,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.util.SafeEncoder;
 
 /**
- *
+ * An implementation of GraphContextGenerator. 
  */
 public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
 

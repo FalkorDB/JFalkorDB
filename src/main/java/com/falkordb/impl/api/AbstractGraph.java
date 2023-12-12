@@ -28,7 +28,7 @@ public abstract class AbstractGraph implements Graph {
     /**
      * Sends a query to the redis graph.Implementation and context dependent
      * @param preparedQuery prepared query
-     * @param timeout
+     * @param timeout timeout in milliseconds
      * @return Result set
      */
     protected abstract ResultSet sendQuery(String preparedQuery, long timeout);
@@ -36,7 +36,7 @@ public abstract class AbstractGraph implements Graph {
     /**
      * Sends a read-query to the redis graph.Implementation and context dependent
      * @param preparedQuery prepared query
-     * @param timeout
+     * @param timeout timeout in milliseconds
      * @return Result set
      */
     protected abstract ResultSet sendReadOnlyQuery(String preparedQuery, long timeout);
@@ -109,9 +109,9 @@ public abstract class AbstractGraph implements Graph {
 
     /**
      * Executes a cypher query with parameters and timeout.
-     * @param timeout
      * @param query Cypher query.
      * @param params parameters map.
+     * @param timeout timeout in milliseconds
      * @return a result set.
      */
     @Override
@@ -122,9 +122,9 @@ public abstract class AbstractGraph implements Graph {
 
     /**
      * Executes a cypher read-only query with parameters and timeout.
-     * @param timeout
      * @param query Cypher query.
      * @param params parameters map.
+     * @param timeout timeout in milliseconds
      * @return a result set.
      */
     @Override
