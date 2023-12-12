@@ -63,8 +63,8 @@ public abstract class AbstractGraph implements Graph {
 
     /**
      * Execute a Cypher query with timeout.
-     * @param timeout
      * @param query Cypher query
+     * @param timeout timeout in milliseconds
      * @return a result set
      */
     @Override
@@ -74,8 +74,8 @@ public abstract class AbstractGraph implements Graph {
 
     /**
      * Execute a Cypher read-only query with timeout.
-     * @param timeout
      * @param query Cypher query
+     * @param timeout timeout in milliseconds
      * @return a result set
      */
     @Override

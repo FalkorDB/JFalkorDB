@@ -138,6 +138,7 @@ public interface GraphTransaction extends
 
     /**
      * Flushes all previously queued commands in a transaction and restores the connection state to normal
+     * @return "OK" if the transaction was successfully discarded, otherwise an exception is thrown
      */
     String discard();
 }

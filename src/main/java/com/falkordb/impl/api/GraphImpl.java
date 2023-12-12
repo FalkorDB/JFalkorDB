@@ -18,6 +18,8 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
 
     /**
      * Creates a client running on the local machine
+     * @param driver driver connection
+     * @param graphId graph id
      */
     public GraphImpl(DriverImpl driver, String graphId) {
         this.driver = driver;
@@ -61,7 +63,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      * closes it once done
      * 
      * @param preparedQuery prepared query
-     * @param timeout
+     * @param timeout timeout in milliseconds
      * @return Result set with the query answer
      */
     @Override
