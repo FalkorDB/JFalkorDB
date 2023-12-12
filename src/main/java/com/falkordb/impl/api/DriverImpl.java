@@ -4,14 +4,14 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.util.Pool;
 
-public class Driver implements com.falkordb.Driver {
+public class DriverImpl implements com.falkordb.Driver {
 
     private final Pool<Jedis> pool;
 
     /**
      * Creates a client running on the local machine
      */
-    public Driver() {
+    public DriverImpl() {
         this("localhost", 6379);
     }
 
@@ -21,13 +21,13 @@ public class Driver implements com.falkordb.Driver {
      * @param host Redis host
      * @param port Redis port
      */
-    public Driver(String host, int port) {
+    public DriverImpl(String host, int port) {
         this.pool = new JedisPool(host, port);
     }
 
     @Override
-    public Graph graph(String graphId) {
-        return new Graph(this, graphId);
+    public GraphImpl graph(String graphId) {
+        return new GraphImpl(this, graphId);
     }
 
     @Override

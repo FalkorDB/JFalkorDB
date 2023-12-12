@@ -10,16 +10,16 @@ import redis.clients.jedis.util.SafeEncoder;
 /**
  *
  */
-public class Graph extends AbstractGraph implements GraphContextGenerator {
+public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
 
-    private final Driver driver;
+    private final DriverImpl driver;
     private final String graphId;
     private final GraphCache cache;
 
     /**
      * Creates a client running on the local machine
      */
-    public Graph(Driver driver, String graphId) {
+    public GraphImpl(DriverImpl driver, String graphId) {
         this.driver = driver;
         this.graphId = graphId;
         this.cache = new GraphCache();

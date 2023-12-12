@@ -89,6 +89,7 @@ public abstract class AbstractGraph implements Graph {
      * @param params parameters map.
      * @return a result set.
      */
+    @Override
     public ResultSet query(String query, Map<String, Object> params) {
         String preparedQuery = Utils.prepareQuery(query, params);
         return sendQuery(preparedQuery);

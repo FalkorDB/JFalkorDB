@@ -3,6 +3,7 @@ package com.falkordb.impl.api;
 import java.util.List;
 
 import com.falkordb.GraphContext;
+import com.falkordb.GraphPipeline;
 import com.falkordb.ResultSet;
 import com.falkordb.exceptions.GraphException;
 import com.falkordb.impl.Utils;
@@ -129,7 +130,7 @@ public class ContextedGraph extends AbstractGraph implements GraphContext {
     @Override
     public GraphPipeline pipelined() {
         Client client = connection.getClient();
-        return new GraphPipeline(client, this, this.cache, this.graphId);
+        return new GraphPipelineImpl(client, this, this.cache, this.graphId);
     }
 
     /**

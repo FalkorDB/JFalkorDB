@@ -1,14 +1,16 @@
 package com.falkordb;
 
+import com.falkordb.impl.api.DriverImpl;
+
 final public class FalkorDB {
 
     private FalkorDB() {}   
 
     public static Driver driver (){
-        return new com.falkordb.impl.api.Driver();
+        return new DriverImpl();
     }
 
     public static Driver driver (String host, int port){
-        return new com.falkordb.impl.api.Driver(host, port);
+        return new DriverImpl(host, port);
     }
 }

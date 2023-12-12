@@ -17,13 +17,13 @@ import java.util.Map;
 /**
  * This class is extending Jedis Pipeline
  */
-public class GraphPipeline extends Pipeline implements com.falkordb.GraphPipeline {
+public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPipeline {
 
     private final Graph graph;
     private GraphCache cache;
     private final String graphId;
 
-    public GraphPipeline(Client client, Graph graph, GraphCache cache, String graphId){
+    public GraphPipelineImpl(Client client, Graph graph, GraphCache cache, String graphId){
         super.setClient(client);
         this.graph = graph;
         this.cache = cache;

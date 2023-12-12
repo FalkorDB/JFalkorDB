@@ -13,7 +13,6 @@ import org.junit.Test;
 
 import com.falkordb.graph_entities.Node;
 import com.falkordb.graph_entities.Property;
-import com.falkordb.impl.api.Graph;
 import com.falkordb.impl.resultset.ResultSetImpl;
 
 public class TransactionTest {
