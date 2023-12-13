@@ -6,12 +6,14 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.util.Pool;
 
-public class DriverImpl implements com.falkordb.Driver {
+import com.falkordb.Driver;
+
+public class DriverImpl implements Driver {
 
     private final Pool<Jedis> pool;
 
     /**
-     * Creates a client running on the specific host/post
+     * Creates a client running on the specific host/port
      *
      * @param host Server host
      * @param port Server port
@@ -21,11 +23,11 @@ public class DriverImpl implements com.falkordb.Driver {
     }
 
     /**
-     * Creates a client running on the specific host/post
+     * Creates a client running on the specific host/port
      *
-     * @param host Server host
-     * @param port Server port
-     * @param user username
+     * @param host     Server host
+     * @param port     Server port
+     * @param user     username
      * @param password password
      */
     public DriverImpl(String host, int port, String user, final String password) {
