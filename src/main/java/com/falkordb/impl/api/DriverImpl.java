@@ -13,7 +13,7 @@ public class DriverImpl implements Driver {
     private final Pool<Jedis> pool;
 
     /**
-     * Creates a client running on the specific host/post
+     * Creates a client running on the specific host/port
      *
      * @param host Server host
      * @param port Server port
@@ -23,7 +23,7 @@ public class DriverImpl implements Driver {
     }
 
     /**
-     * Creates a client running on the specific host/post
+     * Creates a client running on the specific host/port
      *
      * @param host     Server host
      * @param port     Server port
