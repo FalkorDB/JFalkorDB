@@ -94,8 +94,12 @@ public abstract class GraphEntity {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof GraphEntity)) return false;
+        if (this == o){
+             return true;
+        }
+        if (!(o instanceof GraphEntity)){ 
+            return false;
+        }
         GraphEntity that = (GraphEntity) o;
         return id == that.id &&
                 Objects.equals(propertyMap, that.propertyMap);

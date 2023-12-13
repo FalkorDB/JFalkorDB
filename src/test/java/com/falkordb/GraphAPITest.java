@@ -210,9 +210,6 @@ public class GraphAPITest {
         Property<Boolean> trueBooleanProperty = new Property<>("boolValue", true);
         Property<Boolean> falseBooleanProperty = new Property<>("boolValue", false);
 
-        Property<String> placeProperty = new Property<>("place", place);
-        Property<Integer> sinceProperty = new Property<>("since", since);
-
         Node expectedNode = new Node();
         expectedNode.setId(0);
         expectedNode.addLabel("person");
@@ -227,14 +224,15 @@ public class GraphAPITest {
                         + "doubleValue=Property{name='doubleValue', value=3.14}, "
                         + "age=Property{name='age', value=32}}}",
                 expectedNode.toString());
+        Assert.assertEquals( 4, expectedNode.getNumberOfProperties());    
 
         Edge expectedEdge = new Edge();
         expectedEdge.setId(0);
         expectedEdge.setSource(0);
         expectedEdge.setDestination(1);
         expectedEdge.setRelationshipType("knows");
-        expectedEdge.addProperty(placeProperty);
-        expectedEdge.addProperty(sinceProperty);
+        expectedEdge.addProperty("place", place);
+        expectedEdge.addProperty("since", since);
         expectedEdge.addProperty(doubleProperty);
         expectedEdge.addProperty(falseBooleanProperty);
         Assert.assertEquals("Edge{relationshipType='knows', source=0, destination=1, id=0, "
@@ -242,6 +240,7 @@ public class GraphAPITest {
                 + "place=Property{name='place', value=TLV}, "
                 + "doubleValue=Property{name='doubleValue', value=3.14}, "
                 + "since=Property{name='since', value=2000}}}", expectedEdge.toString());
+        Assert.assertEquals( 4, expectedEdge.getNumberOfProperties());               
 
         Map<String, Object> params = new HashMap<>();
         params.put("name", name);
@@ -876,7 +875,14 @@ public class GraphAPITest {
         Assert.assertEquals(Collections.singletonList("restaurant"), record.keys());
         Node node = record.getValue(0);
         Property<?> property = node.getProperty("location");
-        Assert.assertEquals(new Point(30.27822306, -97.75134723), property.getValue());
+        Point result = (Point)property.getValue();
+
+        Point point = new Point(30.27822306, -97.75134723);
+        Assert.assertEquals(point, result);
+        Assert.assertEquals(30.27822306, result.getLatitude(), 0.01);
+        Assert.assertEquals(-97.75134723, result.getLongitude(), 0.01);
+        Assert.assertEquals("Point{latitude=30.2782230377197, longitude=-97.751350402832}", result.toString());
+        Assert.assertEquals(-132320535, result.hashCode());
     }
 
     @Test
