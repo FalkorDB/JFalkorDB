@@ -52,7 +52,7 @@ public class GraphAPITest {
 
         try {
             iterator.next();
-            Assert.fail();
+            fail("Expected NoSuchElementException was not thrown.");
         } catch (NoSuchElementException ignored) {
         }
     }
@@ -102,7 +102,7 @@ public class GraphAPITest {
 
         Assert.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
         Assert.assertNotNull(client.query(
-                "MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  CREATE (a)-[:knows]->(a)"));
+                "MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  CREATE (a)-[:knows]->(b)"));
         deleteResult = client.query("MATCH (a:person) WHERE (a.name = 'roi') DELETE a");
 
         Assert.assertFalse(deleteResult.iterator().hasNext());
@@ -155,9 +155,8 @@ public class GraphAPITest {
 
         try {
             client.query("CREATE INDEX ON :person(age)");
-            fail();
+            fail("Expected Exception was not thrown.");
         } catch (Exception e) {
-            // TODO: handle exception
         }
 
         ResultSet deleteExistingIndexResult = client.query("DROP INDEX ON :person(age)");
@@ -182,7 +181,6 @@ public class GraphAPITest {
         Assert.assertEquals("HeaderImpl{"
                 + "schemaTypes=[COLUMN_SCALAR, COLUMN_SCALAR, COLUMN_SCALAR], "
                 + "schemaNames=[a, r, a.age]}", header.toString());
-        // Assert.assertEquals(-1901778507, header.hashCode());
 
         List<String> schemaNames = header.getSchemaNames();
 
@@ -934,7 +932,7 @@ public class GraphAPITest {
                 "WITH 1000000 as n RETURN reduce(f = 1, x IN range(1, n) | f * x) AS result",
                 1L);
 
-            Assert.fail(); // should timeout
+            fail("Expected Timeout Exception was not thrown.");
         } catch (GraphException e) {
             Assert.assertTrue(e.getMessage().contains("Query timed out"));
         }

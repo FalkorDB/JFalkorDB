@@ -190,8 +190,9 @@ public class TransactionTest {
             Assert.assertEquals(1, resultSet.getStatistics().nodesCreated());
             Assert.assertEquals(1, resultSet.getStatistics().propertiesSet());
 
-            // Graph read-only query result
             Assert.assertEquals(ResultSetImpl.class, results.get(4).getClass());
+
+            // Graph read-only query result
             resultSet = (ResultSet) results.get(3);
 
             Assert.assertNotNull(resultSet.getHeader());

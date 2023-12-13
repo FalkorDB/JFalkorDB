@@ -335,7 +335,6 @@ public class ResultSetImpl implements ResultSet {
 
     @Override
     public Iterator<Record> iterator() {
-        // TODO Auto-generated method stub
         return results.iterator();
     }
 }

@@ -14,7 +14,7 @@ public class PathTest {
 
     private Node buildNode(int id){
         Node n = new Node();
-        n.setId(0);
+        n.setId(id);
         return n;
     }
 
