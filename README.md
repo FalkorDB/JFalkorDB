@@ -124,4 +124,4 @@ public class GraphExample {
 
 ## License
 
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FFalkorDB%2FJFalkorDB.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FFalkorDB%2FJFalkorDB?ref=badge_large)
+JFalkorDB is licensed under the [BSD-3-Clause license ](https://github.com/FalkorDB/JFalkorDB/blob/master/LICENSE).
