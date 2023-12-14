@@ -1,5 +1,6 @@
 package com.falkordb;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
  
 import org.junit.After;
@@ -28,6 +29,7 @@ public class IterableTest {
         ResultSet rs = api.query("MATCH(n) RETURN n");
         int count = 0;
         for (Record record : rs) {
+            assertNotNull(record);
             count++;
         }
         assertEquals(rs.size(), count);
@@ -53,8 +55,8 @@ public class IterableTest {
         ResultSet rs = api.query("MATCH(n) RETURN n");
         rs.iterator().next();
         int count = 0;
-        for (@SuppressWarnings("unused")
-        Record row : rs) {
+        for (Record row : rs) {
+            assertNotNull(row);
             count++;
         }
         assertEquals(rs.size(), count);

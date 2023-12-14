@@ -110,5 +110,6 @@ public abstract class GraphEntity {
         return Objects.hash(id, propertyMap);
     }
 
+    @Override
     public abstract String toString();
 }
