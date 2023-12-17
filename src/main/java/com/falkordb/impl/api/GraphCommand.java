@@ -23,6 +23,7 @@ public enum GraphCommand implements ProtocolCommand {
     /**
      * Returns the raw command
      */
+    @Override
     public byte[] getRaw() {
         return raw;
     }
