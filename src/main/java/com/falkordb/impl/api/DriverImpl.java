@@ -19,7 +19,7 @@ public class DriverImpl implements Driver {
      * @param port Server port
      */
     public DriverImpl(String host, int port) {
-        this.pool = new JedisPool(host, port);
+        this(new JedisPool(host, port));
     }
 
     /**
@@ -31,7 +31,7 @@ public class DriverImpl implements Driver {
      * @param password password
      */
     public DriverImpl(String host, int port, String user, final String password) {
-        this.pool = new JedisPool(host, port, user, password);
+        this(new JedisPool(host, port, user, password));
     }
 
     /**
@@ -40,7 +40,19 @@ public class DriverImpl implements Driver {
      * @param uri server uri
      */
     public DriverImpl(URI uri) {
-        this.pool = new JedisPool(uri);
+        this(new JedisPool(uri));
+    }
+
+    /**
+     * Creates a client wrapping existing JedisPool
+     * Should be used when you need to share the same pool between different clients
+     * 
+     * Notice: might be changed in the future
+     *
+     * @param pool jedis pool to wrap
+     */
+    public DriverImpl(Pool<Jedis> pool) {
+        this.pool = pool;
     }
 
     @Override
