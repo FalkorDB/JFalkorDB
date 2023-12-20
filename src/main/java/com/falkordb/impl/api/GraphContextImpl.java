@@ -138,7 +138,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
 
     /**
      * Perfrom watch over given Redis keys
-     * @param keys
+     * @param keys keys to watch
      * @return "OK"
      */
     @Override
@@ -148,7 +148,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
 
     /**
      * Removes watch from all keys
-     * @return
+     * @return "OK"
      */
     @Override
     public String unwatch() {

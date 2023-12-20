@@ -79,7 +79,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      * pool and closes it once done
      * 
      * @param preparedQuery prepared query
-     * @param timeout
+     * @param timeout timeout in milliseconds
      * @return Result set with the query answer
      */
     @Override
