@@ -240,4 +240,35 @@ public class TransactionTest {
             Assert.assertEquals("Person", record.getValue("label"));
         }
     }
+
+    @Test
+    public void testGraphCopy() {
+        Iterator<Record> originalResultSetIterator;
+        try (GraphContext c = api.getContext()) {
+            // Create sample data and copy the graph
+            GraphTransaction transaction = c.multi();
+            transaction.query("CREATE (:person{name:'roi',age:32})-[:knows]->(:person{name:'amit',age:30})");
+            transaction.query("MATCH (p:person)-[rel:knows]->(p2:person) RETURN p,rel,p2");
+            transaction.copyGraph("social-copied");
+            List<Object> results = transaction.exec();
+
+            ResultSet originalResultSet = (ResultSet) results.get(1);
+            originalResultSetIterator = originalResultSet.iterator();
+        }
+
+        GraphContextGenerator api2 = FalkorDB.driver().graph("social-copied");
+        try {
+            // Compare graph contents
+            ResultSet copiedResultSet = api2.query("MATCH (p:person)-[rel:knows]->(p2:person) RETURN p,rel,p2");
+            Iterator<Record> copiedResultSetIterator = copiedResultSet.iterator();
+            while (originalResultSetIterator.hasNext()) {
+                Assert.assertTrue(copiedResultSetIterator.hasNext());
+                Assert.assertEquals(originalResultSetIterator.next(), copiedResultSetIterator.next());
+            }
+        } finally {
+            // Cleanup
+            api2.deleteGraph();
+            api2.close();
+        }
+    }
 }
