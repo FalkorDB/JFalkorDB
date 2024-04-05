@@ -228,6 +228,17 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
         return query(preparedProcedure);
     }
 
+    /**
+     * Copies the graph
+     * @param destinationGraphId duplicated graph name
+     * @return response with the copy running time statistics
+     */
+    @Override
+    public Response<String> copyGraph(String destinationGraphId) {
+        client.sendCommand(GraphCommand.COPY, graphId, destinationGraphId);
+        return getResponse(BuilderFactory.STRING);
+    }
+
 
     /**
      * Deletes the entire graph

@@ -228,6 +228,17 @@ public class GraphTransactionImpl extends Transaction
     }
 
     /**
+     * Copies the graph, in multi/exec context
+     * @param destinationGraphId duplicated graph name
+     * @return response with the copy running time statistics
+     */
+    @Override
+    public Response<String> copyGraph(String destinationGraphId) {
+        client.sendCommand(GraphCommand.COPY, graphId, destinationGraphId);
+        return getResponse(BuilderFactory.STRING);
+    }
+
+    /**
      * Deletes the entire graph, in multi/exec context
      * @return response with the deletion running time statistics
      */
