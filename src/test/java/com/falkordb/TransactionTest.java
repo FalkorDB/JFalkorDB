@@ -9,7 +9,6 @@ import java.util.Map;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.falkordb.graph_entities.Node;
@@ -242,8 +241,8 @@ public class TransactionTest {
         }
     }
 
-    @Ignore("Test is ignored due to bug in FalkorDB caused by using transactions in conjunction with graph copy")
-    @Test
+    // Disabled due to bug in FalkorDB caused by using transactions in conjunction with graph copy
+    /* @Test
     public void testGraphCopy() {
         Iterator<Record> originalResultSetIterator;
         try (GraphContext c = api.getContext()) {
@@ -272,5 +271,5 @@ public class TransactionTest {
             api2.deleteGraph();
             api2.close();
         }
-    }
+    } */
 }

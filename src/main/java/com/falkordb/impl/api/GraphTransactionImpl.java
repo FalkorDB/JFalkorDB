@@ -227,16 +227,17 @@ public class GraphTransactionImpl extends Transaction
         return query(preparedProcedure);
     }
 
+    // Disabled due to bug in FalkorDB caused by using transactions in conjunction with graph copy
     /**
      * Copies the graph, in multi/exec context
      * @param destinationGraphId duplicated graph name
      * @return response with the copy running time statistics
      */
-    @Override
+    /* @Override
     public Response<String> copyGraph(String destinationGraphId) {
         client.sendCommand(GraphCommand.COPY, graphId, destinationGraphId);
         return getResponse(BuilderFactory.STRING);
-    }
+    } */
 
     /**
      * Deletes the entire graph, in multi/exec context
