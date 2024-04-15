@@ -14,6 +14,10 @@ on:
   pull_request:
     branches: [ "master" ]
 
+permissions:
+  contents: write
+
+
 jobs:
   build:
 
@@ -30,9 +34,9 @@ jobs:
           - 6379:6379
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up JDK 17
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
@@ -47,5 +51,6 @@ jobs:
 
     # Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Maven Dependency Tree Dependency Submission
+      if: github.token.permissions.contents == 'write'
       uses: advanced-security/maven-dependency-submission-action@v4.0.2
             
