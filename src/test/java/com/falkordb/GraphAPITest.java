@@ -937,4 +937,59 @@ public class GraphAPITest {
             Assert.assertTrue(e.getMessage().contains("Query timed out"));
         }
     }
+
+    @Test
+    public void testGraphCopy() {
+        // Create sample data
+        client.query("CREATE (:person{name:'roi',age:32})-[:knows]->(:person{name:'amit',age:30})");
+        ResultSet originalResultSet = client.query("MATCH (p:person)-[rel:knows]->(p2:person) RETURN p,rel,p2");
+        Iterator<Record> originalResultSetIterator = originalResultSet.iterator();
+
+        // Copy the graph
+        client.copyGraph("social-copied");
+
+        GraphContextGenerator client2 = FalkorDB.driver().graph("social-copied");
+        try {
+            // Compare graph contents
+            ResultSet copiedResultSet = client2.query("MATCH (p:person)-[rel:knows]->(p2:person) RETURN p,rel,p2");
+            Iterator<Record> copiedResultSetIterator = copiedResultSet.iterator();
+            while (originalResultSetIterator.hasNext()) {
+                Assert.assertTrue(copiedResultSetIterator.hasNext());
+                Assert.assertEquals(originalResultSetIterator.next(), copiedResultSetIterator.next());
+            }
+        } finally {
+            // Cleanup
+            client2.deleteGraph();
+            client2.close();
+        }
+    }
+
+    @Test
+    public void testGraphCopyContextedAPI() {
+        Iterator<Record> originalResultSetIterator;
+        try (GraphContext c = client.getContext()) {
+            // Create sample data
+            c.query("CREATE (:person{name:'roi',age:32})-[:knows]->(:person{name:'amit',age:30})");
+            ResultSet originalResultSet = c.query("MATCH (p:person)-[rel:knows]->(p2:person) RETURN p,rel,p2");
+            originalResultSetIterator = originalResultSet.iterator();
+
+            // Copy the graph
+            c.copyGraph("social-copied");
+        }
+
+        GraphContextGenerator client2 = FalkorDB.driver().graph("social-copied");
+        try {
+            // Compare graph contents
+            ResultSet copiedResultSet = client2.query("MATCH (p:person)-[rel:knows]->(p2:person) RETURN p,rel,p2");
+            Iterator<Record> copiedResultSetIterator = copiedResultSet.iterator();
+            while (originalResultSetIterator.hasNext()) {
+                Assert.assertTrue(copiedResultSetIterator.hasNext());
+                Assert.assertEquals(originalResultSetIterator.next(), copiedResultSetIterator.next());
+            }
+        } finally {
+            // Cleanup
+            client2.deleteGraph();
+            client2.close();
+        }
+    }
 }

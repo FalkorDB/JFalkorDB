@@ -156,6 +156,17 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     }
 
     /**
+     * Copies the graph
+     * @param destinationGraphId duplicated graph name
+     * @return copy running time statistics
+     */
+    @Override
+    public String copyGraph(String destinationGraphId) {
+        Object response = connection.sendCommand(GraphCommand.COPY, graphId, destinationGraphId);
+        return SafeEncoder.encode((byte[]) response);
+    }
+
+    /**
      * Deletes the entire graph
      * @return delete running time statistics
      */
