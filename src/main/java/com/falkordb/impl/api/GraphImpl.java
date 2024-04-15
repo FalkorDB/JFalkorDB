@@ -90,6 +90,20 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
     }
 
     /**
+     * Copies the graph
+     *
+     * @param destinationGraphId duplicated graph name
+     * @return copy running time statistics
+     */
+    @Override
+    public String copyGraph(String destinationGraphId) {
+        try (Jedis conn = driver.getConnection()) {
+            Object response = conn.sendCommand(GraphCommand.COPY, graphId, destinationGraphId);
+            return SafeEncoder.encode((byte[]) response);
+        }
+    }
+
+    /**
      * Deletes the entire graph
      * 
      * @return delete running time statistics

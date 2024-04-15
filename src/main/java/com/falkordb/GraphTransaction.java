@@ -111,6 +111,14 @@ public interface GraphTransaction extends
      */
     Response<ResultSet> callProcedure(String procedure, List<String> args  , Map<String, List<String>> kwargs);
 
+    // Disabled due to bug in FalkorDB caused by using transactions in conjunction with graph copy
+    /**
+     * Copies the graph
+     * @param destinationGraphId duplicated graph name
+     * @return a response which builds the copy running time statistics
+     */
+    // Response<String> copyGraph(String destinationGraphId);
+
     /**
      * Deletes the entire graph
      * @return a response which builds the delete running time statistics
