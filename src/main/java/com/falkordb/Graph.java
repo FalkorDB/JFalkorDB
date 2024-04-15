@@ -95,6 +95,13 @@ public interface Graph extends Closeable {
     ResultSet callProcedure(String procedure, List<String> args  , Map<String, List<String>> kwargs);
 
     /**
+     * Copies the graph
+     * @param destinationGraphId duplicated graph name
+     * @return copy running time statistics
+     */
+    String copyGraph(String destinationGraphId);
+
+    /**
      * Deletes the entire graph
      * @return delete running time statistics
      */
