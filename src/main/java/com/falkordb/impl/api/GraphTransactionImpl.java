@@ -40,7 +40,7 @@ public class GraphTransactionImpl extends Transaction
     @Override
     public Response<ResultSet> query(String query) {
         client.sendCommand(GraphCommand.QUERY, graphId, query, Utils.COMPACT_STRING);
-        return getResponse(new Builder<ResultSet>() {
+        return enqueResponse(new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
             public ResultSet build(Object o) {
@@ -57,7 +57,7 @@ public class GraphTransactionImpl extends Transaction
     @Override
     public Response<ResultSet> readOnlyQuery(String query) {
         client.sendCommand(GraphCommand.RO_QUERY, graphId, query, Utils.COMPACT_STRING);
-        return getResponse(new Builder<ResultSet>() {
+        return enqueResponse(new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
             public ResultSet build(Object o) {
@@ -78,7 +78,7 @@ public class GraphTransactionImpl extends Transaction
     public Response<ResultSet> query(String query, long timeout) {
         client.sendCommand(GraphCommand.QUERY, graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING,
                 Long.toString(timeout));
-        return getResponse(new Builder<ResultSet>() {
+        return enqueResponse(new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
             public ResultSet build(Object o) {
@@ -99,7 +99,7 @@ public class GraphTransactionImpl extends Transaction
     public Response<ResultSet> readOnlyQuery(String query, long timeout) {
         client.sendCommand(GraphCommand.RO_QUERY, graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING,
                 Long.toString(timeout));
-        return getResponse(new Builder<ResultSet>() {
+        return enqueResponse(new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
             public ResultSet build(Object o) {
@@ -118,7 +118,7 @@ public class GraphTransactionImpl extends Transaction
     public Response<ResultSet> query(String query, Map<String, Object> params) {
         String preparedQuery = Utils.prepareQuery(query, params);
         client.sendCommand(GraphCommand.QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
-        return getResponse(new Builder<ResultSet>() {
+        return enqueResponse(new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
             public ResultSet build(Object o) {
@@ -137,7 +137,7 @@ public class GraphTransactionImpl extends Transaction
     public Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params) {
         String preparedQuery = Utils.prepareQuery(query, params);
         client.sendCommand(GraphCommand.RO_QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
-        return getResponse(new Builder<ResultSet>() {
+        return enqueResponse(new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
             public ResultSet build(Object o) {
@@ -160,7 +160,7 @@ public class GraphTransactionImpl extends Transaction
         String preparedQuery = Utils.prepareQuery(query, params);
         client.sendCommand(GraphCommand.QUERY, graphId, preparedQuery, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING,
                 Long.toString(timeout));
-        return getResponse(new Builder<ResultSet>() {
+        return enqueResponse(new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
             public ResultSet build(Object o) {
@@ -183,7 +183,7 @@ public class GraphTransactionImpl extends Transaction
         String preparedQuery = Utils.prepareQuery(query, params);
         client.sendCommand(GraphCommand.RO_QUERY, graphId, preparedQuery, Utils.COMPACT_STRING,
                 Utils.TIMEOUT_STRING, Long.toString(timeout));
-        return getResponse(new Builder<ResultSet>() {
+        return enqueResponse(new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
             public ResultSet build(Object o) {
@@ -236,7 +236,7 @@ public class GraphTransactionImpl extends Transaction
     /* @Override
     public Response<String> copyGraph(String destinationGraphId) {
         client.sendCommand(GraphCommand.COPY, graphId, destinationGraphId);
-        return getResponse(BuilderFactory.STRING);
+        return enqueResponse(BuilderFactory.STRING);
     } */
 
     /**
@@ -246,7 +246,7 @@ public class GraphTransactionImpl extends Transaction
     @Override
     public Response<String> deleteGraph() {
         client.sendCommand(GraphCommand.DELETE, graphId);
-        Response<String> response = getResponse(BuilderFactory.STRING);
+        Response<String> response = enqueResponse(BuilderFactory.STRING);
         cache.clear();
         return response;
     }
