@@ -84,6 +84,22 @@ public class Utils {
             List<Object> list = (List<Object>) value;
             return arrayToString(list.toArray());
         }
+
+        if(value instanceof Map){
+            @SuppressWarnings("unchecked")
+            Map<Object, Object> map = (Map<Object, Object>) value;
+            StringBuilder sb = new StringBuilder().append('{');
+            for(Map.Entry<Object, Object> entry : map.entrySet()) {
+                sb.append(valueToString(entry.getKey())).append(':').append(valueToString(entry.getValue())).append(",");
+            }
+            // remove last comma
+            if(sb.length() > 1) {
+                sb.setLength(sb.length() - 1);
+            }
+            sb.append('}');
+            return sb.toString();
+        }
+
         return value.toString();
     }
 
