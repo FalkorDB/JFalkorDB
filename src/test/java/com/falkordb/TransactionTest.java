@@ -22,17 +22,40 @@ public class TransactionTest {
     public TransactionTest() {
     }
 
+    /**
+     * Creates a FalkorDB graph API instance for the "social" graph before test execution.
+     * 
+     * This method is annotated with @Before, indicating it runs before each test method.
+     * It initializes the 'api' field with a new FalkorDB graph driver instance for the "social" graph.
+     * 
+     * @return void
+     */
     @Before
     public void createApi(){
         api = FalkorDB.driver().graph("social");
     }
 
+    /**
+     * Cleans up resources by deleting the graph and closing the API connection after test execution.
+     * 
+     * This method is annotated with @After, indicating it will be executed after each test method.
+     * 
+     * @throws <UNKNOWN> if there's an error during graph deletion or API closure
+     */
     @After
     public void deleteGraph() {
         api.deleteGraph();
         api.close();
     }
 
+    /**
+    * Tests the multi-execution functionality of a GraphTransaction.
+    * 
+    * This test method performs multiple operations in a single transaction,
+    * including Redis commands and graph queries, and verifies the results.
+    * 
+    * @return void
+    */
     @Test
     public void testMultiExec(){
         try (GraphContext c = api.getContext()) {
@@ -115,6 +138,21 @@ public class TransactionTest {
             Assert.assertEquals(1, resultSet.size());
 
             iterator = resultSet.iterator();
+            ```
+            /**
+             * Tests the behavior of a write transaction with watch functionality.
+             * 
+             * This test method verifies the following:
+             * 1. Creation of multiple graph contexts
+             * 2. Setting up a watch on a specific label
+             * 3. Executing a multi-transaction query
+             * 4. Concurrent query execution in different contexts
+             * 5. Verification of transaction execution result
+             * 6. Proper closing of graph contexts
+             * 
+             * @return void This method doesn't return anything
+             */
+            ```
             Assert.assertTrue(iterator.hasNext());
             record = iterator.next();
             Assert.assertFalse(iterator.hasNext());
@@ -139,8 +177,27 @@ public class TransactionTest {
         Assert.assertNull(returnValue);
         c1.close();
         c2.close();
+    /**
+    * Tests multiple executions with read-only queries in a graph transaction.
+    * 
+    * This test method performs the following operations:
+    * 1. Creates a multi-transaction in a GraphContext.
+    * 2. Sets a key-value pair.
+    * 3. Executes two CREATE queries to add Person nodes.
+    * 4. Executes a read-only query to match a Person node.
+    * 5. Calls a procedure to get database labels.
+    * 6. Executes the transaction and validates the results.
+    * 
+    * @return void This method doesn't return anything.
+    */
     }
 
+    /**
+    * Tests the read transaction watch functionality in a multi-context environment.
+    * 
+    * @param None This method doesn't take any parameters as it's a JUnit test method.
+    * @return void This method doesn't return anything as it's a test method.
+    */
     @Test
     public void testReadTransactionWatch(){
 
