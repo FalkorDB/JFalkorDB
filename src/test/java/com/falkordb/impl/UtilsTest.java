@@ -13,6 +13,15 @@ import org.junit.Test;
 
 public class UtilsTest {
 
+    /**
+     * Tests the prepareProcedure method of the Utils class.
+     * 
+     * This test method verifies various scenarios of preparing procedure calls
+     * using different combinations of procedure names, parameters, and keyword arguments.
+     * 
+     * @param None
+     * @return void This method doesn't return anything as it's a test method
+     */
     @Test
     public void testPrepareProcedure() {
         Assert.assertEquals("CALL prc()",
@@ -29,6 +38,12 @@ public class UtilsTest {
         Assert.assertEquals("CALL prc()ka,kb", Utils.prepareProcedure("prc", Arrays.asList(new String[]{}), kwargs));
     }
 
+    /**
+    * Tests the parameter preparation functionality of the Utils.prepareQuery method.
+    * 
+    * @param None This is a test method and doesn't take any parameters.
+    * @return void This method doesn't return anything as it's a JUnit test method.
+    */
     @Test
     public void testParamsPrep() {
         Map<String, Object> params = new HashMap<>();
