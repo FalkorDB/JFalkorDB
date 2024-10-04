@@ -17,18 +17,43 @@ public class PipelineTest {
 
     private GraphContextGenerator api;
 
+    /**
+    * Initializes the FalkorDB graph API for the 'social' graph before test execution.
+    * 
+    * This method is annotated with @Before, indicating it runs before each test method.
+    * It creates a new instance of the FalkorDB graph API, specifically for the 'social' graph.
+    *
+    * @return void
+    */
     @Before
     public void createApi() {
         api = FalkorDB.driver().graph("social");
 
     }
 
+    /**
+     * Deletes the graph and closes the API connection after test execution.
+     * 
+     * This method is annotated with @After, indicating it runs after each test method.
+     * It performs cleanup by deleting the graph and closing the API connection.
+     * 
+     * @return void
+     */
     @After
     public void deleteGraph() {
         api.deleteGraph();
         api.close();
     }
 
+    /**
+    * Tests the synchronous execution of a pipeline of commands in a graph context.
+    * 
+    * This method performs a series of operations including setting values, creating nodes,
+    * incrementing counters, retrieving values, and executing graph queries. It then verifies
+    * the results of these operations to ensure they are executed correctly and in order.
+    * 
+    * @return void This test method doesn't return anything
+    */
     @Test
     public void testSync() {
         try (GraphContext c = api.getContext()) {
@@ -115,6 +140,18 @@ public class PipelineTest {
         }
     }
 
+    /**
+    * Tests read-only queries in a graph context using a pipelined approach.
+    * 
+    * This test method performs the following operations:
+    * 1. Sets a key-value pair
+    * 2. Creates two Person nodes
+    * 3. Executes a read-only query to match a specific Person node
+    * 4. Calls a procedure to retrieve graph labels
+    * 5. Validates the results of each operation
+    * 
+    * @return void This method doesn't return anything
+    */
     @Test
     public void testReadOnlyQueries() {
         try (GraphContext c = api.getContext()) {
@@ -192,6 +229,16 @@ public class PipelineTest {
         }
     }
 
+    /**
+     * Tests the waitReplicas functionality in a GraphPipeline.
+     * 
+     * This test method creates a GraphContext, performs a series of operations
+     * in a pipelined manner, and then waits for replicas to synchronize.
+     * It sets a key-value pair, creates two Person nodes, waits for replicas,
+     * and then verifies the results.
+     * 
+     * @return void This method doesn't return anything
+     */
     @Test
     public void testWaitReplicas() {
         try (GraphContext c = api.getContext()) {
@@ -205,6 +252,11 @@ public class PipelineTest {
         }
     }
 
+    /**
+     * Tests the graph copy functionality by creating a sample graph, copying it, and comparing the contents.
+     * 
+     * @return void This method doesn't return anything
+     */
     @Test
     public void testGraphCopy() {
         Iterator<Record> originalResultSetIterator;
