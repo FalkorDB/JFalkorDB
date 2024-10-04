@@ -21,6 +21,13 @@ public final class PathBuilder{
         this.edges = new ArrayList<>(nodesCount > 0 ? nodesCount - 1 : 0);
     }
 
+    /**
+     * Appends an object to the path builder.
+     * 
+     * @param object The object to append, must be of the expected class type (Node or Edge)
+     * @return The updated PathBuilder instance
+     * @throws IllegalArgumentException if the object's class does not match the expected class
+     */
     public PathBuilder append(Object object){
         Class<? extends Object> c = object.getClass();
         if(!currentAppendClass.equals(c)){
@@ -32,6 +39,24 @@ public final class PathBuilder{
         return appendEdge((Edge)object);
     }
 
+    /**
+     * Appends an edge to the path and updates the current append class.
+     *
+     * @param edge The Edge object to be added to the path
+     * @return The current PathBuilder instance for method chaining
+     */
+    /**
+     * Appends a node to the path and updates the current append class.
+     * 
+     * @param node The Node object to be added to the path
+     * @return The current PathBuilder instance for method chaining
+     */
+    /**
+    * Builds and returns a Path object based on the collected nodes and edges.
+    *
+    * @return A new Path object constructed from the collected nodes and edges
+    * @throws IllegalArgumentException if the number of nodes is not equal to the number of edges plus one
+    */
     private PathBuilder appendEdge(Edge edge) {
         edges.add(edge);
         currentAppendClass = Node.class;
