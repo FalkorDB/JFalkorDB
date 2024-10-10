@@ -803,7 +803,7 @@ public class GraphAPITest {
         ResultSet resultSet = client.query("RETURN vecf32([2.1, -0.82, 1.3, 4.5]) AS vector");
         Assert.assertEquals(1, resultSet.size());
         Record r = resultSet.iterator().next();
-        List<Double> vector = r.getValue(0);
+        List<Float> vector = r.getValue(0);
         Assert.assertEquals(4, vector.size());
         Assert.assertEquals(2.1f, vector.get(0), 0.01);
         Assert.assertEquals(-0.82f, vector.get(1), 0.01);
