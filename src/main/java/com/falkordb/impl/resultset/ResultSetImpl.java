@@ -246,6 +246,8 @@ public class ResultSetImpl implements ResultSet {
                 return deserializeMap(obj);
             case VALUE_POINT:
                 return deserializePoint(obj);
+            case VALUE_VECTORF32:
+                return deserializeVector(obj);
             case VALUE_UNKNOWN:
             default:
                 return obj;
@@ -254,6 +256,16 @@ public class ResultSetImpl implements ResultSet {
 
     private Object deserializePoint(Object rawScalarData) {
         return new Point(BuilderFactory.DOUBLE_LIST.build(rawScalarData));
+    }
+
+    private List<Float> deserializeVector(Object rawScalarData) {
+        List<byte[]> array = (List<byte[]>) rawScalarData;
+       
+        List<Float> res = new ArrayList<>(array.size());
+        for (byte[] val : array) {
+            res.add(Float.parseFloat(SafeEncoder.encode(val)));
+        }
+        return res;
     }
 
     @SuppressWarnings("unchecked")

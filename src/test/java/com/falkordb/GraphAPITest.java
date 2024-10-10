@@ -799,6 +799,14 @@ public class GraphAPITest {
     }
 
     @Test
+    public void testVecf32() {        
+        ResultSet resultSet = client.query("RETURN vecf32([2.1, -0.82, 1.3, 4.5]) AS vector");
+        Assert.assertEquals(1, resultSet.size());
+        Record r = resultSet.iterator().next();
+        Assert.assertEquals(Arrays.asList(2.1f, -0.82f, 1.3f, 4.5f), r.getValue(0));   
+    }
+
+    @Test
     public void testCachedExecution() {
         client.query("CREATE (:N {val:1}), (:N {val:2})");
 
