@@ -28,7 +28,7 @@ jobs:
       # Label used to access the service container
       falkordb:
         # Docker Hub image
-        image: falkordb/falkordb:latest
+        image: falkordb/falkordb:edge
         # Map port 6379 on the Docker host to port 6379 on the FalkorDB container
         ports:
           - 6379:6379
@@ -45,7 +45,7 @@ jobs:
       run: mvn -B package --file pom.xml
 
     - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v4.3.1
+      uses: codecov/codecov-action@v4.6.0
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
