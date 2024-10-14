@@ -14,7 +14,8 @@ enum ResultSetScalarTypes {
     VALUE_NODE,
     VALUE_PATH,
     VALUE_MAP,
-    VALUE_POINT;
+    VALUE_POINT,
+    VALUE_VECTORF32;
 
     private static final ResultSetScalarTypes[] values = values();
 

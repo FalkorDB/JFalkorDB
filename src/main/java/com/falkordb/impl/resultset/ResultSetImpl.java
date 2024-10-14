@@ -13,6 +13,7 @@ import redis.clients.jedis.util.SafeEncoder;
 import redis.clients.jedis.exceptions.JedisDataException;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ResultSetImpl implements ResultSet {
 
@@ -25,7 +26,7 @@ public class ResultSetImpl implements ResultSet {
     /**
      * @param rawResponse the raw representation of response is at most 3 lists of
      *                    objects. The last list is the statistics list.
-     * @param graph  the graph connection
+     * @param graph       the graph connection
      * @param cache       the graph local cache
      */
     @SuppressWarnings("unchecked")
@@ -157,7 +158,7 @@ public class ResultSetImpl implements ResultSet {
 
     /**
      * @param graphEntity graph entity
-     * @param id entity id to be set to the graph entity
+     * @param id          entity id to be set to the graph entity
      */
     private void deserializeGraphEntityId(GraphEntity graphEntity, long id) {
         graphEntity.setId(id);
@@ -246,6 +247,8 @@ public class ResultSetImpl implements ResultSet {
                 return deserializeMap(obj);
             case VALUE_POINT:
                 return deserializePoint(obj);
+            case VALUE_VECTORF32:
+                return deserializeVector(obj);
             case VALUE_UNKNOWN:
             default:
                 return obj;
@@ -254,6 +257,20 @@ public class ResultSetImpl implements ResultSet {
 
     private Object deserializePoint(Object rawScalarData) {
         return new Point(BuilderFactory.DOUBLE_LIST.build(rawScalarData));
+    }
+
+    private List<Float> deserializeVector(Object rawScalarData) {
+        List<byte[]> array = (List<byte[]>) rawScalarData;
+        return array.stream()
+                .map(val -> {
+                    try {
+                        return Float.parseFloat(SafeEncoder.encode(val));
+                    } catch (NumberFormatException e) {
+                        // Handle the exception appropriately
+                        throw new GraphException("Invalid float value in vector data", e);
+                    }
+                })
+                .collect(Collectors.toList());
     }
 
     @SuppressWarnings("unchecked")
