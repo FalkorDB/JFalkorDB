@@ -45,12 +45,12 @@ jobs:
       run: mvn -B package --file pom.xml
 
     - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v4.5.0
+      uses: codecov/codecov-action@v4.6.0
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     # Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Maven Dependency Tree Dependency Submission
       if: github.token.permissions.contents == 'write'
-      uses: advanced-security/maven-dependency-submission-action@v4.1.0
+      uses: advanced-security/maven-dependency-submission-action@v4.1.1
             
