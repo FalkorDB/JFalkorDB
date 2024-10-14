@@ -1,6 +1,5 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 	<parent>
 		<groupId>org.sonatype.oss</groupId>
@@ -12,7 +11,7 @@
 	<packaging>jar</packaging>
 	<groupId>com.falkordb</groupId>
 	<artifactId>jfalkordb</artifactId>
-	<version>0.3.1-SNAPSHOT</version>
+	<version>0.4.0-SNAPSHOT</version>
 
 	<name>JFalkorDB</name>
 	<description>Official client for falkordb</description>
@@ -50,9 +49,9 @@
 			<version>3.10.0</version>
 		</dependency>
 		<dependency>
-		    <groupId>org.apache.commons</groupId>
-		    <artifactId>commons-text</artifactId>
-		    <version>1.11.0</version>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-text</artifactId>
+			<version>1.12.0</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -66,36 +65,25 @@
 			<version>2.0.13</version>
 			<scope>test</scope>
 		</dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>5.10.2</version>
-            <scope>test</scope>
-        </dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>5.11.2</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>nl.jqno.equalsverifier</groupId>
 			<artifactId>equalsverifier</artifactId>
 			<version>3.16.1</version>
 			<scope>test</scope>
 		</dependency>
-    </dependencies>
+	</dependencies>
 	<properties>
 		<maven.compiler.source>8</maven.compiler.source>
 		<maven.compiler.target>8</maven.compiler.target>
 		<maven.test.source>8</maven.test.source>
 		<maven.test.target>8</maven.test.target>
 	</properties>
-
-	<distributionManagement>
-		<snapshotRepository>
-			<id>ossrh</id>
-			<url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
-		</snapshotRepository>
-		<repository>
-		    <id>ossrh</id>
-    		<url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2</url>
-  		</repository>
-	</distributionManagement>
 	<build>
 		<plugins>
 			<plugin>
@@ -118,14 +106,14 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>org.sonatype.plugins</groupId>
-				<artifactId>nexus-staging-maven-plugin</artifactId>
-				<version>1.6.13</version>
+				<groupId>org.sonatype.central</groupId>
+				<artifactId>central-publishing-maven-plugin</artifactId>
+				<version>0.6.0</version>
 				<extensions>true</extensions>
 				<configuration>
-					<serverId>ossrh</serverId>
-					<nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-					<autoReleaseAfterClose>true</autoReleaseAfterClose>
+					<publishingServerId>central</publishingServerId>
+					<autoPublish>true</autoPublish>
+					<waitUntil>published</waitUntil>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -139,7 +127,7 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-source-plugin</artifactId>
-						<version>2.2.1</version>
+						<version>3.3.1</version>
 						<executions>
 							<execution>
 								<id>attach-sources</id>
