@@ -95,7 +95,7 @@ public class GraphExample {
             Edge e =  record.getValue("r");
 
             //print record
-            System.out.println("Node: " + n + " Edge: " + e);
+            System.out.println("Node: " + n + ", Edge: " + e);
         }
 
         resultSet = graph.query("MATCH p = (:person)-[:knows]->(:person) RETURN p");
