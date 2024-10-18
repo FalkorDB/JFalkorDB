@@ -22,17 +22,37 @@ public class TransactionTest {
     public TransactionTest() {
     }
 
+    /**
+    * Sets up the FalkorDB graph API for the "social" graph before test execution.
+    * This method is annotated with @Before, indicating it runs before each test method.
+    * It initializes the 'api' field with a new FalkorDB graph driver instance for the "social" graph.
+    *
+    * @throws <UNKNOWN> if there's an error initializing the FalkorDB driver or accessing the graph
+    */
     @Before
     public void createApi(){
         api = FalkorDB.driver().graph("social");
     }
 
+    /**
+    * Deletes the graph and closes the API connection.
+    * This method is annotated with @After, indicating it should be executed after each test method.
+    */
     @After
     public void deleteGraph() {
         api.deleteGraph();
         api.close();
     }
 
+    /**
+    * Performs a multi-execution test on a GraphContext using various Redis and graph operations.
+    * This method tests the functionality of GraphTransaction, including setting values,
+    * executing graph queries, incrementing values, retrieving values, and calling procedures.
+    * It also verifies the correctness of the results returned from these operations.
+    * 
+    * @throws Exception if any error occurs during the execution of the test
+    * @return void
+    */
     @Test
     public void testMultiExec(){
         try (GraphContext c = api.getContext()) {
@@ -123,6 +143,17 @@ public class TransactionTest {
         }
     }
 
+    /**
+    * Executes a test for writing a transaction with watch functionality.
+    * 
+    * This method tests the behavior of write transactions in a multi-context scenario
+    * where one context is watching a specific label. It creates two graph contexts,
+    * sets up a watch on one context, initiates a multi-transaction, and performs
+    * write operations on both contexts. Finally, it verifies the transaction execution
+    * and closes both contexts.
+    * 
+    * @throws Exception If an error occurs during the test execution
+    */
     @Test
     public void testWriteTransactionWatch(){
 
@@ -141,6 +172,16 @@ public class TransactionTest {
         c2.close();
     }
 
+    /**
+    * Tests the read transaction watch functionality in a multi-context scenario.
+    * 
+    * This method creates two separate graph contexts, performs various operations
+    * including creating nodes, watching for changes, executing multi-transactions,
+    * and querying the graph. It also verifies the behavior of these operations.
+    * 
+    * @return void
+    * @throws AssertionError if any of the assertions fail
+    */
     @Test
     public void testReadTransactionWatch(){
 
@@ -162,6 +203,16 @@ public class TransactionTest {
         c2.close();
     }
 
+    /**
+    * Tests the execution of multiple commands in a single transaction, including read-only queries.
+    * This method verifies the behavior of GraphTransaction's multi-command execution,
+    * including set operations, graph creation, read-only queries, and procedure calls.
+    * 
+    * @param <UNKNOWN> This method doesn't have any parameters
+    * @return void This method doesn't return a value
+    *
+    * @throws Exception If any error occurs during the execution of the test
+    */
     @Test
     public void testMultiExecWithReadOnlyQueries(){
         try (GraphContext c = api.getContext()) {
