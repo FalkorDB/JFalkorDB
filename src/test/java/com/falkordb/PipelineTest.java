@@ -17,19 +17,45 @@ public class PipelineTest {
 
     private GraphContextGenerator api;
 
+    /**
+     * Initializes the FalkorDB API for the "social" graph.
+     * This method is annotated with @Before, indicating it should be executed before test methods.
+     * 
+     * @throws <UNKNOWN> if there's an error connecting to the database or creating the driver
+     */
     @Before
     public void createApi() {
         api = FalkorDB.driver().graph("social");
 
     }
 
-    @After
+    /**
+     * Deletes the graph and closes the API connection.
+     * This method is annotated with @After, indicating it should be executed after test methods.
+     * 
+     * @throws RuntimeException if there's an error during graph deletion or API closure
+     */    @After
     public void deleteGraph() {
         api.deleteGraph();
         api.close();
     }
 
-    @Test
+    /**
+    * Executes a series of Redis and Graph operations in a pipelined manner and verifies the results.
+    * 
+    * This test method performs the following operations:
+    * 1. Sets a Redis key-value pair
+    * 2. Creates two Person nodes in the graph
+    * 3. Increments a numeric value
+    * 4. Retrieves a value
+    * 5. Queries the graph for a specific node
+    * 6. Calls a procedure to get all labels
+    * 
+    * After executing these operations, it validates the results to ensure correct behavior
+    * of the pipelined execution and proper integration between Redis and Graph operations.
+    * 
+    * @throws Exception if any error occurs during the execution of the test
+    */    @Test
     public void testSync() {
         try (GraphContext c = api.getContext()) {
             GraphPipeline pipeline = c.pipelined();
@@ -115,6 +141,18 @@ public class PipelineTest {
         }
     }
 
+    /**
+    * Tests the functionality of read-only queries in a graph pipeline.
+    * 
+    * This method verifies the behavior of various operations in a graph pipeline,
+    * including setting values, creating nodes, executing read-only queries,
+    * and calling procedures. It checks the correctness of the results returned
+    * by these operations.
+    * 
+    * @param <UNKNOWN> This method does not take any parameters as it is a test method.
+    * @return void This method does not return a value.
+    * @throws Exception If any unexpected error occurs during the test execution.
+    */
     @Test
     public void testReadOnlyQueries() {
         try (GraphContext c = api.getContext()) {
@@ -192,6 +230,21 @@ public class PipelineTest {
         }
     }
 
+    /**
+    * Executes a series of graph operations and tests the waitReplicas functionality.
+    * 
+    * This test method performs the following steps:
+    * 1. Creates a GraphContext
+    * 2. Initializes a GraphPipeline
+    * 3. Sets a key-value pair
+    * 4. Creates two Person nodes
+    * 5. Calls waitReplicas method
+    * 6. Synchronizes the pipeline and retrieves results
+    * 7. Asserts the expected result of waitReplicas
+    * 
+    * @throws Exception If an error occurs during graph operations
+    * @return void This method doesn't return anything
+    */
     @Test
     public void testWaitReplicas() {
         try (GraphContext c = api.getContext()) {
@@ -205,6 +258,17 @@ public class PipelineTest {
         }
     }
 
+    /**
+    * Tests the graph copy functionality by creating a sample graph, copying it, and verifying the contents.
+    * 
+    * This method performs the following steps:
+    * 1. Creates a sample graph with person nodes and relationships
+    * 2. Copies the graph to a new graph named "social-copied"
+    * 3. Compares the contents of the original and copied graphs
+    * 4. Cleans up by deleting the copied graph
+    * 
+    * @throws Exception if any database operations or assertions fail
+    */
     @Test
     public void testGraphCopy() {
         Iterator<Record> originalResultSetIterator;

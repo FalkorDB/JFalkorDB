@@ -13,7 +13,18 @@ import org.junit.Test;
 
 public class UtilsTest {
 
-    @Test
+    /**
+    * Tests the Utils.prepareProcedure method with various input scenarios.
+    * 
+    * This test method verifies the behavior of the Utils.prepareProcedure method
+    * under different conditions:
+    * 1. With an empty parameter list
+    * 2. With a non-empty parameter list
+    * 3. With both parameters and keyword arguments
+    * 4. With only keyword arguments
+    * 
+    * @throws AssertionError if any of the test cases fail
+    */    @Test
     public void testPrepareProcedure() {
         Assert.assertEquals("CALL prc()",
                 Utils.prepareProcedure("prc", Arrays.asList(new String[]{}), new HashMap<>()));
@@ -29,6 +40,17 @@ public class UtilsTest {
         Assert.assertEquals("CALL prc()ka,kb", Utils.prepareProcedure("prc", Arrays.asList(new String[]{}), kwargs));
     }
 
+    /**
+    * Tests the Utils.prepareQuery method for various parameter types and values.
+    * 
+    * This method verifies that the Utils.prepareQuery method correctly handles
+    * different types of parameters, including strings, numbers, booleans, null values,
+    * arrays, and lists. It tests the method's ability to properly escape special
+    * characters and format different data types for use in a Cypher query.
+    * 
+    * @param <UNKNOWN> This method does not take any parameters as it is a JUnit test method.
+    * @return void This method does not return a value as it is a JUnit test method.
+    */
     @Test
     public void testParamsPrep() {
         Map<String, Object> params = new HashMap<>();
