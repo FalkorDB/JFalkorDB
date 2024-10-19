@@ -20,8 +20,6 @@ public class PipelineTest {
     /**
      * Initializes the FalkorDB API for the "social" graph.
      * This method is annotated with @Before, indicating it should be executed before test methods.
-     * 
-     * @throws <UNKNOWN> if there's an error connecting to the database or creating the driver
      */
     @Before
     public void createApi() {
@@ -149,7 +147,6 @@ public class PipelineTest {
     * and calling procedures. It checks the correctness of the results returned
     * by these operations.
     * 
-    * @param <UNKNOWN> This method does not take any parameters as it is a test method.
     * @return void This method does not return a value.
     * @throws Exception If any unexpected error occurs during the test execution.
     */
