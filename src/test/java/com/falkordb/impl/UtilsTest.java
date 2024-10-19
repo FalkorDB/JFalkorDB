@@ -48,7 +48,6 @@ public class UtilsTest {
     * arrays, and lists. It tests the method's ability to properly escape special
     * characters and format different data types for use in a Cypher query.
     * 
-    * @param <UNKNOWN> This method does not take any parameters as it is a JUnit test method.
     * @return void This method does not return a value as it is a JUnit test method.
     */
     @Test
