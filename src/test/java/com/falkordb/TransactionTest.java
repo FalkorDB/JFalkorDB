@@ -26,8 +26,6 @@ public class TransactionTest {
     * Sets up the FalkorDB graph API for the "social" graph before test execution.
     * This method is annotated with @Before, indicating it runs before each test method.
     * It initializes the 'api' field with a new FalkorDB graph driver instance for the "social" graph.
-    *
-    * @throws <UNKNOWN> if there's an error initializing the FalkorDB driver or accessing the graph
     */
     @Before
     public void createApi(){
@@ -208,7 +206,6 @@ public class TransactionTest {
     * This method verifies the behavior of GraphTransaction's multi-command execution,
     * including set operations, graph creation, read-only queries, and procedure calls.
     * 
-    * @param <UNKNOWN> This method doesn't have any parameters
     * @return void This method doesn't return a value
     *
     * @throws Exception If any error occurs during the execution of the test
