@@ -41,7 +41,13 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
-
+        <developers>
+           <developer>
+               <id>gkorland</id>
+               <name>Guy Korland</name>
+               <email>gkorland@gmail.com</email>
+           </developer>
+        </developers>
 	<dependencies>
 		<dependency>
 			<groupId>redis.clients</groupId>
