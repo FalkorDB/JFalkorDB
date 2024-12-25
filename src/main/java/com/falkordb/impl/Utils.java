@@ -90,7 +90,7 @@ public class Utils {
             Map<Object, Object> map = (Map<Object, Object>) value;
             StringBuilder sb = new StringBuilder().append('{');
             for(Map.Entry<Object, Object> entry : map.entrySet()) {
-                sb.append(valueToString(entry.getKey())).append(':').append(valueToString(entry.getValue())).append(",");
+                sb.append(entry.getKey()).append(':').append(valueToString(entry.getValue())).append(",");
             }
             // remove last comma
             if(sb.length() > 1) {
