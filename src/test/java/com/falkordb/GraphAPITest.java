@@ -222,7 +222,7 @@ public class GraphAPITest {
                         + "doubleValue=Property{name='doubleValue', value=3.14}, "
                         + "age=Property{name='age', value=32}}}",
                 expectedNode.toString());
-        Assert.assertEquals( 4, expectedNode.getNumberOfProperties());    
+        Assert.assertEquals(4, expectedNode.getNumberOfProperties());
 
         Edge expectedEdge = new Edge();
         expectedEdge.setId(0);
@@ -238,7 +238,7 @@ public class GraphAPITest {
                 + "place=Property{name='place', value=TLV}, "
                 + "doubleValue=Property{name='doubleValue', value=3.14}, "
                 + "since=Property{name='since', value=2000}}}", expectedEdge.toString());
-        Assert.assertEquals( 4, expectedEdge.getNumberOfProperties());               
+        Assert.assertEquals(4, expectedEdge.getNumberOfProperties());
 
         Map<String, Object> params = new HashMap<>();
         params.put("name", name);
@@ -820,6 +820,31 @@ public class GraphAPITest {
     }
 
     @Test
+    public void testVecf32() {
+        ResultSet resultSet = client.query("RETURN vecf32([2.1, -0.82, 1.3, 4.5]) AS vector");
+        Assert.assertEquals(1, resultSet.size());
+        Record r = resultSet.iterator().next();
+        List<Object> vector = r.getValue(0);
+        Assert.assertEquals(4, vector.size());
+        Object res = vector.get(0);
+
+        // The result can be either Double or Float depending on the server version
+        if ( res instanceof Double) {
+            List<Double> v = r.getValue(0);
+            Assert.assertEquals(2.1, v.get(0), 0.01);
+            Assert.assertEquals(-0.82, v.get(1), 0.01);
+            Assert.assertEquals(1.3, v.get(2), 0.01);
+            Assert.assertEquals(4.5, v.get(3), 0.01);
+        } else {
+            List<Float> v = r.getValue(0);
+            Assert.assertEquals(2.1f, v.get(0), 0.01);
+            Assert.assertEquals(-0.82f, v.get(1), 0.01);
+            Assert.assertEquals(1.3f, v.get(2), 0.01);
+            Assert.assertEquals(4.5f, v.get(3), 0.01);
+        }
+    }
+
+    @Test
     public void testCachedExecution() {
         client.query("CREATE (:N {val:1}), (:N {val:2})");
 
@@ -894,7 +919,7 @@ public class GraphAPITest {
         Assert.assertEquals(Collections.singletonList("restaurant"), record.keys());
         Node node = record.getValue(0);
         Property<?> property = node.getProperty("location");
-        Point result = (Point)property.getValue();
+        Point result = (Point) property.getValue();
 
         Point point = new Point(30.27822306, -97.75134723);
         Assert.assertEquals(point, result);
@@ -950,8 +975,8 @@ public class GraphAPITest {
         client.query("CREATE (:person{name:'filipe',age:30})");
         try {
             client.readOnlyQuery(
-                "WITH 1000000 as n RETURN reduce(f = 1, x IN range(1, n) | f * x) AS result",
-                1L);
+                    "WITH 1000000 as n RETURN reduce(f = 1, x IN range(1, n) | f * x) AS result",
+                    1L);
 
             fail("Expected Timeout Exception was not thrown.");
         } catch (GraphException e) {
