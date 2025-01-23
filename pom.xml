@@ -33,6 +33,13 @@
 		<connection>scm:git:git://github.com/FalkorDB/JFalkorDB.git</connection>
 		<developerConnection>scm:git:git@github.com:FalkorDB/JFalkorDB.git</developerConnection>
 	</scm>
+	<distributionManagement>
+    		<repository>
+        		<id>central</id>
+        		<name>Central Repository</name>
+        		<url>https://central.sonatype.dev/maven2</url>
+    		</repository>
+	</distributionManagement>
 	<licenses>
 		<license>
 			<name>BSD 3 Clause</name>
