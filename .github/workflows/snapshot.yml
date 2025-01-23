@@ -42,6 +42,6 @@
               mvn --no-transfer-progress \
                 -DskipTests deploy
             env:
-              MAVEN_USERNAME: ${{secrets.OSSH_USERNAME}}
-              MAVEN_PASSWORD: ${{secrets.OSSH_PASSWORD}}
+              MAVEN_USERNAME: ${{secrets.OSSRH_PASSWORD}}
+              MAVEN_PASSWORD: ${{secrets.OSSRH_PASSWORD}}
     
