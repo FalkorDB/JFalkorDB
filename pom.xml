@@ -80,7 +80,7 @@
 		<dependency>
 			<groupId>nl.jqno.equalsverifier</groupId>
 			<artifactId>equalsverifier</artifactId>
-			<version>3.18</version>
+			<version>3.18.1</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -114,7 +114,7 @@
 			<plugin>
 				<groupId>org.sonatype.central</groupId>
 				<artifactId>central-publishing-maven-plugin</artifactId>
-				<version>0.6.0</version>
+				<version>0.7.0</version>
 				<extensions>true</extensions>
 				<configuration>
 					<publishingServerId>central</publishingServerId>
