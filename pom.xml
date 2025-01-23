@@ -16,6 +16,15 @@
 	<name>JFalkorDB</name>
 	<description>Official client for falkordb</description>
 	<url>https://www.falkordb.com</url>
+	<settings>
+  		<servers>
+    			<server>
+	      			<id>central</id>
+	      			<username>${env.MAVEN_USERNAME}</username>
+	      			<password>${env.MAVEN_PASSWORD}</password>
+    			</server>
+  		</servers>
+	</settings>
 
 	<organization>
 		<name>FalkorBD</name>
