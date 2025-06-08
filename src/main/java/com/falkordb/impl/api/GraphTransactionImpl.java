@@ -240,8 +240,8 @@ public class GraphTransactionImpl extends Transaction
     } */
 
     /**
-     * Deletes the entire graph, in multi/exec context
-     * @return response with the deletion running time statistics
+     * Deletes the entire graph, in multi/exec context.
+     * @return response with the deletion running time statistics.
      */
     @Override
     public Response<String> deleteGraph() {
