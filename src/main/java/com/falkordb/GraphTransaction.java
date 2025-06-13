@@ -130,12 +130,6 @@ public interface GraphTransaction extends
      */
     void clear();
 
-//    /**
-//     * Executes the transaction and returns a list of the executed transaction commands answers
-//     * @return a list of the executed transaction commands answers
-//     */
-//    List<Response<?>> execGetResponse();
-
     /**
      * Flushes all previously queued commands in a transaction and restores the connection state to normal
      * @return "OK" if the transaction was successfully discarded, otherwise an exception is thrown

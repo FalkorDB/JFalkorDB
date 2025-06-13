@@ -238,11 +238,15 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<String> deleteGraph() {
-        return appendWithResponse(GraphCommand.DELETE, Arrays.asList(graphId), new Builder<String>() {
-            @Override
-            public String build(Object o) {
-                return (String) o;
-            }
-        });
+        try {
+            return appendWithResponse(GraphCommand.DELETE, Arrays.asList(graphId), new Builder<String>() {
+                @Override
+                public String build(Object o) {
+                    return (String) o;
+                }
+            });
+        } finally {
+            cache.clear();
+        }
     }
 }
