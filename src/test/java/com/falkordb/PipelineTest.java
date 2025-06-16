@@ -164,7 +164,7 @@ public class PipelineTest {
         Assert.assertEquals(1, resultSet.getStatistics().propertiesSet());
 
         // Graph read-only query result
-        Assert.assertEquals(ResultSetImpl.class, results.get(4).getClass());
+        Assert.assertEquals(ResultSetImpl.class, results.get(3).getClass());
         resultSet = (ResultSet) results.get(3);
 
         Assert.assertNotNull(resultSet.getHeader());
