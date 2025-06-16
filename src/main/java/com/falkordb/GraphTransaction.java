@@ -1,9 +1,14 @@
 package com.falkordb;
 
 import redis.clients.jedis.Response;
-import redis.clients.jedis.commands.PipelineBinaryCommands;
-import redis.clients.jedis.commands.PipelineCommands;
-import redis.clients.jedis.commands.RedisModulePipelineCommands;
+import redis.clients.jedis.commands.BasicRedisPipeline;
+import redis.clients.jedis.commands.BinaryRedisPipeline;
+import redis.clients.jedis.commands.BinaryScriptingCommandsPipeline;
+import redis.clients.jedis.commands.ClusterPipeline;
+import redis.clients.jedis.commands.MultiKeyBinaryRedisPipeline;
+import redis.clients.jedis.commands.MultiKeyCommandsPipeline;
+import redis.clients.jedis.commands.RedisPipeline;
+import redis.clients.jedis.commands.ScriptingCommandsPipeline;
 
 import java.io.Closeable;
 import java.util.List;
@@ -13,7 +18,10 @@ import java.util.Map;
  * An interface which aligned to Jedis transactional interface
  */
 public interface GraphTransaction extends
-        PipelineCommands, PipelineBinaryCommands, RedisModulePipelineCommands, Closeable {
+        MultiKeyBinaryRedisPipeline,
+        MultiKeyCommandsPipeline, ClusterPipeline,
+        BinaryScriptingCommandsPipeline, ScriptingCommandsPipeline,
+        BasicRedisPipeline, BinaryRedisPipeline, RedisPipeline, Closeable {
 
     /**
      * Execute a Cypher query.
@@ -129,6 +137,12 @@ public interface GraphTransaction extends
      * flushes all previously queued commands in a transaction and restores the connection state to normal
      */
     void clear();
+
+    /**
+     * Executes the transaction and returns a list of the executed transaction commands answers
+     * @return a list of the executed transaction commands answers
+     */
+    List<Response<?>> execGetResponse();
 
     /**
      * Flushes all previously queued commands in a transaction and restores the connection state to normal

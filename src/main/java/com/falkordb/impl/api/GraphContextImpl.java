@@ -11,6 +11,7 @@ import com.falkordb.impl.Utils;
 import com.falkordb.impl.graph_cache.GraphCache;
 import com.falkordb.impl.resultset.ResultSetImpl;
 
+import redis.clients.jedis.Client;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.util.SafeEncoder;
@@ -119,10 +120,10 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public GraphTransaction multi() {
-        GraphTransactionImpl transaction = new GraphTransactionImpl(
-                connection.getClient(), this, this.cache, this.graphId);
-        transaction.multi();
-        return transaction;
+        Client client = connection.getClient();
+        client.multi();
+        client.getOne();
+        return new GraphTransactionImpl(client, this, this.cache, this.graphId);
     }
 
     /**
@@ -131,7 +132,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public GraphPipeline pipelined() {
-        return new GraphPipelineImpl(connection.getClient(), this, this.cache, this.graphId);
+        Client client = connection.getClient();
+        return new GraphPipelineImpl(client, this, this.cache, this.graphId);
     }
 
     /**
