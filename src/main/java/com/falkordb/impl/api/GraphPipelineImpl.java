@@ -114,7 +114,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      */
     @Override
     public Response<ResultSet> query(String query, Map<String, Object> params) {
-        return appendWithResponse(GraphCommand.QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), new Builder<ResultSet>() {
+        return appendWithResponse(GraphCommand.QUERY, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING), new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
             public ResultSet build(Object o) {
@@ -131,7 +131,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      */
     @Override
     public Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params) {
-        return appendWithResponse(GraphCommand.RO_QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), new Builder<ResultSet>() {
+        return appendWithResponse(GraphCommand.RO_QUERY, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING), new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
             public ResultSet build(Object o) {
@@ -152,7 +152,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      */
     @Override
     public Response<ResultSet> query(String query, Map<String, Object> params, long timeout) {
-        return appendWithResponse(GraphCommand.QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING,
+        return appendWithResponse(GraphCommand.QUERY, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING, Utils.TIMEOUT_STRING,
                 Long.toString(timeout)), new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
@@ -174,7 +174,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      */
     @Override
     public Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params, long timeout) {
-        return appendWithResponse(GraphCommand.RO_QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING,
+        return appendWithResponse(GraphCommand.RO_QUERY, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING, Utils.TIMEOUT_STRING,
                 Long.toString(timeout)), new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
