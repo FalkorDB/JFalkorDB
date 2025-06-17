@@ -120,7 +120,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     @Override
     public GraphTransaction multi() {
         GraphTransactionImpl transaction = new GraphTransactionImpl(
-                connection.getClient(), this, this.cache, this.graphId);
+                connection.getConnection(), this, this.cache, this.graphId);
         transaction.multi();
         return transaction;
     }
@@ -131,7 +131,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public GraphPipeline pipelined() {
-        return new GraphPipelineImpl(connection.getClient(), this, this.cache, this.graphId);
+        return new GraphPipelineImpl(connection.getConnection(), this, this.cache, this.graphId);
     }
 
     /**
