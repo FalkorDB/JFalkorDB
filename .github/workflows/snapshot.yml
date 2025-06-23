@@ -39,6 +39,7 @@ jobs:
           mvn --no-transfer-progress \
             -DskipTests deploy
         env:
-          MAVEN_USERNAME: ${{secrets.OSSRH_USERNAME}}
-          MAVEN_PASSWORD: ${{secrets.OSSRH_PASSWORD}}
+          MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_TOKEN: ${{ secrets.CENTRAL_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
 
