@@ -1,47 +1,47 @@
----
+name: Publish Snapshot
+on:
+  push:
+    branches:
+      - master
+      - '[0-9].x'
+  workflow_dispatch:
 
-    name: Publish Snapshot
-    
-    on:
-      push:
-        branches:
-          - master
-          - '[0-9].x'
-      workflow_dispatch:
-    
-    jobs:
-    
-      snapshot:
-        name: Deploy Snapshot
-        runs-on: ubuntu-latest
-        steps:
-          - uses: actions/checkout@v4
-          - name: Set up publishing to maven central
-            uses: actions/setup-java@v4
-            with:
-              java-version: '8'
-              distribution: 'temurin'
-              server-id: ossrh
-              server-username: MAVEN_USERNAME
-              server-password: MAVEN_PASSWORD
+jobs:
+  snapshot:
+    name: Deploy Snapshot
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up publishing to maven central
+        uses: actions/setup-java@v4
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+          cache: maven
+          server-id: central
+          server-username: CENTRAL_USERNAME
+          server-password: CENTRAL_TOKEN
+          # gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }} # Value of the GPG private key to import
+          # gpg-passphrase: MAVEN_GPG_PASSPHRASE # env variable for GPG private ke
 
-          - name: Cache dependencies
-            uses: actions/cache@v4
-            with:
-              path: |
-                ~/.m2/repository
-                /var/cache/apt
-              key: jfalkordb-${{hashFiles('**/pom.xml')}}
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            /var/cache/apt
+          key: jfalkordb-${{hashFiles('**/pom.xml')}}
 
-          - name: mvn offline
-            run: |
-              mvn -q dependency:go-offline
-              
-          - name: deploy
-            run: |
-              mvn --no-transfer-progress \
-                -DskipTests deploy
-            env:
-              MAVEN_USERNAME: ${{secrets.OSSH_USERNAME}}
-              MAVEN_PASSWORD: ${{secrets.OSSH_PASSWORD}}
-    
+      - name: mvn offline
+        run: |
+          mvn -q dependency:go-offline
+          
+      - name: deploy
+        run: |
+          mvn --no-transfer-progress \
+            -DskipTests deploy
+        env:
+          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          CENTRAL_TOKEN: ${{ secrets.CENTRAL_TOKEN }}
+          # MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+

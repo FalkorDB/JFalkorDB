@@ -5,31 +5,34 @@ import com.falkordb.ResultSet;
 import com.falkordb.impl.Utils;
 import com.falkordb.impl.graph_cache.GraphCache;
 import com.falkordb.impl.resultset.ResultSetImpl;
-import redis.clients.jedis.Builder;
-import redis.clients.jedis.BuilderFactory;
-import redis.clients.jedis.Client;
-import redis.clients.jedis.Response;
-import redis.clients.jedis.Transaction;
+import redis.clients.jedis.*;
+import redis.clients.jedis.commands.ProtocolCommand;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 /**
  * This class is extending Jedis Transaction
  */
-public class GraphTransactionImpl extends Transaction
-        implements com.falkordb.GraphTransaction {
+public class GraphTransactionImpl extends Transaction implements com.falkordb.GraphTransaction {
 
     private final Graph graph;
     private final String graphId;
     private GraphCache cache;
 
-    public GraphTransactionImpl(Client client, Graph graph, GraphCache cache, String graphId) {
+    public GraphTransactionImpl(Connection connection, Graph graph, GraphCache cache, String graphId) {
         // init as in Jedis
-        super(client);
+        super(connection, false);
         this.graph = graph;
         this.graphId = graphId;
         this.cache = cache;
+    }
+
+    protected <T> Response<T> appendWithResponse(ProtocolCommand protocolCommand, List<Object> arguments, Builder<T> builder) {
+        CommandArguments commandArguments = new CommandArguments(protocolCommand);
+        arguments.forEach(commandArguments::add);
+        return this.appendCommand(new CommandObject<>(commandArguments, builder));
     }
 
     /**
@@ -39,8 +42,7 @@ public class GraphTransactionImpl extends Transaction
      */
     @Override
     public Response<ResultSet> query(String query) {
-        client.sendCommand(GraphCommand.QUERY, graphId, query, Utils.COMPACT_STRING);
-        return enqueResponse(new Builder<ResultSet>() {
+        return appendWithResponse(GraphCommand.QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
             public ResultSet build(Object o) {
@@ -56,8 +58,7 @@ public class GraphTransactionImpl extends Transaction
      */
     @Override
     public Response<ResultSet> readOnlyQuery(String query) {
-        client.sendCommand(GraphCommand.RO_QUERY, graphId, query, Utils.COMPACT_STRING);
-        return enqueResponse(new Builder<ResultSet>() {
+        return appendWithResponse(GraphCommand.RO_QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
             public ResultSet build(Object o) {
@@ -76,9 +77,8 @@ public class GraphTransactionImpl extends Transaction
      */
     @Override
     public Response<ResultSet> query(String query, long timeout) {
-        client.sendCommand(GraphCommand.QUERY, graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING,
-                Long.toString(timeout));
-        return enqueResponse(new Builder<ResultSet>() {
+        return appendWithResponse(GraphCommand.QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING,
+                Long.toString(timeout)), new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
             public ResultSet build(Object o) {
@@ -97,15 +97,15 @@ public class GraphTransactionImpl extends Transaction
      */
     @Override
     public Response<ResultSet> readOnlyQuery(String query, long timeout) {
-        client.sendCommand(GraphCommand.RO_QUERY, graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING,
-                Long.toString(timeout));
-        return enqueResponse(new Builder<ResultSet>() {
+        return appendWithResponse(GraphCommand.RO_QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING,
+                Long.toString(timeout)), new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
             public ResultSet build(Object o) {
                 return new ResultSetImpl((List<Object>) o, graph, cache);
             }
         });
+
     }
 
     /**
@@ -116,9 +116,7 @@ public class GraphTransactionImpl extends Transaction
      */
     @Override
     public Response<ResultSet> query(String query, Map<String, Object> params) {
-        String preparedQuery = Utils.prepareQuery(query, params);
-        client.sendCommand(GraphCommand.QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
-        return enqueResponse(new Builder<ResultSet>() {
+        return appendWithResponse(GraphCommand.QUERY, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING), new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
             public ResultSet build(Object o) {
@@ -135,9 +133,7 @@ public class GraphTransactionImpl extends Transaction
      */
     @Override
     public Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params) {
-        String preparedQuery = Utils.prepareQuery(query, params);
-        client.sendCommand(GraphCommand.RO_QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
-        return enqueResponse(new Builder<ResultSet>() {
+        return appendWithResponse(GraphCommand.RO_QUERY, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING), new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
             public ResultSet build(Object o) {
@@ -157,16 +153,15 @@ public class GraphTransactionImpl extends Transaction
      */
     @Override
     public Response<ResultSet> query(String query, Map<String, Object> params, long timeout) {
-        String preparedQuery = Utils.prepareQuery(query, params);
-        client.sendCommand(GraphCommand.QUERY, graphId, preparedQuery, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING,
-                Long.toString(timeout));
-        return enqueResponse(new Builder<ResultSet>() {
+        return appendWithResponse(GraphCommand.QUERY, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING,
+                Utils.TIMEOUT_STRING, Long.toString(timeout)), new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
             public ResultSet build(Object o) {
                 return new ResultSetImpl((List<Object>) o, graph, cache);
             }
         });
+
     }
 
     /**
@@ -180,10 +175,8 @@ public class GraphTransactionImpl extends Transaction
      */
     @Override
     public Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params, long timeout) {
-        String preparedQuery = Utils.prepareQuery(query, params);
-        client.sendCommand(GraphCommand.RO_QUERY, graphId, preparedQuery, Utils.COMPACT_STRING,
-                Utils.TIMEOUT_STRING, Long.toString(timeout));
-        return enqueResponse(new Builder<ResultSet>() {
+        return appendWithResponse(GraphCommand.RO_QUERY, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING,
+                Utils.TIMEOUT_STRING, Long.toString(timeout)), new Builder<ResultSet>() {
             @SuppressWarnings("unchecked")
             @Override
             public ResultSet build(Object o) {
@@ -245,9 +238,15 @@ public class GraphTransactionImpl extends Transaction
      */
     @Override
     public Response<String> deleteGraph() {
-        client.sendCommand(GraphCommand.DELETE, graphId);
-        Response<String> response = enqueResponse(BuilderFactory.STRING);
-        cache.clear();
-        return response;
+        try {
+            return appendWithResponse(GraphCommand.DELETE, Arrays.asList(graphId), new Builder<String>() {
+                @Override
+                public String build(Object o) {
+                    return (String) o;
+                }
+            });
+        } finally {
+            cache.clear();
+        }
     }
 }
