@@ -1,15 +1,16 @@
 package com.falkordb;
 
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.falkordb.Statistics.Label;
 import com.falkordb.exceptions.GraphException;
@@ -24,12 +25,12 @@ public class GraphAPITest {
 
     private GraphContextGenerator client;
 
-    @Before
+    @BeforeEach
     public void createApi() {
         client = FalkorDB.driver().graph("social");
     }
 
-    @After
+    @AfterEach
     public void deleteGraph() {
         client.deleteGraph();
         client.close();
@@ -40,15 +41,15 @@ public class GraphAPITest {
         // Create a node
         ResultSet resultSet = client.query("CREATE ({name:'roi',age:32})");
 
-        Assert.assertEquals(1, resultSet.getStatistics().nodesCreated());
-        Assert.assertNull(resultSet.getStatistics().getStringValue(Label.NODES_DELETED));
-        Assert.assertNull(resultSet.getStatistics().getStringValue(Label.RELATIONSHIPS_CREATED));
-        Assert.assertNull(resultSet.getStatistics().getStringValue(Label.RELATIONSHIPS_DELETED));
-        Assert.assertEquals(2, resultSet.getStatistics().propertiesSet());
-        Assert.assertNotNull(resultSet.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
+        Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
+        Assertions.assertNull(resultSet.getStatistics().getStringValue(Label.NODES_DELETED));
+        Assertions.assertNull(resultSet.getStatistics().getStringValue(Label.RELATIONSHIPS_CREATED));
+        Assertions.assertNull(resultSet.getStatistics().getStringValue(Label.RELATIONSHIPS_DELETED));
+        Assertions.assertEquals(2, resultSet.getStatistics().propertiesSet());
+        Assertions.assertNotNull(resultSet.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
 
         Iterator<Record> iterator = resultSet.iterator();
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertFalse(iterator.hasNext());
 
         try {
             iterator.next();
@@ -61,97 +62,97 @@ public class GraphAPITest {
     public void testCreateLabeledNode() {
         // Create a node with a label
         ResultSet resultSet = client.query("CREATE (:human{name:'danny',age:12})");
-        Assert.assertFalse(resultSet.iterator().hasNext());
-        Assert.assertEquals("1", resultSet.getStatistics().getStringValue(Label.NODES_CREATED));
-        Assert.assertEquals("2", resultSet.getStatistics().getStringValue(Label.PROPERTIES_SET));
-        Assert.assertNotNull(resultSet.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
+        Assertions.assertFalse(resultSet.iterator().hasNext());
+        Assertions.assertEquals("1", resultSet.getStatistics().getStringValue(Label.NODES_CREATED));
+        Assertions.assertEquals("2", resultSet.getStatistics().getStringValue(Label.PROPERTIES_SET));
+        Assertions.assertNotNull(resultSet.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
     }
 
     @Test
     public void testConnectNodes() {
         // Create both source and destination nodes
-        Assert.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
-        Assert.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
+        Assertions.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
+        Assertions.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
 
         // Connect source and destination nodes.
         ResultSet resultSet = client.query(
                 "MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  CREATE (a)-[:knows]->(b)");
 
-        Assert.assertFalse(resultSet.iterator().hasNext());
-        Assert.assertNull(resultSet.getStatistics().getStringValue(Label.NODES_CREATED));
-        Assert.assertNull(resultSet.getStatistics().getStringValue(Label.PROPERTIES_SET));
-        Assert.assertEquals(1, resultSet.getStatistics().relationshipsCreated());
-        Assert.assertEquals(0, resultSet.getStatistics().relationshipsDeleted());
-        Assert.assertNotNull(resultSet.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
+        Assertions.assertFalse(resultSet.iterator().hasNext());
+        Assertions.assertNull(resultSet.getStatistics().getStringValue(Label.NODES_CREATED));
+        Assertions.assertNull(resultSet.getStatistics().getStringValue(Label.PROPERTIES_SET));
+        Assertions.assertEquals(1, resultSet.getStatistics().relationshipsCreated());
+        Assertions.assertEquals(0, resultSet.getStatistics().relationshipsDeleted());
+        Assertions.assertNotNull(resultSet.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
     }
 
     @Test
     public void testDeleteNodes() {
-        Assert.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
-        Assert.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
+        Assertions.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
+        Assertions.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
         ResultSet deleteResult = client.query("MATCH (a:person) WHERE (a.name = 'roi') DELETE a");
 
-        Assert.assertFalse(deleteResult.iterator().hasNext());
-        Assert.assertNull(deleteResult.getStatistics().getStringValue(Label.NODES_CREATED));
-        Assert.assertNull(deleteResult.getStatistics().getStringValue(Label.PROPERTIES_SET));
-        Assert.assertNull(deleteResult.getStatistics().getStringValue(Label.NODES_CREATED));
-        Assert.assertNull(deleteResult.getStatistics().getStringValue(Label.RELATIONSHIPS_CREATED));
-        Assert.assertNull(deleteResult.getStatistics().getStringValue(Label.RELATIONSHIPS_DELETED));
-        Assert.assertEquals(1, deleteResult.getStatistics().nodesDeleted());
-        Assert.assertNotNull(deleteResult.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
+        Assertions.assertFalse(deleteResult.iterator().hasNext());
+        Assertions.assertNull(deleteResult.getStatistics().getStringValue(Label.NODES_CREATED));
+        Assertions.assertNull(deleteResult.getStatistics().getStringValue(Label.PROPERTIES_SET));
+        Assertions.assertNull(deleteResult.getStatistics().getStringValue(Label.NODES_CREATED));
+        Assertions.assertNull(deleteResult.getStatistics().getStringValue(Label.RELATIONSHIPS_CREATED));
+        Assertions.assertNull(deleteResult.getStatistics().getStringValue(Label.RELATIONSHIPS_DELETED));
+        Assertions.assertEquals(1, deleteResult.getStatistics().nodesDeleted());
+        Assertions.assertNotNull(deleteResult.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
 
-        Assert.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
-        Assert.assertNotNull(client.query(
+        Assertions.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
+        Assertions.assertNotNull(client.query(
                 "MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  CREATE (a)-[:knows]->(b)"));
         deleteResult = client.query("MATCH (a:person) WHERE (a.name = 'roi') DELETE a");
 
-        Assert.assertFalse(deleteResult.iterator().hasNext());
-        Assert.assertNull(deleteResult.getStatistics().getStringValue(Label.NODES_CREATED));
-        Assert.assertNull(deleteResult.getStatistics().getStringValue(Label.PROPERTIES_SET));
-        Assert.assertNull(deleteResult.getStatistics().getStringValue(Label.NODES_CREATED));
-        Assert.assertNull(deleteResult.getStatistics().getStringValue(Label.RELATIONSHIPS_CREATED));
-        Assert.assertEquals(1, deleteResult.getStatistics().relationshipsDeleted());
-        Assert.assertEquals(1, deleteResult.getStatistics().nodesDeleted());
+        Assertions.assertFalse(deleteResult.iterator().hasNext());
+        Assertions.assertNull(deleteResult.getStatistics().getStringValue(Label.NODES_CREATED));
+        Assertions.assertNull(deleteResult.getStatistics().getStringValue(Label.PROPERTIES_SET));
+        Assertions.assertNull(deleteResult.getStatistics().getStringValue(Label.NODES_CREATED));
+        Assertions.assertNull(deleteResult.getStatistics().getStringValue(Label.RELATIONSHIPS_CREATED));
+        Assertions.assertEquals(1, deleteResult.getStatistics().relationshipsDeleted());
+        Assertions.assertEquals(1, deleteResult.getStatistics().nodesDeleted());
 
-        Assert.assertNotNull(deleteResult.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
+        Assertions.assertNotNull(deleteResult.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
 
     }
 
     @Test
     public void testDeleteRelationship() {
 
-        Assert.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
-        Assert.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
-        Assert.assertNotNull(client.query(
+        Assertions.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
+        Assertions.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
+        Assertions.assertNotNull(client.query(
                 "MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  CREATE (a)-[:knows]->(a)"));
         ResultSet deleteResult = client.query("MATCH (a:person)-[e]->() WHERE (a.name = 'roi') DELETE e");
 
-        Assert.assertFalse(deleteResult.iterator().hasNext());
-        Assert.assertNull(deleteResult.getStatistics().getStringValue(Label.NODES_CREATED));
-        Assert.assertNull(deleteResult.getStatistics().getStringValue(Label.PROPERTIES_SET));
-        Assert.assertNull(deleteResult.getStatistics().getStringValue(Label.NODES_CREATED));
-        Assert.assertNull(deleteResult.getStatistics().getStringValue(Label.RELATIONSHIPS_CREATED));
-        Assert.assertNull(deleteResult.getStatistics().getStringValue(Label.NODES_DELETED));
-        Assert.assertEquals(1, deleteResult.getStatistics().relationshipsDeleted());
+        Assertions.assertFalse(deleteResult.iterator().hasNext());
+        Assertions.assertNull(deleteResult.getStatistics().getStringValue(Label.NODES_CREATED));
+        Assertions.assertNull(deleteResult.getStatistics().getStringValue(Label.PROPERTIES_SET));
+        Assertions.assertNull(deleteResult.getStatistics().getStringValue(Label.NODES_CREATED));
+        Assertions.assertNull(deleteResult.getStatistics().getStringValue(Label.RELATIONSHIPS_CREATED));
+        Assertions.assertNull(deleteResult.getStatistics().getStringValue(Label.NODES_DELETED));
+        Assertions.assertEquals(1, deleteResult.getStatistics().relationshipsDeleted());
 
-        Assert.assertNotNull(deleteResult.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
+        Assertions.assertNotNull(deleteResult.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
 
     }
 
     @Test
     public void testIndex() {
         // Create both source and destination nodes
-        Assert.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
+        Assertions.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
 
         ResultSet createIndexResult = client.query("CREATE INDEX ON :person(age)");
-        Assert.assertFalse(createIndexResult.iterator().hasNext());
-        Assert.assertEquals(1, createIndexResult.getStatistics().indicesAdded());
+        Assertions.assertFalse(createIndexResult.iterator().hasNext());
+        Assertions.assertEquals(1, createIndexResult.getStatistics().indicesAdded());
 
         // since RediSearch as index, those action are allowed
         ResultSet createNonExistingIndexResult = client.query("CREATE INDEX ON :person(age1)");
-        Assert.assertFalse(createNonExistingIndexResult.iterator().hasNext());
-        Assert.assertNotNull(createNonExistingIndexResult.getStatistics().getStringValue(Label.INDICES_ADDED));
-        Assert.assertEquals(1, createNonExistingIndexResult.getStatistics().indicesAdded());
+        Assertions.assertFalse(createNonExistingIndexResult.iterator().hasNext());
+        Assertions.assertNotNull(createNonExistingIndexResult.getStatistics().getStringValue(Label.INDICES_ADDED));
+        Assertions.assertEquals(1, createNonExistingIndexResult.getStatistics().indicesAdded());
 
         try {
             client.query("CREATE INDEX ON :person(age)");
@@ -160,35 +161,35 @@ public class GraphAPITest {
         }
 
         ResultSet deleteExistingIndexResult = client.query("DROP INDEX ON :person(age)");
-        Assert.assertFalse(deleteExistingIndexResult.iterator().hasNext());
-        Assert.assertNotNull(deleteExistingIndexResult.getStatistics().getStringValue(Label.INDICES_DELETED));
-        Assert.assertEquals(1, deleteExistingIndexResult.getStatistics().indicesDeleted());
+        Assertions.assertFalse(deleteExistingIndexResult.iterator().hasNext());
+        Assertions.assertNotNull(deleteExistingIndexResult.getStatistics().getStringValue(Label.INDICES_DELETED));
+        Assertions.assertEquals(1, deleteExistingIndexResult.getStatistics().indicesDeleted());
 
     }
 
     @Test
     public void testHeader() {
 
-        Assert.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
-        Assert.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
-        Assert.assertNotNull(client.query(
+        Assertions.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
+        Assertions.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
+        Assertions.assertNotNull(client.query(
                 "MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  CREATE (a)-[:knows]->(a)"));
 
         ResultSet queryResult = client.query("MATCH (a:person)-[r:knows]->(b:person) RETURN a,r, a.age");
 
         Header header = queryResult.getHeader();
-        Assert.assertNotNull(header);
-        Assert.assertEquals("HeaderImpl{"
+        Assertions.assertNotNull(header);
+        Assertions.assertEquals("HeaderImpl{"
                 + "schemaTypes=[COLUMN_SCALAR, COLUMN_SCALAR, COLUMN_SCALAR], "
                 + "schemaNames=[a, r, a.age]}", header.toString());
 
         List<String> schemaNames = header.getSchemaNames();
 
-        Assert.assertNotNull(schemaNames);
-        Assert.assertEquals(3, schemaNames.size());
-        Assert.assertEquals("a", schemaNames.get(0));
-        Assert.assertEquals("r", schemaNames.get(1));
-        Assert.assertEquals("a.age", schemaNames.get(2));
+        Assertions.assertNotNull(schemaNames);
+        Assertions.assertEquals(3, schemaNames.size());
+        Assertions.assertEquals("a", schemaNames.get(0));
+        Assertions.assertEquals("r", schemaNames.get(1));
+        Assertions.assertEquals("a.age", schemaNames.get(2));
 
     }
 
@@ -215,14 +216,14 @@ public class GraphAPITest {
         expectedNode.addProperty(ageProperty);
         expectedNode.addProperty(doubleProperty);
         expectedNode.addProperty(trueBooleanProperty);
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 "Node{labels=[person], id=0, "
                         + "propertyMap={name=Property{name='name', value=roi}, "
                         + "boolValue=Property{name='boolValue', value=true}, "
                         + "doubleValue=Property{name='doubleValue', value=3.14}, "
                         + "age=Property{name='age', value=32}}}",
                 expectedNode.toString());
-        Assert.assertEquals(4, expectedNode.getNumberOfProperties());
+        Assertions.assertEquals(4, expectedNode.getNumberOfProperties());
 
         Edge expectedEdge = new Edge();
         expectedEdge.setId(0);
@@ -233,12 +234,12 @@ public class GraphAPITest {
         expectedEdge.addProperty("since", since);
         expectedEdge.addProperty(doubleProperty);
         expectedEdge.addProperty(falseBooleanProperty);
-        Assert.assertEquals("Edge{relationshipType='knows', source=0, destination=1, id=0, "
+        Assertions.assertEquals("Edge{relationshipType='knows', source=0, destination=1, id=0, "
                 + "propertyMap={boolValue=Property{name='boolValue', value=false}, "
                 + "place=Property{name='place', value=TLV}, "
                 + "doubleValue=Property{name='doubleValue', value=3.14}, "
                 + "since=Property{name='since', value=2000}}}", expectedEdge.toString());
-        Assert.assertEquals(4, expectedEdge.getNumberOfProperties());
+        Assertions.assertEquals(4, expectedEdge.getNumberOfProperties());
 
         Map<String, Object> params = new HashMap<>();
         params.put("name", name);
@@ -246,74 +247,74 @@ public class GraphAPITest {
         params.put("boolValue", boolValue);
         params.put("doubleValue", doubleValue);
 
-        Assert.assertNotNull(client.query(
+        Assertions.assertNotNull(client.query(
                 "CREATE (:person{name:$name,age:$age, doubleValue:$doubleValue, boolValue:$boolValue})", params));
-        Assert.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
-        Assert.assertNotNull(
+        Assertions.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
+        Assertions.assertNotNull(
                 client.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  " +
                         "CREATE (a)-[:knows{place:'TLV', since:2000,doubleValue:3.14, boolValue:false}]->(b)"));
 
         ResultSet resultSet = client.query("MATCH (a:person)-[r:knows]->(b:person) RETURN a,r, " +
                 "a.name, a.age, a.doubleValue, a.boolValue, " +
                 "r.place, r.since, r.doubleValue, r.boolValue");
-        Assert.assertNotNull(resultSet);
+        Assertions.assertNotNull(resultSet);
 
-        Assert.assertEquals(0, resultSet.getStatistics().nodesCreated());
-        Assert.assertEquals(0, resultSet.getStatistics().nodesDeleted());
-        Assert.assertEquals(0, resultSet.getStatistics().labelsAdded());
-        Assert.assertEquals(0, resultSet.getStatistics().propertiesSet());
-        Assert.assertEquals(0, resultSet.getStatistics().relationshipsCreated());
-        Assert.assertEquals(0, resultSet.getStatistics().relationshipsDeleted());
-        Assert.assertNotNull(resultSet.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
+        Assertions.assertEquals(0, resultSet.getStatistics().nodesCreated());
+        Assertions.assertEquals(0, resultSet.getStatistics().nodesDeleted());
+        Assertions.assertEquals(0, resultSet.getStatistics().labelsAdded());
+        Assertions.assertEquals(0, resultSet.getStatistics().propertiesSet());
+        Assertions.assertEquals(0, resultSet.getStatistics().relationshipsCreated());
+        Assertions.assertEquals(0, resultSet.getStatistics().relationshipsDeleted());
+        Assertions.assertNotNull(resultSet.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
 
-        Assert.assertEquals(1, resultSet.size());
+        Assertions.assertEquals(1, resultSet.size());
 
         Iterator<Record> iterator = resultSet.iterator();
-        Assert.assertTrue(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
         Record record = iterator.next();
-        Assert.assertFalse(iterator.hasNext());
+        Assertions.assertFalse(iterator.hasNext());
 
         Node node = record.getValue(0);
-        Assert.assertNotNull(node);
+        Assertions.assertNotNull(node);
 
-        Assert.assertEquals(expectedNode, node);
+        Assertions.assertEquals(expectedNode, node);
 
         node = record.getValue("a");
-        Assert.assertEquals(expectedNode, node);
+        Assertions.assertEquals(expectedNode, node);
 
         Edge edge = record.getValue(1);
-        Assert.assertNotNull(edge);
-        Assert.assertEquals(expectedEdge, edge);
+        Assertions.assertNotNull(edge);
+        Assertions.assertEquals(expectedEdge, edge);
 
         edge = record.getValue("r");
-        Assert.assertEquals(expectedEdge, edge);
+        Assertions.assertEquals(expectedEdge, edge);
 
-        Assert.assertEquals(Arrays.asList("a", "r", "a.name", "a.age", "a.doubleValue", "a.boolValue",
+        Assertions.assertEquals(Arrays.asList("a", "r", "a.name", "a.age", "a.doubleValue", "a.boolValue",
                 "r.place", "r.since", "r.doubleValue", "r.boolValue"), record.keys());
 
-        Assert.assertEquals(Arrays.asList(expectedNode, expectedEdge,
+        Assertions.assertEquals(Arrays.asList(expectedNode, expectedEdge,
                 name, (long) age, doubleValue, true,
                 place, (long) since, doubleValue, false),
                 record.values());
 
         Node a = record.getValue("a");
         for (String propertyName : expectedNode.getEntityPropertyNames()) {
-            Assert.assertEquals(expectedNode.getProperty(propertyName), a.getProperty(propertyName));
+            Assertions.assertEquals(expectedNode.getProperty(propertyName), a.getProperty(propertyName));
         }
 
-        Assert.assertEquals("roi", record.getString(2));
-        Assert.assertEquals("32", record.getString(3));
-        Assert.assertEquals(32L, ((Long) record.getValue(3)).longValue());
-        Assert.assertEquals(32L, ((Long) record.getValue("a.age")).longValue());
-        Assert.assertEquals("roi", record.getString("a.name"));
-        Assert.assertEquals("32", record.getString("a.age"));
+        Assertions.assertEquals("roi", record.getString(2));
+        Assertions.assertEquals("32", record.getString(3));
+        Assertions.assertEquals(32L, ((Long) record.getValue(3)).longValue());
+        Assertions.assertEquals(32L, ((Long) record.getValue("a.age")).longValue());
+        Assertions.assertEquals("roi", record.getString("a.name"));
+        Assertions.assertEquals("32", record.getString("a.age"));
 
     }
 
     @Test
     public void testMultiThread() {
 
-        Assert.assertNotNull(
+        Assertions.assertNotNull(
                 client.query("CREATE (:person {name:'roi', age:32})-[:knows]->(:person {name:'amit',age:30}) "));
 
         List<ResultSet> resultSets = IntStream.range(0, 16).parallel()
@@ -337,22 +338,22 @@ public class GraphAPITest {
         expectedEdge.setRelationshipType("knows");
 
         for (ResultSet resultSet : resultSets) {
-            Assert.assertNotNull(resultSet.getHeader());
+            Assertions.assertNotNull(resultSet.getHeader());
             Header header = resultSet.getHeader();
             List<String> schemaNames = header.getSchemaNames();
-            Assert.assertNotNull(schemaNames);
-            Assert.assertEquals(3, schemaNames.size());
-            Assert.assertEquals("a", schemaNames.get(0));
-            Assert.assertEquals("r", schemaNames.get(1));
-            Assert.assertEquals("a.age", schemaNames.get(2));
-            Assert.assertEquals(1, resultSet.size());
+            Assertions.assertNotNull(schemaNames);
+            Assertions.assertEquals(3, schemaNames.size());
+            Assertions.assertEquals("a", schemaNames.get(0));
+            Assertions.assertEquals("r", schemaNames.get(1));
+            Assertions.assertEquals("a.age", schemaNames.get(2));
+            Assertions.assertEquals(1, resultSet.size());
 
             Iterator<Record> iterator = resultSet.iterator();
-            Assert.assertTrue(iterator.hasNext());
+            Assertions.assertTrue(iterator.hasNext());
             Record record = iterator.next();
-            Assert.assertFalse(iterator.hasNext());
-            Assert.assertEquals(Arrays.asList("a", "r", "a.age"), record.keys());
-            Assert.assertEquals(Arrays.asList(expectedNode, expectedEdge, 32L), record.values());
+            Assertions.assertFalse(iterator.hasNext());
+            Assertions.assertEquals(Arrays.asList("a", "r", "a.age"), record.keys());
+            Assertions.assertEquals(Arrays.asList(expectedNode, expectedEdge, 32L), record.values());
         }
 
         // test for update in local cache
@@ -368,9 +369,9 @@ public class GraphAPITest {
         expectedEdge.setDestination(3);
         expectedEdge.setId(1);
 
-        Assert.assertNotNull(client.query("CREATE (:worker{lastName:'a'})"));
-        Assert.assertNotNull(client.query("CREATE (:worker{lastName:'b'})"));
-        Assert.assertNotNull(client.query(
+        Assertions.assertNotNull(client.query("CREATE (:worker{lastName:'a'})"));
+        Assertions.assertNotNull(client.query("CREATE (:worker{lastName:'b'})"));
+        Assertions.assertNotNull(client.query(
                 "MATCH (a:worker), (b:worker) WHERE (a.lastName = 'a' AND b.lastName='b')  CREATE (a)-[:worksWith]->(b)"));
 
         resultSets = IntStream.range(0, 16).parallel()
@@ -378,30 +379,30 @@ public class GraphAPITest {
                 .collect(Collectors.toList());
 
         for (ResultSet resultSet : resultSets) {
-            Assert.assertNotNull(resultSet.getHeader());
+            Assertions.assertNotNull(resultSet.getHeader());
             Header header = resultSet.getHeader();
             List<String> schemaNames = header.getSchemaNames();
-            Assert.assertNotNull(schemaNames);
-            Assert.assertEquals(2, schemaNames.size());
-            Assert.assertEquals("a", schemaNames.get(0));
-            Assert.assertEquals("r", schemaNames.get(1));
-            Assert.assertEquals(1, resultSet.size());
+            Assertions.assertNotNull(schemaNames);
+            Assertions.assertEquals(2, schemaNames.size());
+            Assertions.assertEquals("a", schemaNames.get(0));
+            Assertions.assertEquals("r", schemaNames.get(1));
+            Assertions.assertEquals(1, resultSet.size());
 
             Iterator<Record> iterator = resultSet.iterator();
-            Assert.assertTrue(iterator.hasNext());
+            Assertions.assertTrue(iterator.hasNext());
             Record record = iterator.next();
-            Assert.assertFalse(iterator.hasNext());
-            Assert.assertEquals(Arrays.asList("a", "r"), record.keys());
-            Assert.assertEquals(Arrays.asList(expectedNode, expectedEdge), record.values());
+            Assertions.assertFalse(iterator.hasNext());
+            Assertions.assertEquals(Arrays.asList("a", "r"), record.keys());
+            Assertions.assertEquals(Arrays.asList(expectedNode, expectedEdge), record.values());
         }
     }
 
     @Test
     public void testAdditionToProcedures() {
 
-        Assert.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
-        Assert.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
-        Assert.assertNotNull(client.query(
+        Assertions.assertNotNull(client.query("CREATE (:person{name:'roi',age:32})"));
+        Assertions.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
+        Assertions.assertNotNull(client.query(
                 "MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  CREATE (a)-[:knows]->(b)"));
 
         // expected objects init
@@ -422,21 +423,21 @@ public class GraphAPITest {
         expectedEdge.setRelationshipType("knows");
 
         ResultSet resultSet = client.query("MATCH (a:person)-[r:knows]->(b:person) RETURN a,r");
-        Assert.assertNotNull(resultSet.getHeader());
+        Assertions.assertNotNull(resultSet.getHeader());
         Header header = resultSet.getHeader();
         List<String> schemaNames = header.getSchemaNames();
-        Assert.assertNotNull(schemaNames);
-        Assert.assertEquals(2, schemaNames.size());
-        Assert.assertEquals("a", schemaNames.get(0));
-        Assert.assertEquals("r", schemaNames.get(1));
-        Assert.assertEquals(1, resultSet.size());
+        Assertions.assertNotNull(schemaNames);
+        Assertions.assertEquals(2, schemaNames.size());
+        Assertions.assertEquals("a", schemaNames.get(0));
+        Assertions.assertEquals("r", schemaNames.get(1));
+        Assertions.assertEquals(1, resultSet.size());
 
         Iterator<Record> iterator = resultSet.iterator();
-        Assert.assertTrue(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
         Record record = iterator.next();
-        Assert.assertFalse(iterator.hasNext());
-        Assert.assertEquals(Arrays.asList("a", "r"), record.keys());
-        Assert.assertEquals(Arrays.asList(expectedNode, expectedEdge), record.values());
+        Assertions.assertFalse(iterator.hasNext());
+        Assertions.assertEquals(Arrays.asList("a", "r"), record.keys());
+        Assertions.assertEquals(Arrays.asList(expectedNode, expectedEdge), record.values());
 
         // test for local cache updates
 
@@ -450,26 +451,26 @@ public class GraphAPITest {
         expectedEdge.setSource(2);
         expectedEdge.setDestination(3);
         expectedEdge.setId(1);
-        Assert.assertNotNull(client.query("CREATE (:worker{lastName:'a'})"));
-        Assert.assertNotNull(client.query("CREATE (:worker{lastName:'b'})"));
-        Assert.assertNotNull(client.query(
+        Assertions.assertNotNull(client.query("CREATE (:worker{lastName:'a'})"));
+        Assertions.assertNotNull(client.query("CREATE (:worker{lastName:'b'})"));
+        Assertions.assertNotNull(client.query(
                 "MATCH (a:worker), (b:worker) WHERE (a.lastName = 'a' AND b.lastName='b')  CREATE (a)-[:worksWith]->(b)"));
         resultSet = client.query("MATCH (a:worker)-[r:worksWith]->(b:worker) RETURN a,r");
-        Assert.assertNotNull(resultSet.getHeader());
+        Assertions.assertNotNull(resultSet.getHeader());
         header = resultSet.getHeader();
         schemaNames = header.getSchemaNames();
-        Assert.assertNotNull(schemaNames);
-        Assert.assertEquals(2, schemaNames.size());
-        Assert.assertEquals("a", schemaNames.get(0));
-        Assert.assertEquals("r", schemaNames.get(1));
-        Assert.assertEquals(1, resultSet.size());
+        Assertions.assertNotNull(schemaNames);
+        Assertions.assertEquals(2, schemaNames.size());
+        Assertions.assertEquals("a", schemaNames.get(0));
+        Assertions.assertEquals("r", schemaNames.get(1));
+        Assertions.assertEquals(1, resultSet.size());
 
         iterator = resultSet.iterator();
-        Assert.assertTrue(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
         record = iterator.next();
-        Assert.assertFalse(iterator.hasNext());
-        Assert.assertEquals(Arrays.asList("a", "r"), record.keys());
-        Assert.assertEquals(Arrays.asList(expectedNode, expectedEdge), record.values());
+        Assertions.assertFalse(iterator.hasNext());
+        Assertions.assertEquals(Arrays.asList("a", "r"), record.keys());
+        Assertions.assertEquals(Arrays.asList(expectedNode, expectedEdge), record.values());
 
     }
 
@@ -478,14 +479,14 @@ public class GraphAPITest {
         Map<String, Object> params1 = new HashMap<String, Object>();
         params1.put("s1", "S\"'");
         params1.put("s2", "S'\"");
-        Assert.assertNotNull(client.query("CREATE (:escaped{s1:$s1,s2:$s2})", params1));
+        Assertions.assertNotNull(client.query("CREATE (:escaped{s1:$s1,s2:$s2})", params1));
 
         Map<String, Object> params2 = new HashMap<String, Object>();
         params2.put("s1", "S\"'");
         params2.put("s2", "S'\"");
-        Assert.assertNotNull(client.query("MATCH (n) where n.s1=$s1 and n.s2=$s2 RETURN n", params2));
+        Assertions.assertNotNull(client.query("MATCH (n) where n.s1=$s1 and n.s2=$s2 RETURN n", params2));
 
-        Assert.assertNotNull(client.query("MATCH (n) where n.s1='S\"' RETURN n"));
+        Assertions.assertNotNull(client.query("MATCH (n) where n.s1='S\"' RETURN n"));
 
     }
 
@@ -533,67 +534,67 @@ public class GraphAPITest {
         params.put("boolValue", boolValue);
         params.put("doubleValue", doubleValue);
         try (GraphContext c = client.getContext()) {
-            Assert.assertNotNull(c.query(
+            Assertions.assertNotNull(c.query(
                     "CREATE (:person{name:$name, age:$age, doubleValue:$doubleValue, boolValue:$boolValue})", params));
-            Assert.assertNotNull(c.query("CREATE (:person{name:'amit',age:30})"));
-            Assert.assertNotNull(
+            Assertions.assertNotNull(c.query("CREATE (:person{name:'amit',age:30})"));
+            Assertions.assertNotNull(
                     c.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  " +
                             "CREATE (a)-[:knows{place:'TLV', since:2000,doubleValue:3.14, boolValue:false}]->(b)"));
 
             ResultSet resultSet = c.query("MATCH (a:person)-[r:knows]->(b:person) RETURN a,r, " +
                     "a.name, a.age, a.doubleValue, a.boolValue, " +
                     "r.place, r.since, r.doubleValue, r.boolValue");
-            Assert.assertNotNull(resultSet);
+            Assertions.assertNotNull(resultSet);
 
-            Assert.assertEquals(0, resultSet.getStatistics().nodesCreated());
-            Assert.assertEquals(0, resultSet.getStatistics().nodesDeleted());
-            Assert.assertEquals(0, resultSet.getStatistics().labelsAdded());
-            Assert.assertEquals(0, resultSet.getStatistics().propertiesSet());
-            Assert.assertEquals(0, resultSet.getStatistics().relationshipsCreated());
-            Assert.assertEquals(0, resultSet.getStatistics().relationshipsDeleted());
-            Assert.assertNotNull(resultSet.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
+            Assertions.assertEquals(0, resultSet.getStatistics().nodesCreated());
+            Assertions.assertEquals(0, resultSet.getStatistics().nodesDeleted());
+            Assertions.assertEquals(0, resultSet.getStatistics().labelsAdded());
+            Assertions.assertEquals(0, resultSet.getStatistics().propertiesSet());
+            Assertions.assertEquals(0, resultSet.getStatistics().relationshipsCreated());
+            Assertions.assertEquals(0, resultSet.getStatistics().relationshipsDeleted());
+            Assertions.assertNotNull(resultSet.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
 
-            Assert.assertEquals(1, resultSet.size());
+            Assertions.assertEquals(1, resultSet.size());
 
             Iterator<Record> iterator = resultSet.iterator();
-            Assert.assertTrue(iterator.hasNext());
+            Assertions.assertTrue(iterator.hasNext());
             Record record = iterator.next();
-            Assert.assertFalse(iterator.hasNext());
+            Assertions.assertFalse(iterator.hasNext());
 
             Node node = record.getValue(0);
-            Assert.assertNotNull(node);
+            Assertions.assertNotNull(node);
 
-            Assert.assertEquals(expectedNode, node);
+            Assertions.assertEquals(expectedNode, node);
 
             node = record.getValue("a");
-            Assert.assertEquals(expectedNode, node);
+            Assertions.assertEquals(expectedNode, node);
 
             Edge edge = record.getValue(1);
-            Assert.assertNotNull(edge);
-            Assert.assertEquals(expectedEdge, edge);
+            Assertions.assertNotNull(edge);
+            Assertions.assertEquals(expectedEdge, edge);
 
             edge = record.getValue("r");
-            Assert.assertEquals(expectedEdge, edge);
+            Assertions.assertEquals(expectedEdge, edge);
 
-            Assert.assertEquals(Arrays.asList("a", "r", "a.name", "a.age", "a.doubleValue", "a.boolValue",
+            Assertions.assertEquals(Arrays.asList("a", "r", "a.name", "a.age", "a.doubleValue", "a.boolValue",
                     "r.place", "r.since", "r.doubleValue", "r.boolValue"), record.keys());
 
-            Assert.assertEquals(Arrays.asList(expectedNode, expectedEdge,
+            Assertions.assertEquals(Arrays.asList(expectedNode, expectedEdge,
                     name, (long) age, doubleValue, true,
                     place, (long) since, doubleValue, false),
                     record.values());
 
             Node a = record.getValue("a");
             for (String propertyName : expectedNode.getEntityPropertyNames()) {
-                Assert.assertEquals(expectedNode.getProperty(propertyName), a.getProperty(propertyName));
+                Assertions.assertEquals(expectedNode.getProperty(propertyName), a.getProperty(propertyName));
             }
 
-            Assert.assertEquals("roi", record.getString(2));
-            Assert.assertEquals("32", record.getString(3));
-            Assert.assertEquals(32L, ((Long) (record.getValue(3))).longValue());
-            Assert.assertEquals(32L, ((Long) record.getValue("a.age")).longValue());
-            Assert.assertEquals("roi", record.getString("a.name"));
-            Assert.assertEquals("32", record.getString("a.age"));
+            Assertions.assertEquals("roi", record.getString(2));
+            Assertions.assertEquals("32", record.getString(3));
+            Assertions.assertEquals(32L, ((Long) (record.getValue(3))).longValue());
+            Assertions.assertEquals(32L, ((Long) record.getValue("a.age")).longValue());
+            Assertions.assertEquals("roi", record.getString("a.name"));
+            Assertions.assertEquals("32", record.getString("a.age"));
         }
     }
 
@@ -620,76 +621,76 @@ public class GraphAPITest {
         expectedBNode.addProperty(bAgeProperty);
         expectedBNode.addProperty(bListProperty);
 
-        Assert.assertNotNull(client.query("CREATE (:person{name:'a',age:32,array:[0,1,2]})"));
-        Assert.assertNotNull(client.query("CREATE (:person{name:'b',age:30,array:[3,4,5]})"));
+        Assertions.assertNotNull(client.query("CREATE (:person{name:'a',age:32,array:[0,1,2]})"));
+        Assertions.assertNotNull(client.query("CREATE (:person{name:'b',age:30,array:[3,4,5]})"));
 
         // test array
 
         ResultSet resultSet = client.query("WITH [0,1,2] as x return x");
 
         // check header
-        Assert.assertNotNull(resultSet.getHeader());
+        Assertions.assertNotNull(resultSet.getHeader());
         Header header = resultSet.getHeader();
 
         List<String> schemaNames = header.getSchemaNames();
-        Assert.assertNotNull(schemaNames);
-        Assert.assertEquals(1, schemaNames.size());
-        Assert.assertEquals("x", schemaNames.get(0));
+        Assertions.assertNotNull(schemaNames);
+        Assertions.assertEquals(1, schemaNames.size());
+        Assertions.assertEquals("x", schemaNames.get(0));
 
         // check record
-        Assert.assertEquals(1, resultSet.size());
+        Assertions.assertEquals(1, resultSet.size());
 
         Iterator<Record> iterator = resultSet.iterator();
-        Assert.assertTrue(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
         Record record = iterator.next();
-        Assert.assertFalse(iterator.hasNext());
-        Assert.assertEquals(Arrays.asList("x"), record.keys());
+        Assertions.assertFalse(iterator.hasNext());
+        Assertions.assertEquals(Arrays.asList("x"), record.keys());
 
         List<Long> x = record.getValue("x");
-        Assert.assertEquals(Arrays.asList(0L, 1L, 2L), x);
+        Assertions.assertEquals(Arrays.asList(0L, 1L, 2L), x);
 
         // test collect
         resultSet = client.query("MATCH(n) return collect(n) as x");
 
-        Assert.assertNotNull(resultSet.getHeader());
+        Assertions.assertNotNull(resultSet.getHeader());
         header = resultSet.getHeader();
 
         schemaNames = header.getSchemaNames();
-        Assert.assertNotNull(schemaNames);
-        Assert.assertEquals(1, schemaNames.size());
-        Assert.assertEquals("x", schemaNames.get(0));
+        Assertions.assertNotNull(schemaNames);
+        Assertions.assertEquals(1, schemaNames.size());
+        Assertions.assertEquals("x", schemaNames.get(0));
 
         // check record
-        Assert.assertEquals(1, resultSet.size());
+        Assertions.assertEquals(1, resultSet.size());
 
         iterator = resultSet.iterator();
-        Assert.assertTrue(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
         record = iterator.next();
-        Assert.assertFalse(iterator.hasNext());
-        Assert.assertEquals(Arrays.asList("x"), record.keys());
+        Assertions.assertFalse(iterator.hasNext());
+        Assertions.assertEquals(Arrays.asList("x"), record.keys());
         x = record.getValue("x");
-        Assert.assertEquals(Arrays.asList(expectedANode, expectedBNode), x);
+        Assertions.assertEquals(Arrays.asList(expectedANode, expectedBNode), x);
 
         // test unwind
         resultSet = client.query("unwind([0,1,2]) as x return x");
 
-        Assert.assertNotNull(resultSet.getHeader());
+        Assertions.assertNotNull(resultSet.getHeader());
         header = resultSet.getHeader();
 
         schemaNames = header.getSchemaNames();
-        Assert.assertNotNull(schemaNames);
-        Assert.assertEquals(1, schemaNames.size());
-        Assert.assertEquals("x", schemaNames.get(0));
+        Assertions.assertNotNull(schemaNames);
+        Assertions.assertEquals(1, schemaNames.size());
+        Assertions.assertEquals("x", schemaNames.get(0));
 
         // check record
-        Assert.assertEquals(3, resultSet.size());
+        Assertions.assertEquals(3, resultSet.size());
 
         iterator = resultSet.iterator();
         for (long i = 0; i < 3; i++) {
-            Assert.assertTrue(iterator.hasNext());
+            Assertions.assertTrue(iterator.hasNext());
             record = iterator.next();
-            Assert.assertEquals(Arrays.asList("x"), record.keys());
-            Assert.assertEquals(i, (long) record.getValue("x"));
+            Assertions.assertEquals(Arrays.asList("x"), record.keys());
+            Assertions.assertEquals(i, (long) record.getValue("x"));
 
         }
 
@@ -730,10 +731,10 @@ public class GraphAPITest {
 
         ResultSet resultSet = client.query("MATCH p = (:L1)-[:R1*]->(:L1) RETURN p");
 
-        Assert.assertEquals(expectedPaths.size(), resultSet.size());
+        Assertions.assertEquals(expectedPaths.size(), resultSet.size());
         for (Record record : resultSet) {
             Path p = record.getValue("p");
-            Assert.assertTrue(expectedPaths.contains(p));
+            Assertions.assertTrue(expectedPaths.contains(p));
             expectedPaths.remove(p);
         }
 
@@ -742,49 +743,49 @@ public class GraphAPITest {
     @Test
     public void testNullGraphEntities() {
         // Create two nodes connected by a single outgoing edge.
-        Assert.assertNotNull(client.query("CREATE (:L)-[:E]->(:L2)"));
+        Assertions.assertNotNull(client.query("CREATE (:L)-[:E]->(:L2)"));
         // Test a query that produces 1 record with 3 null values.
         ResultSet resultSet = client.query("OPTIONAL MATCH (a:NONEXISTENT)-[e]->(b) RETURN a, e, b");
-        Assert.assertEquals(1, resultSet.size());
+        Assertions.assertEquals(1, resultSet.size());
 
         Iterator<Record> iterator = resultSet.iterator();
-        Assert.assertTrue(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
         Record record = iterator.next();
-        Assert.assertFalse(iterator.hasNext());
-        Assert.assertEquals(Arrays.asList(null, null, null), record.values());
+        Assertions.assertFalse(iterator.hasNext());
+        Assertions.assertEquals(Arrays.asList(null, null, null), record.values());
 
         // Test a query that produces 2 records, with 2 null values in the second.
         resultSet = client.query("MATCH (a) OPTIONAL MATCH (a)-[e]->(b) RETURN a, e, b ORDER BY ID(a)");
-        Assert.assertEquals(2, resultSet.size());
+        Assertions.assertEquals(2, resultSet.size());
 
         iterator = resultSet.iterator();
         record = iterator.next();
-        Assert.assertEquals(3, record.size());
+        Assertions.assertEquals(3, record.size());
 
-        Assert.assertNotNull(record.getValue(0));
-        Assert.assertNotNull(record.getValue(1));
-        Assert.assertNotNull(record.getValue(2));
+        Assertions.assertNotNull(record.getValue(0));
+        Assertions.assertNotNull(record.getValue(1));
+        Assertions.assertNotNull(record.getValue(2));
 
         record = iterator.next();
-        Assert.assertEquals(3, record.size());
+        Assertions.assertEquals(3, record.size());
 
-        Assert.assertNotNull(record.getValue(0));
-        Assert.assertNull(record.getValue(1));
-        Assert.assertNull(record.getValue(2));
+        Assertions.assertNotNull(record.getValue(0));
+        Assertions.assertNull(record.getValue(1));
+        Assertions.assertNull(record.getValue(2));
 
         // Test a query that produces 2 records, the first containing a path and the
         // second containing a null value.
         resultSet = client.query("MATCH (a) OPTIONAL MATCH p = (a)-[e]->(b) RETURN p");
-        Assert.assertEquals(2, resultSet.size());
+        Assertions.assertEquals(2, resultSet.size());
 
         iterator = resultSet.iterator();
         record = iterator.next();
-        Assert.assertEquals(1, record.size());
-        Assert.assertNotNull(record.getValue(0));
+        Assertions.assertEquals(1, record.size());
+        Assertions.assertNotNull(record.getValue(0));
 
         record = iterator.next();
-        Assert.assertEquals(1, record.size());
-        Assert.assertNull(record.getValue(0));
+        Assertions.assertEquals(1, record.size());
+        Assertions.assertNull(record.getValue(0));
     }
 
     @Test
@@ -793,33 +794,33 @@ public class GraphAPITest {
         Map<String, Object> params = new HashMap<>();
         params.put("val", value);
         ResultSet resultSet = client.query("CREATE (n {val:$val}) RETURN n.val", params);
-        Assert.assertEquals(1, resultSet.size());
+        Assertions.assertEquals(1, resultSet.size());
         Record r = resultSet.iterator().next();
-        Assert.assertEquals(Long.valueOf(value), r.getValue(0));
+        Assertions.assertEquals(Long.valueOf(value), r.getValue(0));
     }
 
     @Test
     public void testVecf32() {
         ResultSet resultSet = client.query("RETURN vecf32([2.1, -0.82, 1.3, 4.5]) AS vector");
-        Assert.assertEquals(1, resultSet.size());
+        Assertions.assertEquals(1, resultSet.size());
         Record r = resultSet.iterator().next();
         List<Object> vector = r.getValue(0);
-        Assert.assertEquals(4, vector.size());
+        Assertions.assertEquals(4, vector.size());
         Object res = vector.get(0);
 
         // The result can be either Double or Float depending on the server version
         if ( res instanceof Double) {
             List<Double> v = r.getValue(0);
-            Assert.assertEquals(2.1, v.get(0), 0.01);
-            Assert.assertEquals(-0.82, v.get(1), 0.01);
-            Assert.assertEquals(1.3, v.get(2), 0.01);
-            Assert.assertEquals(4.5, v.get(3), 0.01);
+            Assertions.assertEquals(2.1, v.get(0), 0.01);
+            Assertions.assertEquals(-0.82, v.get(1), 0.01);
+            Assertions.assertEquals(1.3, v.get(2), 0.01);
+            Assertions.assertEquals(4.5, v.get(3), 0.01);
         } else {
             List<Float> v = r.getValue(0);
-            Assert.assertEquals(2.1f, v.get(0), 0.01);
-            Assert.assertEquals(-0.82f, v.get(1), 0.01);
-            Assert.assertEquals(1.3f, v.get(2), 0.01);
-            Assert.assertEquals(4.5f, v.get(3), 0.01);
+            Assertions.assertEquals(2.1f, v.get(0), 0.01);
+            Assertions.assertEquals(-0.82f, v.get(1), 0.01);
+            Assertions.assertEquals(1.3f, v.get(2), 0.01);
+            Assertions.assertEquals(4.5f, v.get(3), 0.01);
         }
     }
 
@@ -831,20 +832,20 @@ public class GraphAPITest {
         Map<String, Object> params = new HashMap<>();
         params.put("val", 1L);
         ResultSet resultSet = client.query("MATCH (n:N {val:$val}) RETURN n.val", params);
-        Assert.assertEquals(1, resultSet.size());
+        Assertions.assertEquals(1, resultSet.size());
         Record r = resultSet.iterator().next();
-        Assert.assertEquals(params.get("val"), r.getValue(0));
-        Assert.assertFalse(resultSet.getStatistics().cachedExecution());
+        Assertions.assertEquals(params.get("val"), r.getValue(0));
+        Assertions.assertFalse(resultSet.getStatistics().cachedExecution());
 
         // Run in loop many times to make sure the query will be loaded
         // from cache at least once
         for (int i = 0; i < 64; i++) {
             resultSet = client.query("MATCH (n:N {val:$val}) RETURN n.val", params);
         }
-        Assert.assertEquals(1, resultSet.size());
+        Assertions.assertEquals(1, resultSet.size());
         r = resultSet.iterator().next();
-        Assert.assertEquals(params.get("val"), r.getValue(0));
-        Assert.assertTrue(resultSet.getStatistics().cachedExecution());
+        Assertions.assertEquals(params.get("val"), r.getValue(0));
+        Assertions.assertTrue(resultSet.getStatistics().cachedExecution());
     }
 
     @Test
@@ -864,18 +865,18 @@ public class GraphAPITest {
         f.put("y", (long) 2);
         expected.put("f", f);
         ResultSet res = client.query("RETURN {a:1, b:'str', c:NULL, d:[1,2,3], e:True, f:{x:1, y:2}}");
-        Assert.assertEquals(1, res.size());
+        Assertions.assertEquals(1, res.size());
         Record r = res.iterator().next();
         Map<String, Object> actual = r.getValue(0);
-        Assert.assertEquals(expected, actual);
+        Assertions.assertEquals(expected, actual);
     }
 
     @Test
     public void testGeoPointLatLon() {
         ResultSet rs = client.query("CREATE (:restaurant"
                 + " {location: point({latitude:30.27822306, longitude:-97.75134723})})");
-        Assert.assertEquals(1, rs.getStatistics().nodesCreated());
-        Assert.assertEquals(1, rs.getStatistics().propertiesSet());
+        Assertions.assertEquals(1, rs.getStatistics().nodesCreated());
+        Assertions.assertEquals(1, rs.getStatistics().propertiesSet());
 
         assertTestGeoPoint();
     }
@@ -884,36 +885,36 @@ public class GraphAPITest {
     public void testGeoPointLonLat() {
         ResultSet rs = client.query("CREATE (:restaurant"
                 + " {location: point({longitude:-97.75134723, latitude:30.27822306})})");
-        Assert.assertEquals(1, rs.getStatistics().nodesCreated());
-        Assert.assertEquals(1, rs.getStatistics().propertiesSet());
+        Assertions.assertEquals(1, rs.getStatistics().nodesCreated());
+        Assertions.assertEquals(1, rs.getStatistics().propertiesSet());
 
         assertTestGeoPoint();
     }
 
     private void assertTestGeoPoint() {
         ResultSet results = client.query("MATCH (restaurant) RETURN restaurant");
-        Assert.assertEquals(1, results.size());
+        Assertions.assertEquals(1, results.size());
         Record record = results.iterator().next();
-        Assert.assertEquals(1, record.size());
-        Assert.assertEquals(Collections.singletonList("restaurant"), record.keys());
+        Assertions.assertEquals(1, record.size());
+        Assertions.assertEquals(Collections.singletonList("restaurant"), record.keys());
         Node node = record.getValue(0);
         Property<?> property = node.getProperty("location");
         Point result = (Point) property.getValue();
 
         Point point = new Point(30.27822306, -97.75134723);
-        Assert.assertEquals(point, result);
-        Assert.assertEquals(30.27822306, result.getLatitude(), 0.01);
-        Assert.assertEquals(-97.75134723, result.getLongitude(), 0.01);
-        Assert.assertEquals("Point{latitude=30.2782230377197, longitude=-97.751350402832}", result.toString());
-        Assert.assertEquals(-132320535, result.hashCode());
+        Assertions.assertEquals(point, result);
+        Assertions.assertEquals(30.27822306, result.getLatitude(), 0.01);
+        Assertions.assertEquals(-97.75134723, result.getLongitude(), 0.01);
+        Assertions.assertEquals("Point{latitude=30.2782230377197, longitude=-97.751350402832}", result.toString());
+        Assertions.assertEquals(-132320535, result.hashCode());
     }
 
     @Test
     public void timeoutArgument() {
         ResultSet rs = client.query("UNWIND range(0,100) AS x WITH x AS x WHERE x = 100 RETURN x", 1L);
-        Assert.assertEquals(1, rs.size());
+        Assertions.assertEquals(1, rs.size());
         Record r = rs.iterator().next();
-        Assert.assertEquals(Long.valueOf(100), r.getValue(0));
+        Assertions.assertEquals(Long.valueOf(100), r.getValue(0));
     }
 
     @Test
@@ -924,29 +925,29 @@ public class GraphAPITest {
         Map<String, Object> params = new HashMap<>();
         params.put("val", 1L);
         ResultSet resultSet = client.readOnlyQuery("MATCH (n:N {val:$val}) RETURN n.val", params);
-        Assert.assertEquals(1, resultSet.size());
+        Assertions.assertEquals(1, resultSet.size());
         Record r = resultSet.iterator().next();
-        Assert.assertEquals(params.get("val"), r.getValue(0));
-        Assert.assertFalse(resultSet.getStatistics().cachedExecution());
+        Assertions.assertEquals(params.get("val"), r.getValue(0));
+        Assertions.assertFalse(resultSet.getStatistics().cachedExecution());
 
         // Run in loop many times to make sure the query will be loaded
         // from cache at least once
         for (int i = 0; i < 64; i++) {
             resultSet = client.readOnlyQuery("MATCH (n:N {val:$val}) RETURN n.val", params);
         }
-        Assert.assertEquals(1, resultSet.size());
+        Assertions.assertEquals(1, resultSet.size());
         r = resultSet.iterator().next();
-        Assert.assertEquals(params.get("val"), r.getValue(0));
-        Assert.assertTrue(resultSet.getStatistics().cachedExecution());
+        Assertions.assertEquals(params.get("val"), r.getValue(0));
+        Assertions.assertTrue(resultSet.getStatistics().cachedExecution());
     }
 
     @Test
     public void testSimpleReadOnly() {
         client.query("CREATE (:person{name:'filipe',age:30})");
         ResultSet rsRo = client.readOnlyQuery("MATCH (a:person) WHERE (a.name = 'filipe') RETURN a.age");
-        Assert.assertEquals(1, rsRo.size());
+        Assertions.assertEquals(1, rsRo.size());
         Record r = rsRo.iterator().next();
-        Assert.assertEquals(Long.valueOf(30), r.getValue(0));
+        Assertions.assertEquals(Long.valueOf(30), r.getValue(0));
     }
 
     @Test
@@ -959,7 +960,7 @@ public class GraphAPITest {
 
             fail("Expected Timeout Exception was not thrown.");
         } catch (GraphException e) {
-            Assert.assertTrue(e.getMessage().contains("Query timed out"));
+            Assertions.assertTrue(e.getMessage().contains("Query timed out"));
         }
     }
 
@@ -979,8 +980,8 @@ public class GraphAPITest {
             ResultSet copiedResultSet = client2.query("MATCH (p:person)-[rel:knows]->(p2:person) RETURN p,rel,p2");
             Iterator<Record> copiedResultSetIterator = copiedResultSet.iterator();
             while (originalResultSetIterator.hasNext()) {
-                Assert.assertTrue(copiedResultSetIterator.hasNext());
-                Assert.assertEquals(originalResultSetIterator.next(), copiedResultSetIterator.next());
+                Assertions.assertTrue(copiedResultSetIterator.hasNext());
+                Assertions.assertEquals(originalResultSetIterator.next(), copiedResultSetIterator.next());
             }
         } finally {
             // Cleanup
@@ -1008,8 +1009,8 @@ public class GraphAPITest {
             ResultSet copiedResultSet = client2.query("MATCH (p:person)-[rel:knows]->(p2:person) RETURN p,rel,p2");
             Iterator<Record> copiedResultSetIterator = copiedResultSet.iterator();
             while (originalResultSetIterator.hasNext()) {
-                Assert.assertTrue(copiedResultSetIterator.hasNext());
-                Assert.assertEquals(originalResultSetIterator.next(), copiedResultSetIterator.next());
+                Assertions.assertTrue(copiedResultSetIterator.hasNext());
+                Assertions.assertEquals(originalResultSetIterator.next(), copiedResultSetIterator.next());
             }
         } finally {
             // Cleanup
