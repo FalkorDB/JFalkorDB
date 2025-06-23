@@ -2,10 +2,10 @@ package com.falkordb;
 
 import java.util.*;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.falkordb.graph_entities.Node;
 import com.falkordb.graph_entities.Property;
@@ -15,13 +15,13 @@ public class PipelineTest {
 
     private GraphContextGenerator api;
 
-    @Before
+    @BeforeEach
     public void createApi() {
         api = FalkorDB.driver().graph("social");
 
     }
 
-    @After
+    @AfterEach
     public void deleteGraph() {
         api.deleteGraph();
         api.close();
@@ -41,39 +41,39 @@ public class PipelineTest {
             List<Object> results = pipeline.syncAndReturnAll();
 
             // Redis set command
-            Assert.assertEquals(String.class, results.get(0).getClass());
-            Assert.assertEquals("OK", results.get(0));
+            Assertions.assertEquals(String.class, results.get(0).getClass());
+            Assertions.assertEquals("OK", results.get(0));
 
             // Redis graph command
-            Assert.assertEquals(ResultSetImpl.class, results.get(1).getClass());
+            Assertions.assertEquals(ResultSetImpl.class, results.get(1).getClass());
             ResultSet resultSet = (ResultSet) results.get(1);
-            Assert.assertEquals(1, resultSet.getStatistics().nodesCreated());
-            Assert.assertEquals(1, resultSet.getStatistics().propertiesSet());
+            Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
+            Assertions.assertEquals(1, resultSet.getStatistics().propertiesSet());
 
-            Assert.assertEquals(ResultSetImpl.class, results.get(2).getClass());
+            Assertions.assertEquals(ResultSetImpl.class, results.get(2).getClass());
             resultSet = (ResultSet) results.get(2);
-            Assert.assertEquals(1, resultSet.getStatistics().nodesCreated());
-            Assert.assertEquals(1, resultSet.getStatistics().propertiesSet());
+            Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
+            Assertions.assertEquals(1, resultSet.getStatistics().propertiesSet());
 
             // Redis incr command
-            Assert.assertEquals(Long.class, results.get(3).getClass());
-            Assert.assertEquals(2L, results.get(3));
+            Assertions.assertEquals(Long.class, results.get(3).getClass());
+            Assertions.assertEquals(2L, results.get(3));
 
             // Redis get command
-            Assert.assertEquals(String.class, results.get(4).getClass());
-            Assert.assertEquals("2", results.get(4));
+            Assertions.assertEquals(String.class, results.get(4).getClass());
+            Assertions.assertEquals("2", results.get(4));
 
             // Graph query result
-            Assert.assertEquals(ResultSetImpl.class, results.get(5).getClass());
+            Assertions.assertEquals(ResultSetImpl.class, results.get(5).getClass());
             resultSet = (ResultSet) results.get(5);
 
-            Assert.assertNotNull(resultSet.getHeader());
+            Assertions.assertNotNull(resultSet.getHeader());
             Header header = resultSet.getHeader();
 
             List<String> schemaNames = header.getSchemaNames();
-            Assert.assertNotNull(schemaNames);
-            Assert.assertEquals(1, schemaNames.size());
-            Assert.assertEquals("n", schemaNames.get(0));
+            Assertions.assertNotNull(schemaNames);
+            Assertions.assertEquals(1, schemaNames.size());
+            Assertions.assertEquals("n", schemaNames.get(0));
 
             Property<String> nameProperty = new Property<>("name", "a");
 
@@ -82,34 +82,34 @@ public class PipelineTest {
             expectedNode.addLabel("Person");
             expectedNode.addProperty(nameProperty);
             // see that the result were pulled from the right graph
-            Assert.assertEquals(1, resultSet.size());
+            Assertions.assertEquals(1, resultSet.size());
 
             Iterator<Record> iterator = resultSet.iterator();
-            Assert.assertTrue(iterator.hasNext());
+            Assertions.assertTrue(iterator.hasNext());
             Record record = iterator.next();
-            Assert.assertFalse(iterator.hasNext());
-            Assert.assertEquals(Arrays.asList("n"), record.keys());
-            Assert.assertEquals(expectedNode, record.getValue("n"));
+            Assertions.assertFalse(iterator.hasNext());
+            Assertions.assertEquals(Arrays.asList("n"), record.keys());
+            Assertions.assertEquals(expectedNode, record.getValue("n"));
 
-            Assert.assertEquals(ResultSetImpl.class, results.get(6).getClass());
+            Assertions.assertEquals(ResultSetImpl.class, results.get(6).getClass());
             resultSet = (ResultSet) results.get(6);
 
-            Assert.assertNotNull(resultSet.getHeader());
+            Assertions.assertNotNull(resultSet.getHeader());
             header = resultSet.getHeader();
 
             schemaNames = header.getSchemaNames();
-            Assert.assertNotNull(schemaNames);
-            Assert.assertEquals(1, schemaNames.size());
-            Assert.assertEquals("label", schemaNames.get(0));
+            Assertions.assertNotNull(schemaNames);
+            Assertions.assertEquals(1, schemaNames.size());
+            Assertions.assertEquals("label", schemaNames.get(0));
 
-            Assert.assertEquals(1, resultSet.size());
+            Assertions.assertEquals(1, resultSet.size());
 
             iterator = resultSet.iterator();
-            Assert.assertTrue(iterator.hasNext());
+            Assertions.assertTrue(iterator.hasNext());
             record = iterator.next();
-            Assert.assertFalse(iterator.hasNext());
-            Assert.assertEquals(Arrays.asList("label"), record.keys());
-            Assert.assertEquals("Person", record.getValue("label"));
+            Assertions.assertFalse(iterator.hasNext());
+            Assertions.assertEquals(Arrays.asList("label"), record.keys());
+            Assertions.assertEquals("Person", record.getValue("label"));
         }
     }
 
@@ -149,31 +149,31 @@ public class PipelineTest {
 
     protected void verifyReadOnlyQueryResults(List<Object> results) {
         // Redis set command
-        Assert.assertEquals(String.class, results.get(0).getClass());
-        Assert.assertEquals("OK", results.get(0));
+        Assertions.assertEquals(String.class, results.get(0).getClass());
+        Assertions.assertEquals("OK", results.get(0));
 
         // Redis graph command
-        Assert.assertEquals(ResultSetImpl.class, results.get(1).getClass());
+        Assertions.assertEquals(ResultSetImpl.class, results.get(1).getClass());
         ResultSet resultSet = (ResultSet) results.get(1);
-        Assert.assertEquals(1, resultSet.getStatistics().nodesCreated());
-        Assert.assertEquals(1, resultSet.getStatistics().propertiesSet());
+        Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
+        Assertions.assertEquals(1, resultSet.getStatistics().propertiesSet());
 
-        Assert.assertEquals(ResultSetImpl.class, results.get(2).getClass());
+        Assertions.assertEquals(ResultSetImpl.class, results.get(2).getClass());
         resultSet = (ResultSet) results.get(2);
-        Assert.assertEquals(1, resultSet.getStatistics().nodesCreated());
-        Assert.assertEquals(1, resultSet.getStatistics().propertiesSet());
+        Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
+        Assertions.assertEquals(1, resultSet.getStatistics().propertiesSet());
 
         // Graph read-only query result
-        Assert.assertEquals(ResultSetImpl.class, results.get(3).getClass());
+        Assertions.assertEquals(ResultSetImpl.class, results.get(3).getClass());
         resultSet = (ResultSet) results.get(3);
 
-        Assert.assertNotNull(resultSet.getHeader());
+        Assertions.assertNotNull(resultSet.getHeader());
         Header header = resultSet.getHeader();
 
         List<String> schemaNames = header.getSchemaNames();
-        Assert.assertNotNull(schemaNames);
-        Assert.assertEquals(1, schemaNames.size());
-        Assert.assertEquals("n", schemaNames.get(0));
+        Assertions.assertNotNull(schemaNames);
+        Assertions.assertEquals(1, schemaNames.size());
+        Assertions.assertEquals("n", schemaNames.get(0));
 
         Property<String> nameProperty = new Property<>("name", "a");
 
@@ -182,34 +182,34 @@ public class PipelineTest {
         expectedNode.addLabel("Person");
         expectedNode.addProperty(nameProperty);
         // see that the result were pulled from the right graph
-        Assert.assertEquals(1, resultSet.size());
+        Assertions.assertEquals(1, resultSet.size());
 
         Iterator<Record> iterator = resultSet.iterator();
-        Assert.assertTrue(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
         Record record = iterator.next();
-        Assert.assertFalse(iterator.hasNext());
-        Assert.assertEquals(Arrays.asList("n"), record.keys());
-        Assert.assertEquals(expectedNode, record.getValue("n"));
+        Assertions.assertFalse(iterator.hasNext());
+        Assertions.assertEquals(Arrays.asList("n"), record.keys());
+        Assertions.assertEquals(expectedNode, record.getValue("n"));
 
-        Assert.assertEquals(ResultSetImpl.class, results.get(4).getClass());
+        Assertions.assertEquals(ResultSetImpl.class, results.get(4).getClass());
         resultSet = (ResultSet) results.get(4);
 
-        Assert.assertNotNull(resultSet.getHeader());
+        Assertions.assertNotNull(resultSet.getHeader());
         header = resultSet.getHeader();
 
         schemaNames = header.getSchemaNames();
-        Assert.assertNotNull(schemaNames);
-        Assert.assertEquals(1, schemaNames.size());
-        Assert.assertEquals("label", schemaNames.get(0));
+        Assertions.assertNotNull(schemaNames);
+        Assertions.assertEquals(1, schemaNames.size());
+        Assertions.assertEquals("label", schemaNames.get(0));
 
-        Assert.assertEquals(1, resultSet.size());
+        Assertions.assertEquals(1, resultSet.size());
 
         iterator = resultSet.iterator();
-        Assert.assertTrue(iterator.hasNext());
+        Assertions.assertTrue(iterator.hasNext());
         record = iterator.next();
-        Assert.assertFalse(iterator.hasNext());
-        Assert.assertEquals(Arrays.asList("label"), record.keys());
-        Assert.assertEquals("Person", record.getValue("label"));
+        Assertions.assertFalse(iterator.hasNext());
+        Assertions.assertEquals(Arrays.asList("label"), record.keys());
+        Assertions.assertEquals("Person", record.getValue("label"));
     }
 
     @Test
@@ -233,8 +233,8 @@ public class PipelineTest {
             ResultSet copiedResultSet = api2.query("MATCH (p:person)-[rel:knows]->(p2:person) RETURN p,rel,p2");
             Iterator<Record> copiedResultSetIterator = copiedResultSet.iterator();
             while (originalResultSetIterator.hasNext()) {
-                Assert.assertTrue(copiedResultSetIterator.hasNext());
-                Assert.assertEquals(originalResultSetIterator.next(), copiedResultSetIterator.next());
+                Assertions.assertTrue(copiedResultSetIterator.hasNext());
+                Assertions.assertEquals(originalResultSetIterator.next(), copiedResultSetIterator.next());
             }
         } finally {
             // Cleanup
