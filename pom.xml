@@ -56,15 +56,10 @@
 	</developers>
 
 	<distributionManagement>
-		<repository>
-			<id>central</id>
-			<name>Sonatype Central</name>
-			<url>https://central.sonatype.dev/maven2</url>
-		</repository>
-		<snapshotRepository>
-			<id>central</id>
-			<url>https://central.sonatype.dev/maven2</url>
-		</snapshotRepository>
+        <repository>
+            <id>central</id>
+            <url>https://central.sonatype.com/api/v1/publisher</url>
+        </repository>
 	</distributionManagement>
 
 	<properties>
