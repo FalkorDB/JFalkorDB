@@ -23,7 +23,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
 
     public GraphTransactionImpl(Connection connection, Graph graph, GraphCache cache, String graphId) {
         // init as in Jedis
-        super(connection);
+        super(connection, false);
         this.graph = graph;
         this.graphId = graphId;
         this.cache = cache;
