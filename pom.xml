@@ -34,11 +34,11 @@
 		<developerConnection>scm:git:git@github.com:FalkorDB/JFalkorDB.git</developerConnection>
 	</scm>
 	<distributionManagement>
-    		<repository>
-        		<id>central</id>
-        		<name>Central Repository</name>
-        		<url>https://central.sonatype.dev/maven2</url>
-    		</repository>
+		<repository>
+			<id>central</id>
+			<name>Central Repository</name>
+			<url>https://central.sonatype.dev/maven2</url>
+		</repository>
 	</distributionManagement>
 	<licenses>
 		<license>
@@ -47,13 +47,13 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
-        <developers>
-           <developer>
-               <id>gkorland</id>
-               <name>Guy Korland</name>
-               <email>gkorland@gmail.com</email>
-           </developer>
-        </developers>
+	<developers>
+		<developer>
+			<id>gkorland</id>
+			<name>Guy Korland</name>
+			<email>gkorland@gmail.com</email>
+		</developer>
+	</developers>
 	<dependencies>
 		<dependency>
 			<groupId>redis.clients</groupId>
@@ -80,7 +80,7 @@
 		<dependency>
 			<groupId>nl.jqno.equalsverifier</groupId>
 			<artifactId>equalsverifier</artifactId>
-			<version>4.0.2</version>
+			<version>3.14.2</version>			<!-- or latest 3.x version -->
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
