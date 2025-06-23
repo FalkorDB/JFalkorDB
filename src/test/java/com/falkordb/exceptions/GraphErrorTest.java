@@ -1,14 +1,14 @@
 package com.falkordb.exceptions;
 
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.falkordb.FalkorDB;
 import com.falkordb.GraphContext;
@@ -18,13 +18,13 @@ public class GraphErrorTest {
 
     private GraphContextGenerator api;
 
-    @Before
+    @BeforeEach
     public void createApi() {
         api = FalkorDB.driver().graph("social");
-        Assert.assertNotNull(api.query("CREATE (:person{mixed_prop: 'strval'}), (:person{mixed_prop: 50})"));
+        Assertions.assertNotNull(api.query("CREATE (:person{mixed_prop: 'strval'}), (:person{mixed_prop: 50})"));
     }
 
-    @After
+    @AfterEach
     public void deleteGraph() throws Exception{
 
         api.deleteGraph();
@@ -52,8 +52,8 @@ public class GraphErrorTest {
             // Issue a query that causes a compile-time error
             api.query("RETURN toUpper(5)");
         } catch (Exception e) {
-            Assert.assertEquals(GraphException.class, e.getClass());
-            Assert.assertTrue(e.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
+            Assertions.assertEquals(GraphException.class, e.getClass());
+            Assertions.assertTrue(e.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
         }
 
         // On general api usage, user should get a new connection
@@ -62,8 +62,8 @@ public class GraphErrorTest {
             // Issue a query that causes a compile-time error
             api.query("MATCH (p:person) RETURN toUpper(p.mixed_prop)");
         } catch (Exception e) {
-            Assert.assertEquals(GraphException.class, e.getClass());
-            Assert.assertTrue(e.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
+            Assertions.assertEquals(GraphException.class, e.getClass());
+            Assertions.assertTrue(e.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
         }
     }
 
@@ -107,8 +107,8 @@ public class GraphErrorTest {
             // Issue a query that causes a compile-time error
             c.query("RETURN toUpper(5)");
         } catch (Exception e) {
-            Assert.assertEquals(GraphException.class, e.getClass());
-            Assert.assertTrue(e.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
+            Assertions.assertEquals(GraphException.class, e.getClass());
+            Assertions.assertTrue(e.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
         }
 
         // On contexted api usage, connection should stay open
@@ -116,8 +116,8 @@ public class GraphErrorTest {
             // Issue a query that causes a compile-time error
             c.query("MATCH (p:person) RETURN toUpper(p.mixed_prop)");
         } catch (Exception e) {
-            Assert.assertEquals(GraphException.class, e.getClass());
-            Assert.assertTrue(e.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
+            Assertions.assertEquals(GraphException.class, e.getClass());
+            Assertions.assertTrue(e.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
         }
     }
 
