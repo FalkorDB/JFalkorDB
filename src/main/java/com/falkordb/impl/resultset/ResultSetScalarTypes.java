@@ -15,7 +15,10 @@ enum ResultSetScalarTypes {
     VALUE_PATH,
     VALUE_MAP,
     VALUE_POINT,
-    VALUE_VECTORF32;
+    VALUE_VECTORF32,
+    VALUE_DATETIME,
+    VALUE_DATE,
+    VALUE_TIME;
 
     private static final ResultSetScalarTypes[] values = values();
 
