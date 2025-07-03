@@ -55,7 +55,7 @@ public class GraphAPITest {
         LocalDate temporal = record.getValue("date");
         Assertions.assertEquals(1984, temporal.getYear());
         Assertions.assertEquals(Month.of(1), temporal.getMonth());
-        Assertions.assertEquals(1, temporal.getDayOfYear());
+        Assertions.assertEquals(1, temporal.getDayOfMonth());
     }
 
     @Test
@@ -67,7 +67,7 @@ public class GraphAPITest {
         LocalDateTime temporal = record.getValue("datetime");
         Assertions.assertEquals(1984, temporal.getYear());
         Assertions.assertEquals(Month.of(1), temporal.getMonth());
-        Assertions.assertEquals(1, temporal.getDayOfYear());
+        Assertions.assertEquals(1, temporal.getDayOfMonth());
         Assertions.assertEquals(12, temporal.getHour());
         Assertions.assertEquals(15, temporal.getMinute());
         Assertions.assertEquals(1, temporal.getSecond());
