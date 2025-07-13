@@ -21,18 +21,18 @@ import redis.clients.jedis.util.SafeEncoder;
  */
 public class GraphContextImpl extends AbstractGraph implements GraphContext {
 
-    private final Jedis connection;
+    private final Jedis jedis;
     private final String graphId;
     private GraphCache cache;
 
     /**
      * Generates a new instance with a specific Jedis connection
-     * @param connection Jedis connection
+     * @param jedis Jedis connection
      * @param cache GraphCache
      * @param graphId graph id 
      */
-    public GraphContextImpl(Jedis connection, GraphCache cache, String graphId) {
-        this.connection = connection;
+    public GraphContextImpl(Jedis jedis, GraphCache cache, String graphId) {
+        this.jedis = jedis;
         this.graphId = graphId;
         this.cache = cache;
     }
@@ -46,7 +46,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     protected ResultSet sendQuery(String preparedQuery) {
         try {
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>) connection.sendCommand(GraphCommand.QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
+            List<Object> rawResponse = (List<Object>) jedis.sendCommand(GraphCommand.QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
             return new ResultSetImpl(rawResponse, this, this.cache);
         } catch (GraphException rt) {
             throw rt;
@@ -64,7 +64,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     protected ResultSet sendReadOnlyQuery(String preparedQuery) {
         try {
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>) connection.sendCommand(GraphCommand.RO_QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
+            List<Object> rawResponse = (List<Object>) jedis.sendCommand(GraphCommand.RO_QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
             return new ResultSetImpl(rawResponse, this, this.cache);
         } catch (GraphException ge) {
             throw ge;
@@ -83,7 +83,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     protected ResultSet sendQuery(String preparedQuery, long timeout) {
         try {
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>) connection.sendBlockingCommand(GraphCommand.QUERY,
+            List<Object> rawResponse = (List<Object>) jedis.sendBlockingCommand(GraphCommand.QUERY,
                     graphId, preparedQuery, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout));
             return new ResultSetImpl(rawResponse, this, this.cache);
         } catch (GraphException rt) {
@@ -103,7 +103,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     protected ResultSet sendReadOnlyQuery(String preparedQuery, long timeout) {
         try {
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>) connection.sendBlockingCommand(GraphCommand.RO_QUERY,
+            List<Object> rawResponse = (List<Object>) jedis.sendBlockingCommand(GraphCommand.RO_QUERY,
                     graphId, preparedQuery, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout));
             return new ResultSetImpl(rawResponse, this, this.cache);
         } catch (GraphException ge) {
@@ -120,7 +120,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     @Override
     public GraphTransaction multi() {
         GraphTransactionImpl transaction = new GraphTransactionImpl(
-                connection.getConnection(), this, this.cache, this.graphId);
+                jedis.getConnection(), this, this.cache, this.graphId);
         transaction.multi();
         return transaction;
     }
@@ -131,7 +131,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public GraphPipeline pipelined() {
-        return new GraphPipelineImpl(connection.getConnection(), this, this.cache, this.graphId);
+        return new GraphPipelineImpl(jedis.getConnection(), this, this.cache, this.graphId);
     }
 
     /**
@@ -141,7 +141,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public String watch(String... keys) {
-        return connection.watch(keys);
+        return jedis.watch(keys);
     }
 
     /**
@@ -150,7 +150,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public String unwatch() {
-        return connection.unwatch();
+        return jedis.unwatch();
     }
 
     /**
@@ -160,7 +160,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public String copyGraph(String destinationGraphId) {
-        Object response = connection.sendCommand(GraphCommand.COPY, graphId, destinationGraphId);
+        Object response = jedis.sendCommand(GraphCommand.COPY, graphId, destinationGraphId);
         return SafeEncoder.encode((byte[]) response);
     }
 
@@ -172,9 +172,9 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     public String deleteGraph() {
         Object response;
         try {
-            response = connection.sendCommand(GraphCommand.DELETE, graphId);
+            response = jedis.sendCommand(GraphCommand.DELETE, graphId);
         } catch (Exception e) {
-            connection.close();
+            jedis.close();
             throw e;
         }
         //clear local state
@@ -188,12 +188,12 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public void close() {
-        this.connection.close();
+        this.jedis.close();
     }
 
     @Override
     public int hashCode() {
-       return this.connection.hashCode();
+       return this.jedis.hashCode();
     }
 
     @Override
@@ -208,6 +208,6 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
         }
 
         final GraphContextImpl other = (GraphContextImpl) o;
-        return this.connection == other.connection;
+        return this.jedis == other.jedis;
     }
 }
