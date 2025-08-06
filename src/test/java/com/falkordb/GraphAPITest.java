@@ -1027,18 +1027,20 @@ public class GraphAPITest {
         client.query("MATCH (a:person), (b:person) WHERE (a.name = 'Alice' AND b.name='Bob') CREATE (a)-[:knows]->(b)");
 
         // Test explain without parameters
-        String explainResult = client.explain("MATCH (p:person) RETURN p");
+        List<String> explainResult = client.explain("MATCH (p:person) RETURN p");
         Assertions.assertNotNull(explainResult);
         Assertions.assertFalse(explainResult.isEmpty());
-        // Should contain typical execution plan keywords
-        Assertions.assertTrue(explainResult.toLowerCase().contains("scan") || 
-                             explainResult.toLowerCase().contains("project") ||
-                             explainResult.toLowerCase().contains("results"));
+        // Should contain typical execution plan keywords in one of the lines
+        boolean containsExpectedKeywords = explainResult.stream()
+            .anyMatch(line -> line.toLowerCase().contains("scan") || 
+                             line.toLowerCase().contains("project") ||
+                             line.toLowerCase().contains("results"));
+        Assertions.assertTrue(containsExpectedKeywords);
 
         // Test explain with parameters
         Map<String, Object> params = new HashMap<>();
         params.put("name", "Alice");
-        String explainWithParams = client.explain("MATCH (p:person) WHERE p.name = $name RETURN p", params);
+        List<String> explainWithParams = client.explain("MATCH (p:person) WHERE p.name = $name RETURN p", params);
         Assertions.assertNotNull(explainWithParams);
         Assertions.assertFalse(explainWithParams.isEmpty());
     }
@@ -1050,14 +1052,14 @@ public class GraphAPITest {
             context.query("CREATE (:person{name:'Charlie',age:35})");
 
             // Test explain using contexted API
-            String explainResult = context.explain("MATCH (p:person) RETURN p");
+            List<String> explainResult = context.explain("MATCH (p:person) RETURN p");
             Assertions.assertNotNull(explainResult);
             Assertions.assertFalse(explainResult.isEmpty());
 
             // Test explain with parameters using contexted API
             Map<String, Object> params = new HashMap<>();
             params.put("name", "Charlie");
-            String explainWithParams = context.explain("MATCH (p:person) WHERE p.name = $name RETURN p", params);
+            List<String> explainWithParams = context.explain("MATCH (p:person) WHERE p.name = $name RETURN p", params);
             Assertions.assertNotNull(explainWithParams);
             Assertions.assertFalse(explainWithParams.isEmpty());
         }

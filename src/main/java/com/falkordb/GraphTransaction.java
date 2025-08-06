@@ -120,17 +120,17 @@ public interface GraphTransaction extends
     /**
      * Get the execution plan for a given query.
      * @param query Cypher query
-     * @return a response which builds the execution plan as string
+     * @return a response which builds the execution plan as list of strings
      */
-    Response<String> explain(String query);
+    Response<List<String>> explain(String query);
 
     /**
      * Get the execution plan for a given query with parameters.
      * @param query Cypher query
      * @param params parameters map
-     * @return a response which builds the execution plan as string
+     * @return a response which builds the execution plan as list of strings
      */
-    Response<String> explain(String query, Map<String, Object> params);
+    Response<List<String>> explain(String query, Map<String, Object> params);
 
 
     /**

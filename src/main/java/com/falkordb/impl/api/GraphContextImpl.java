@@ -1,5 +1,7 @@
 package com.falkordb.impl.api;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.falkordb.GraphContext;
@@ -187,13 +189,30 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      * Sends an explain command using GRAPH.EXPLAIN
      * 
      * @param preparedQuery prepared query
-     * @return execution plan as string
+     * @return execution plan as list of strings
      */
     @Override
-    protected String sendExplain(String preparedQuery) {
+    @SuppressWarnings("unchecked")
+    protected List<String> sendExplain(String preparedQuery) {
         try {
             Object response = connection.sendCommand(GraphCommand.EXPLAIN, graphId, preparedQuery);
-            return SafeEncoder.encode((byte[]) response);
+            
+            // GRAPH.EXPLAIN returns an array of byte arrays, convert to list of strings
+            if (response instanceof List) {
+                List<Object> responseList = (List<Object>) response;
+                List<String> result = new ArrayList<>(responseList.size());
+                for (Object item : responseList) {
+                    if (item instanceof byte[]) {
+                        result.add(SafeEncoder.encode((byte[]) item));
+                    } else {
+                        result.add(item.toString());
+                    }
+                }
+                return result;
+            } else {
+                // Fallback for unexpected response format
+                return Arrays.asList(SafeEncoder.encode((byte[]) response));
+            }
         } catch (GraphException ge) {
             throw ge;
         } catch (JedisDataException de) {

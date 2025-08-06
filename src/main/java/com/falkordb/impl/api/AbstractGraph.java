@@ -154,10 +154,10 @@ public abstract class AbstractGraph implements Graph {
     /**
      * Get the execution plan for a given query.
      * @param query Cypher query
-     * @return execution plan as string
+     * @return execution plan as list of strings
      */
     @Override
-    public String explain(String query) {
+    public List<String> explain(String query) {
         return explain(query, new HashMap<>());
     }
 
@@ -165,10 +165,10 @@ public abstract class AbstractGraph implements Graph {
      * Get the execution plan for a given query with parameters.
      * @param query Cypher query
      * @param params parameters map
-     * @return execution plan as string
+     * @return execution plan as list of strings
      */
     @Override
-    public String explain(String query, Map<String, Object> params) {
+    public List<String> explain(String query, Map<String, Object> params) {
         String preparedQuery = Utils.prepareQuery(query, params);
         return sendExplain(preparedQuery);
     }
@@ -176,7 +176,7 @@ public abstract class AbstractGraph implements Graph {
     /**
      * Sends an explain command. Implementation and context dependent
      * @param preparedQuery prepared query
-     * @return execution plan as string
+     * @return execution plan as list of strings
      */
-    protected abstract String sendExplain(String preparedQuery);
+    protected abstract List<String> sendExplain(String preparedQuery);
 }

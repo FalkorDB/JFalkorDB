@@ -110,17 +110,17 @@ public interface Graph extends Closeable {
     /**
      * Get the execution plan for a given query.
      * @param query Cypher query
-     * @return execution plan as string
+     * @return execution plan as list of strings
      */
-    String explain(String query);
+    List<String> explain(String query);
 
     /**
      * Get the execution plan for a given query with parameters.
      * @param query Cypher query
      * @param params parameters map
-     * @return execution plan as string
+     * @return execution plan as list of strings
      */
-    String explain(String query, Map<String, Object> params);
+    List<String> explain(String query, Map<String, Object> params);
 
     @Override
     void close();

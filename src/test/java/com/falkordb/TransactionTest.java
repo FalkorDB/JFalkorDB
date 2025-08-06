@@ -257,13 +257,15 @@ public class TransactionTest {
             List<Object> results = transaction.exec();
             
             // Check explain results
-            Assertions.assertEquals(String.class, results.get(0).getClass());
-            String explainResult1 = (String) results.get(0);
+            Assertions.assertEquals(List.class, results.get(0).getClass());
+            @SuppressWarnings("unchecked")
+            List<String> explainResult1 = (List<String>) results.get(0);
             Assertions.assertNotNull(explainResult1);
             Assertions.assertFalse(explainResult1.isEmpty());
             
-            Assertions.assertEquals(String.class, results.get(1).getClass());
-            String explainResult2 = (String) results.get(1);
+            Assertions.assertEquals(List.class, results.get(1).getClass());
+            @SuppressWarnings("unchecked")
+            List<String> explainResult2 = (List<String>) results.get(1);
             Assertions.assertNotNull(explainResult2);
             Assertions.assertFalse(explainResult2.isEmpty());
         }
