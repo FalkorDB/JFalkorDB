@@ -122,7 +122,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     protected ResultSet sendProfile(String preparedQuery) {
         try {
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>) connection.sendCommand(GraphCommand.PROFILE, graphId, preparedQuery);
+            List<Object> rawResponse = (List<Object>) connection.sendCommand(GraphCommand.PROFILE, graphId, preparedQuery, Utils.COMPACT_STRING);
             return new ResultSetImpl(rawResponse, this, this.cache);
         } catch (GraphException ge) {
             throw ge;

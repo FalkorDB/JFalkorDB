@@ -227,7 +227,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      */
     @Override
     public Response<ResultSet> profile(String query) {
-        return appendWithResponse(GraphCommand.PROFILE, Arrays.asList(graphId, query), new Builder<ResultSet>() {
+        return appendWithResponse(GraphCommand.PROFILE, Arrays.asList(graphId, query, Utils.COMPACT_STRING), new Builder<ResultSet>() {
             @Override
             public ResultSet build(Object data) {
                 return new ResultSetImpl((List<Object>) data, graph, cache);
@@ -244,7 +244,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      */
     @Override
     public Response<ResultSet> profile(String query, Map<String, Object> params) {
-        return appendWithResponse(GraphCommand.PROFILE, Arrays.asList(graphId, Utils.prepareQuery(query, params)), new Builder<ResultSet>() {
+        return appendWithResponse(GraphCommand.PROFILE, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING), new Builder<ResultSet>() {
             @Override
             public ResultSet build(Object data) {
                 return new ResultSetImpl((List<Object>) data, graph, cache);
