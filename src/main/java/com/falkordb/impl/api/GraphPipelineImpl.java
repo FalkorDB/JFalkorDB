@@ -7,8 +7,12 @@ import com.falkordb.impl.graph_cache.GraphCache;
 import com.falkordb.impl.resultset.ResultSetImpl;
 import redis.clients.jedis.*;
 import redis.clients.jedis.commands.ProtocolCommand;
+import redis.clients.jedis.util.SafeEncoder;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -241,6 +245,47 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
         } finally {
             cache.clear();
         }
+    }
 
+    /**
+     * Get the execution plan for a given query
+     * @param query Cypher query
+     * @return response with the execution plan as list of strings
+     */
+    @Override
+    public Response<List<String>> explain(String query) {
+        return explain(query, Collections.emptyMap());
+    }
+
+    /**
+     * Get the execution plan for a given query with parameters
+     * @param query Cypher query
+     * @param params parameters map
+     * @return response with the execution plan as list of strings
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public Response<List<String>> explain(String query, Map<String, Object> params) {
+        return appendWithResponse(GraphCommand.EXPLAIN, Arrays.asList(graphId, Utils.prepareQuery(query, params)), new Builder<List<String>>() {
+            @Override
+            public List<String> build(Object o) {
+                // GRAPH.EXPLAIN returns an array of byte arrays, convert to list of strings
+                if (o instanceof List) {
+                    List<Object> responseList = (List<Object>) o;
+                    List<String> result = new ArrayList<>(responseList.size());
+                    for (Object item : responseList) {
+                        if (item instanceof byte[]) {
+                            result.add(SafeEncoder.encode((byte[]) item));
+                        } else {
+                            result.add(item.toString());
+                        }
+                    }
+                    return result;
+                } else {
+                    // Fallback for unexpected response format
+                    return Arrays.asList(SafeEncoder.encode((byte[]) o));
+                }
+            }
+        });
     }
 }
