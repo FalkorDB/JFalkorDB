@@ -43,6 +43,13 @@ public abstract class AbstractGraph implements Graph {
     protected abstract ResultSet sendReadOnlyQuery(String preparedQuery, long timeout);
 
     /**
+     * Sends an explain command. Implementation and context dependent
+     * @param preparedQuery prepared query
+     * @return execution plan as list of strings
+     */
+    protected abstract List<String> sendExplain(String preparedQuery);
+
+    /**
      * Execute a Cypher query.
      * @param query Cypher query
      * @return a result set
@@ -172,11 +179,4 @@ public abstract class AbstractGraph implements Graph {
         String preparedQuery = Utils.prepareQuery(query, params);
         return sendExplain(preparedQuery);
     }
-
-    /**
-     * Sends an explain command. Implementation and context dependent
-     * @param preparedQuery prepared query
-     * @return execution plan as list of strings
-     */
-    protected abstract List<String> sendExplain(String preparedQuery);
 }
