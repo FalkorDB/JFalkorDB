@@ -184,6 +184,24 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     }
 
     /**
+     * Sends an explain command using GRAPH.EXPLAIN
+     * 
+     * @param preparedQuery prepared query
+     * @return execution plan as string
+     */
+    @Override
+    protected String sendExplain(String preparedQuery) {
+        try {
+            Object response = connection.sendCommand(GraphCommand.EXPLAIN, graphId, preparedQuery);
+            return SafeEncoder.encode((byte[]) response);
+        } catch (GraphException ge) {
+            throw ge;
+        } catch (JedisDataException de) {
+            throw new GraphException(de);
+        }
+    }
+
+    /**
      * closes the Jedis connection
      */
     @Override

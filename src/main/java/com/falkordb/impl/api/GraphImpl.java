@@ -119,6 +119,20 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
     }
 
     /**
+     * Sends an explain command using GRAPH.EXPLAIN
+     * 
+     * @param preparedQuery prepared query
+     * @return execution plan as string
+     */
+    @Override
+    protected String sendExplain(String preparedQuery) {
+        try (Jedis conn = driver.getConnection()) {
+            Object response = conn.sendCommand(GraphCommand.EXPLAIN, graphId, preparedQuery);
+            return SafeEncoder.encode((byte[]) response);
+        }
+    }
+
+    /**
      * Returns a new ContextedGraph bounded to a Jedis connection from the Jedis
      * pool
      * 

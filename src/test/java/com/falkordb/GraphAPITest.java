@@ -1018,4 +1018,48 @@ public class GraphAPITest {
             client2.close();
         }
     }
+
+    @Test
+    public void testExplain() {
+        // Create some test data first
+        client.query("CREATE (:person{name:'Alice',age:30})");
+        client.query("CREATE (:person{name:'Bob',age:25})");
+        client.query("MATCH (a:person), (b:person) WHERE (a.name = 'Alice' AND b.name='Bob') CREATE (a)-[:knows]->(b)");
+
+        // Test explain without parameters
+        String explainResult = client.explain("MATCH (p:person) RETURN p");
+        Assertions.assertNotNull(explainResult);
+        Assertions.assertFalse(explainResult.isEmpty());
+        // Should contain typical execution plan keywords
+        Assertions.assertTrue(explainResult.toLowerCase().contains("scan") || 
+                             explainResult.toLowerCase().contains("project") ||
+                             explainResult.toLowerCase().contains("results"));
+
+        // Test explain with parameters
+        Map<String, Object> params = new HashMap<>();
+        params.put("name", "Alice");
+        String explainWithParams = client.explain("MATCH (p:person) WHERE p.name = $name RETURN p", params);
+        Assertions.assertNotNull(explainWithParams);
+        Assertions.assertFalse(explainWithParams.isEmpty());
+    }
+
+    @Test
+    public void testExplainContextedAPI() {
+        try (GraphContext context = client.getContext()) {
+            // Create some test data first
+            context.query("CREATE (:person{name:'Charlie',age:35})");
+
+            // Test explain using contexted API
+            String explainResult = context.explain("MATCH (p:person) RETURN p");
+            Assertions.assertNotNull(explainResult);
+            Assertions.assertFalse(explainResult.isEmpty());
+
+            // Test explain with parameters using contexted API
+            Map<String, Object> params = new HashMap<>();
+            params.put("name", "Charlie");
+            String explainWithParams = context.explain("MATCH (p:person) WHERE p.name = $name RETURN p", params);
+            Assertions.assertNotNull(explainWithParams);
+            Assertions.assertFalse(explainWithParams.isEmpty());
+        }
+    }
 }

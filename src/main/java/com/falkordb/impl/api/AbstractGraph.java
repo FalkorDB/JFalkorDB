@@ -3,6 +3,7 @@ package com.falkordb.impl.api;
 import com.falkordb.Graph;
 import com.falkordb.ResultSet;
 import com.falkordb.impl.Utils;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -149,4 +150,33 @@ public abstract class AbstractGraph implements Graph {
         String preparedProcedure = Utils.prepareProcedure(procedure, args, kwargs);
         return query(preparedProcedure);
     }
+
+    /**
+     * Get the execution plan for a given query.
+     * @param query Cypher query
+     * @return execution plan as string
+     */
+    @Override
+    public String explain(String query) {
+        return explain(query, new HashMap<>());
+    }
+
+    /**
+     * Get the execution plan for a given query with parameters.
+     * @param query Cypher query
+     * @param params parameters map
+     * @return execution plan as string
+     */
+    @Override
+    public String explain(String query, Map<String, Object> params) {
+        String preparedQuery = Utils.prepareQuery(query, params);
+        return sendExplain(preparedQuery);
+    }
+
+    /**
+     * Sends an explain command. Implementation and context dependent
+     * @param preparedQuery prepared query
+     * @return execution plan as string
+     */
+    protected abstract String sendExplain(String preparedQuery);
 }
