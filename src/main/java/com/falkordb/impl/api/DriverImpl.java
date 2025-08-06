@@ -1,10 +1,13 @@
 package com.falkordb.impl.api;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.util.Pool;
+import redis.clients.jedis.util.SafeEncoder;
 
 import com.falkordb.Driver;
 
@@ -63,6 +66,42 @@ public class DriverImpl implements Driver {
     @Override
     public Jedis getConnection() {
         return pool.getResource();
+    }
+
+    /**
+     * Lists all graphs in the database
+     * 
+     * @return a list of graph names
+     */
+    @Override
+    public List<String> listGraphs() {
+        try (Jedis conn = getConnection()) {
+            Object response = conn.sendCommand(GraphCommand.LIST);
+            return parseListResponse(response);
+        }
+    }
+
+    /**
+     * Parses the response from GRAPH.LIST command
+     * 
+     * @param response the raw response from Redis
+     * @return a list of graph names
+     */
+    List<String> parseListResponse(Object response) {
+        List<String> graphNames = new ArrayList<>();
+        
+        if (response instanceof List<?>) {
+            List<?> list = (List<?>) response;
+            for (Object item : list) {
+                if (item instanceof byte[]) {
+                    graphNames.add(SafeEncoder.encode((byte[]) item));
+                } else if (item instanceof String) {
+                    graphNames.add((String) item);
+                }
+            }
+        }
+        
+        return graphNames;
     }
 
     /**
