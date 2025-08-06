@@ -1,6 +1,7 @@
 package com.falkordb;
 
 import java.io.Closeable;
+import java.util.List;
 
 import redis.clients.jedis.Jedis;
 
@@ -23,4 +24,11 @@ public interface Driver extends Closeable {
      * @return a underline connection to the database
      */
     Jedis getConnection();
+
+    /**
+     * Lists all available graphs in the database
+     * 
+     * @return a list of graph names
+     */
+    List<String> listGraphs();
 }
