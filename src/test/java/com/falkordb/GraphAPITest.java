@@ -595,6 +595,10 @@ public class GraphAPITest {
             Assertions.assertEquals(32L, ((Long) record.getValue("a.age")).longValue());
             Assertions.assertEquals("roi", record.getString("a.name"));
             Assertions.assertEquals("32", record.getString("a.age"));
+
+            // Test profile functionality in contexted API
+            ResultSet profileResult = c.profile("MATCH (a:person) WHERE (a.name = 'roi') RETURN a.age");
+            Assertions.assertNotNull(profileResult);
         }
     }
 
@@ -962,6 +966,22 @@ public class GraphAPITest {
         } catch (GraphException e) {
             Assertions.assertTrue(e.getMessage().contains("Query timed out"));
         }
+    }
+
+    @Test
+    public void testProfile() {
+        // Create sample data for profiling
+        client.query("CREATE (:person{name:'alice',age:30})");
+        
+        // Test basic profile
+        ResultSet profileResult = client.profile("MATCH (a:person) WHERE (a.name = 'alice') RETURN a.age");
+        Assertions.assertNotNull(profileResult);
+        
+        // Test profile with parameters
+        Map<String, Object> params = new HashMap<>();
+        params.put("name", "alice");
+        ResultSet profileResultWithParams = client.profile("MATCH (a:person) WHERE (a.name = $name) RETURN a.age", params);
+        Assertions.assertNotNull(profileResultWithParams);
     }
 
     @Test

@@ -241,6 +241,22 @@ public class TransactionTest {
         }
     }
 
+    @Test
+    public void testProfile(){
+        try (GraphContext c = api.getContext()) {
+            GraphTransaction transaction = c.multi();
+
+            transaction.query("CREATE (:Person {name:'alice'})");
+            transaction.profile("MATCH (n:Person{name:'alice'}) RETURN n");
+            List<Object> results = transaction.exec();
+
+            // Profile result
+            Assertions.assertEquals(ResultSetImpl.class, results.get(1).getClass());
+            ResultSet profileResult = (ResultSet) results.get(1);
+            Assertions.assertNotNull(profileResult);
+        }
+    }
+
     // Disabled due to bug in FalkorDB caused by using transactions in conjunction with graph copy
     /* @Test
     public void testGraphCopy() {

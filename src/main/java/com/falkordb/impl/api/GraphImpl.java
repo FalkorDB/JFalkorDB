@@ -90,6 +90,21 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
     }
 
     /**
+     * Overrides the abstract function.
+     * Sends the profile query from any Jedis connection received from the Jedis
+     * pool and closes it once done
+     * 
+     * @param preparedQuery prepared query
+     * @return Result set with execution plan and performance metrics
+     */
+    @Override
+    protected ResultSet sendProfile(String preparedQuery) {
+        try (GraphContext contextedGraph = new GraphContextImpl(driver.getConnection(), this.cache, this.graphId)) {
+            return contextedGraph.profile(preparedQuery);
+        }
+    }
+
+    /**
      * Copies the graph
      *
      * @param destinationGraphId duplicated graph name

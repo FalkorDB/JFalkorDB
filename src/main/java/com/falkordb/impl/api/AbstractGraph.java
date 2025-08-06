@@ -42,6 +42,13 @@ public abstract class AbstractGraph implements Graph {
     protected abstract ResultSet sendReadOnlyQuery(String preparedQuery, long timeout);
 
     /**
+     * Sends a profile query to the redis graph. Implementation and context dependent
+     * @param preparedQuery prepared query
+     * @return Result set with execution plan and metrics
+     */
+    protected abstract ResultSet sendProfile(String preparedQuery);
+
+    /**
      * Execute a Cypher query.
      * @param query Cypher query
      * @return a result set
@@ -148,5 +155,29 @@ public abstract class AbstractGraph implements Graph {
 
         String preparedProcedure = Utils.prepareProcedure(procedure, args, kwargs);
         return query(preparedProcedure);
+    }
+
+    /**
+     * Execute a Cypher query and produce an execution plan augmented with metrics
+     * for each operation's execution.
+     * @param query Cypher query
+     * @return a result set with execution plan and performance metrics
+     */
+    @Override
+    public ResultSet profile(String query) {
+        return sendProfile(query);
+    }
+
+    /**
+     * Execute a Cypher query with parameters and produce an execution plan augmented with metrics
+     * for each operation's execution.
+     * @param query Cypher query
+     * @param params parameters map
+     * @return a result set with execution plan and performance metrics
+     */
+    @Override
+    public ResultSet profile(String query, Map<String, Object> params) {
+        String preparedQuery = Utils.prepareQuery(query, params);
+        return sendProfile(preparedQuery);
     }
 }

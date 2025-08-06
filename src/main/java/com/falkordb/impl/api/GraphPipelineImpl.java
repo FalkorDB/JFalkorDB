@@ -220,6 +220,39 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
     }
 
     /**
+     * Execute a Cypher query and produce an execution plan augmented with metrics
+     * for each operation's execution.
+     * @param query Cypher query
+     * @return a response which builds result set with execution plan and performance metrics
+     */
+    @Override
+    public Response<ResultSet> profile(String query) {
+        return appendWithResponse(GraphCommand.PROFILE, Arrays.asList(graphId, query), new Builder<ResultSet>() {
+            @Override
+            public ResultSet build(Object data) {
+                return new ResultSetImpl((List<Object>) data, graph, cache);
+            }
+        });
+    }
+
+    /**
+     * Execute a Cypher query with parameters and produce an execution plan augmented with metrics
+     * for each operation's execution.
+     * @param query Cypher query
+     * @param params parameters map
+     * @return a response which builds result set with execution plan and performance metrics
+     */
+    @Override
+    public Response<ResultSet> profile(String query, Map<String, Object> params) {
+        return appendWithResponse(GraphCommand.PROFILE, Arrays.asList(graphId, Utils.prepareQuery(query, params)), new Builder<ResultSet>() {
+            @Override
+            public ResultSet build(Object data) {
+                return new ResultSetImpl((List<Object>) data, graph, cache);
+            }
+        });
+    }
+
+    /**
      * Copies the graph
      * @param destinationGraphId duplicated graph name
      * @return response with the copy running time statistics

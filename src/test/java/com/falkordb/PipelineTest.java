@@ -213,6 +213,20 @@ public class PipelineTest {
     }
 
     @Test
+    public void testProfile() {
+        try (GraphContext c = api.getContext()) {
+            GraphPipeline pipeline = c.pipelined();
+            pipeline.query("CREATE (:person{name:'alice',age:30})");
+            pipeline.profile("MATCH (a:person) WHERE (a.name = 'alice') RETURN a.age");
+            List<Object> results = pipeline.syncAndReturnAll();
+            
+            // Check that profile result is not null
+            ResultSet profileResult = (ResultSet) results.get(1);
+            Assertions.assertNotNull(profileResult);
+        }
+    }
+
+    @Test
     public void testGraphCopy() {
         Iterator<Record> originalResultSetIterator;
         try (GraphContext c = api.getContext()) {
