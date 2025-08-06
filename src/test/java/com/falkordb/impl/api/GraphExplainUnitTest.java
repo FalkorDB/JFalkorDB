@@ -262,6 +262,11 @@ public class GraphExplainUnitTest {
         }
 
         @Override
+        protected ResultSet sendProfile(String preparedQuery) {
+            throw new UnsupportedOperationException("Not implemented for unit test");
+        }
+
+        @Override
         public ResultSet callProcedure(String procedure) {
             throw new UnsupportedOperationException("Not implemented for unit test");
         }
