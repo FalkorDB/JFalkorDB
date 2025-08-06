@@ -259,13 +259,13 @@ public class PipelineTest {
             List<Object> results = pipeline.syncAndReturnAll();
             
             // Check explain results
-            Assertions.assertEquals(List.class, results.get(0).getClass());
+            Assertions.assertTrue(results.get(0) instanceof List);
             @SuppressWarnings("unchecked")
             List<String> explainResult1 = (List<String>) results.get(0);
             Assertions.assertNotNull(explainResult1);
             Assertions.assertFalse(explainResult1.isEmpty());
             
-            Assertions.assertEquals(List.class, results.get(1).getClass());
+            Assertions.assertTrue(results.get(1) instanceof List);
             @SuppressWarnings("unchecked")
             List<String> explainResult2 = (List<String>) results.get(1);
             Assertions.assertNotNull(explainResult2);
