@@ -87,7 +87,7 @@ public class DriverImpl implements Driver {
      * @param response the raw response from Redis
      * @return a list of graph names
      */
-    private List<String> parseListResponse(Object response) {
+    List<String> parseListResponse(Object response) {
         List<String> graphNames = new ArrayList<>();
         
         if (response instanceof List<?>) {
