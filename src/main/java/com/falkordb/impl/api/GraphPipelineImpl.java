@@ -7,8 +7,10 @@ import com.falkordb.impl.graph_cache.GraphCache;
 import com.falkordb.impl.resultset.ResultSetImpl;
 import redis.clients.jedis.*;
 import redis.clients.jedis.commands.ProtocolCommand;
+import redis.clients.jedis.util.SafeEncoder;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -241,6 +243,31 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
         } finally {
             cache.clear();
         }
+    }
 
+    /**
+     * Get the execution plan for a given query
+     * @param query Cypher query
+     * @return response with the execution plan as string
+     */
+    @Override
+    public Response<String> explain(String query) {
+        return explain(query, new HashMap<>());
+    }
+
+    /**
+     * Get the execution plan for a given query with parameters
+     * @param query Cypher query
+     * @param params parameters map
+     * @return response with the execution plan as string
+     */
+    @Override
+    public Response<String> explain(String query, Map<String, Object> params) {
+        return appendWithResponse(GraphCommand.EXPLAIN, Arrays.asList(graphId, Utils.prepareQuery(query, params)), new Builder<String>() {
+            @Override
+            public String build(Object o) {
+                return SafeEncoder.encode((byte[]) o);
+            }
+        });
     }
 }

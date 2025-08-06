@@ -241,6 +241,34 @@ public class TransactionTest {
         }
     }
 
+    @Test
+    public void testExplainInTransaction(){
+        try (GraphContext c = api.getContext()) {
+            // Create some test data first
+            c.query("CREATE (:Person {name:'Alice'})");
+            
+            GraphTransaction transaction = c.multi();
+            transaction.explain("MATCH (p:Person) RETURN p");
+            
+            Map<String, Object> params = new HashMap<>();
+            params.put("name", "Alice");
+            transaction.explain("MATCH (p:Person) WHERE p.name = $name RETURN p", params);
+            
+            List<Object> results = transaction.exec();
+            
+            // Check explain results
+            Assertions.assertEquals(String.class, results.get(0).getClass());
+            String explainResult1 = (String) results.get(0);
+            Assertions.assertNotNull(explainResult1);
+            Assertions.assertFalse(explainResult1.isEmpty());
+            
+            Assertions.assertEquals(String.class, results.get(1).getClass());
+            String explainResult2 = (String) results.get(1);
+            Assertions.assertNotNull(explainResult2);
+            Assertions.assertFalse(explainResult2.isEmpty());
+        }
+    }
+
     // Disabled due to bug in FalkorDB caused by using transactions in conjunction with graph copy
     /* @Test
     public void testGraphCopy() {

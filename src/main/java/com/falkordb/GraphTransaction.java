@@ -117,6 +117,21 @@ public interface GraphTransaction extends
      */
     Response<String> deleteGraph();
 
+    /**
+     * Get the execution plan for a given query.
+     * @param query Cypher query
+     * @return a response which builds the execution plan as string
+     */
+    Response<String> explain(String query);
+
+    /**
+     * Get the execution plan for a given query with parameters.
+     * @param query Cypher query
+     * @param params parameters map
+     * @return a response which builds the execution plan as string
+     */
+    Response<String> explain(String query, Map<String, Object> params);
+
 
     /**
      * executes the transaction
