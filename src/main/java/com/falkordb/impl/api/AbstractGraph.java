@@ -3,6 +3,7 @@ package com.falkordb.impl.api;
 import com.falkordb.Graph;
 import com.falkordb.ResultSet;
 import com.falkordb.impl.Utils;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -165,7 +166,7 @@ public abstract class AbstractGraph implements Graph {
      */
     @Override
     public List<String> explain(String query) {
-        return explain(query, new HashMap<>());
+        return explain(query, Collections.emptyMap());
     }
 
     /**

@@ -11,6 +11,7 @@ import redis.clients.jedis.util.SafeEncoder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -253,7 +254,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      */
     @Override
     public Response<List<String>> explain(String query) {
-        return explain(query, new HashMap<>());
+        return explain(query, Collections.emptyMap());
     }
 
     /**
