@@ -3,6 +3,7 @@ package com.falkordb.impl.api;
 import com.falkordb.Graph;
 import com.falkordb.ResultSet;
 import com.falkordb.impl.Utils;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,6 +48,13 @@ public abstract class AbstractGraph implements Graph {
      * @return Result set with execution plan and metrics
      */
     protected abstract ResultSet sendProfile(String preparedQuery);
+  
+    /**
+     * Sends an explain command. Implementation and context dependent
+     * @param preparedQuery prepared query
+     * @return execution plan as list of strings
+     */
+    protected abstract List<String> sendExplain(String preparedQuery);
 
     /**
      * Execute a Cypher query.
@@ -179,5 +187,27 @@ public abstract class AbstractGraph implements Graph {
     public ResultSet profile(String query, Map<String, Object> params) {
         String preparedQuery = Utils.prepareQuery(query, params);
         return sendProfile(preparedQuery);
+    }
+  
+    /**
+     * Get the execution plan for a given query.
+     * @param query Cypher query
+     * @return execution plan as list of strings
+     */
+    @Override
+    public List<String> explain(String query) {
+        return sendExplain(query);
+    }
+
+    /**
+     * Get the execution plan for a given query with parameters.
+     * @param query Cypher query
+     * @param params parameters map
+     * @return execution plan as list of strings
+     */
+    @Override
+    public List<String> explain(String query, Map<String, Object> params) {
+        String preparedQuery = Utils.prepareQuery(query, params);
+        return sendExplain(preparedQuery);
     }
 }
