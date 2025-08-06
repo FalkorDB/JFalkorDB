@@ -247,13 +247,32 @@ public class TransactionTest {
             GraphTransaction transaction = c.multi();
 
             transaction.query("CREATE (:Person {name:'alice'})");
+            transaction.query("CREATE (:Person {name:'bob'})");
             transaction.profile("MATCH (n:Person{name:'alice'}) RETURN n");
             List<Object> results = transaction.exec();
 
             // Profile result
-            Assertions.assertEquals(ResultSetImpl.class, results.get(1).getClass());
-            ResultSet profileResult = (ResultSet) results.get(1);
+            Assertions.assertEquals(ResultSetImpl.class, results.get(2).getClass());
+            ResultSet profileResult = (ResultSet) results.get(2);
             Assertions.assertNotNull(profileResult);
+            
+            // Verify profile result contains execution plan operations
+            Assertions.assertTrue(profileResult.size() > 0, "Profile result should contain execution plan operations");
+            
+            // Verify profile result has a header with columns
+            Header header = profileResult.getHeader();
+            Assertions.assertNotNull(header, "Profile result should have a header");
+            Assertions.assertTrue(header.getSchemaNames().size() > 0, "Profile result header should have columns");
+            
+            // Verify profile result contains execution plan data
+            Iterator<Record> iterator = profileResult.iterator();
+            Assertions.assertTrue(iterator.hasNext(), "Profile result should have execution plan operations");
+            Record record = iterator.next();
+            Assertions.assertNotNull(record, "Profile result record should not be null");
+            Assertions.assertTrue(record.size() > 0, "Profile result record should have values");
+            
+            // Verify profile result has statistics (execution metrics)
+            Assertions.assertNotNull(profileResult.getStatistics(), "Profile result should have statistics");
         }
     }
 
