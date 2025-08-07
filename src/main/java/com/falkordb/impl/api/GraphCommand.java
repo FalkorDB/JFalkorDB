@@ -22,6 +22,11 @@ public enum GraphCommand implements ProtocolCommand {
      * Represents the graph.DELETE command.
      */
     DELETE("graph.DELETE"),
+  
+    /**
+     * Represents the graph.EXPLAIN command.
+     */
+    EXPLAIN("graph.EXPLAIN"),
     /**
      * Represents the graph.LIST command.
      */
