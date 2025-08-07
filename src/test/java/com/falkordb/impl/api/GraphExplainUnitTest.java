@@ -51,8 +51,7 @@ public class GraphExplainUnitTest {
         Assertions.assertEquals("            NodeByLabelScan", result.get(3));
 
         // Verify that query was properly prepared
-        String expectedPreparedQuery = Utils.prepareQuery(query, new HashMap<>());
-        Assertions.assertEquals(expectedPreparedQuery, testGraph.getLastPreparedQuery());
+        Assertions.assertEquals(query, testGraph.getLastPreparedQuery());
     }
 
     @Test
