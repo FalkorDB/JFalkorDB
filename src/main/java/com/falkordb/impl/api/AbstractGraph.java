@@ -3,7 +3,6 @@ package com.falkordb.impl.api;
 import com.falkordb.Graph;
 import com.falkordb.ResultSet;
 import com.falkordb.impl.Utils;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -160,7 +159,6 @@ public abstract class AbstractGraph implements Graph {
 
     @Override
     public ResultSet callProcedure(String procedure, List<String> args  , Map<String, List<String>> kwargs){
-
         String preparedProcedure = Utils.prepareProcedure(procedure, args, kwargs);
         return query(preparedProcedure);
     }
@@ -173,8 +171,7 @@ public abstract class AbstractGraph implements Graph {
      */
     @Override
     public ResultSet profile(String query) {
-        String preparedQuery = Utils.prepareQuery(query, new HashMap<>());
-        return sendProfile(preparedQuery);
+        return sendProfile(query);
     }
 
     /**
@@ -197,8 +194,7 @@ public abstract class AbstractGraph implements Graph {
      */
     @Override
     public List<String> explain(String query) {
-        String preparedQuery = Utils.prepareQuery(query, new HashMap<>());
-        return sendExplain(preparedQuery);
+        return sendExplain(query);
     }
 
     /**
