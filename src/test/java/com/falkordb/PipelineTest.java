@@ -242,4 +242,34 @@ public class PipelineTest {
             api2.close();
         }
     }
+
+    @Test
+    public void testExplainInPipeline(){
+        try (GraphContext c = api.getContext()) {
+            // Create some test data first
+            c.query("CREATE (:Person {name:'Bob'})");
+            
+            GraphPipeline pipeline = c.pipelined();
+            pipeline.explain("MATCH (p:Person) RETURN p");
+            
+            Map<String, Object> params = new HashMap<>();
+            params.put("name", "Bob");
+            pipeline.explain("MATCH (p:Person) WHERE p.name = $name RETURN p", params);
+            
+            List<Object> results = pipeline.syncAndReturnAll();
+            
+            // Check explain results
+            Assertions.assertTrue(results.get(0) instanceof List);
+            @SuppressWarnings("unchecked")
+            List<String> explainResult1 = (List<String>) results.get(0);
+            Assertions.assertNotNull(explainResult1);
+            Assertions.assertFalse(explainResult1.isEmpty());
+            
+            Assertions.assertTrue(results.get(1) instanceof List);
+            @SuppressWarnings("unchecked")
+            List<String> explainResult2 = (List<String>) results.get(1);
+            Assertions.assertNotNull(explainResult2);
+            Assertions.assertFalse(explainResult2.isEmpty());
+        }
+    }
 }

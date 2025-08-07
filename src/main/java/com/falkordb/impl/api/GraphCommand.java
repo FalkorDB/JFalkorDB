@@ -9,7 +9,9 @@ public enum GraphCommand implements ProtocolCommand {
     QUERY("graph.QUERY"),
     RO_QUERY("graph.RO_QUERY"),
     COPY("graph.COPY"),
-    DELETE("graph.DELETE");
+    DELETE("graph.DELETE"),
+    EXPLAIN("graph.EXPLAIN"),
+    LIST("graph.LIST");
 
     private final byte[] raw;
 
