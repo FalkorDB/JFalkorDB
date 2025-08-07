@@ -21,6 +21,13 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
     private GraphCache cache;
     private final String graphId;
 
+    /**
+     * Creates a new pipeline for a given graph.
+     * @param connection the connection to use
+     * @param graph the graph to use
+     * @param cache the graph cache to use
+     * @param graphId the graph ID to use
+     */
     public GraphPipelineImpl(Connection connection, Graph graph, GraphCache cache, String graphId){
         super(connection);
         this.graph = graph;
@@ -28,6 +35,14 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
         this.graphId = graphId;
     }
 
+    /**
+     * Appends a command to the pipeline.
+     * @param protocolCommand the command to append
+     * @param arguments the command arguments
+     * @param builder the response builder
+     * @param <T> the response type
+     * @return the response
+     */
     protected <T> Response<T> appendWithResponse(ProtocolCommand protocolCommand, List<Object> arguments, Builder<T> builder) {
         CommandArguments commandArguments = new CommandArguments(protocolCommand);
         arguments.forEach(commandArguments::add);

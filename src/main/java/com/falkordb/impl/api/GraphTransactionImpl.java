@@ -21,6 +21,13 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     private final String graphId;
     private GraphCache cache;
 
+    /**
+     * Creates a new transaction for a given graph.
+     * @param connection the connection to use
+     * @param graph the graph to use
+     * @param cache the graph cache to use
+     * @param graphId the graph ID to use
+     */
     public GraphTransactionImpl(Connection connection, Graph graph, GraphCache cache, String graphId) {
         // init as in Jedis
         super(connection, false);
@@ -29,6 +36,14 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
         this.cache = cache;
     }
 
+    /**
+     * Appends a command to the transaction.
+     * @param protocolCommand the command to append
+     * @param arguments the command arguments
+     * @param builder the response builder
+     * @param <T> the response type
+     * @return the response
+     */
     protected <T> Response<T> appendWithResponse(ProtocolCommand protocolCommand, List<Object> arguments, Builder<T> builder) {
         CommandArguments commandArguments = new CommandArguments(protocolCommand);
         arguments.forEach(commandArguments::add);

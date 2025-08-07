@@ -15,6 +15,9 @@ import redis.clients.jedis.exceptions.JedisDataException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * An implementation of the ResultSet interface.
+ */
 public class ResultSetImpl implements ResultSet {
 
     private final Header header;

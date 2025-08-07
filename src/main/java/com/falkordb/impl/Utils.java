@@ -11,15 +11,27 @@ import java.util.stream.Collectors;
  * Utilities class
  */
 public class Utils {
+    /**
+     * A dummy list.
+     */
     public static final List<String> DUMMY_LIST = new ArrayList<>(0);
+    /**
+     * A dummy map.
+     */
     public static final Map<String, List<String>> DUMMY_MAP = new HashMap<>(0);
+    /**
+     * The compact string.
+     */
     public static final String COMPACT_STRING = "--COMPACT";
+    /**
+     * The timeout string.
+     */
     public static final String TIMEOUT_STRING = "TIMEOUT";
 
     private static final CharSequenceTranslator ESCAPE_CHYPER;
     static {
         final Map<CharSequence, CharSequence> escapeJavaMap = new HashMap<>();
-        escapeJavaMap.put("\'", "\\'");
+        escapeJavaMap.put("'", "\'");
         escapeJavaMap.put("\"", "\\\"");
         ESCAPE_CHYPER = new AggregateTranslator(new LookupTranslator(Collections.unmodifiableMap(escapeJavaMap)));
     }

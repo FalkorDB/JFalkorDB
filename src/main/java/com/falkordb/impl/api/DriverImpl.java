@@ -11,6 +11,9 @@ import redis.clients.jedis.util.SafeEncoder;
 
 import com.falkordb.Driver;
 
+/**
+ * A FalkorDB Driver for managing graphs and connections.
+ */
 public class DriverImpl implements Driver {
 
     private final Pool<Jedis> pool;

@@ -5,11 +5,19 @@ import java.util.Objects;
 
 import com.falkordb.Record;
 
+/**
+ * An implementation of the Record interface.
+ */
 public class RecordImpl implements Record {
 
   private final List<String> header;
   private final List<Object> values;
 
+  /**
+   * Creates a new RecordImpl.
+   * @param header the header of the record
+   * @param values the values of the record
+   */
   public RecordImpl(List<String> header, List<Object> values){
     this.header=header;
     this.values = values;

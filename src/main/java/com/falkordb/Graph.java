@@ -4,6 +4,9 @@ import java.io.Closeable;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * An interface for a FalkorDB graph.
+ */
 public interface Graph extends Closeable {
 
     /**
@@ -66,7 +69,7 @@ public interface Graph extends Closeable {
      * @param query Cypher query.
      * @param params parameters map.
      * @param timeout timeout in milliseconds
-     * @return a result set.
+     * @return a result set
      */
     ResultSet readOnlyQuery(String query, Map<String, Object> params, long timeout);
 
