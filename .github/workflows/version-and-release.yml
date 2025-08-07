@@ -8,39 +8,50 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    # Service containers to run with `test-job`
+    services:
+      # Label used to access the service container
+      falkordb:
+        # Docker Hub image
+        image: falkordb/falkordb:edge
+        # Map port 6379 on the Docker host to port 6379 on the FalkorDB container
+        ports:
+          - 6379:6379
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: get version from tag
+      - name: Get version from tag
         id: get_version
         run: |
           realversion="${GITHUB_REF/refs\/tags\//}"
           realversion="${realversion//v/}"
-          echo "::set-output name=VERSION::$realversion"
+          echo "VERSION=$realversion" >> $GITHUB_OUTPUT
 
-      - name: Set up publishing to maven central
+      - name: Set up JDK 8 for publishing to Maven Central
         uses: actions/setup-java@v4
         with:
           java-version: '8'
           distribution: 'temurin'
-          server-id: ossrh
-          server-username: MAVEN_USERNAME
-          server-password: MAVEN_PASSWORD
+          cache: maven
+          server-id: central
+          server-username: MAVEN_CENTRAL_USERNAME
+          server-password: MAVEN_CENTRAL_TOKEN
 
-      - name: mvn versions
+      - name: Update version in POM
         run: mvn versions:set -DnewVersion=${{ steps.get_version.outputs.VERSION }}
 
-      - name: Install gpg key
+      - name: Import GPG key
         run: |
-          cat <(echo -e "${{ secrets.OSSH_GPG_SECRET_KEY }}") | gpg --batch --import
+          echo "${{ secrets.OSSH_GPG_SECRET_KEY }}" | gpg --batch --import
           gpg --list-secret-keys --keyid-format LONG
 
-      - name: Publish
+      - name: Build and deploy to Maven Central
         run: |
           mvn --no-transfer-progress \
             --batch-mode \
-            -Dgpg.passphrase='${{ secrets.OSSH_GPG_SECRET_KEY_PASSWORD }}' \
-            -DskipTests deploy -P release
+            clean deploy
         env:
-          MAVEN_USERNAME: ${{secrets.OSSH_USERNAME}}
-          MAVEN_PASSWORD: ${{secrets.OSSH_PASSWORD}}
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_TOKEN: ${{ secrets.CENTRAL_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.OSSH_GPG_SECRET_KEY_PASSWORD }}
