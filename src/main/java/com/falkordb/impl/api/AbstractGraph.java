@@ -173,7 +173,8 @@ public abstract class AbstractGraph implements Graph {
      */
     @Override
     public ResultSet profile(String query) {
-        return sendProfile(query);
+        String preparedQuery = Utils.prepareQuery(query, new HashMap<>());
+        return sendProfile(preparedQuery);
     }
 
     /**
@@ -196,7 +197,8 @@ public abstract class AbstractGraph implements Graph {
      */
     @Override
     public List<String> explain(String query) {
-        return sendExplain(query);
+        String preparedQuery = Utils.prepareQuery(query, new HashMap<>());
+        return sendExplain(preparedQuery);
     }
 
     /**
