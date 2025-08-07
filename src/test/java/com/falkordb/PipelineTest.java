@@ -213,6 +213,39 @@ public class PipelineTest {
     }
 
     @Test
+    public void testProfile() {
+        try (GraphContext c = api.getContext()) {
+            GraphPipeline pipeline = c.pipelined();
+            pipeline.query("CREATE (:person{name:'alice',age:30})");
+            pipeline.query("CREATE (:person{name:'bob',age:25})");
+            pipeline.profile("MATCH (a:person) WHERE (a.name = 'alice') RETURN a.age");
+            List<Object> results = pipeline.syncAndReturnAll();
+            
+            // Check that profile result is not null and has expected structure
+            ResultSet profileResult = (ResultSet) results.get(2);
+            Assertions.assertNotNull(profileResult);
+            
+            // Verify profile result contains execution plan operations
+            Assertions.assertTrue(profileResult.size() > 0, "Profile result should contain execution plan operations");
+            
+            // Verify profile result has a header with columns
+            Header header = profileResult.getHeader();
+            Assertions.assertNotNull(header, "Profile result should have a header");
+            Assertions.assertTrue(header.getSchemaNames().size() > 0, "Profile result header should have columns");
+            
+            // Verify profile result contains execution plan data
+            Iterator<Record> iterator = profileResult.iterator();
+            Assertions.assertTrue(iterator.hasNext(), "Profile result should have execution plan operations");
+            Record record = iterator.next();
+            Assertions.assertNotNull(record, "Profile result record should not be null");
+            Assertions.assertTrue(record.size() > 0, "Profile result record should have values");
+            
+            // Verify profile result has statistics (execution metrics)
+            Assertions.assertNotNull(profileResult.getStatistics(), "Profile result should have statistics");
+        }
+    }
+
+    @Test
     public void testGraphCopy() {
         Iterator<Record> originalResultSetIterator;
         try (GraphContext c = api.getContext()) {
