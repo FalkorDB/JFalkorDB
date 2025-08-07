@@ -31,7 +31,7 @@ public class Utils {
     private static final CharSequenceTranslator ESCAPE_CHYPER;
     static {
         final Map<CharSequence, CharSequence> escapeJavaMap = new HashMap<>();
-        escapeJavaMap.put("'", "\'");
+        escapeJavaMap.put("\'", "\\'");
         escapeJavaMap.put("\"", "\\\"");
         ESCAPE_CHYPER = new AggregateTranslator(new LookupTranslator(Collections.unmodifiableMap(escapeJavaMap)));
     }
