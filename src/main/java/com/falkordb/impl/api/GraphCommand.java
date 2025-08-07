@@ -14,6 +14,12 @@ public enum GraphCommand implements ProtocolCommand {
      * Represents the graph.RO_QUERY command.
      */
     RO_QUERY("graph.RO_QUERY"),
+
+    /**
+     * Represents the graph.PROFILE command.
+     */
+    PROFILE("graph.PROFILE"),
+  
     /**
      * Represents the graph.COPY command.
      */

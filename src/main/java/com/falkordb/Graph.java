@@ -81,6 +81,23 @@ public interface Graph extends Closeable {
     ResultSet callProcedure(String procedure);
 
     /**
+     * Execute a Cypher query and produce an execution plan augmented with metrics
+     * for each operation's execution.
+     * @param query Cypher query
+     * @return a result set with execution plan and performance metrics
+     */
+    ResultSet profile(String query);
+
+    /**
+     * Execute a Cypher query with parameters and produce an execution plan augmented with metrics
+     * for each operation's execution.
+     * @param query Cypher query
+     * @param params parameters map
+     * @return a result set with execution plan and performance metrics
+     */
+    ResultSet profile(String query, Map<String, Object> params);
+
+    /**
      * Invokes stored procedure with arguments
      * @param procedure procedure name to invoke
      * @param args procedure arguments
