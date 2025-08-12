@@ -11,7 +11,7 @@ import org.testcontainers.utility.DockerImageName;
 
 public class BaseTestContainerTestIT {
     private static final Logger log = LoggerFactory.getLogger(BaseTestContainerTestIT.class);
-    public static final DockerImageName FALOKRDB_IMAGE = DockerImageName.parse("falkordb/falkordb:latest");
+    public static final DockerImageName FALKORDB_IMAGE = DockerImageName.parse("falkordb/falkordb:latest");
 
     @Container
     protected static GenericContainer<?> continerFalkordb;
@@ -19,7 +19,7 @@ public class BaseTestContainerTestIT {
 
     @BeforeAll
     public static void setUpContainer() {
-        continerFalkordb = new GenericContainer<>(FALOKRDB_IMAGE)
+        continerFalkordb = new GenericContainer<>(FALKORDB_IMAGE)
                 .withExposedPorts(falkordbPort)
                 .withLogConsumer(new Slf4jLogConsumer(log)); // Replace 6379 with Falkordb's default port if different
         continerFalkordb.start();
