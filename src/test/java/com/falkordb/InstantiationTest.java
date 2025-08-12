@@ -2,15 +2,17 @@ package com.falkordb;
 
 import java.net.URI;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import com.falkordb.test.BaseTestIT;
+import com.redis.testcontainers.RedisContainer;
+import org.junit.jupiter.api.*;
+import org.testcontainers.junit.jupiter.Container;
 
-public class InstantiationTest {
+public class InstantiationTest extends BaseTestIT {
     private GraphContextGenerator client;
 
     @Test
     public void createDefaultClient() {
+
         client = FalkorDB.driver().graph("g");
         ResultSet resultSet = client.query("CREATE ({name:'bsb'})");
         Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
@@ -18,21 +20,22 @@ public class InstantiationTest {
 
     @Test
     public void createClientWithHostAndPort() {
-        client = FalkorDB.driver("localhost", 6379).graph("g");
+        client = FalkorDB.driver(getFalkordbHost(), getFalkordbPort()).graph("g");
         ResultSet resultSet = client.query("CREATE ({name:'bsb'})");
         Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
     }
 
     @Test
     public void createClientWithHostAndPortNoUser() {
-        client = FalkorDB.driver("localhost", 6379, null, null).graph("g");
+        client = FalkorDB.driver(getFalkordbHost(), getFalkordbPort(), null, null).graph("g");
         ResultSet resultSet = client.query("CREATE ({name:'bsb'})");
         Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
     }
 
     @Test
     public void createClientWithURL() {
-        client = FalkorDB.driver(URI.create("redis://localhost:6379")).graph("g");
+        client = FalkorDB.driver(URI.create(String.format("redis://%s:%d",
+                getFalkordbHost(), getFalkordbPort()))).graph("g");
         ResultSet resultSet = client.query("CREATE ({name:'bsb'})");
         Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
     }
