@@ -3,9 +3,7 @@ package com.falkordb;
 import java.net.URI;
 
 import com.falkordb.test.BaseTestIT;
-import com.redis.testcontainers.RedisContainer;
 import org.junit.jupiter.api.*;
-import org.testcontainers.junit.jupiter.Container;
 
 public class InstantiationTest extends BaseTestIT {
     private GraphContextGenerator client;

@@ -15,7 +15,7 @@ public class BaseTestIT {
 
     @Container
     protected static GenericContainer<?> continerFalkordb;
-    private static int falkordbPort = 6379; // Default port for Falkordb, adjust if necessary
+    private static final int falkordbPort = 6379; // Default port for Falkordb, adjust if necessary
 
     @BeforeAll
     public static void setUpContainer() {
