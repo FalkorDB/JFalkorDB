@@ -6,8 +6,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.utility.DockerImageName;
+
+import java.time.Duration;
 
 public class BaseTestContainerTestIT {
     private static final Logger log = LoggerFactory.getLogger(BaseTestContainerTestIT.class);
@@ -27,8 +30,8 @@ public class BaseTestContainerTestIT {
         containerFalkorDB = new GenericContainer<>(image)
                 .withExposedPorts(FALKORDB_PORT)
                 .withLogConsumer(new Slf4jLogConsumer(log))
-                .waitingFor(org.testcontainers.containers.wait.strategy.Wait.forListeningPort())
-                .withStartupTimeout(java.time.Duration.ofSeconds(90));
+                .waitingFor(Wait.forListeningPort())
+                .withStartupTimeout(Duration.ofSeconds(90));
         containerFalkorDB.start();
     }
 
