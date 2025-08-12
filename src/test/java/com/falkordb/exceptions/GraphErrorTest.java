@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 
+import com.falkordb.test.BaseTestContainerTestIT;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,13 +15,13 @@ import com.falkordb.FalkorDB;
 import com.falkordb.GraphContext;
 import com.falkordb.GraphContextGenerator;
 
-public class GraphErrorTest {
+public class GraphErrorTest extends BaseTestContainerTestIT {
 
     private GraphContextGenerator api;
 
     @BeforeEach
     public void createApi() {
-        api = FalkorDB.driver().graph("social");
+        api = FalkorDB.driver(getFalkordbHost(),getFalkordbPort()).graph("social");
         Assertions.assertNotNull(api.query("CREATE (:person{mixed_prop: 'strval'}), (:person{mixed_prop: 50})"));
     }
 

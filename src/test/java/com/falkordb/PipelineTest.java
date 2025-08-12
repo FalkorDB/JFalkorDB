@@ -261,7 +261,7 @@ public class PipelineTest extends BaseTestContainerTestIT {
             originalResultSetIterator = originalResultSet.iterator();
         }
 
-        GraphContextGenerator api2 = FalkorDB.driver().graph("social-copied");
+        GraphContextGenerator api2 = FalkorDB.driver(getFalkordbHost(),getFalkordbPort()).graph("social-copied");
         try {
             // Compare graph contents
             ResultSet copiedResultSet = api2.query("MATCH (p:person)-[rel:knows]->(p2:person) RETURN p,rel,p2");

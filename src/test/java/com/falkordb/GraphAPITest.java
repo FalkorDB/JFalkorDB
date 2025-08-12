@@ -1041,7 +1041,7 @@ public class GraphAPITest extends BaseTestContainerTestIT {
         // Copy the graph
         client.copyGraph("social-copied");
 
-        GraphContextGenerator client2 = FalkorDB.driver().graph("social-copied");
+        GraphContextGenerator client2 = FalkorDB.driver(getFalkordbHost(),getFalkordbPort()).graph("social-copied");
         try {
             // Compare graph contents
             ResultSet copiedResultSet = client2.query("MATCH (p:person)-[rel:knows]->(p2:person) RETURN p,rel,p2");
@@ -1070,7 +1070,7 @@ public class GraphAPITest extends BaseTestContainerTestIT {
             c.copyGraph("social-copied");
         }
 
-        GraphContextGenerator client2 = FalkorDB.driver().graph("social-copied");
+        GraphContextGenerator client2 = FalkorDB.driver(getFalkordbHost(),getFalkordbPort()).graph("social-copied");
         try {
             // Compare graph contents
             ResultSet copiedResultSet = client2.query("MATCH (p:person)-[rel:knows]->(p2:person) RETURN p,rel,p2");
