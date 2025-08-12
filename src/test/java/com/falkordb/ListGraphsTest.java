@@ -2,17 +2,18 @@ package com.falkordb;
 
 import java.util.List;
 
+import com.falkordb.test.BaseTestContainerTestIT;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class ListGraphsTest {
+public class ListGraphsTest extends BaseTestContainerTestIT {
 
     private Driver driver;
 
     @BeforeEach
     public void setUp() {
-        driver = FalkorDB.driver();
+        driver = FalkorDB.driver(getFalkordbHost(),getFalkordbPort());
     }
 
     @Test

@@ -2,16 +2,16 @@ package com.falkordb;
 
 import java.net.URI;
 
-import com.falkordb.test.BaseTestIT;
+import com.falkordb.test.BaseTestContainerTestIT;
 import org.junit.jupiter.api.*;
 
-public class InstantiationTest extends BaseTestIT {
+public class InstantiationTest extends BaseTestContainerTestIT {
     private GraphContextGenerator client;
 
     @Test
     public void createDefaultClient() {
 
-        client = FalkorDB.driver().graph("g");
+        client = FalkorDB.driver(getFalkordbHost(),getFalkordbPort()).graph("g");
         ResultSet resultSet = client.query("CREATE ({name:'bsb'})");
         Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
     }

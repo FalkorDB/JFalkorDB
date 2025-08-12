@@ -2,6 +2,7 @@ package com.falkordb;
 
 import java.util.*;
 
+import com.falkordb.test.BaseTestContainerTestIT;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,13 +12,13 @@ import com.falkordb.graph_entities.Node;
 import com.falkordb.graph_entities.Property;
 import com.falkordb.impl.resultset.ResultSetImpl;
 
-public class PipelineTest {
+public class PipelineTest extends BaseTestContainerTestIT {
 
     private GraphContextGenerator api;
 
     @BeforeEach
     public void createApi() {
-        api = FalkorDB.driver().graph("social");
+        api = FalkorDB.driver(getFalkordbHost(),getFalkordbPort()).graph("social");
 
     }
 

@@ -9,8 +9,8 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.utility.DockerImageName;
 
-public class BaseTestIT {
-    private static final Logger log = LoggerFactory.getLogger(BaseTestIT.class);
+public class BaseTestContainerTestIT {
+    private static final Logger log = LoggerFactory.getLogger(BaseTestContainerTestIT.class);
     public static final DockerImageName FALOKRDB_IMAGE = DockerImageName.parse("falkordb/falkordb:latest");
 
     @Container
