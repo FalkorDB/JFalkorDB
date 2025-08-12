@@ -12,31 +12,38 @@ import org.testcontainers.utility.DockerImageName;
 public class BaseTestContainerTestIT {
     private static final Logger log = LoggerFactory.getLogger(BaseTestContainerTestIT.class);
     public static final DockerImageName FALKORDB_IMAGE = DockerImageName.parse("falkordb/falkordb:latest");
+    public static final int FALKORDB_PORT = 6379;
 
     @Container
-    protected static GenericContainer<?> continerFalkordb;
+    private static GenericContainer<?> containerFalkorDB;
     private static final int falkordbPort = 6379; // Default port for Falkordb, adjust if necessary
 
     @BeforeAll
     public static void setUpContainer() {
-        continerFalkordb = new GenericContainer<>(FALKORDB_IMAGE)
-                .withExposedPorts(falkordbPort)
-                .withLogConsumer(new Slf4jLogConsumer(log)); // Replace 6379 with Falkordb's default port if different
-        continerFalkordb.start();
+        // allow overriding image via -Dfalkordb.image=repo/image:tag
+        DockerImageName image = DockerImageName.parse(
+                System.getProperty("falkordb.image", FALKORDB_IMAGE.asCanonicalNameString())
+        );
+        containerFalkorDB = new GenericContainer<>(image)
+                .withExposedPorts(FALKORDB_PORT)
+                .withLogConsumer(new Slf4jLogConsumer(log))
+                .waitingFor(org.testcontainers.containers.wait.strategy.Wait.forListeningPort())
+                .withStartupTimeout(java.time.Duration.ofSeconds(90));
+        containerFalkorDB.start();
     }
 
     @AfterAll
     public static void tearDownContainer() {
-        if (continerFalkordb != null) {
-            continerFalkordb.stop();
+        if (containerFalkorDB != null) {
+            containerFalkorDB.stop();
         }
     }
 
     protected int getFalkordbPort() {
-        return continerFalkordb.getFirstMappedPort();
+        return containerFalkorDB.getFirstMappedPort();
     }
 
     protected String getFalkordbHost() {
-        return continerFalkordb.getHost();
+        return containerFalkorDB.getHost();
     }
 }
