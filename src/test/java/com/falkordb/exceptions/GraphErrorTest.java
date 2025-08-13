@@ -1,31 +1,31 @@
 package com.falkordb.exceptions;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.util.HashMap;
-
+import com.falkordb.FalkorDB;
+import com.falkordb.GraphContext;
+import com.falkordb.GraphContextGenerator;
+import com.falkordb.test.BaseTestContainerTestIT;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.falkordb.FalkorDB;
-import com.falkordb.GraphContext;
-import com.falkordb.GraphContextGenerator;
+import java.util.HashMap;
 
-public class GraphErrorTest {
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class GraphErrorTest extends BaseTestContainerTestIT {
 
     private GraphContextGenerator api;
 
     @BeforeEach
     public void createApi() {
-        api = FalkorDB.driver().graph("social");
+        api = FalkorDB.driver(getFalkordbHost(), getFalkordbPort()).graph("social");
         Assertions.assertNotNull(api.query("CREATE (:person{mixed_prop: 'strval'}), (:person{mixed_prop: 50})"));
     }
 
     @AfterEach
-    public void deleteGraph() throws Exception{
+    public void deleteGraph() throws Exception {
 
         api.deleteGraph();
         api.close();

@@ -1,19 +1,20 @@
 package com.falkordb;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
- 
+import com.falkordb.test.BaseTestContainerTestIT;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class IterableTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+public class IterableTest extends BaseTestContainerTestIT {
 
     private GraphContextGenerator api;
 
     @BeforeEach
     public void createApi() {
-        api = FalkorDB.driver().graph("social");
+        api = FalkorDB.driver(getFalkordbHost(), getFalkordbPort()).graph("social");
     }
 
     @AfterEach
