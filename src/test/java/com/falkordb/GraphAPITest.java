@@ -1,26 +1,20 @@
 package com.falkordb;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
+import com.falkordb.Statistics.Label;
+import com.falkordb.exceptions.GraphException;
+import com.falkordb.graph_entities.*;
 import com.falkordb.test.BaseTestContainerTestIT;
-import org.junit.jupiter.api.Assertions;
+import com.falkordb.test.utils.PathBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.falkordb.Statistics.Label;
-import com.falkordb.exceptions.GraphException;
-import com.falkordb.graph_entities.Edge;
-import com.falkordb.graph_entities.Node;
-import com.falkordb.graph_entities.Path;
-import com.falkordb.graph_entities.Point;
-import com.falkordb.graph_entities.Property;
-import com.falkordb.test.utils.PathBuilder;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class GraphAPITest extends BaseTestContainerTestIT {
 
@@ -28,7 +22,7 @@ public class GraphAPITest extends BaseTestContainerTestIT {
 
     @BeforeEach
     public void createApi() {
-        client = FalkorDB.driver(getFalkordbHost(),getFalkordbPort()).graph("social");
+        client = FalkorDB.driver(getFalkordbHost(), getFalkordbPort()).graph("social");
     }
 
     @AfterEach
@@ -294,8 +288,8 @@ public class GraphAPITest extends BaseTestContainerTestIT {
                 "r.place", "r.since", "r.doubleValue", "r.boolValue"), record.keys());
 
         Assertions.assertEquals(Arrays.asList(expectedNode, expectedEdge,
-                name, (long) age, doubleValue, true,
-                place, (long) since, doubleValue, false),
+                        name, (long) age, doubleValue, true,
+                        place, (long) since, doubleValue, false),
                 record.values());
 
         Node a = record.getValue("a");
@@ -581,8 +575,8 @@ public class GraphAPITest extends BaseTestContainerTestIT {
                     "r.place", "r.since", "r.doubleValue", "r.boolValue"), record.keys());
 
             Assertions.assertEquals(Arrays.asList(expectedNode, expectedEdge,
-                    name, (long) age, doubleValue, true,
-                    place, (long) since, doubleValue, false),
+                            name, (long) age, doubleValue, true,
+                            place, (long) since, doubleValue, false),
                     record.values());
 
             Node a = record.getValue("a");
@@ -600,13 +594,13 @@ public class GraphAPITest extends BaseTestContainerTestIT {
             // Test profile functionality in contexted API
             ResultSet profileResult = c.profile("MATCH (a:person) WHERE (a.name = 'roi') RETURN a.age");
             Assertions.assertNotNull(profileResult);
-            
+
             // Verify profile result structure in contexted API
             Assertions.assertTrue(profileResult.size() > 0, "Profile result should contain execution plan operations");
             Header profileHeader = profileResult.getHeader();
             Assertions.assertNotNull(profileHeader, "Profile result should have a header");
             Assertions.assertTrue(profileHeader.getSchemaNames().size() > 0, "Profile result header should have columns");
-            
+
             // Verify profile result contains meaningful data
             Iterator<Record> profileIterator = profileResult.iterator();
             Assertions.assertTrue(profileIterator.hasNext(), "Profile result should have execution plan operations");
@@ -827,7 +821,7 @@ public class GraphAPITest extends BaseTestContainerTestIT {
         Object res = vector.get(0);
 
         // The result can be either Double or Float depending on the server version
-        if ( res instanceof Double) {
+        if (res instanceof Double) {
             List<Double> v = r.getValue(0);
             Assertions.assertEquals(2.1, v.get(0), 0.01);
             Assertions.assertEquals(-0.82, v.get(1), 0.01);
@@ -987,44 +981,44 @@ public class GraphAPITest extends BaseTestContainerTestIT {
         // Create sample data for profiling
         client.query("CREATE (:person{name:'alice',age:30})");
         client.query("CREATE (:person{name:'bob',age:25})");
-        
+
         // Test basic profile
         ResultSet profileResult = client.profile("MATCH (a:person) WHERE (a.name = 'alice') RETURN a.age");
         Assertions.assertNotNull(profileResult);
-        
+
         // Verify profile result has expected structure
         Assertions.assertTrue(profileResult.size() > 0, "Profile result should contain execution plan operations");
-        
+
         // Verify profile result has a header
         Header header = profileResult.getHeader();
         Assertions.assertNotNull(header, "Profile result should have a header");
         Assertions.assertTrue(header.getSchemaNames().size() > 0, "Profile result header should have columns");
-        
+
         // Verify the profile result contains timing information (execution plan data)
         // Profile results typically contain execution plan operations with timing data
         Iterator<Record> iterator = profileResult.iterator();
         Assertions.assertTrue(iterator.hasNext(), "Profile result should have at least one operation");
-        
+
         Record firstRecord = iterator.next();
         Assertions.assertNotNull(firstRecord, "Profile result record should not be null");
         Assertions.assertTrue(firstRecord.size() > 0, "Profile result record should have values");
-        
+
         // Test profile with parameters
         Map<String, Object> params = new HashMap<>();
         params.put("name", "alice");
         ResultSet profileResultWithParams = client.profile("MATCH (a:person) WHERE (a.name = $name) RETURN a.age", params);
         Assertions.assertNotNull(profileResultWithParams);
-        
+
         // Verify parameterized profile result has expected structure
         Assertions.assertTrue(profileResultWithParams.size() > 0, "Parameterized profile result should contain execution plan operations");
         Header paramHeader = profileResultWithParams.getHeader();
         Assertions.assertNotNull(paramHeader, "Parameterized profile result should have a header");
-        
+
         // Test profile with more complex query
         ResultSet complexProfileResult = client.profile("MATCH (p:person) WHERE p.age > 20 RETURN p.name, p.age ORDER BY p.age");
         Assertions.assertNotNull(complexProfileResult);
         Assertions.assertTrue(complexProfileResult.size() > 0, "Complex profile result should contain execution plan operations");
-        
+
         // Verify all profile results have statistics (execution plans should have execution time)
         Assertions.assertNotNull(profileResult.getStatistics(), "Profile result should have statistics");
         Assertions.assertNotNull(profileResultWithParams.getStatistics(), "Parameterized profile result should have statistics");
@@ -1041,7 +1035,7 @@ public class GraphAPITest extends BaseTestContainerTestIT {
         // Copy the graph
         client.copyGraph("social-copied");
 
-        GraphContextGenerator client2 = FalkorDB.driver(getFalkordbHost(),getFalkordbPort()).graph("social-copied");
+        GraphContextGenerator client2 = FalkorDB.driver(getFalkordbHost(), getFalkordbPort()).graph("social-copied");
         try {
             // Compare graph contents
             ResultSet copiedResultSet = client2.query("MATCH (p:person)-[rel:knows]->(p2:person) RETURN p,rel,p2");
@@ -1070,7 +1064,7 @@ public class GraphAPITest extends BaseTestContainerTestIT {
             c.copyGraph("social-copied");
         }
 
-        GraphContextGenerator client2 = FalkorDB.driver(getFalkordbHost(),getFalkordbPort()).graph("social-copied");
+        GraphContextGenerator client2 = FalkorDB.driver(getFalkordbHost(), getFalkordbPort()).graph("social-copied");
         try {
             // Compare graph contents
             ResultSet copiedResultSet = client2.query("MATCH (p:person)-[rel:knows]->(p2:person) RETURN p,rel,p2");
@@ -1099,9 +1093,9 @@ public class GraphAPITest extends BaseTestContainerTestIT {
         Assertions.assertFalse(explainResult.isEmpty());
         // Should contain typical execution plan keywords in one of the lines
         boolean containsExpectedKeywords = explainResult.stream()
-            .anyMatch(line -> line.toLowerCase().contains("scan") || 
-                             line.toLowerCase().contains("project") ||
-                             line.toLowerCase().contains("results"));
+                .anyMatch(line -> line.toLowerCase().contains("scan") ||
+                        line.toLowerCase().contains("project") ||
+                        line.toLowerCase().contains("results"));
         Assertions.assertTrue(containsExpectedKeywords);
 
         // Test explain with parameters

@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
@@ -17,7 +16,6 @@ public class BaseTestContainerTestIT {
     public static final DockerImageName FALKORDB_IMAGE = DockerImageName.parse("falkordb/falkordb:latest");
     public static final int FALKORDB_PORT = 6379;
 
-    @Container
     private static GenericContainer<?> containerFalkorDB;
     private static final int falkordbPort = 6379; // Default port for Falkordb, adjust if necessary
 
