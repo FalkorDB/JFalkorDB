@@ -262,6 +262,8 @@ public class ResultSetImpl implements ResultSet {
                 return Instant.ofEpochSecond((Long) obj)
                         .atZone(ZoneOffset.UTC)
                         .toLocalTime();
+            case VALUE_DURATION:
+                return Duration.ofSeconds((Long) obj);
             case VALUE_UNKNOWN:
             default:
                 return obj;

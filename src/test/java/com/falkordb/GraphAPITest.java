@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -71,6 +72,16 @@ public class GraphAPITest {
         Assertions.assertEquals(12, temporal.getHour());
         Assertions.assertEquals(15, temporal.getMinute());
         Assertions.assertEquals(1, temporal.getSecond());
+    }
+
+    @Test
+    public void testGetDuration(){
+        ResultSet resultSet = client.query("RETURN duration({hours: 2, minutes: 30, seconds: 45}) as duration");
+        Iterator<Record> iterator = resultSet.iterator();
+        Assertions.assertTrue(iterator.hasNext());
+        Record record = iterator.next();
+        Duration temporal = record.getValue("duration");
+        Assertions.assertEquals(2 * 3600 + 30 * 60 + 45, temporal.getSeconds());
     }
 
     @Test

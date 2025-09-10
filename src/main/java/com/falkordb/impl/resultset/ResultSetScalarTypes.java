@@ -18,7 +18,8 @@ enum ResultSetScalarTypes {
     VALUE_VECTORF32,
     VALUE_DATETIME,
     VALUE_DATE,
-    VALUE_TIME;
+    VALUE_TIME,
+    VALUE_DURATION;
 
     private static final ResultSetScalarTypes[] values = values();
 
