@@ -21,7 +21,7 @@ FalkorDB Java client
     <dependency>
       <groupId>com.falkordb</groupId>
       <artifactId>jfalkordb</artifactId>
-      <version>0.4.0</version>
+      <version>0.5.1</version>
     </dependency>
   </dependencies>
 ```
@@ -44,7 +44,7 @@ and
     <dependency>
       <groupId>com.falkordb</groupId>
       <artifactId>jfalkordb</artifactId>
-      <version>0.4.1-SNAPSHOT</version>
+      <version>0.6.0-SNAPSHOT</version>
     </dependency>
   </dependencies>
 ```
