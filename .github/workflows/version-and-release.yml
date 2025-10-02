@@ -43,7 +43,9 @@ jobs:
 
       - name: Import GPG key
         run: |
-          echo "${{ secrets.OSSH_GPG_SECRET_KEY }}" | gpg --batch --import
+          echo "${{ secrets.OSSH_GPG_SECRET_KEY }}" > /tmp/gpg-key.asc
+          gpg --batch --yes --import /tmp/gpg-key.asc
+          rm /tmp/gpg-key.asc
           gpg --list-secret-keys --keyid-format LONG
 
       - name: Build and deploy to Maven Central
