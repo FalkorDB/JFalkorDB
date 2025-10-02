@@ -101,7 +101,6 @@ public class GraphPipelineTransactionExplainUnitTest {
         );
         
         // Validate structure - should be a list of strings
-        Assertions.assertTrue(mockExplainResponse instanceof List);
         Assertions.assertEquals(4, mockExplainResponse.size());
         
         // Convert to expected format
