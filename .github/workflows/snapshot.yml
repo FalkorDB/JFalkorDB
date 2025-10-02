@@ -11,7 +11,7 @@ jobs:
     name: Deploy Snapshot
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up publishing to maven central
         uses: actions/setup-java@v5
         with:
