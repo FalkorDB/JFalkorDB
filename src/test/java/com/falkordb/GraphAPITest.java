@@ -595,6 +595,23 @@ public class GraphAPITest {
             Assertions.assertEquals(32L, ((Long) record.getValue("a.age")).longValue());
             Assertions.assertEquals("roi", record.getString("a.name"));
             Assertions.assertEquals("32", record.getString("a.age"));
+
+            // Test profile functionality in contexted API
+            ResultSet profileResult = c.profile("MATCH (a:person) WHERE (a.name = 'roi') RETURN a.age");
+            Assertions.assertNotNull(profileResult);
+            
+            // Verify profile result structure in contexted API
+            Assertions.assertTrue(profileResult.size() > 0, "Profile result should contain execution plan operations");
+            Header profileHeader = profileResult.getHeader();
+            Assertions.assertNotNull(profileHeader, "Profile result should have a header");
+            Assertions.assertTrue(profileHeader.getSchemaNames().size() > 0, "Profile result header should have columns");
+            
+            // Verify profile result contains meaningful data
+            Iterator<Record> profileIterator = profileResult.iterator();
+            Assertions.assertTrue(profileIterator.hasNext(), "Profile result should have execution plan operations");
+            Record profileRecord = profileIterator.next();
+            Assertions.assertNotNull(profileRecord, "Profile result record should not be null");
+            Assertions.assertTrue(profileRecord.size() > 0, "Profile result record should have values");
         }
     }
 
@@ -988,6 +1005,55 @@ public class GraphAPITest {
     }
 
     @Test
+    public void testProfile() {
+        // Create sample data for profiling
+        client.query("CREATE (:person{name:'alice',age:30})");
+        client.query("CREATE (:person{name:'bob',age:25})");
+        
+        // Test basic profile
+        ResultSet profileResult = client.profile("MATCH (a:person) WHERE (a.name = 'alice') RETURN a.age");
+        Assertions.assertNotNull(profileResult);
+        
+        // Verify profile result has expected structure
+        Assertions.assertTrue(profileResult.size() > 0, "Profile result should contain execution plan operations");
+        
+        // Verify profile result has a header
+        Header header = profileResult.getHeader();
+        Assertions.assertNotNull(header, "Profile result should have a header");
+        Assertions.assertTrue(header.getSchemaNames().size() > 0, "Profile result header should have columns");
+        
+        // Verify the profile result contains timing information (execution plan data)
+        // Profile results typically contain execution plan operations with timing data
+        Iterator<Record> iterator = profileResult.iterator();
+        Assertions.assertTrue(iterator.hasNext(), "Profile result should have at least one operation");
+        
+        Record firstRecord = iterator.next();
+        Assertions.assertNotNull(firstRecord, "Profile result record should not be null");
+        Assertions.assertTrue(firstRecord.size() > 0, "Profile result record should have values");
+        
+        // Test profile with parameters
+        Map<String, Object> params = new HashMap<>();
+        params.put("name", "alice");
+        ResultSet profileResultWithParams = client.profile("MATCH (a:person) WHERE (a.name = $name) RETURN a.age", params);
+        Assertions.assertNotNull(profileResultWithParams);
+        
+        // Verify parameterized profile result has expected structure
+        Assertions.assertTrue(profileResultWithParams.size() > 0, "Parameterized profile result should contain execution plan operations");
+        Header paramHeader = profileResultWithParams.getHeader();
+        Assertions.assertNotNull(paramHeader, "Parameterized profile result should have a header");
+        
+        // Test profile with more complex query
+        ResultSet complexProfileResult = client.profile("MATCH (p:person) WHERE p.age > 20 RETURN p.name, p.age ORDER BY p.age");
+        Assertions.assertNotNull(complexProfileResult);
+        Assertions.assertTrue(complexProfileResult.size() > 0, "Complex profile result should contain execution plan operations");
+        
+        // Verify all profile results have statistics (execution plans should have execution time)
+        Assertions.assertNotNull(profileResult.getStatistics(), "Profile result should have statistics");
+        Assertions.assertNotNull(profileResultWithParams.getStatistics(), "Parameterized profile result should have statistics");
+        Assertions.assertNotNull(complexProfileResult.getStatistics(), "Complex profile result should have statistics");
+    }
+
+    @Test
     public void testGraphCopy() {
         // Create sample data
         client.query("CREATE (:person{name:'roi',age:32})-[:knows]->(:person{name:'amit',age:30})");
@@ -1039,6 +1105,52 @@ public class GraphAPITest {
             // Cleanup
             client2.deleteGraph();
             client2.close();
+        }
+    }
+
+    @Test
+    public void testExplain() {
+        // Create some test data first
+        client.query("CREATE (:person{name:'Alice',age:30})");
+        client.query("CREATE (:person{name:'Bob',age:25})");
+        client.query("MATCH (a:person), (b:person) WHERE (a.name = 'Alice' AND b.name='Bob') CREATE (a)-[:knows]->(b)");
+
+        // Test explain without parameters
+        List<String> explainResult = client.explain("MATCH (p:person) RETURN p");
+        Assertions.assertNotNull(explainResult);
+        Assertions.assertFalse(explainResult.isEmpty());
+        // Should contain typical execution plan keywords in one of the lines
+        boolean containsExpectedKeywords = explainResult.stream()
+            .anyMatch(line -> line.toLowerCase().contains("scan") || 
+                             line.toLowerCase().contains("project") ||
+                             line.toLowerCase().contains("results"));
+        Assertions.assertTrue(containsExpectedKeywords);
+
+        // Test explain with parameters
+        Map<String, Object> params = new HashMap<>();
+        params.put("name", "Alice");
+        List<String> explainWithParams = client.explain("MATCH (p:person) WHERE p.name = $name RETURN p", params);
+        Assertions.assertNotNull(explainWithParams);
+        Assertions.assertFalse(explainWithParams.isEmpty());
+    }
+
+    @Test
+    public void testExplainContextedAPI() {
+        try (GraphContext context = client.getContext()) {
+            // Create some test data first
+            context.query("CREATE (:person{name:'Charlie',age:35})");
+
+            // Test explain using contexted API
+            List<String> explainResult = context.explain("MATCH (p:person) RETURN p");
+            Assertions.assertNotNull(explainResult);
+            Assertions.assertFalse(explainResult.isEmpty());
+
+            // Test explain with parameters using contexted API
+            Map<String, Object> params = new HashMap<>();
+            params.put("name", "Charlie");
+            List<String> explainWithParams = context.explain("MATCH (p:person) WHERE p.name = $name RETURN p", params);
+            Assertions.assertNotNull(explainWithParams);
+            Assertions.assertFalse(explainWithParams.isEmpty());
         }
     }
 }

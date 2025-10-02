@@ -12,6 +12,9 @@ public class Node extends GraphEntity {
     //members
     private final List<String> labels;
 
+    /**
+     * Default constructor.
+     */
     public Node() {
         super();
         labels = new ArrayList<>();

@@ -6,10 +6,37 @@ import redis.clients.jedis.commands.ProtocolCommand;
  * An enum which aligned to FalkorDB Graph commands
  */
 public enum GraphCommand implements ProtocolCommand {
+    /**
+     * Represents the graph.QUERY command.
+     */
     QUERY("graph.QUERY"),
+    /**
+     * Represents the graph.RO_QUERY command.
+     */
     RO_QUERY("graph.RO_QUERY"),
+
+    /**
+     * Represents the graph.PROFILE command.
+     */
+    PROFILE("graph.PROFILE"),
+  
+    /**
+     * Represents the graph.COPY command.
+     */
     COPY("graph.COPY"),
-    DELETE("graph.DELETE");
+    /**
+     * Represents the graph.DELETE command.
+     */
+    DELETE("graph.DELETE"),
+  
+    /**
+     * Represents the graph.EXPLAIN command.
+     */
+    EXPLAIN("graph.EXPLAIN"),
+    /**
+     * Represents the graph.LIST command.
+     */
+    LIST("graph.LIST");
 
     private final byte[] raw;
 

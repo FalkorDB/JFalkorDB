@@ -1,5 +1,8 @@
 package com.falkordb;
 
+/**
+ * An interface for a FalkorDB graph with context.
+ */
 public interface GraphContext extends Graph {
 
     /**

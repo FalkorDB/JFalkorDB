@@ -7,6 +7,10 @@ import com.falkordb.impl.graph_cache.GraphCache;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.util.SafeEncoder;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * An implementation of GraphContextGenerator. 
  */
@@ -90,6 +94,21 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
     }
 
     /**
+     * Overrides the abstract function.
+     * Sends the profile query from any Jedis connection received from the Jedis
+     * pool and closes it once done
+     * 
+     * @param preparedQuery prepared query
+     * @return Result set with execution plan and performance metrics
+     */
+    @Override
+    protected ResultSet sendProfile(String preparedQuery) {
+        try (GraphContext contextedGraph = new GraphContextImpl(driver.getConnection(), this.cache, this.graphId)) {
+            return contextedGraph.profile(preparedQuery);
+        }
+    }
+
+    /**
      * Copies the graph
      *
      * @param destinationGraphId duplicated graph name
@@ -115,6 +134,37 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
             // clear local state
             cache.clear();
             return SafeEncoder.encode((byte[]) response);
+        }
+    }
+
+    /**
+     * Sends an explain command using GRAPH.EXPLAIN
+     * 
+     * @param preparedQuery prepared query
+     * @return execution plan as list of strings
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    protected List<String> sendExplain(String preparedQuery) {
+        try (Jedis conn = driver.getConnection()) {
+            Object response = conn.sendCommand(GraphCommand.EXPLAIN, graphId, preparedQuery);
+            
+            // GRAPH.EXPLAIN returns an array of byte arrays, convert to list of strings
+            if (response instanceof List) {
+                List<Object> responseList = (List<Object>) response;
+                List<String> result = new ArrayList<>(responseList.size());
+                for (Object item : responseList) {
+                    if (item instanceof byte[]) {
+                        result.add(SafeEncoder.encode((byte[]) item));
+                    } else {
+                        result.add(item.toString());
+                    }
+                }
+                return result;
+            } else {
+                // Fallback for unexpected response format
+                return Arrays.asList(SafeEncoder.encode((byte[]) response));
+            }
         }
     }
 

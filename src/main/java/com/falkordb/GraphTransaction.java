@@ -103,6 +103,23 @@ public interface GraphTransaction extends
      */
     Response<ResultSet> callProcedure(String procedure, List<String> args  , Map<String, List<String>> kwargs);
 
+    /**
+     * Execute a Cypher query and produce an execution plan augmented with metrics
+     * for each operation's execution.
+     * @param query Cypher query
+     * @return a response which builds result set with execution plan and performance metrics
+     */
+    Response<ResultSet> profile(String query);
+
+    /**
+     * Execute a Cypher query with parameters and produce an execution plan augmented with metrics
+     * for each operation's execution.
+     * @param query Cypher query
+     * @param params parameters map
+     * @return a response which builds result set with execution plan and performance metrics
+     */
+    Response<ResultSet> profile(String query, Map<String, Object> params);
+
     // Disabled due to bug in FalkorDB caused by using transactions in conjunction with graph copy
     /**
      * Copies the graph
@@ -116,6 +133,21 @@ public interface GraphTransaction extends
      * @return a response which builds the delete running time statistics
      */
     Response<String> deleteGraph();
+
+    /**
+     * Get the execution plan for a given query.
+     * @param query Cypher query
+     * @return a response which builds the execution plan as list of strings
+     */
+    Response<List<String>> explain(String query);
+
+    /**
+     * Get the execution plan for a given query with parameters.
+     * @param query Cypher query
+     * @param params parameters map
+     * @return a response which builds the execution plan as list of strings
+     */
+    Response<List<String>> explain(String query, Map<String, Object> params);
 
 
     /**

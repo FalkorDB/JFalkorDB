@@ -11,7 +11,7 @@
 
 	<groupId>com.falkordb</groupId>
 	<artifactId>jfalkordb</artifactId>
-	<version>0.5.0-SNAPSHOT</version>
+	<version>0.5.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>JFalkorDB</name>
@@ -74,12 +74,12 @@
 		<dependency>
 			<groupId>redis.clients</groupId>
 			<artifactId>jedis</artifactId>
-			<version>6.0.0</version>
+			<version>6.2.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-text</artifactId>
-			<version>1.13.1</version>
+			<version>1.14.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -90,13 +90,13 @@
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
-			<version>5.13.1</version>
+			<version>5.13.4</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>nl.jqno.equalsverifier</groupId>
 			<artifactId>equalsverifier</artifactId>
-			<version>3.14.2</version>
+			<version>3.19.4</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -106,7 +106,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.2.5</version>
+				<version>3.5.4</version>
 			</plugin>
 
 			<plugin>
@@ -146,7 +146,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.11.2</version>
+				<version>3.12.0</version>
 				<executions>
 					<execution>
 						<id>attach-javadocs</id>
@@ -156,7 +156,20 @@
 					</execution>
 				</executions>
 			</plugin>
-
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<version>3.2.8</version>
+				<executions>
+					<execution>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>sign</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.sonatype.central</groupId>
 				<artifactId>central-publishing-maven-plugin</artifactId>

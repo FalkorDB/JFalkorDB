@@ -7,8 +7,12 @@ import com.falkordb.impl.graph_cache.GraphCache;
 import com.falkordb.impl.resultset.ResultSetImpl;
 import redis.clients.jedis.*;
 import redis.clients.jedis.commands.ProtocolCommand;
+import redis.clients.jedis.util.SafeEncoder;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,6 +25,13 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     private final String graphId;
     private GraphCache cache;
 
+    /**
+     * Creates a new transaction for a given graph.
+     * @param connection the connection to use
+     * @param graph the graph to use
+     * @param cache the graph cache to use
+     * @param graphId the graph ID to use
+     */
     public GraphTransactionImpl(Connection connection, Graph graph, GraphCache cache, String graphId) {
         // init as in Jedis
         super(connection, false);
@@ -29,6 +40,14 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
         this.cache = cache;
     }
 
+    /**
+     * Appends a command to the transaction.
+     * @param protocolCommand the command to append
+     * @param arguments the command arguments
+     * @param builder the response builder
+     * @param <T> the response type
+     * @return the response
+     */
     protected <T> Response<T> appendWithResponse(ProtocolCommand protocolCommand, List<Object> arguments, Builder<T> builder) {
         CommandArguments commandArguments = new CommandArguments(protocolCommand);
         arguments.forEach(commandArguments::add);
@@ -220,6 +239,39 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
         return query(preparedProcedure);
     }
 
+    /**
+     * Execute a Cypher query and produce an execution plan augmented with metrics
+     * for each operation's execution, in multi/exec context.
+     * @param query Cypher query
+     * @return a response which builds result set with execution plan and performance metrics
+     */
+    @Override
+    public Response<ResultSet> profile(String query) {
+        return appendWithResponse(GraphCommand.PROFILE, Arrays.asList(graphId, query, Utils.COMPACT_STRING), new Builder<ResultSet>() {
+            @Override
+            public ResultSet build(Object data) {
+                return new ResultSetImpl((List<Object>) data, graph, cache);
+            }
+        });
+    }
+
+    /**
+     * Execute a Cypher query with parameters and produce an execution plan augmented with metrics
+     * for each operation's execution, in multi/exec context.
+     * @param query Cypher query
+     * @param params parameters map
+     * @return a response which builds result set with execution plan and performance metrics
+     */
+    @Override
+    public Response<ResultSet> profile(String query, Map<String, Object> params) {
+        return appendWithResponse(GraphCommand.PROFILE, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING), new Builder<ResultSet>() {
+            @Override
+            public ResultSet build(Object data) {
+                return new ResultSetImpl((List<Object>) data, graph, cache);
+            }
+        });
+    }
+
     // Disabled due to bug in FalkorDB caused by using transactions in conjunction with graph copy
     /**
      * Copies the graph, in multi/exec context
@@ -248,5 +300,47 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
         } finally {
             cache.clear();
         }
+    }
+
+    /**
+     * Get the execution plan for a given query, in multi/exec context
+     * @param query Cypher query
+     * @return response with the execution plan as list of strings
+     */
+    @Override
+    public Response<List<String>> explain(String query) {
+        return explain(query, Collections.emptyMap());
+    }
+
+    /**
+     * Get the execution plan for a given query with parameters, in multi/exec context
+     * @param query Cypher query
+     * @param params parameters map
+     * @return response with the execution plan as list of strings
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public Response<List<String>> explain(String query, Map<String, Object> params) {
+        return appendWithResponse(GraphCommand.EXPLAIN, Arrays.asList(graphId, Utils.prepareQuery(query, params)), new Builder<List<String>>() {
+            @Override
+            public List<String> build(Object o) {
+                // GRAPH.EXPLAIN returns an array of byte arrays, convert to list of strings
+                if (o instanceof List) {
+                    List<Object> responseList = (List<Object>) o;
+                    List<String> result = new ArrayList<>(responseList.size());
+                    for (Object item : responseList) {
+                        if (item instanceof byte[]) {
+                            result.add(SafeEncoder.encode((byte[]) item));
+                        } else {
+                            result.add(item.toString());
+                        }
+                    }
+                    return result;
+                } else {
+                    // Fallback for unexpected response format
+                    return Arrays.asList(SafeEncoder.encode((byte[]) o));
+                }
+            }
+        });
     }
 }

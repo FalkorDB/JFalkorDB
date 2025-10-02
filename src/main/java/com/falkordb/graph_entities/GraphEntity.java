@@ -9,9 +9,18 @@ import java.util.*;
  */
 public abstract class GraphEntity {
     //members
+    /**
+     * The entity's ID.
+     */
     protected long id;
+    /**
+     * The entity's properties.
+     */
     protected final Map<String, Property<?>> propertyMap;
 
+    /**
+     * Default constructor.
+     */
     public GraphEntity() {
         propertyMap = new HashMap<>();
     }
