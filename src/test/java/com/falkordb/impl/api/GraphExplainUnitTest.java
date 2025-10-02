@@ -51,8 +51,7 @@ public class GraphExplainUnitTest {
         Assertions.assertEquals("            NodeByLabelScan", result.get(3));
 
         // Verify that query was properly prepared
-        String expectedPreparedQuery = Utils.prepareQuery(query, new HashMap<>());
-        Assertions.assertEquals(expectedPreparedQuery, testGraph.getLastPreparedQuery());
+        Assertions.assertEquals(query, testGraph.getLastPreparedQuery());
     }
 
     @Test
@@ -259,6 +258,11 @@ public class GraphExplainUnitTest {
             } else {
                 return Arrays.asList("Fallback response");
             }
+        }
+
+        @Override
+        protected ResultSet sendProfile(String preparedQuery) {
+            throw new UnsupportedOperationException("Not implemented for unit test");
         }
 
         @Override

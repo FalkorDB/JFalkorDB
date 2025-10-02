@@ -4,6 +4,9 @@ import java.io.Closeable;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * An interface for a FalkorDB graph.
+ */
 public interface Graph extends Closeable {
 
     /**
@@ -66,7 +69,7 @@ public interface Graph extends Closeable {
      * @param query Cypher query.
      * @param params parameters map.
      * @param timeout timeout in milliseconds
-     * @return a result set.
+     * @return a result set
      */
     ResultSet readOnlyQuery(String query, Map<String, Object> params, long timeout);
 
@@ -76,6 +79,23 @@ public interface Graph extends Closeable {
      * @return result set with the procedure data
      */
     ResultSet callProcedure(String procedure);
+
+    /**
+     * Execute a Cypher query and produce an execution plan augmented with metrics
+     * for each operation's execution.
+     * @param query Cypher query
+     * @return a result set with execution plan and performance metrics
+     */
+    ResultSet profile(String query);
+
+    /**
+     * Execute a Cypher query with parameters and produce an execution plan augmented with metrics
+     * for each operation's execution.
+     * @param query Cypher query
+     * @param params parameters map
+     * @return a result set with execution plan and performance metrics
+     */
+    ResultSet profile(String query, Map<String, Object> params);
 
     /**
      * Invokes stored procedure with arguments

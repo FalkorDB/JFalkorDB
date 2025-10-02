@@ -8,6 +8,7 @@ import com.falkordb.Statistics;
 import com.falkordb.exceptions.GraphException;
 import com.falkordb.graph_entities.*;
 import com.falkordb.impl.graph_cache.GraphCache;
+import com.falkordb.impl.resultset.RecordImpl;
 import redis.clients.jedis.BuilderFactory;
 import redis.clients.jedis.util.SafeEncoder;
 import redis.clients.jedis.exceptions.JedisDataException;
@@ -16,6 +17,9 @@ import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * An implementation of the ResultSet interface.
+ */
 public class ResultSetImpl implements ResultSet {
 
     private final Header header;
@@ -42,7 +46,16 @@ public class ResultSetImpl implements ResultSet {
             throw new GraphException((Throwable) rawResponse.get(rawResponse.size() - 1));
         }
 
-        if (rawResponse.size() != 3) {
+        // Check if this is a profile response (all elements are byte arrays)
+        boolean isProfileResponse = !rawResponse.isEmpty() && 
+                                   rawResponse.stream().allMatch(item -> item instanceof byte[]);
+
+        if (isProfileResponse) {
+            // Handle profile response: each byte array is a line of execution plan
+            header = parseProfileHeader();
+            results = parseProfileResult(rawResponse);
+            statistics = parseStatistics(new ArrayList<>());
+        } else if (rawResponse.size() != 3) {
 
             header = parseHeader(new ArrayList<>());
             results = new ArrayList<>();
@@ -104,12 +117,55 @@ public class ResultSetImpl implements ResultSet {
     }
 
     /**
+     * Parse header for profile results
+     * @return header for execution plan data
+     */
+    private HeaderImpl parseProfileHeader() {
+        // Create a single column header for execution plan text
+        List<List<Object>> headerData = new ArrayList<>();
+        List<Object> column = new ArrayList<>();
+        column.add(0L); // Column type (scalar) - must be Long
+        column.add(SafeEncoder.encode("PLAN")); // Column name
+        headerData.add(column);
+        return new HeaderImpl(headerData);
+    }
+
+    /**
+     * Parse profile result - convert byte arrays to execution plan records
+     * @param rawResponse list of byte arrays representing execution plan lines
+     * @return list of records containing execution plan text
+     */
+    private List<Record> parseProfileResult(List<Object> rawResponse) {
+        List<Record> profileRecords = new ArrayList<>();
+        for (Object item : rawResponse) {
+            if (item instanceof byte[]) {
+                String planLine = SafeEncoder.encode((byte[]) item);
+                List<Object> values = new ArrayList<>();
+                values.add(planLine);
+                profileRecords.add(new RecordImpl(this.header.getSchemaNames(), values));
+            }
+        }
+        return profileRecords;
+    }
+
+    /**
      * @param rawStatistics raw statistics representation
      * @return parsed statistics
      */
     @SuppressWarnings("unchecked")
     private StatisticsImpl parseStatistics(Object rawStatistics) {
-        return new StatisticsImpl((List<byte[]>) rawStatistics);
+        // Handle both List<byte[]> (regular queries) and byte[] (profile queries)
+        if (rawStatistics instanceof List) {
+            return new StatisticsImpl((List<byte[]>) rawStatistics);
+        } else if (rawStatistics instanceof byte[]) {
+            // For profile commands, statistics might come as a single byte array
+            List<byte[]> statisticsList = new ArrayList<>();
+            statisticsList.add((byte[]) rawStatistics);
+            return new StatisticsImpl(statisticsList);
+        } else {
+            // Fallback for other types - create empty statistics
+            return new StatisticsImpl(new ArrayList<>());
+        }
     }
 
     /**

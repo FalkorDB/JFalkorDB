@@ -116,6 +116,24 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     }
 
     /**
+     * Sends the profile query over the instance only connection
+     * @param preparedQuery prepared query
+     * @return Result set with execution plan and performance metrics
+     */
+    @Override
+    protected ResultSet sendProfile(String preparedQuery) {
+        try {
+            @SuppressWarnings("unchecked")
+            List<Object> rawResponse = (List<Object>) connection.sendCommand(GraphCommand.PROFILE, graphId, preparedQuery, Utils.COMPACT_STRING);
+            return new ResultSetImpl(rawResponse, this, this.cache);
+        } catch (GraphException ge) {
+            throw ge;
+        } catch (JedisDataException de) {
+            throw new GraphException(de);
+        }
+    }
+
+    /**
      * Creates a new GraphTransaction transactional object
      * @return new GraphTransaction
      */

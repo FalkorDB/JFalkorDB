@@ -25,6 +25,13 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
     private GraphCache cache;
     private final String graphId;
 
+    /**
+     * Creates a new pipeline for a given graph.
+     * @param connection the connection to use
+     * @param graph the graph to use
+     * @param cache the graph cache to use
+     * @param graphId the graph ID to use
+     */
     public GraphPipelineImpl(Connection connection, Graph graph, GraphCache cache, String graphId){
         super(connection);
         this.graph = graph;
@@ -32,6 +39,14 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
         this.graphId = graphId;
     }
 
+    /**
+     * Appends a command to the pipeline.
+     * @param protocolCommand the command to append
+     * @param arguments the command arguments
+     * @param builder the response builder
+     * @param <T> the response type
+     * @return the response
+     */
     protected <T> Response<T> appendWithResponse(ProtocolCommand protocolCommand, List<Object> arguments, Builder<T> builder) {
         CommandArguments commandArguments = new CommandArguments(protocolCommand);
         arguments.forEach(commandArguments::add);
@@ -221,6 +236,39 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
                                                   Map<String, List<String>> kwargs) {
         String preparedProcedure = Utils.prepareProcedure(procedure, args, kwargs);
         return query(preparedProcedure);
+    }
+
+    /**
+     * Execute a Cypher query and produce an execution plan augmented with metrics
+     * for each operation's execution.
+     * @param query Cypher query
+     * @return a response which builds result set with execution plan and performance metrics
+     */
+    @Override
+    public Response<ResultSet> profile(String query) {
+        return appendWithResponse(GraphCommand.PROFILE, Arrays.asList(graphId, query, Utils.COMPACT_STRING), new Builder<ResultSet>() {
+            @Override
+            public ResultSet build(Object data) {
+                return new ResultSetImpl((List<Object>) data, graph, cache);
+            }
+        });
+    }
+
+    /**
+     * Execute a Cypher query with parameters and produce an execution plan augmented with metrics
+     * for each operation's execution.
+     * @param query Cypher query
+     * @param params parameters map
+     * @return a response which builds result set with execution plan and performance metrics
+     */
+    @Override
+    public Response<ResultSet> profile(String query, Map<String, Object> params) {
+        return appendWithResponse(GraphCommand.PROFILE, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING), new Builder<ResultSet>() {
+            @Override
+            public ResultSet build(Object data) {
+                return new ResultSetImpl((List<Object>) data, graph, cache);
+            }
+        });
     }
 
     /**

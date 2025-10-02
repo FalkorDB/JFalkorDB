@@ -13,6 +13,9 @@ public class Edge extends GraphEntity {
     private long source;
     private long destination;
 
+    /**
+     * Default constructor.
+     */
     public Edge() {
         super();
     }
