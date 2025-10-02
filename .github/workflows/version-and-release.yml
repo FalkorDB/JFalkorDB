@@ -42,11 +42,10 @@ jobs:
         run: mvn versions:set -DnewVersion=${{ steps.get_version.outputs.VERSION }}
 
       - name: Import GPG key
-        run: |
-          echo "${{ secrets.OSSH_GPG_SECRET_KEY }}" > /tmp/gpg-key.asc
-          gpg --batch --yes --import /tmp/gpg-key.asc
-          rm /tmp/gpg-key.asc
-          gpg --list-secret-keys --keyid-format LONG
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.OSSH_GPG_SECRET_KEY }}
+          passphrase: ${{ secrets.OSSH_GPG_SECRET_KEY_PASSWORD }}
 
       - name: Build and deploy to Maven Central
         run: |
