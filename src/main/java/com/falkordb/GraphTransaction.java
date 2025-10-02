@@ -123,7 +123,6 @@ public interface GraphTransaction extends
     // Disabled due to bug in FalkorDB caused by using transactions in conjunction with graph copy
     /**
      * Copies the graph
-     * @param destinationGraphId duplicated graph name
      * @return a response which builds the copy running time statistics
      */
     // Response<String> copyGraph(String destinationGraphId);
