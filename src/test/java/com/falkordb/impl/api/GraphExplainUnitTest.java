@@ -245,7 +245,7 @@ public class GraphExplainUnitTest {
             this.lastPreparedQuery = preparedQuery;
             
             // Simulate the parsing logic from GraphImpl.sendExplain
-            if (mockExplainResponse instanceof List) {
+            if (mockExplainResponse != null) {
                 List<String> result = new ArrayList<>(mockExplainResponse.size());
                 for (Object item : mockExplainResponse) {
                     if (item instanceof byte[]) {
