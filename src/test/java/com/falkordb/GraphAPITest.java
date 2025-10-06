@@ -1,25 +1,24 @@
 package com.falkordb;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import org.junit.jupiter.api.Assertions;
+import com.falkordb.Statistics.Label;
+import com.falkordb.exceptions.GraphException;
+import com.falkordb.graph_entities.*;
+import com.falkordb.test.utils.PathBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.falkordb.Statistics.Label;
-import com.falkordb.exceptions.GraphException;
-import com.falkordb.graph_entities.Edge;
-import com.falkordb.graph_entities.Node;
-import com.falkordb.graph_entities.Path;
-import com.falkordb.graph_entities.Point;
-import com.falkordb.graph_entities.Property;
-import com.falkordb.test.utils.PathBuilder;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Month;
+import java.time.Duration;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class GraphAPITest {
 
@@ -34,6 +33,55 @@ public class GraphAPITest {
     public void deleteGraph() {
         client.deleteGraph();
         client.close();
+    }
+
+    @Test
+    public void testGetTime(){
+        ResultSet resultSet = client.query("RETURN localtime({hour: 12, minute:0, second:0}) as time");
+        Iterator<Record> iterator = resultSet.iterator();
+        Assertions.assertTrue(iterator.hasNext());
+        Record record = iterator.next();
+        LocalTime temporal = record.getValue("time");
+        Assertions.assertEquals(12, temporal.getHour());
+        Assertions.assertEquals(0, temporal.getMinute());
+        Assertions.assertEquals(0, temporal.getSecond());
+    }
+
+    @Test
+    public void testGetDate(){
+        ResultSet resultSet = client.query("RETURN date({year : 1984, month:1, day:1}) as date");
+        Iterator<Record> iterator = resultSet.iterator();
+        Assertions.assertTrue(iterator.hasNext());
+        Record record = iterator.next();
+        LocalDate temporal = record.getValue("date");
+        Assertions.assertEquals(1984, temporal.getYear());
+        Assertions.assertEquals(Month.of(1), temporal.getMonth());
+        Assertions.assertEquals(1, temporal.getDayOfMonth());
+    }
+
+    @Test
+    public void testGetDateTime(){
+        ResultSet resultSet = client.query("RETURN localdatetime({year : 1984, month:1, day:1,hour: 12, minute:15, second:1 }) as datetime");
+        Iterator<Record> iterator = resultSet.iterator();
+        Assertions.assertTrue(iterator.hasNext());
+        Record record = iterator.next();
+        LocalDateTime temporal = record.getValue("datetime");
+        Assertions.assertEquals(1984, temporal.getYear());
+        Assertions.assertEquals(Month.of(1), temporal.getMonth());
+        Assertions.assertEquals(1, temporal.getDayOfMonth());
+        Assertions.assertEquals(12, temporal.getHour());
+        Assertions.assertEquals(15, temporal.getMinute());
+        Assertions.assertEquals(1, temporal.getSecond());
+    }
+
+    @Test
+    public void testGetDuration(){
+        ResultSet resultSet = client.query("RETURN duration({hours: 2, minutes: 30, seconds: 45}) as duration");
+        Iterator<Record> iterator = resultSet.iterator();
+        Assertions.assertTrue(iterator.hasNext());
+        Record record = iterator.next();
+        Duration temporal = record.getValue("duration");
+        Assertions.assertEquals(2 * 3600 + 30 * 60 + 45, temporal.getSeconds());
     }
 
     @Test

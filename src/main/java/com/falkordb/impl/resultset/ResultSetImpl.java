@@ -13,6 +13,7 @@ import redis.clients.jedis.BuilderFactory;
 import redis.clients.jedis.util.SafeEncoder;
 import redis.clients.jedis.exceptions.JedisDataException;
 
+import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -305,6 +306,20 @@ public class ResultSetImpl implements ResultSet {
                 return deserializePoint(obj);
             case VALUE_VECTORF32:
                 return deserializeVector(obj);
+            case VALUE_DATETIME:
+                return Instant.ofEpochSecond((Long) obj)
+                        .atZone(ZoneOffset.UTC)
+                        .toLocalDateTime();
+            case VALUE_DATE:
+                return Instant.ofEpochSecond((Long) obj)
+                        .atZone(ZoneOffset.UTC)
+                        .toLocalDate();
+            case VALUE_TIME:
+                return Instant.ofEpochSecond((Long) obj)
+                        .atZone(ZoneOffset.UTC)
+                        .toLocalTime();
+            case VALUE_DURATION:
+                return Duration.ofSeconds((Long) obj);
             case VALUE_UNKNOWN:
             default:
                 return obj;
