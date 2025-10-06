@@ -38,8 +38,7 @@ jobs:
           
       - name: deploy
         run: |
-          mvn --no-transfer-progress \
-            -DskipTests -Dgpg.skip=true deploy
+          mvn -DskipTests -Dgpg.skip=true deploy
         env:
           CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
           CENTRAL_TOKEN: ${{ secrets.CENTRAL_TOKEN }}
