@@ -762,6 +762,29 @@ public class GraphAPITest {
     }
 
     @Test
+    public void testMapSupport() {
+
+        Map<String, Object> props1 = new HashMap<>();
+        Map<String, Object> person1 = new HashMap<>();
+        person1.put("name", "a");
+        person1.put("age", 33);
+        props1.put("p", person1);
+
+        // Create a person with a map property
+        Assert.assertNotNull(client.query("CREATE (n:Person) set n=$p return n", props1));
+
+        ResultSet resultSet = client.query("MATCH (n:Person) RETURN n");
+        Assert.assertEquals(1, resultSet.size());
+
+        Iterator<Record> iterator = resultSet.iterator();
+        Record record = iterator.next();
+        Node node = record.getValue("n");
+        Assert.assertEquals("a", node.getProperty("name").getValue());
+        Assert.assertEquals(33L, node.getProperty("age").getValue());
+
+    }
+
+    @Test
     public void testPath() {
         List<Node> nodes = new ArrayList<>(3);
         for (int i = 0; i < 3; i++) {
