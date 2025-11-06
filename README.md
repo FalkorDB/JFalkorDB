@@ -189,20 +189,24 @@ import com.falkordb.Driver;
 import com.falkordb.impl.api.DriverImpl;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.JedisClientConfig;
+import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.HostAndPort;
 
 JedisPoolConfig poolConfig = new JedisPoolConfig();
 poolConfig.setMaxTotal(64);
 poolConfig.setMaxIdle(32);
 poolConfig.setMinIdle(8);
 
-// Create pool with authentication
-JedisPool jedisPool = new JedisPool(
-    poolConfig,
-    "localhost",  // host
-    6379,         // port
-    "default",    // username
-    "your-password" // password
-);
+// Configure authentication
+JedisClientConfig clientConfig = DefaultJedisClientConfig.builder()
+    .user("default")        // username
+    .password("your-password") // password
+    .build();
+
+// Create pool with authentication and custom pool config
+HostAndPort hostAndPort = new HostAndPort("localhost", 6379);
+JedisPool jedisPool = new JedisPool(poolConfig, hostAndPort, clientConfig);
 
 Driver driver = new DriverImpl(jedisPool);
 ```
@@ -216,6 +220,7 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisClientConfig;
 import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.HostAndPort;
 import java.time.Duration;
 
 JedisPoolConfig poolConfig = new JedisPoolConfig();
@@ -234,7 +239,8 @@ JedisClientConfig clientConfig = DefaultJedisClientConfig.builder()
     .build();
 
 // Create pool with advanced configuration
-JedisPool jedisPool = new JedisPool(poolConfig, "localhost", 6379, clientConfig);
+HostAndPort hostAndPort = new HostAndPort("localhost", 6379);
+JedisPool jedisPool = new JedisPool(poolConfig, hostAndPort, clientConfig);
 
 Driver driver = new DriverImpl(jedisPool);
 ```
@@ -248,6 +254,7 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisClientConfig;
 import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.HostAndPort;
 import javax.net.ssl.SSLSocketFactory;
 
 JedisPoolConfig poolConfig = new JedisPoolConfig();
@@ -262,7 +269,8 @@ JedisClientConfig clientConfig = DefaultJedisClientConfig.builder()
     .password("your-password")
     .build();
 
-JedisPool jedisPool = new JedisPool(poolConfig, "your-server.com", 6380, clientConfig);
+HostAndPort hostAndPort = new HostAndPort("your-server.com", 6380);
+JedisPool jedisPool = new JedisPool(poolConfig, hostAndPort, clientConfig);
 
 Driver driver = new DriverImpl(jedisPool);
 ```
