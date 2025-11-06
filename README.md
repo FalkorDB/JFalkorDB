@@ -152,10 +152,11 @@ JedisPoolConfig poolConfig = new JedisPoolConfig();
 poolConfig.setMaxTotal(128);
 
 // Maximum number of idle connections in the pool
-poolConfig.setMaxIdle(64);
+// Recommended: Set to maxTotal / 4 or less for optimal resource usage
+poolConfig.setMaxIdle(32);
 
 // Minimum number of idle connections in the pool
-poolConfig.setMinIdle(16);
+poolConfig.setMinIdle(8);
 
 // Maximum time to wait for a connection (ms)
 poolConfig.setMaxWait(Duration.ofSeconds(30));
@@ -260,6 +261,7 @@ import javax.net.ssl.SSLSocketFactory;
 JedisPoolConfig poolConfig = new JedisPoolConfig();
 poolConfig.setMaxTotal(64);
 poolConfig.setMaxIdle(32);
+poolConfig.setMinIdle(8);
 
 // Configure SSL connection
 JedisClientConfig clientConfig = DefaultJedisClientConfig.builder()
