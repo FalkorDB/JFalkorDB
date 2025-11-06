@@ -136,6 +136,12 @@ public class GraphExample {
 
 You can customize the connection pool to optimize performance and resource usage. JFalkorDB uses [Jedis](https://github.com/redis/jedis) internally, which provides comprehensive pool configuration options.
 
+**Pool Configuration Guidelines:**
+- `maxTotal`: Maximum number of connections (size according to your application's concurrency needs)
+- `maxIdle`: Maximum idle connections kept in the pool (recommended: `maxTotal / 4` to balance resource usage and responsiveness; increase for applications with high traffic variability)
+- `minIdle`: Minimum idle connections to keep ready (recommended: `maxIdle / 4` for steady performance)
+- `maxWait`: Maximum time to wait for a connection when pool is exhausted
+
 ### Basic Connection Pool Configuration
 
 ```java
@@ -232,11 +238,10 @@ poolConfig.setMaxWait(Duration.ofSeconds(30));
 
 // Configure connection and socket timeouts
 JedisClientConfig clientConfig = DefaultJedisClientConfig.builder()
-    .connectionTimeoutMillis(2000)  // Connection timeout
-    .socketTimeoutMillis(5000)      // Socket/read timeout
-    .user("default")                // Username (if needed)
-    .password("your-password")      // Password (if needed)
-    .ssl(false)                     // Enable SSL if needed
+    .connectionTimeoutMillis(2000)  // Connection timeout: time to establish connection
+    .socketTimeoutMillis(5000)      // Socket timeout: time to wait for response
+    .user("default")                // Username for authentication
+    .password("your-password")      // Password for authentication
     .build();
 
 // Create pool with advanced configuration
