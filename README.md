@@ -132,6 +132,143 @@ public class GraphExample {
 }
 ```
 
+## Configuring Connection Pool
+
+You can customize the connection pool to optimize performance and resource usage. JFalkorDB uses [Jedis](https://github.com/redis/jedis) internally, which provides comprehensive pool configuration options.
+
+### Basic Connection Pool Configuration
+
+```java
+import com.falkordb.Driver;
+import com.falkordb.impl.api.DriverImpl;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
+import java.time.Duration;
+
+// Create a custom pool configuration
+JedisPoolConfig poolConfig = new JedisPoolConfig();
+
+// Maximum number of connections in the pool
+poolConfig.setMaxTotal(128);
+
+// Maximum number of idle connections in the pool
+poolConfig.setMaxIdle(64);
+
+// Minimum number of idle connections in the pool
+poolConfig.setMinIdle(16);
+
+// Maximum time to wait for a connection (ms)
+poolConfig.setMaxWait(Duration.ofSeconds(30));
+
+// Test connections before borrowing from pool
+poolConfig.setTestOnBorrow(true);
+
+// Test connections when returning to pool
+poolConfig.setTestOnReturn(true);
+
+// Test idle connections in the pool
+poolConfig.setTestWhileIdle(true);
+
+// Create a JedisPool with custom configuration
+JedisPool jedisPool = new JedisPool(poolConfig, "localhost", 6379);
+
+// Create the driver with the custom pool
+Driver driver = new DriverImpl(jedisPool);
+
+// Use the driver
+// ... your code here ...
+
+// Don't forget to close the driver when done
+driver.close();
+```
+
+### Connection Pool Configuration with Authentication
+
+```java
+import com.falkordb.Driver;
+import com.falkordb.impl.api.DriverImpl;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
+
+JedisPoolConfig poolConfig = new JedisPoolConfig();
+poolConfig.setMaxTotal(64);
+poolConfig.setMaxIdle(32);
+poolConfig.setMinIdle(8);
+
+// Create pool with authentication
+JedisPool jedisPool = new JedisPool(
+    poolConfig,
+    "localhost",  // host
+    6379,         // port
+    "default",    // username
+    "your-password" // password
+);
+
+Driver driver = new DriverImpl(jedisPool);
+```
+
+### Advanced Pool Configuration with Timeouts
+
+```java
+import com.falkordb.Driver;
+import com.falkordb.impl.api.DriverImpl;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.JedisClientConfig;
+import redis.clients.jedis.DefaultJedisClientConfig;
+import java.time.Duration;
+
+JedisPoolConfig poolConfig = new JedisPoolConfig();
+poolConfig.setMaxTotal(128);
+poolConfig.setMaxIdle(64);
+poolConfig.setMinIdle(16);
+poolConfig.setMaxWait(Duration.ofSeconds(30));
+
+// Configure connection and socket timeouts
+JedisClientConfig clientConfig = DefaultJedisClientConfig.builder()
+    .connectionTimeoutMillis(2000)  // Connection timeout
+    .socketTimeoutMillis(5000)      // Socket/read timeout
+    .user("default")                // Username (if needed)
+    .password("your-password")      // Password (if needed)
+    .ssl(false)                     // Enable SSL if needed
+    .build();
+
+// Create pool with advanced configuration
+JedisPool jedisPool = new JedisPool(poolConfig, "localhost", 6379, clientConfig);
+
+Driver driver = new DriverImpl(jedisPool);
+```
+
+### Connection Pool Configuration with SSL/TLS
+
+```java
+import com.falkordb.Driver;
+import com.falkordb.impl.api.DriverImpl;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.JedisClientConfig;
+import redis.clients.jedis.DefaultJedisClientConfig;
+import javax.net.ssl.SSLSocketFactory;
+
+JedisPoolConfig poolConfig = new JedisPoolConfig();
+poolConfig.setMaxTotal(64);
+poolConfig.setMaxIdle(32);
+
+// Configure SSL connection
+JedisClientConfig clientConfig = DefaultJedisClientConfig.builder()
+    .ssl(true)
+    .sslSocketFactory((SSLSocketFactory) SSLSocketFactory.getDefault())
+    .user("default")
+    .password("your-password")
+    .build();
+
+JedisPool jedisPool = new JedisPool(poolConfig, "your-server.com", 6380, clientConfig);
+
+Driver driver = new DriverImpl(jedisPool);
+```
+
+For more information about Jedis pool configuration options, see the [Jedis documentation](https://github.com/redis/jedis).
+
 ## License
 
 JFalkorDB is licensed under the [BSD-3-Clause license ](https://github.com/FalkorDB/JFalkorDB/blob/master/LICENSE).
