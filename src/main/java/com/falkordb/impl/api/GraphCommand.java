@@ -36,7 +36,27 @@ public enum GraphCommand implements ProtocolCommand {
     /**
      * Represents the graph.LIST command.
      */
-    LIST("graph.LIST");
+    LIST("graph.LIST"),
+    
+    /**
+     * Represents the graph.UDF LOAD command.
+     */
+    UDF_LOAD("graph.UDF"),
+    
+    /**
+     * Represents the graph.UDF LIST command.
+     */
+    UDF_LIST("graph.UDF"),
+    
+    /**
+     * Represents the graph.UDF FLUSH command.
+     */
+    UDF_FLUSH("graph.UDF"),
+    
+    /**
+     * Represents the graph.UDF DELETE command.
+     */
+    UDF_DELETE("graph.UDF");
 
     private final byte[] raw;
 

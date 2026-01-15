@@ -85,6 +85,97 @@ public class DriverImpl implements Driver {
     }
 
     /**
+     * Loads a User Defined Function (UDF) library.
+     * 
+     * @param libraryName The name of the UDF library
+     * @param script The JavaScript code containing the UDF functions
+     * @param replace Whether to replace an existing library with the same name
+     * @return true if the library was loaded successfully
+     */
+    @Override
+    public boolean udfLoad(String libraryName, String script, boolean replace) {
+        try (Jedis conn = getConnection()) {
+            if (replace) {
+                conn.sendCommand(GraphCommand.UDF_LOAD, "LOAD", "REPLACE", libraryName, script);
+            } else {
+                conn.sendCommand(GraphCommand.UDF_LOAD, "LOAD", libraryName, script);
+            }
+            return true;
+        }
+    }
+
+    /**
+     * Lists all loaded UDF libraries.
+     * 
+     * @return a list of UDF library information
+     */
+    @Override
+    public List<Object> udfList() {
+        try (Jedis conn = getConnection()) {
+            Object response = conn.sendCommand(GraphCommand.UDF_LIST, "LIST");
+            if (response instanceof List<?>) {
+                return (List<Object>) response;
+            }
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Lists UDF libraries with optional filters.
+     * 
+     * @param libraryName Optional library name to filter results
+     * @param withCode Whether to include the code in the response
+     * @return a list of UDF library information
+     */
+    @Override
+    public List<Object> udfList(String libraryName, boolean withCode) {
+        try (Jedis conn = getConnection()) {
+            Object response;
+            if (libraryName != null && withCode) {
+                response = conn.sendCommand(GraphCommand.UDF_LIST, "LIST", libraryName, "WITHCODE");
+            } else if (libraryName != null) {
+                response = conn.sendCommand(GraphCommand.UDF_LIST, "LIST", libraryName);
+            } else if (withCode) {
+                response = conn.sendCommand(GraphCommand.UDF_LIST, "LIST", "WITHCODE");
+            } else {
+                return udfList();
+            }
+            
+            if (response instanceof List<?>) {
+                return (List<Object>) response;
+            }
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Flushes all loaded UDF libraries.
+     * 
+     * @return true if libraries were flushed successfully
+     */
+    @Override
+    public boolean udfFlush() {
+        try (Jedis conn = getConnection()) {
+            conn.sendCommand(GraphCommand.UDF_FLUSH, "FLUSH");
+            return true;
+        }
+    }
+
+    /**
+     * Deletes a specific UDF library.
+     * 
+     * @param libraryName The name of the library to delete
+     * @return true if the library was deleted successfully
+     */
+    @Override
+    public boolean udfDelete(String libraryName) {
+        try (Jedis conn = getConnection()) {
+            conn.sendCommand(GraphCommand.UDF_DELETE, "DELETE", libraryName);
+            return true;
+        }
+    }
+
+    /**
      * Parses the response from GRAPH.LIST command
      * 
      * @param response the raw response from Redis
