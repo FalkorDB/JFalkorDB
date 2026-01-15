@@ -85,6 +85,140 @@ public class DriverImpl implements Driver {
     }
 
     /**
+     * Loads a User Defined Function (UDF) library.
+     * 
+     * @param libraryName The name of the UDF library
+     * @param script The JavaScript code containing the UDF functions
+     * @param replace Whether to replace an existing library with the same name
+     * @return true if the library was loaded successfully
+     * @throws redis.clients.jedis.exceptions.JedisDataException if loading fails
+     */
+    @Override
+    public boolean udfLoad(String libraryName, String script, boolean replace) {
+        try (Jedis conn = getConnection()) {
+            Object response;
+            if (replace) {
+                response = conn.sendCommand(GraphCommand.UDF, "LOAD", "REPLACE", libraryName, script);
+            } else {
+                response = conn.sendCommand(GraphCommand.UDF, "LOAD", libraryName, script);
+            }
+            // Validate response
+            if (response == null) {
+                return false;
+            }
+            String status;
+            if (response instanceof byte[]) {
+                status = SafeEncoder.encode((byte[]) response);
+            } else {
+                status = response.toString();
+            }
+            return "OK".equalsIgnoreCase(status);
+        }
+    }
+
+    /**
+     * Lists all loaded UDF libraries.
+     * 
+     * @return a list of UDF library information
+     */
+    @Override
+    public List<Object> udfList() {
+        try (Jedis conn = getConnection()) {
+            Object response = conn.sendCommand(GraphCommand.UDF, "LIST");
+            if (response instanceof List<?>) {
+                return (List<Object>) response;
+            }
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Lists UDF libraries with optional filters.
+     * 
+     * @param libraryName Optional library name to filter results
+     * @param withCode Whether to include the code in the response
+     * @return a list of UDF library information
+     */
+    @Override
+    public List<Object> udfList(String libraryName, boolean withCode) {
+        try (Jedis conn = getConnection()) {
+            Object response;
+            if (libraryName != null && withCode) {
+                response = conn.sendCommand(GraphCommand.UDF, "LIST", libraryName, "WITHCODE");
+            } else if (libraryName != null) {
+                response = conn.sendCommand(GraphCommand.UDF, "LIST", libraryName);
+            } else if (withCode) {
+                response = conn.sendCommand(GraphCommand.UDF, "LIST", "WITHCODE");
+            } else {
+                return udfList();
+            }
+            
+            if (response instanceof List<?>) {
+                return (List<Object>) response;
+            }
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * Flushes all loaded UDF libraries.
+     * 
+     * @return true if libraries were flushed successfully
+     * @throws redis.clients.jedis.exceptions.JedisDataException if flushing fails
+     */
+    @Override
+    public boolean udfFlush() {
+        try (Jedis conn = getConnection()) {
+            Object response = conn.sendCommand(GraphCommand.UDF, "FLUSH");
+            // Validate response
+            if (response == null) {
+                return false;
+            }
+            String status;
+            if (response instanceof byte[]) {
+                status = SafeEncoder.encode((byte[]) response);
+            } else {
+                status = response.toString();
+            }
+            return "OK".equalsIgnoreCase(status);
+        }
+    }
+
+    /**
+     * Deletes a specific UDF library.
+     * 
+     * @param libraryName The name of the library to delete
+     * @return true if the library was deleted successfully
+     * @throws redis.clients.jedis.exceptions.JedisDataException if deletion fails (e.g., library doesn't exist)
+     */
+    @Override
+    public boolean udfDelete(String libraryName) {
+        try (Jedis conn = getConnection()) {
+            Object response = conn.sendCommand(GraphCommand.UDF, "DELETE", libraryName);
+            
+            if (response == null) {
+                return false;
+            }
+            
+            if (response instanceof Long) {
+                return ((Long) response) > 0;
+            }
+            
+            if (response instanceof String) {
+                return "OK".equalsIgnoreCase((String) response);
+            }
+            
+            if (response instanceof byte[]) {
+                String decoded = SafeEncoder.encode((byte[]) response);
+                return "OK".equalsIgnoreCase(decoded);
+            }
+            
+            // Unknown response type: conservatively report failure
+            return false;
+        }
+    }
+
+    /**
      * Parses the response from GRAPH.LIST command
      * 
      * @param response the raw response from Redis
