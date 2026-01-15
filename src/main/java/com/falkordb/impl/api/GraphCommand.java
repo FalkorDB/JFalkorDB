@@ -39,22 +39,28 @@ public enum GraphCommand implements ProtocolCommand {
     LIST("graph.LIST"),
     
     /**
-     * Represents the graph.UDF LOAD command.
+     * Represents the graph.UDF command base.
+     * Note: All UDF operations use "graph.UDF" as the base command.
+     * The specific subcommand (LOAD, LIST, FLUSH, DELETE) is passed
+     * as the first parameter to sendCommand().
      */
     UDF_LOAD("graph.UDF"),
     
     /**
-     * Represents the graph.UDF LIST command.
+     * Represents the graph.UDF command base.
+     * See UDF_LOAD for details on command structure.
      */
     UDF_LIST("graph.UDF"),
     
     /**
-     * Represents the graph.UDF FLUSH command.
+     * Represents the graph.UDF command base.
+     * See UDF_LOAD for details on command structure.
      */
     UDF_FLUSH("graph.UDF"),
     
     /**
-     * Represents the graph.UDF DELETE command.
+     * Represents the graph.UDF command base.
+     * See UDF_LOAD for details on command structure.
      */
     UDF_DELETE("graph.UDF");
 

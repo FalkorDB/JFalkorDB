@@ -91,6 +91,7 @@ public class DriverImpl implements Driver {
      * @param script The JavaScript code containing the UDF functions
      * @param replace Whether to replace an existing library with the same name
      * @return true if the library was loaded successfully
+     * @throws redis.clients.jedis.exceptions.JedisDataException if loading fails
      */
     @Override
     public boolean udfLoad(String libraryName, String script, boolean replace) {
@@ -100,6 +101,7 @@ public class DriverImpl implements Driver {
             } else {
                 conn.sendCommand(GraphCommand.UDF_LOAD, "LOAD", libraryName, script);
             }
+            // Command will throw JedisDataException on error, so reaching here means success
             return true;
         }
     }
@@ -152,11 +154,13 @@ public class DriverImpl implements Driver {
      * Flushes all loaded UDF libraries.
      * 
      * @return true if libraries were flushed successfully
+     * @throws redis.clients.jedis.exceptions.JedisDataException if flushing fails
      */
     @Override
     public boolean udfFlush() {
         try (Jedis conn = getConnection()) {
             conn.sendCommand(GraphCommand.UDF_FLUSH, "FLUSH");
+            // Command will throw JedisDataException on error, so reaching here means success
             return true;
         }
     }
@@ -166,11 +170,13 @@ public class DriverImpl implements Driver {
      * 
      * @param libraryName The name of the library to delete
      * @return true if the library was deleted successfully
+     * @throws redis.clients.jedis.exceptions.JedisDataException if deletion fails (e.g., library doesn't exist)
      */
     @Override
     public boolean udfDelete(String libraryName) {
         try (Jedis conn = getConnection()) {
             conn.sendCommand(GraphCommand.UDF_DELETE, "DELETE", libraryName);
+            // Command will throw JedisDataException on error, so reaching here means success
             return true;
         }
     }
