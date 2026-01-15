@@ -44,6 +44,21 @@ public class UdfTest {
         
         boolean result = driver.udfLoad(libraryName, script, false);
         Assertions.assertTrue(result, "UDF library should be loaded successfully");
+        
+        // Verify the function can be called
+        Graph graph = driver.graph("udf_test_graph");
+        try {
+            ResultSet rs = graph.query("RETURN TestLib.testFunc() AS result");
+            Assertions.assertEquals(1, rs.size(), "Query should return exactly one result");
+            
+            for (Record record : rs) {
+                String value = record.getString("result");
+                Assertions.assertEquals("hello", value, "UDF should return 'hello'");
+            }
+        } finally {
+            graph.deleteGraph();
+            graph.close();
+        }
     }
 
     @Test
@@ -56,9 +71,33 @@ public class UdfTest {
         boolean result1 = driver.udfLoad(libraryName, script1, false);
         Assertions.assertTrue(result1, "First UDF library should be loaded successfully");
         
-        // Replace the library
-        boolean result2 = driver.udfLoad(libraryName, script2, true);
-        Assertions.assertTrue(result2, "UDF library should be replaced successfully");
+        // Verify the first function works
+        Graph graph = driver.graph("udf_test_replace_graph");
+        try {
+            ResultSet rs1 = graph.query("RETURN TestLibReplace.testFunc1() AS result");
+            Assertions.assertEquals(1, rs1.size(), "Query should return exactly one result");
+            
+            for (Record record : rs1) {
+                String value = record.getString("result");
+                Assertions.assertEquals("hello", value, "First UDF should return 'hello'");
+            }
+            
+            // Replace the library
+            boolean result2 = driver.udfLoad(libraryName, script2, true);
+            Assertions.assertTrue(result2, "UDF library should be replaced successfully");
+            
+            // Verify the new function works
+            ResultSet rs2 = graph.query("RETURN TestLibReplace.testFunc2() AS result");
+            Assertions.assertEquals(1, rs2.size(), "Query should return exactly one result");
+            
+            for (Record record : rs2) {
+                String value = record.getString("result");
+                Assertions.assertEquals("world", value, "Replaced UDF should return 'world'");
+            }
+        } finally {
+            graph.deleteGraph();
+            graph.close();
+        }
     }
 
     @Test
