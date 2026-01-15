@@ -98,9 +98,9 @@ public class DriverImpl implements Driver {
         try (Jedis conn = getConnection()) {
             Object response;
             if (replace) {
-                response = conn.sendCommand(GraphCommand.UDF_LOAD, "LOAD", "REPLACE", libraryName, script);
+                response = conn.sendCommand(GraphCommand.UDF, "LOAD", "REPLACE", libraryName, script);
             } else {
-                response = conn.sendCommand(GraphCommand.UDF_LOAD, "LOAD", libraryName, script);
+                response = conn.sendCommand(GraphCommand.UDF, "LOAD", libraryName, script);
             }
             // Validate response
             if (response == null) {
@@ -124,7 +124,7 @@ public class DriverImpl implements Driver {
     @Override
     public List<Object> udfList() {
         try (Jedis conn = getConnection()) {
-            Object response = conn.sendCommand(GraphCommand.UDF_LIST, "LIST");
+            Object response = conn.sendCommand(GraphCommand.UDF, "LIST");
             if (response instanceof List<?>) {
                 return (List<Object>) response;
             }
@@ -144,11 +144,11 @@ public class DriverImpl implements Driver {
         try (Jedis conn = getConnection()) {
             Object response;
             if (libraryName != null && withCode) {
-                response = conn.sendCommand(GraphCommand.UDF_LIST, "LIST", libraryName, "WITHCODE");
+                response = conn.sendCommand(GraphCommand.UDF, "LIST", libraryName, "WITHCODE");
             } else if (libraryName != null) {
-                response = conn.sendCommand(GraphCommand.UDF_LIST, "LIST", libraryName);
+                response = conn.sendCommand(GraphCommand.UDF, "LIST", libraryName);
             } else if (withCode) {
-                response = conn.sendCommand(GraphCommand.UDF_LIST, "LIST", "WITHCODE");
+                response = conn.sendCommand(GraphCommand.UDF, "LIST", "WITHCODE");
             } else {
                 return udfList();
             }
@@ -169,7 +169,7 @@ public class DriverImpl implements Driver {
     @Override
     public boolean udfFlush() {
         try (Jedis conn = getConnection()) {
-            Object response = conn.sendCommand(GraphCommand.UDF_FLUSH, "FLUSH");
+            Object response = conn.sendCommand(GraphCommand.UDF, "FLUSH");
             // Validate response
             if (response == null) {
                 return false;
@@ -194,7 +194,7 @@ public class DriverImpl implements Driver {
     @Override
     public boolean udfDelete(String libraryName) {
         try (Jedis conn = getConnection()) {
-            Object response = conn.sendCommand(GraphCommand.UDF_DELETE, "DELETE", libraryName);
+            Object response = conn.sendCommand(GraphCommand.UDF, "DELETE", libraryName);
             
             if (response == null) {
                 return false;
