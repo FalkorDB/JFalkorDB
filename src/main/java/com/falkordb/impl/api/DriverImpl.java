@@ -96,13 +96,23 @@ public class DriverImpl implements Driver {
     @Override
     public boolean udfLoad(String libraryName, String script, boolean replace) {
         try (Jedis conn = getConnection()) {
+            Object response;
             if (replace) {
-                conn.sendCommand(GraphCommand.UDF_LOAD, "LOAD", "REPLACE", libraryName, script);
+                response = conn.sendCommand(GraphCommand.UDF_LOAD, "LOAD", "REPLACE", libraryName, script);
             } else {
-                conn.sendCommand(GraphCommand.UDF_LOAD, "LOAD", libraryName, script);
+                response = conn.sendCommand(GraphCommand.UDF_LOAD, "LOAD", libraryName, script);
             }
-            // Command will throw JedisDataException on error, so reaching here means success
-            return true;
+            // Validate response
+            if (response == null) {
+                return false;
+            }
+            String status;
+            if (response instanceof byte[]) {
+                status = SafeEncoder.encode((byte[]) response);
+            } else {
+                status = response.toString();
+            }
+            return "OK".equalsIgnoreCase(status);
         }
     }
 
@@ -159,9 +169,18 @@ public class DriverImpl implements Driver {
     @Override
     public boolean udfFlush() {
         try (Jedis conn = getConnection()) {
-            conn.sendCommand(GraphCommand.UDF_FLUSH, "FLUSH");
-            // Command will throw JedisDataException on error, so reaching here means success
-            return true;
+            Object response = conn.sendCommand(GraphCommand.UDF_FLUSH, "FLUSH");
+            // Validate response
+            if (response == null) {
+                return false;
+            }
+            String status;
+            if (response instanceof byte[]) {
+                status = SafeEncoder.encode((byte[]) response);
+            } else {
+                status = response.toString();
+            }
+            return "OK".equalsIgnoreCase(status);
         }
     }
 
@@ -175,9 +194,27 @@ public class DriverImpl implements Driver {
     @Override
     public boolean udfDelete(String libraryName) {
         try (Jedis conn = getConnection()) {
-            conn.sendCommand(GraphCommand.UDF_DELETE, "DELETE", libraryName);
-            // Command will throw JedisDataException on error, so reaching here means success
-            return true;
+            Object response = conn.sendCommand(GraphCommand.UDF_DELETE, "DELETE", libraryName);
+            
+            if (response == null) {
+                return false;
+            }
+            
+            if (response instanceof Long) {
+                return ((Long) response) > 0;
+            }
+            
+            if (response instanceof String) {
+                return "OK".equalsIgnoreCase((String) response);
+            }
+            
+            if (response instanceof byte[]) {
+                String decoded = SafeEncoder.encode((byte[]) response);
+                return "OK".equalsIgnoreCase(decoded);
+            }
+            
+            // Unknown response type: conservatively report failure
+            return false;
         }
     }
 
