@@ -129,8 +129,12 @@ public class PointTest {
         Point point1 = new Point(40.7128, -74.0060);
         Point point2 = new Point(51.5074, -0.1278);
         
-        // Different points may have different hash codes (not required, but likely)
+        // Different points should have different hash codes (not required, but likely)
+        // Main assertion is that they are not equal
         assertNotEquals(point1, point2);
+        // We can't guarantee different hash codes, but for these distinct values it's likely
+        // This is more of a sanity check than a strict requirement
+        assertNotEquals(point1.hashCode(), point2.hashCode());
     }
 
     @Test
