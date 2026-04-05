@@ -74,7 +74,7 @@
 		<dependency>
 			<groupId>redis.clients</groupId>
 			<artifactId>jedis</artifactId>
-			<version>7.2.0</version>
+			<version>7.4.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -96,7 +96,7 @@
 		<dependency>
 			<groupId>nl.jqno.equalsverifier</groupId>
 			<artifactId>equalsverifier</artifactId>
-			<version>3.19.4</version>
+			<version>4.4.1</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
