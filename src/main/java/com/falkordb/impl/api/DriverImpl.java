@@ -254,7 +254,8 @@ public class DriverImpl implements Driver {
      * Response format: [name, value]
      * 
      * @param response the raw response from Redis
-     * @return the configuration value as a String, or null if parsing fails
+     * @return the configuration value as a String
+     * @throws JedisDataException if the response format is unexpected
      */
     String parseConfigGetResponse(Object response) {
         if (response instanceof List<?>) {
@@ -268,7 +269,8 @@ public class DriverImpl implements Driver {
                 }
             }
         }
-        return null;
+        throw new redis.clients.jedis.exceptions.JedisDataException(
+                "Unexpected response format from GRAPH.CONFIG GET");
     }
 
     /**

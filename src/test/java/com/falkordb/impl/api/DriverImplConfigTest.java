@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.util.SafeEncoder;
 
 /**
@@ -46,34 +47,39 @@ public class DriverImplConfigTest {
         List<Object> response = Arrays.asList(
                 SafeEncoder.encode("RESULTSET_SIZE"),
                 null);
-        String result = driverImpl.parseConfigGetResponse(response);
-        Assertions.assertNull(result);
+        Assertions.assertThrows(JedisDataException.class, () -> {
+            driverImpl.parseConfigGetResponse(response);
+        });
     }
 
     @Test
     public void testParseConfigGetResponseWithEmptyList() {
         List<Object> response = Collections.emptyList();
-        String result = driverImpl.parseConfigGetResponse(response);
-        Assertions.assertNull(result);
+        Assertions.assertThrows(JedisDataException.class, () -> {
+            driverImpl.parseConfigGetResponse(response);
+        });
     }
 
     @Test
     public void testParseConfigGetResponseWithSingleElementList() {
         List<Object> response = Collections.singletonList(SafeEncoder.encode("RESULTSET_SIZE"));
-        String result = driverImpl.parseConfigGetResponse(response);
-        Assertions.assertNull(result);
+        Assertions.assertThrows(JedisDataException.class, () -> {
+            driverImpl.parseConfigGetResponse(response);
+        });
     }
 
     @Test
     public void testParseConfigGetResponseWithNonListResponse() {
-        String result = driverImpl.parseConfigGetResponse("not a list");
-        Assertions.assertNull(result);
+        Assertions.assertThrows(JedisDataException.class, () -> {
+            driverImpl.parseConfigGetResponse("not a list");
+        });
     }
 
     @Test
     public void testParseConfigGetResponseWithNull() {
-        String result = driverImpl.parseConfigGetResponse(null);
-        Assertions.assertNull(result);
+        Assertions.assertThrows(JedisDataException.class, () -> {
+            driverImpl.parseConfigGetResponse(null);
+        });
     }
 
     @Test

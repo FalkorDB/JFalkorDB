@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import redis.clients.jedis.exceptions.JedisDataException;
+
 public class ConfigTest {
 
     private Driver driver;
@@ -34,22 +36,24 @@ public class ConfigTest {
         String originalValue = driver.configGet("RESULTSET_SIZE");
         Assertions.assertNotNull(originalValue);
 
-        // Set a new value
-        boolean success = driver.configSet("RESULTSET_SIZE", 100);
-        Assertions.assertTrue(success, "Config set should return true");
+        try {
+            // Set a new value
+            boolean success = driver.configSet("RESULTSET_SIZE", 100);
+            Assertions.assertTrue(success, "Config set should return true");
 
-        // Verify the new value
-        String newValue = driver.configGet("RESULTSET_SIZE");
-        Assertions.assertEquals("100", newValue, "Config value should be updated to 100");
-
-        // Restore original value
-        driver.configSet("RESULTSET_SIZE", originalValue);
+            // Verify the new value
+            String newValue = driver.configGet("RESULTSET_SIZE");
+            Assertions.assertEquals("100", newValue, "Config value should be updated to 100");
+        } finally {
+            // Always restore original value
+            driver.configSet("RESULTSET_SIZE", originalValue);
+        }
     }
 
     @Test
     public void testConfigGetInvalidParameter() {
-        // Attempting to get an invalid config parameter should throw an exception
-        Assertions.assertThrows(Exception.class, () -> {
+        // Attempting to get an invalid config parameter should throw a JedisDataException
+        Assertions.assertThrows(JedisDataException.class, () -> {
             driver.configGet("INVALID_CONFIG_PARAM_XYZ");
         });
     }
