@@ -9,3 +9,6 @@ JFalkorDB
 FalkorDB
 GraphContext
 Cypher
+Jedis
+SSL
+TLS
