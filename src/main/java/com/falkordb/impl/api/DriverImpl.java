@@ -236,8 +236,6 @@ public class DriverImpl implements Driver {
                     Object value = list.get(1);
                     if (value instanceof byte[]) {
                         return SafeEncoder.encode((byte[]) value);
-                    } else if (value instanceof Long) {
-                        return value.toString();
                     } else if (value != null) {
                         return value.toString();
                     }
