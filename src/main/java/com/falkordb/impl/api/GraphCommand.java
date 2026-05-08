@@ -36,7 +36,21 @@ public enum GraphCommand implements ProtocolCommand {
     /**
      * Represents the graph.LIST command.
      */
-    LIST("graph.LIST");
+    LIST("graph.LIST"),
+    
+    /**
+     * Represents the graph.UDF command.
+     * Used for all UDF operations (LOAD, LIST, FLUSH, DELETE).
+     * The specific subcommand is passed as the first parameter to sendCommand().
+     */
+    UDF("graph.UDF"),
+
+    /**
+     * Represents the graph.CONFIG command.
+     * Used for CONFIG GET and CONFIG SET operations.
+     * The specific subcommand (GET/SET) is passed as the first parameter to sendCommand().
+     */
+    CONFIG("graph.CONFIG");
 
     private final byte[] raw;
 
