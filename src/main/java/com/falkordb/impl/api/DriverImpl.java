@@ -229,19 +229,7 @@ public class DriverImpl implements Driver {
     public String configGet(String name) {
         try (Jedis conn = getConnection()) {
             Object response = conn.sendCommand(GraphCommand.CONFIG, "GET", name);
-            if (response instanceof List<?>) {
-                List<?> list = (List<?>) response;
-                // Response format: [name, value]
-                if (list.size() >= 2) {
-                    Object value = list.get(1);
-                    if (value instanceof byte[]) {
-                        return SafeEncoder.encode((byte[]) value);
-                    } else if (value != null) {
-                        return value.toString();
-                    }
-                }
-            }
-            return null;
+            return parseConfigGetResponse(response);
         }
     }
 
@@ -257,17 +245,49 @@ public class DriverImpl implements Driver {
     public boolean configSet(String name, Object value) {
         try (Jedis conn = getConnection()) {
             Object response = conn.sendCommand(GraphCommand.CONFIG, "SET", name, String.valueOf(value));
-            if (response == null) {
-                return false;
-            }
-            String status;
-            if (response instanceof byte[]) {
-                status = SafeEncoder.encode((byte[]) response);
-            } else {
-                status = response.toString();
-            }
-            return "OK".equalsIgnoreCase(status);
+            return parseConfigSetResponse(response);
         }
+    }
+
+    /**
+     * Parses the response from GRAPH.CONFIG GET command.
+     * Response format: [name, value]
+     * 
+     * @param response the raw response from Redis
+     * @return the configuration value as a String, or null if parsing fails
+     */
+    String parseConfigGetResponse(Object response) {
+        if (response instanceof List<?>) {
+            List<?> list = (List<?>) response;
+            if (list.size() >= 2) {
+                Object value = list.get(1);
+                if (value instanceof byte[]) {
+                    return SafeEncoder.encode((byte[]) value);
+                } else if (value != null) {
+                    return value.toString();
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Parses the response from GRAPH.CONFIG SET command.
+     * 
+     * @param response the raw response from Redis
+     * @return true if the response indicates success ("OK")
+     */
+    boolean parseConfigSetResponse(Object response) {
+        if (response == null) {
+            return false;
+        }
+        String status;
+        if (response instanceof byte[]) {
+            status = SafeEncoder.encode((byte[]) response);
+        } else {
+            status = response.toString();
+        }
+        return "OK".equalsIgnoreCase(status);
     }
 
     /**
