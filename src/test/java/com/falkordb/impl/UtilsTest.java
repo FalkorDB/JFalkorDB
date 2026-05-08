@@ -52,6 +52,14 @@ public class UtilsTest {
         Assertions.assertEquals("CYPHER param=\"str\" RETURN $param", Utils.prepareQuery("RETURN $param", params));
         params.put("param", "s\"tr");
         Assertions.assertEquals("CYPHER param=\"s\\\"tr\" RETURN $param", Utils.prepareQuery("RETURN $param", params));
+        params.put("param", "Hello ${input.name}!");
+        Assertions.assertEquals("CYPHER param=\"Hello \\${input.name}!\" RETURN $param", Utils.prepareQuery("RETURN $param", params));
+        params.put("param", "costs $100");
+        Assertions.assertEquals("CYPHER param=\"costs \\$100\" RETURN $param", Utils.prepareQuery("RETURN $param", params));
+        params.put("param", "back\\slash");
+        Assertions.assertEquals("CYPHER param=\"back\\\\slash\" RETURN $param", Utils.prepareQuery("RETURN $param", params));
+        params.put("param", "combo\\\"$end");
+        Assertions.assertEquals("CYPHER param=\"combo\\\\\\\"\\$end\" RETURN $param", Utils.prepareQuery("RETURN $param", params));
         Integer arr[] = {1, 2, 3};
         params.put("param", arr);
         Assertions.assertEquals("CYPHER param=[1, 2, 3] RETURN $param", Utils.prepareQuery("RETURN $param", params));

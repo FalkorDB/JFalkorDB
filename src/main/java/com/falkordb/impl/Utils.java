@@ -46,7 +46,7 @@ public class Utils {
     private static String quoteString(String str){
         StringBuilder sb = new StringBuilder(str.length()+2);
         sb.append('"');
-        sb.append(str.replace("\"","\\\""));
+        sb.append(str.replace("\\", "\\\\").replace("\"","\\\"").replace("$", "\\$"));
         sb.append('"');
         return sb.toString();
     }
