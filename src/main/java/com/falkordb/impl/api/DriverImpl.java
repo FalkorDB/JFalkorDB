@@ -219,6 +219,80 @@ public class DriverImpl implements Driver {
     }
 
     /**
+     * Gets the value of a FalkorDB configuration parameter.
+     * 
+     * @param name The configuration parameter name (e.g., "RESULTSET_SIZE")
+     * @return The value of the configuration parameter as a String
+     * @throws redis.clients.jedis.exceptions.JedisDataException if the configuration parameter is invalid
+     */
+    @Override
+    public String configGet(String name) {
+        try (Jedis conn = getConnection()) {
+            Object response = conn.sendCommand(GraphCommand.CONFIG, "GET", name);
+            return parseConfigGetResponse(response);
+        }
+    }
+
+    /**
+     * Sets the value of a FalkorDB configuration parameter.
+     * 
+     * @param name The configuration parameter name (e.g., "RESULTSET_SIZE")
+     * @param value The value to set
+     * @return true if the configuration was set successfully
+     * @throws redis.clients.jedis.exceptions.JedisDataException if setting fails (e.g., invalid parameter)
+     */
+    @Override
+    public boolean configSet(String name, Object value) {
+        try (Jedis conn = getConnection()) {
+            Object response = conn.sendCommand(GraphCommand.CONFIG, "SET", name, String.valueOf(value));
+            return parseConfigSetResponse(response);
+        }
+    }
+
+    /**
+     * Parses the response from GRAPH.CONFIG GET command.
+     * Response format: [name, value]
+     * 
+     * @param response the raw response from Redis
+     * @return the configuration value as a String
+     * @throws JedisDataException if the response format is unexpected
+     */
+    String parseConfigGetResponse(Object response) {
+        if (response instanceof List<?>) {
+            List<?> list = (List<?>) response;
+            if (list.size() >= 2) {
+                Object value = list.get(1);
+                if (value instanceof byte[]) {
+                    return SafeEncoder.encode((byte[]) value);
+                } else if (value != null) {
+                    return value.toString();
+                }
+            }
+        }
+        throw new redis.clients.jedis.exceptions.JedisDataException(
+                "Unexpected response format from GRAPH.CONFIG GET");
+    }
+
+    /**
+     * Parses the response from GRAPH.CONFIG SET command.
+     * 
+     * @param response the raw response from Redis
+     * @return true if the response indicates success ("OK")
+     */
+    boolean parseConfigSetResponse(Object response) {
+        if (response == null) {
+            return false;
+        }
+        String status;
+        if (response instanceof byte[]) {
+            status = SafeEncoder.encode((byte[]) response);
+        } else {
+            status = response.toString();
+        }
+        return "OK".equalsIgnoreCase(status);
+    }
+
+    /**
      * Parses the response from GRAPH.LIST command
      * 
      * @param response the raw response from Redis
