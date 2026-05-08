@@ -66,6 +66,11 @@ public class UtilsTest {
         params.put("param", stringList);
         Assertions.assertEquals("CYPHER param=[\"1\", \"2\", \"3\"] RETURN $param",
                 Utils.prepareQuery("RETURN $param", params));
+        // Test backslash escaping - strings containing \" should be properly escaped
+        params.put("param", "s\\\"tr");
+        Assertions.assertEquals("CYPHER param=\"s\\\\\\\"tr\" RETURN $param", Utils.prepareQuery("RETURN $param", params));
+        params.put("param", "back\\slash");
+        Assertions.assertEquals("CYPHER param=\"back\\\\slash\" RETURN $param", Utils.prepareQuery("RETURN $param", params));
     }
 
 }
