@@ -20,6 +20,7 @@ pinned Maven Wrapper (`./mvnw`).
 | `just verify-local` | Spin up a Dockerized FalkorDB, run `verify`, tear it down. |
 | `just build` / `just test` | Compile-only / tests-only. |
 | `just fmt` / `just fmt-check` | Apply / check palantir-java-format (runs in the `-Pquality` profile). |
+| `just spellcheck` | Spellcheck the Markdown docs (the CI `spellcheck` gate). |
 | `just db-up` / `just db-down` | Manage a local FalkorDB container. |
 
 Tests connect to `localhost:6379`; prefer `just verify-local`, which manages Docker for you.
@@ -28,7 +29,8 @@ Tests connect to `localhost:6379`; prefer `just verify-local`, which manages Doc
 
 1. **Design first** for non-trivial work, and **rubber-duck review** the design before coding.
 2. **Implement** the change with **code + tests + docs** (Javadoc / an example where it helps).
-3. **Validate locally via `just`** — `just verify` (or `just verify-local`) green.
+3. **Validate locally via `just`** — `just verify` (or `just verify-local`) green, and **`just
+   spellcheck`** whenever you touch Markdown (new technical terms go in `.github/wordlist.txt`).
 4. Open a PR on a **Conventional-Commit** branch (`feat:` / `fix:` / `build:` / `docs:` / `ci:` /
    `chore:`); the PR **title** must be a Conventional Commit.
 5. **Resolve every AI review thread** — Copilot **and** CodeRabbit — reply *and* mark resolved —
