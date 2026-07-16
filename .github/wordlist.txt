@@ -12,3 +12,7 @@ Cypher
 Jedis
 SSL
 TLS
+CodeRabbit
+JDK
+md
+repo
