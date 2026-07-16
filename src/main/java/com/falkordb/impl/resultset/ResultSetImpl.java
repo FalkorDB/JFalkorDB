@@ -58,7 +58,7 @@ public class ResultSetImpl implements ResultSet {
             header = parseHeader(new ArrayList<>());
             results = new ArrayList<>();
             statistics = rawResponse.isEmpty()
-                    ? parseStatistics(new ArrayList<Objects>())
+                    ? parseStatistics(new ArrayList<>())
                     : parseStatistics(rawResponse.get(rawResponse.size() - 1));
 
         } else {
