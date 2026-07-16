@@ -1,0 +1,3 @@
+# Keep the POSIX Maven Wrapper script LF and the Windows one CRLF on checkout.
+mvnw text eol=lf
+*.cmd text eol=crlf
