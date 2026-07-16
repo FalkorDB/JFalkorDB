@@ -1,7 +1,8 @@
 # JFalkorDB Modernization Plan
 
-> Filename note: created as `project-modernizations.md` (corrected spelling of the requested
-> `project-modarnizations.md`). Rename if you prefer the original.
+> Filename note: intentionally named `project-modernizations.md` — the requested
+> `project-modarnizations.md` was a typo, and other docs link to this filename, so it should not be
+> renamed.
 
 This plan proposes how to modernize **JFalkorDB** (the official Java client for FalkorDB) by
 adopting the engineering practices already proven in
