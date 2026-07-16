@@ -1,0 +1,14 @@
+# Allow a small tolerance so minor, dependency-driven coverage fluctuations
+# (e.g. a test-only library such as EqualsVerifier exercising slightly different
+# branches between versions) do not fail CI. The functional gate is the required
+# "build" check; coverage remains reported for visibility.
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        target: auto
+        threshold: 1%
