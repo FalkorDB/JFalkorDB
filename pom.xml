@@ -186,9 +186,9 @@
 
 	<profiles>
 		<!-- Static-quality gates that need a modern JDK (Java 11+). OFF by default so it never runs
-		     on the JDK-8 publish build; `just fmt`/`fmt-check` and the JDK-17 CI activate it with
-		     -Pquality. Spotless has NO <executions> binding, so it runs only when its goal is invoked
-		     explicitly (never during `verify`/`deploy`). Extended with more analyzers in a later wave. -->
+		     on the JDK-8 publish build; activate it with -Pquality (via `just fmt` / `just fmt-check`;
+		     a CI format gate is added in the reformat PR). Spotless has NO <executions> binding, so it
+		     runs only when its goal is invoked explicitly (never during `verify`/`deploy`). -->
 		<profile>
 			<id>quality</id>
 			<build>
