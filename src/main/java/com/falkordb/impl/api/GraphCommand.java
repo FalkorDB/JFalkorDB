@@ -1,6 +1,7 @@
 package com.falkordb.impl.api;
-import redis.clients.jedis.util.SafeEncoder;
+
 import redis.clients.jedis.commands.ProtocolCommand;
+import redis.clients.jedis.util.SafeEncoder;
 
 /**
  * An enum which aligned to FalkorDB Graph commands
@@ -19,7 +20,7 @@ public enum GraphCommand implements ProtocolCommand {
      * Represents the graph.PROFILE command.
      */
     PROFILE("graph.PROFILE"),
-  
+
     /**
      * Represents the graph.COPY command.
      */
@@ -28,7 +29,7 @@ public enum GraphCommand implements ProtocolCommand {
      * Represents the graph.DELETE command.
      */
     DELETE("graph.DELETE"),
-  
+
     /**
      * Represents the graph.EXPLAIN command.
      */
@@ -37,7 +38,7 @@ public enum GraphCommand implements ProtocolCommand {
      * Represents the graph.LIST command.
      */
     LIST("graph.LIST"),
-    
+
     /**
      * Represents the graph.UDF command.
      * Used for all UDF operations (LOAD, LIST, FLUSH, DELETE).

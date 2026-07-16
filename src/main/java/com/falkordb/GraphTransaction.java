@@ -1,19 +1,18 @@
 package com.falkordb;
 
+import java.io.Closeable;
+import java.util.List;
+import java.util.Map;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.commands.PipelineBinaryCommands;
 import redis.clients.jedis.commands.PipelineCommands;
 import redis.clients.jedis.commands.RedisModulePipelineCommands;
 
-import java.io.Closeable;
-import java.util.List;
-import java.util.Map;
-
 /**
  * An interface which aligned to Jedis transactional interface
  */
-public interface GraphTransaction extends
-        PipelineCommands, PipelineBinaryCommands, RedisModulePipelineCommands, Closeable {
+public interface GraphTransaction
+        extends PipelineCommands, PipelineBinaryCommands, RedisModulePipelineCommands, Closeable {
 
     /**
      * Execute a Cypher query.
@@ -101,7 +100,7 @@ public interface GraphTransaction extends
      * @param kwargs - procedure output arguments
      * @return a response which builds result set with the procedure data
      */
-    Response<ResultSet> callProcedure(String procedure, List<String> args  , Map<String, List<String>> kwargs);
+    Response<ResultSet> callProcedure(String procedure, List<String> args, Map<String, List<String>> kwargs);
 
     /**
      * Execute a Cypher query and produce an execution plan augmented with metrics
@@ -147,7 +146,6 @@ public interface GraphTransaction extends
      * @return a response which builds the execution plan as list of strings
      */
     Response<List<String>> explain(String query, Map<String, Object> params);
-
 
     /**
      * executes the transaction

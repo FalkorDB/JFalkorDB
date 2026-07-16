@@ -1,19 +1,18 @@
 package com.falkordb;
 
+import java.io.Closeable;
+import java.util.List;
+import java.util.Map;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.commands.PipelineBinaryCommands;
 import redis.clients.jedis.commands.PipelineCommands;
 import redis.clients.jedis.commands.RedisModulePipelineCommands;
 
-import java.io.Closeable;
-import java.util.List;
-import java.util.Map;
-
 /**
  * An interface which aligned to Jedis Pipeline interface
  */
-public interface GraphPipeline extends
-        PipelineCommands, PipelineBinaryCommands, RedisModulePipelineCommands, Closeable {
+public interface GraphPipeline
+        extends PipelineCommands, PipelineBinaryCommands, RedisModulePipelineCommands, Closeable {
 
     /**
      * Execute a Cypher query.
@@ -101,7 +100,7 @@ public interface GraphPipeline extends
      * @param kwargs - procedure output arguments
      * @return a response which builds result set with the procedure data
      */
-    Response<ResultSet> callProcedure(String procedure, List<String> args  , Map<String, List<String>> kwargs);
+    Response<ResultSet> callProcedure(String procedure, List<String> args, Map<String, List<String>> kwargs);
 
     /**
      * Execute a Cypher query and produce an execution plan augmented with metrics
@@ -148,7 +147,6 @@ public interface GraphPipeline extends
      */
     Response<List<String>> explain(String query, Map<String, Object> params);
 
-    
     /**
      * Synchronize pipeline by reading all responses. This operation close the pipeline. Whenever
      * possible try to avoid using this version and use Pipeline.sync() as it won't go through all the
@@ -156,14 +154,14 @@ public interface GraphPipeline extends
      * @return A list of all the responses in the order you executed them.
      */
     List<Object> syncAndReturnAll();
-    
+
     /**
      * Synchronize pipeline by reading all responses. This operation close the pipeline. In order to
      * get return values from pipelined commands, capture the different Response&lt;?&gt; of the
      * commands you execute.
      */
     void sync();
-    
+
     /**
      * Blocks until all the previous write commands are successfully transferred and acknowledged by
      * at least the specified number of replicas. If the timeout, specified in milliseconds, is

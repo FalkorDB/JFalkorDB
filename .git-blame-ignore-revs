@@ -1,0 +1,7 @@
+# Revisions listed here are skipped by `git blame` (formatting-only, no behavior change).
+# Enable locally once with:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+# GitHub applies this file automatically.
+
+# style: apply palantir-java-format to the whole codebase
+bda86fd8739f2cf84c489fa7dd23a0084fe0f9db

@@ -1,15 +1,15 @@
 package com.falkordb;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 public class HeaderTest {
 
     @Test
     public void testResultSetColumnTypesEnumValues() {
         Header.ResultSetColumnTypes[] types = Header.ResultSetColumnTypes.values();
-        
+
         assertEquals(4, types.length);
         assertEquals(Header.ResultSetColumnTypes.COLUMN_UNKNOWN, types[0]);
         assertEquals(Header.ResultSetColumnTypes.COLUMN_SCALAR, types[1]);
@@ -19,14 +19,11 @@ public class HeaderTest {
 
     @Test
     public void testResultSetColumnTypesValueOf() {
-        assertEquals(Header.ResultSetColumnTypes.COLUMN_UNKNOWN, 
-                Header.ResultSetColumnTypes.valueOf("COLUMN_UNKNOWN"));
-        assertEquals(Header.ResultSetColumnTypes.COLUMN_SCALAR, 
-                Header.ResultSetColumnTypes.valueOf("COLUMN_SCALAR"));
-        assertEquals(Header.ResultSetColumnTypes.COLUMN_NODE, 
-                Header.ResultSetColumnTypes.valueOf("COLUMN_NODE"));
-        assertEquals(Header.ResultSetColumnTypes.COLUMN_RELATION, 
-                Header.ResultSetColumnTypes.valueOf("COLUMN_RELATION"));
+        assertEquals(Header.ResultSetColumnTypes.COLUMN_UNKNOWN, Header.ResultSetColumnTypes.valueOf("COLUMN_UNKNOWN"));
+        assertEquals(Header.ResultSetColumnTypes.COLUMN_SCALAR, Header.ResultSetColumnTypes.valueOf("COLUMN_SCALAR"));
+        assertEquals(Header.ResultSetColumnTypes.COLUMN_NODE, Header.ResultSetColumnTypes.valueOf("COLUMN_NODE"));
+        assertEquals(
+                Header.ResultSetColumnTypes.COLUMN_RELATION, Header.ResultSetColumnTypes.valueOf("COLUMN_RELATION"));
     }
 
     @Test
@@ -41,7 +38,7 @@ public class HeaderTest {
         Header.ResultSetColumnTypes type1 = Header.ResultSetColumnTypes.COLUMN_SCALAR;
         Header.ResultSetColumnTypes type2 = Header.ResultSetColumnTypes.COLUMN_SCALAR;
         Header.ResultSetColumnTypes type3 = Header.ResultSetColumnTypes.COLUMN_NODE;
-        
+
         assertEquals(type1, type2);
         assertNotEquals(type1, type3);
     }

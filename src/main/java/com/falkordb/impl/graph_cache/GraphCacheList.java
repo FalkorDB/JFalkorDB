@@ -1,13 +1,11 @@
 package com.falkordb.impl.graph_cache;
 
-import com.falkordb.Record;
 import com.falkordb.Graph;
+import com.falkordb.Record;
 import com.falkordb.ResultSet;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-
 
 /**
  * Represents a local cache of list of strings. Holds data from a specific procedure, for a specific graph.
@@ -15,7 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 class GraphCacheList {
 
     private final String procedure;
-    private final List<String>  data = new CopyOnWriteArrayList<>();
+    private final List<String> data = new CopyOnWriteArrayList<>();
 
     /**
      * @param procedure - exact procedure command
@@ -31,14 +29,13 @@ class GraphCacheList {
      */
     public String getCachedData(int index, Graph graph) {
         if (index >= data.size()) {
-            synchronized (data){
+            synchronized (data) {
                 if (index >= data.size()) {
                     getProcedureInfo(graph);
                 }
             }
         }
         return data.get(index);
-
     }
 
     /**
@@ -48,8 +45,8 @@ class GraphCacheList {
         ResultSet resultSet = graph.callProcedure(procedure);
         List<String> newData = new ArrayList<>();
         int i = 0;
-        for(Record record : resultSet){
-            if(i >= data.size()){
+        for (Record record : resultSet) {
+            if (i >= data.size()) {
                 newData.add(record.getString(0));
             }
             i++;

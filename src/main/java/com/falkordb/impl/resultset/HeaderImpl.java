@@ -1,22 +1,20 @@
 package com.falkordb.impl.resultset;
 
 import com.falkordb.Header;
-import redis.clients.jedis.util.SafeEncoder;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import redis.clients.jedis.util.SafeEncoder;
 
 /**
  * Query result header interface implementation
  */
 public class HeaderImpl implements Header {
 
-    //members
+    // members
     private final List<List<Object>> raw;
     private final List<ResultSetColumnTypes> schemaTypes = new ArrayList<>();
     private final List<String> schemaNames = new ArrayList<>();
-
 
     /**
      * Parameterized constructor
@@ -29,7 +27,6 @@ public class HeaderImpl implements Header {
     public HeaderImpl(List<List<Object>> raw) {
         this.raw = raw;
     }
-
 
     /**
      * @return a list of column names, ordered by they appearance in the query
@@ -59,9 +56,9 @@ public class HeaderImpl implements Header {
     private void buildSchema() {
         for (List<Object> tuple : this.raw) {
 
-            //get type
+            // get type
             ResultSetColumnTypes type = ResultSetColumnTypes.values()[((Long) tuple.get(0)).intValue()];
-            //get text
+            // get text
             String text = SafeEncoder.encode((byte[]) tuple.get(1));
             if (type != null) {
                 schemaTypes.add(type);
@@ -75,8 +72,8 @@ public class HeaderImpl implements Header {
         if (this == o) return true;
         if (!(o instanceof HeaderImpl)) return false;
         HeaderImpl header = (HeaderImpl) o;
-        return Objects.equals(getSchemaTypes(), header.getSchemaTypes()) &&
-                Objects.equals(getSchemaNames(), header.getSchemaNames());
+        return Objects.equals(getSchemaTypes(), header.getSchemaTypes())
+                && Objects.equals(getSchemaNames(), header.getSchemaNames());
     }
 
     @Override

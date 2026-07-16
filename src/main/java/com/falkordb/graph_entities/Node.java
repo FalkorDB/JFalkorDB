@@ -9,7 +9,7 @@ import java.util.Objects;
  */
 public class Node extends GraphEntity {
 
-    //members
+    // members
     private final List<String> labels;
 
     /**
@@ -21,7 +21,7 @@ public class Node extends GraphEntity {
     }
 
     /**
-     * Use this constructor to reduce memory allocations 
+     * Use this constructor to reduce memory allocations
      * when labels or properties are added to the node
      * @param labelsCapacity preallocate the capacity for the node labels
      * @param propertiesCapacity preallocate the capacity for the properties
@@ -30,7 +30,6 @@ public class Node extends GraphEntity {
         super(propertiesCapacity);
         this.labels = new ArrayList<>(labelsCapacity);
     }
-
 
     /**
      * @param label - a label to be add
@@ -52,7 +51,7 @@ public class Node extends GraphEntity {
      * @throws IndexOutOfBoundsException if the index is out of range
      *                                   ({@code index < 0 || index >= getNumberOfLabels()})
      */
-    public String getLabel(int index){
+    public String getLabel(int index) {
         return labels.get(index);
     }
 

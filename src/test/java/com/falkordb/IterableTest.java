@@ -1,8 +1,8 @@
 package com.falkordb;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
- 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,8 +41,7 @@ public class IterableTest {
 
         ResultSet rs = api.query("MATCH(n) RETURN n");
         int count = 0;
-        for (@SuppressWarnings("unused")
-        Record row : rs) {
+        for (@SuppressWarnings("unused") Record row : rs) {
             count++;
         }
         assertEquals(rs.size(), count);
@@ -61,5 +60,4 @@ public class IterableTest {
         }
         assertEquals(rs.size(), count);
     }
-
 }

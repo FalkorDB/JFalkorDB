@@ -1,14 +1,23 @@
-# Allow a small tolerance so minor, dependency-driven coverage fluctuations
-# (e.g. a test-only library such as EqualsVerifier exercising slightly different
-# branches between versions) do not fail CI. The functional gate is the required
-# "build" check; coverage remains reported for visibility.
+# Coverage is reported for visibility only — it is NOT a merge gate. The required
+# functional check is "build" (compile + the full test suite via `just verify`).
+#
+# Why informational: coverage is measured by JaCoCo, which counts *source lines*.
+# Mechanical reformatting (palantir-java-format) reflows statements across more
+# lines, so the line-based percentage shifts even when behavior and tests are
+# unchanged — e.g. the one-time repo-wide reformat inflated line counts and moved
+# coverage by ~1.7% with zero test changes. Gating merges on that number would
+# produce false failures, so the Codecov statuses stay non-blocking while still
+# publishing the full report and PR comment. Flip `informational` to false to make
+# coverage a hard gate again.
 coverage:
   status:
     project:
       default:
         target: auto
         threshold: 1%
+        informational: true
     patch:
       default:
         target: auto
         threshold: 1%
+        informational: true

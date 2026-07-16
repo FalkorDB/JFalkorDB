@@ -1,8 +1,8 @@
 package com.falkordb.graph_entities;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 public class NodeTest {
 
@@ -24,7 +24,7 @@ public class NodeTest {
     public void testAddLabel() {
         Node node = new Node();
         node.addLabel("Person");
-        
+
         assertEquals(1, node.getNumberOfLabels());
         assertEquals("Person", node.getLabel(0));
     }
@@ -35,7 +35,7 @@ public class NodeTest {
         node.addLabel("Person");
         node.addLabel("Employee");
         node.addLabel("Manager");
-        
+
         assertEquals(3, node.getNumberOfLabels());
         assertEquals("Person", node.getLabel(0));
         assertEquals("Employee", node.getLabel(1));
@@ -47,9 +47,9 @@ public class NodeTest {
         Node node = new Node();
         node.addLabel("Person");
         node.addLabel("Employee");
-        
+
         node.removeLabel("Person");
-        
+
         assertEquals(1, node.getNumberOfLabels());
         assertEquals("Employee", node.getLabel(0));
     }
@@ -59,7 +59,7 @@ public class NodeTest {
         Node node = new Node();
         node.addLabel("Person");
         node.addLabel("Employee");
-        
+
         assertEquals("Person", node.getLabel(0));
         assertEquals("Employee", node.getLabel(1));
     }
@@ -68,7 +68,7 @@ public class NodeTest {
     public void testGetLabelThrowsIndexOutOfBounds() {
         Node node = new Node();
         node.addLabel("Person");
-        
+
         assertThrows(IndexOutOfBoundsException.class, () -> node.getLabel(5));
     }
 
@@ -76,10 +76,10 @@ public class NodeTest {
     public void testGetNumberOfLabels() {
         Node node = new Node();
         assertEquals(0, node.getNumberOfLabels());
-        
+
         node.addLabel("Person");
         assertEquals(1, node.getNumberOfLabels());
-        
+
         node.addLabel("Employee");
         assertEquals(2, node.getNumberOfLabels());
     }
@@ -88,7 +88,7 @@ public class NodeTest {
     public void testEqualsWithSameObject() {
         Node node = new Node();
         node.addLabel("Person");
-        
+
         assertEquals(node, node);
     }
 
@@ -97,11 +97,11 @@ public class NodeTest {
         Node node1 = new Node();
         node1.setId(1);
         node1.addLabel("Person");
-        
+
         Node node2 = new Node();
         node2.setId(1);
         node2.addLabel("Person");
-        
+
         assertEquals(node1, node2);
     }
 
@@ -109,10 +109,10 @@ public class NodeTest {
     public void testEqualsWithDifferentLabels() {
         Node node1 = new Node();
         node1.addLabel("Person");
-        
+
         Node node2 = new Node();
         node2.addLabel("Employee");
-        
+
         assertNotEquals(node1, node2);
     }
 
@@ -133,11 +133,11 @@ public class NodeTest {
         Node node1 = new Node();
         node1.setId(1);
         node1.addLabel("Person");
-        
+
         Node node2 = new Node();
         node2.setId(1);
         node2.addLabel("Person");
-        
+
         assertEquals(node1.hashCode(), node2.hashCode());
     }
 
@@ -147,9 +147,9 @@ public class NodeTest {
         node.setId(1);
         node.addLabel("Person");
         node.addProperty("name", "John");
-        
+
         String result = node.toString();
-        
+
         assertTrue(result.contains("Node{"));
         assertTrue(result.contains("labels="));
         assertTrue(result.contains("id="));
@@ -160,7 +160,7 @@ public class NodeTest {
     public void testToStringEmptyNode() {
         Node node = new Node();
         String result = node.toString();
-        
+
         assertNotNull(result);
         assertTrue(result.contains("Node{"));
     }

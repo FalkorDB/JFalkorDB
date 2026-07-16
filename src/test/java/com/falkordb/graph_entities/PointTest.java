@@ -1,18 +1,17 @@
 package com.falkordb.graph_entities;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Arrays;
 import java.util.Collections;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class PointTest {
 
     @Test
     public void testConstructorWithLatitudeLongitude() {
         Point point = new Point(40.7128, -74.0060);
-        
+
         assertEquals(40.7128, point.getLatitude());
         assertEquals(-74.0060, point.getLongitude());
     }
@@ -20,7 +19,7 @@ public class PointTest {
     @Test
     public void testConstructorWithList() {
         Point point = new Point(Arrays.asList(40.7128, -74.0060));
-        
+
         assertEquals(40.7128, point.getLatitude());
         assertEquals(-74.0060, point.getLongitude());
     }
@@ -75,7 +74,7 @@ public class PointTest {
     public void testEqualsWithEqualPoints() {
         Point point1 = new Point(40.7128, -74.0060);
         Point point2 = new Point(40.7128, -74.0060);
-        
+
         assertEquals(point1, point2);
     }
 
@@ -84,7 +83,7 @@ public class PointTest {
         // Points within EPSILON (1e-5) should be equal
         Point point1 = new Point(40.7128, -74.0060);
         Point point2 = new Point(40.71280001, -74.00600001);
-        
+
         assertEquals(point1, point2);
     }
 
@@ -92,7 +91,7 @@ public class PointTest {
     public void testEqualsWithDifferentLatitude() {
         Point point1 = new Point(40.7128, -74.0060);
         Point point2 = new Point(51.5074, -74.0060);
-        
+
         assertNotEquals(point1, point2);
     }
 
@@ -100,7 +99,7 @@ public class PointTest {
     public void testEqualsWithDifferentLongitude() {
         Point point1 = new Point(40.7128, -74.0060);
         Point point2 = new Point(40.7128, -0.1278);
-        
+
         assertNotEquals(point1, point2);
     }
 
@@ -120,7 +119,7 @@ public class PointTest {
     public void testHashCode() {
         Point point1 = new Point(40.7128, -74.0060);
         Point point2 = new Point(40.7128, -74.0060);
-        
+
         assertEquals(point1.hashCode(), point2.hashCode());
     }
 
@@ -128,7 +127,7 @@ public class PointTest {
     public void testPointInequality() {
         Point point1 = new Point(40.7128, -74.0060);
         Point point2 = new Point(51.5074, -0.1278);
-        
+
         assertNotEquals(point1, point2);
     }
 
@@ -136,7 +135,7 @@ public class PointTest {
     public void testToString() {
         Point point = new Point(40.7128, -74.0060);
         String result = point.toString();
-        
+
         assertTrue(result.contains("Point{"));
         assertTrue(result.contains("latitude="));
         assertTrue(result.contains("longitude="));
@@ -147,7 +146,7 @@ public class PointTest {
     @Test
     public void testPointWithZeroCoordinates() {
         Point point = new Point(0.0, 0.0);
-        
+
         assertEquals(0.0, point.getLatitude());
         assertEquals(0.0, point.getLongitude());
     }
@@ -155,7 +154,7 @@ public class PointTest {
     @Test
     public void testPointWithNegativeCoordinates() {
         Point point = new Point(-33.8688, -151.2093);
-        
+
         assertEquals(-33.8688, point.getLatitude());
         assertEquals(-151.2093, point.getLongitude());
     }
@@ -165,15 +164,15 @@ public class PointTest {
         // Test max latitude
         Point point1 = new Point(90.0, 0.0);
         assertEquals(90.0, point1.getLatitude());
-        
+
         // Test min latitude
         Point point2 = new Point(-90.0, 0.0);
         assertEquals(-90.0, point2.getLatitude());
-        
+
         // Test max longitude
         Point point3 = new Point(0.0, 180.0);
         assertEquals(180.0, point3.getLongitude());
-        
+
         // Test min longitude
         Point point4 = new Point(0.0, -180.0);
         assertEquals(-180.0, point4.getLongitude());

@@ -55,5 +55,5 @@ public class GraphCache {
         labels.clear();
         propertyNames.clear();
         relationshipTypes.clear();
-    }   
+    }
 }

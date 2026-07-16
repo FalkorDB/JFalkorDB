@@ -1,24 +1,23 @@
 package com.falkordb;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 import com.falkordb.Statistics.Label;
 import com.falkordb.exceptions.GraphException;
 import com.falkordb.graph_entities.*;
 import com.falkordb.test.utils.PathBuilder;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
-import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class GraphAPITest {
 
@@ -36,7 +35,7 @@ public class GraphAPITest {
     }
 
     @Test
-    public void testGetTime(){
+    public void testGetTime() {
         ResultSet resultSet = client.query("RETURN localtime({hour: 12, minute:0, second:0}) as time");
         Iterator<Record> iterator = resultSet.iterator();
         Assertions.assertTrue(iterator.hasNext());
@@ -48,7 +47,7 @@ public class GraphAPITest {
     }
 
     @Test
-    public void testGetDate(){
+    public void testGetDate() {
         ResultSet resultSet = client.query("RETURN date({year : 1984, month:1, day:1}) as date");
         Iterator<Record> iterator = resultSet.iterator();
         Assertions.assertTrue(iterator.hasNext());
@@ -60,8 +59,9 @@ public class GraphAPITest {
     }
 
     @Test
-    public void testGetDateTime(){
-        ResultSet resultSet = client.query("RETURN localdatetime({year : 1984, month:1, day:1,hour: 12, minute:15, second:1 }) as datetime");
+    public void testGetDateTime() {
+        ResultSet resultSet = client.query(
+                "RETURN localdatetime({year : 1984, month:1, day:1,hour: 12, minute:15, second:1 }) as datetime");
         Iterator<Record> iterator = resultSet.iterator();
         Assertions.assertTrue(iterator.hasNext());
         Record record = iterator.next();
@@ -75,7 +75,7 @@ public class GraphAPITest {
     }
 
     @Test
-    public void testGetDuration(){
+    public void testGetDuration() {
         ResultSet resultSet = client.query("RETURN duration({hours: 2, minutes: 30, seconds: 45}) as duration");
         Iterator<Record> iterator = resultSet.iterator();
         Assertions.assertTrue(iterator.hasNext());
@@ -163,7 +163,6 @@ public class GraphAPITest {
         Assertions.assertEquals(1, deleteResult.getStatistics().nodesDeleted());
 
         Assertions.assertNotNull(deleteResult.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
-
     }
 
     @Test
@@ -184,7 +183,6 @@ public class GraphAPITest {
         Assertions.assertEquals(1, deleteResult.getStatistics().relationshipsDeleted());
 
         Assertions.assertNotNull(deleteResult.getStatistics().getStringValue(Label.QUERY_INTERNAL_EXECUTION_TIME));
-
     }
 
     @Test
@@ -212,7 +210,6 @@ public class GraphAPITest {
         Assertions.assertFalse(deleteExistingIndexResult.iterator().hasNext());
         Assertions.assertNotNull(deleteExistingIndexResult.getStatistics().getStringValue(Label.INDICES_DELETED));
         Assertions.assertEquals(1, deleteExistingIndexResult.getStatistics().indicesDeleted());
-
     }
 
     @Test
@@ -227,9 +224,11 @@ public class GraphAPITest {
 
         Header header = queryResult.getHeader();
         Assertions.assertNotNull(header);
-        Assertions.assertEquals("HeaderImpl{"
-                + "schemaTypes=[COLUMN_SCALAR, COLUMN_SCALAR, COLUMN_SCALAR], "
-                + "schemaNames=[a, r, a.age]}", header.toString());
+        Assertions.assertEquals(
+                "HeaderImpl{"
+                        + "schemaTypes=[COLUMN_SCALAR, COLUMN_SCALAR, COLUMN_SCALAR], "
+                        + "schemaNames=[a, r, a.age]}",
+                header.toString());
 
         List<String> schemaNames = header.getSchemaNames();
 
@@ -238,7 +237,6 @@ public class GraphAPITest {
         Assertions.assertEquals("a", schemaNames.get(0));
         Assertions.assertEquals("r", schemaNames.get(1));
         Assertions.assertEquals("a.age", schemaNames.get(2));
-
     }
 
     @Test
@@ -282,11 +280,13 @@ public class GraphAPITest {
         expectedEdge.addProperty("since", since);
         expectedEdge.addProperty(doubleProperty);
         expectedEdge.addProperty(falseBooleanProperty);
-        Assertions.assertEquals("Edge{relationshipType='knows', source=0, destination=1, id=0, "
-                + "propertyMap={boolValue=Property{name='boolValue', value=false}, "
-                + "place=Property{name='place', value=TLV}, "
-                + "doubleValue=Property{name='doubleValue', value=3.14}, "
-                + "since=Property{name='since', value=2000}}}", expectedEdge.toString());
+        Assertions.assertEquals(
+                "Edge{relationshipType='knows', source=0, destination=1, id=0, "
+                        + "propertyMap={boolValue=Property{name='boolValue', value=false}, "
+                        + "place=Property{name='place', value=TLV}, "
+                        + "doubleValue=Property{name='doubleValue', value=3.14}, "
+                        + "since=Property{name='since', value=2000}}}",
+                expectedEdge.toString());
         Assertions.assertEquals(4, expectedEdge.getNumberOfProperties());
 
         Map<String, Object> params = new HashMap<>();
@@ -298,13 +298,11 @@ public class GraphAPITest {
         Assertions.assertNotNull(client.query(
                 "CREATE (:person{name:$name,age:$age, doubleValue:$doubleValue, boolValue:$boolValue})", params));
         Assertions.assertNotNull(client.query("CREATE (:person{name:'amit',age:30})"));
-        Assertions.assertNotNull(
-                client.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  " +
-                        "CREATE (a)-[:knows{place:'TLV', since:2000,doubleValue:3.14, boolValue:false}]->(b)"));
+        Assertions.assertNotNull(client.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  "
+                + "CREATE (a)-[:knows{place:'TLV', since:2000,doubleValue:3.14, boolValue:false}]->(b)"));
 
-        ResultSet resultSet = client.query("MATCH (a:person)-[r:knows]->(b:person) RETURN a,r, " +
-                "a.name, a.age, a.doubleValue, a.boolValue, " +
-                "r.place, r.since, r.doubleValue, r.boolValue");
+        ResultSet resultSet = client.query("MATCH (a:person)-[r:knows]->(b:person) RETURN a,r, "
+                + "a.name, a.age, a.doubleValue, a.boolValue, " + "r.place, r.since, r.doubleValue, r.boolValue");
         Assertions.assertNotNull(resultSet);
 
         Assertions.assertEquals(0, resultSet.getStatistics().nodesCreated());
@@ -337,12 +335,32 @@ public class GraphAPITest {
         edge = record.getValue("r");
         Assertions.assertEquals(expectedEdge, edge);
 
-        Assertions.assertEquals(Arrays.asList("a", "r", "a.name", "a.age", "a.doubleValue", "a.boolValue",
-                "r.place", "r.since", "r.doubleValue", "r.boolValue"), record.keys());
+        Assertions.assertEquals(
+                Arrays.asList(
+                        "a",
+                        "r",
+                        "a.name",
+                        "a.age",
+                        "a.doubleValue",
+                        "a.boolValue",
+                        "r.place",
+                        "r.since",
+                        "r.doubleValue",
+                        "r.boolValue"),
+                record.keys());
 
-        Assertions.assertEquals(Arrays.asList(expectedNode, expectedEdge,
-                name, (long) age, doubleValue, true,
-                place, (long) since, doubleValue, false),
+        Assertions.assertEquals(
+                Arrays.asList(
+                        expectedNode,
+                        expectedEdge,
+                        name,
+                        (long) age,
+                        doubleValue,
+                        true,
+                        place,
+                        (long) since,
+                        doubleValue,
+                        false),
                 record.values());
 
         Node a = record.getValue("a");
@@ -356,7 +374,6 @@ public class GraphAPITest {
         Assertions.assertEquals(32L, ((Long) record.getValue("a.age")).longValue());
         Assertions.assertEquals("roi", record.getString("a.name"));
         Assertions.assertEquals("32", record.getString("a.age"));
-
     }
 
     @Test
@@ -365,7 +382,8 @@ public class GraphAPITest {
         Assertions.assertNotNull(
                 client.query("CREATE (:person {name:'roi', age:32})-[:knows]->(:person {name:'amit',age:30}) "));
 
-        List<ResultSet> resultSets = IntStream.range(0, 16).parallel()
+        List<ResultSet> resultSets = IntStream.range(0, 16)
+                .parallel()
                 .mapToObj(i -> client.query("MATCH (a:person)-[r:knows]->(b:person) RETURN a,r, a.age"))
                 .collect(Collectors.toList());
 
@@ -419,10 +437,12 @@ public class GraphAPITest {
 
         Assertions.assertNotNull(client.query("CREATE (:worker{lastName:'a'})"));
         Assertions.assertNotNull(client.query("CREATE (:worker{lastName:'b'})"));
-        Assertions.assertNotNull(client.query(
-                "MATCH (a:worker), (b:worker) WHERE (a.lastName = 'a' AND b.lastName='b')  CREATE (a)-[:worksWith]->(b)"));
+        Assertions.assertNotNull(
+                client.query(
+                        "MATCH (a:worker), (b:worker) WHERE (a.lastName = 'a' AND b.lastName='b')  CREATE (a)-[:worksWith]->(b)"));
 
-        resultSets = IntStream.range(0, 16).parallel()
+        resultSets = IntStream.range(0, 16)
+                .parallel()
                 .mapToObj(i -> client.query("MATCH (a:worker)-[r:worksWith]->(b:worker) RETURN a,r"))
                 .collect(Collectors.toList());
 
@@ -501,8 +521,9 @@ public class GraphAPITest {
         expectedEdge.setId(1);
         Assertions.assertNotNull(client.query("CREATE (:worker{lastName:'a'})"));
         Assertions.assertNotNull(client.query("CREATE (:worker{lastName:'b'})"));
-        Assertions.assertNotNull(client.query(
-                "MATCH (a:worker), (b:worker) WHERE (a.lastName = 'a' AND b.lastName='b')  CREATE (a)-[:worksWith]->(b)"));
+        Assertions.assertNotNull(
+                client.query(
+                        "MATCH (a:worker), (b:worker) WHERE (a.lastName = 'a' AND b.lastName='b')  CREATE (a)-[:worksWith]->(b)"));
         resultSet = client.query("MATCH (a:worker)-[r:worksWith]->(b:worker) RETURN a,r");
         Assertions.assertNotNull(resultSet.getHeader());
         header = resultSet.getHeader();
@@ -519,7 +540,6 @@ public class GraphAPITest {
         Assertions.assertFalse(iterator.hasNext());
         Assertions.assertEquals(Arrays.asList("a", "r"), record.keys());
         Assertions.assertEquals(Arrays.asList(expectedNode, expectedEdge), record.values());
-
     }
 
     @Test
@@ -535,7 +555,6 @@ public class GraphAPITest {
         Assertions.assertNotNull(client.query("MATCH (n) where n.s1=$s1 and n.s2=$s2 RETURN n", params2));
 
         Assertions.assertNotNull(client.query("MATCH (n) where n.s1='S\"' RETURN n"));
-
     }
 
     @Test
@@ -585,13 +604,12 @@ public class GraphAPITest {
             Assertions.assertNotNull(c.query(
                     "CREATE (:person{name:$name, age:$age, doubleValue:$doubleValue, boolValue:$boolValue})", params));
             Assertions.assertNotNull(c.query("CREATE (:person{name:'amit',age:30})"));
-            Assertions.assertNotNull(
-                    c.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  " +
-                            "CREATE (a)-[:knows{place:'TLV', since:2000,doubleValue:3.14, boolValue:false}]->(b)"));
+            Assertions.assertNotNull(c.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit')  "
+                    + "CREATE (a)-[:knows{place:'TLV', since:2000,doubleValue:3.14, boolValue:false}]->(b)"));
 
-            ResultSet resultSet = c.query("MATCH (a:person)-[r:knows]->(b:person) RETURN a,r, " +
-                    "a.name, a.age, a.doubleValue, a.boolValue, " +
-                    "r.place, r.since, r.doubleValue, r.boolValue");
+            ResultSet resultSet = c.query("MATCH (a:person)-[r:knows]->(b:person) RETURN a,r, "
+                    + "a.name, a.age, a.doubleValue, a.boolValue, "
+                    + "r.place, r.since, r.doubleValue, r.boolValue");
             Assertions.assertNotNull(resultSet);
 
             Assertions.assertEquals(0, resultSet.getStatistics().nodesCreated());
@@ -624,12 +642,32 @@ public class GraphAPITest {
             edge = record.getValue("r");
             Assertions.assertEquals(expectedEdge, edge);
 
-            Assertions.assertEquals(Arrays.asList("a", "r", "a.name", "a.age", "a.doubleValue", "a.boolValue",
-                    "r.place", "r.since", "r.doubleValue", "r.boolValue"), record.keys());
+            Assertions.assertEquals(
+                    Arrays.asList(
+                            "a",
+                            "r",
+                            "a.name",
+                            "a.age",
+                            "a.doubleValue",
+                            "a.boolValue",
+                            "r.place",
+                            "r.since",
+                            "r.doubleValue",
+                            "r.boolValue"),
+                    record.keys());
 
-            Assertions.assertEquals(Arrays.asList(expectedNode, expectedEdge,
-                    name, (long) age, doubleValue, true,
-                    place, (long) since, doubleValue, false),
+            Assertions.assertEquals(
+                    Arrays.asList(
+                            expectedNode,
+                            expectedEdge,
+                            name,
+                            (long) age,
+                            doubleValue,
+                            true,
+                            place,
+                            (long) since,
+                            doubleValue,
+                            false),
                     record.values());
 
             Node a = record.getValue("a");
@@ -647,13 +685,14 @@ public class GraphAPITest {
             // Test profile functionality in contexted API
             ResultSet profileResult = c.profile("MATCH (a:person) WHERE (a.name = 'roi') RETURN a.age");
             Assertions.assertNotNull(profileResult);
-            
+
             // Verify profile result structure in contexted API
             Assertions.assertTrue(profileResult.size() > 0, "Profile result should contain execution plan operations");
             Header profileHeader = profileResult.getHeader();
             Assertions.assertNotNull(profileHeader, "Profile result should have a header");
-            Assertions.assertTrue(profileHeader.getSchemaNames().size() > 0, "Profile result header should have columns");
-            
+            Assertions.assertTrue(
+                    profileHeader.getSchemaNames().size() > 0, "Profile result header should have columns");
+
             // Verify profile result contains meaningful data
             Iterator<Record> profileIterator = profileResult.iterator();
             Assertions.assertTrue(profileIterator.hasNext(), "Profile result should have execution plan operations");
@@ -756,9 +795,7 @@ public class GraphAPITest {
             record = iterator.next();
             Assertions.assertEquals(Arrays.asList("x"), record.keys());
             Assertions.assertEquals(i, (long) record.getValue("x"));
-
         }
-
     }
 
     @Test
@@ -783,10 +820,23 @@ public class GraphAPITest {
 
         Set<Path> expectedPaths = new HashSet<>();
 
-        Path path01 = new PathBuilder(2).append(nodes.get(0)).append(edges.get(0)).append(nodes.get(1)).build();
-        Path path12 = new PathBuilder(2).append(nodes.get(1)).append(edges.get(1)).append(nodes.get(2)).build();
-        Path path02 = new PathBuilder(3).append(nodes.get(0)).append(edges.get(0)).append(nodes.get(1))
-                .append(edges.get(1)).append(nodes.get(2)).build();
+        Path path01 = new PathBuilder(2)
+                .append(nodes.get(0))
+                .append(edges.get(0))
+                .append(nodes.get(1))
+                .build();
+        Path path12 = new PathBuilder(2)
+                .append(nodes.get(1))
+                .append(edges.get(1))
+                .append(nodes.get(2))
+                .build();
+        Path path02 = new PathBuilder(3)
+                .append(nodes.get(0))
+                .append(edges.get(0))
+                .append(nodes.get(1))
+                .append(edges.get(1))
+                .append(nodes.get(2))
+                .build();
 
         expectedPaths.add(path01);
         expectedPaths.add(path12);
@@ -802,7 +852,6 @@ public class GraphAPITest {
             Assertions.assertTrue(expectedPaths.contains(p));
             expectedPaths.remove(p);
         }
-
     }
 
     @Test
@@ -874,7 +923,7 @@ public class GraphAPITest {
         Object res = vector.get(0);
 
         // The result can be either Double or Float depending on the server version
-        if ( res instanceof Double) {
+        if (res instanceof Double) {
             List<Double> v = r.getValue(0);
             Assertions.assertEquals(2.1, v.get(0), 0.01);
             Assertions.assertEquals(-0.82, v.get(1), 0.01);
@@ -938,8 +987,8 @@ public class GraphAPITest {
 
     @Test
     public void testGeoPointLatLon() {
-        ResultSet rs = client.query("CREATE (:restaurant"
-                + " {location: point({latitude:30.27822306, longitude:-97.75134723})})");
+        ResultSet rs = client.query(
+                "CREATE (:restaurant" + " {location: point({latitude:30.27822306, longitude:-97.75134723})})");
         Assertions.assertEquals(1, rs.getStatistics().nodesCreated());
         Assertions.assertEquals(1, rs.getStatistics().propertiesSet());
 
@@ -948,8 +997,8 @@ public class GraphAPITest {
 
     @Test
     public void testGeoPointLonLat() {
-        ResultSet rs = client.query("CREATE (:restaurant"
-                + " {location: point({longitude:-97.75134723, latitude:30.27822306})})");
+        ResultSet rs = client.query(
+                "CREATE (:restaurant" + " {location: point({longitude:-97.75134723, latitude:30.27822306})})");
         Assertions.assertEquals(1, rs.getStatistics().nodesCreated());
         Assertions.assertEquals(1, rs.getStatistics().propertiesSet());
 
@@ -1019,9 +1068,7 @@ public class GraphAPITest {
     public void testSimpleReadOnlyWithTimeOut() {
         client.query("CREATE (:person{name:'filipe',age:30})");
         try {
-            client.readOnlyQuery(
-                    "WITH 1000000 as n RETURN reduce(f = 1, x IN range(1, n) | f * x) AS result",
-                    1L);
+            client.readOnlyQuery("WITH 1000000 as n RETURN reduce(f = 1, x IN range(1, n) | f * x) AS result", 1L);
 
             fail("Expected Timeout Exception was not thrown.");
         } catch (GraphException e) {
@@ -1034,47 +1081,53 @@ public class GraphAPITest {
         // Create sample data for profiling
         client.query("CREATE (:person{name:'alice',age:30})");
         client.query("CREATE (:person{name:'bob',age:25})");
-        
+
         // Test basic profile
         ResultSet profileResult = client.profile("MATCH (a:person) WHERE (a.name = 'alice') RETURN a.age");
         Assertions.assertNotNull(profileResult);
-        
+
         // Verify profile result has expected structure
         Assertions.assertTrue(profileResult.size() > 0, "Profile result should contain execution plan operations");
-        
+
         // Verify profile result has a header
         Header header = profileResult.getHeader();
         Assertions.assertNotNull(header, "Profile result should have a header");
         Assertions.assertTrue(header.getSchemaNames().size() > 0, "Profile result header should have columns");
-        
+
         // Verify the profile result contains timing information (execution plan data)
         // Profile results typically contain execution plan operations with timing data
         Iterator<Record> iterator = profileResult.iterator();
         Assertions.assertTrue(iterator.hasNext(), "Profile result should have at least one operation");
-        
+
         Record firstRecord = iterator.next();
         Assertions.assertNotNull(firstRecord, "Profile result record should not be null");
         Assertions.assertTrue(firstRecord.size() > 0, "Profile result record should have values");
-        
+
         // Test profile with parameters
         Map<String, Object> params = new HashMap<>();
         params.put("name", "alice");
-        ResultSet profileResultWithParams = client.profile("MATCH (a:person) WHERE (a.name = $name) RETURN a.age", params);
+        ResultSet profileResultWithParams =
+                client.profile("MATCH (a:person) WHERE (a.name = $name) RETURN a.age", params);
         Assertions.assertNotNull(profileResultWithParams);
-        
+
         // Verify parameterized profile result has expected structure
-        Assertions.assertTrue(profileResultWithParams.size() > 0, "Parameterized profile result should contain execution plan operations");
+        Assertions.assertTrue(
+                profileResultWithParams.size() > 0,
+                "Parameterized profile result should contain execution plan operations");
         Header paramHeader = profileResultWithParams.getHeader();
         Assertions.assertNotNull(paramHeader, "Parameterized profile result should have a header");
-        
+
         // Test profile with more complex query
-        ResultSet complexProfileResult = client.profile("MATCH (p:person) WHERE p.age > 20 RETURN p.name, p.age ORDER BY p.age");
+        ResultSet complexProfileResult =
+                client.profile("MATCH (p:person) WHERE p.age > 20 RETURN p.name, p.age ORDER BY p.age");
         Assertions.assertNotNull(complexProfileResult);
-        Assertions.assertTrue(complexProfileResult.size() > 0, "Complex profile result should contain execution plan operations");
-        
+        Assertions.assertTrue(
+                complexProfileResult.size() > 0, "Complex profile result should contain execution plan operations");
+
         // Verify all profile results have statistics (execution plans should have execution time)
         Assertions.assertNotNull(profileResult.getStatistics(), "Profile result should have statistics");
-        Assertions.assertNotNull(profileResultWithParams.getStatistics(), "Parameterized profile result should have statistics");
+        Assertions.assertNotNull(
+                profileResultWithParams.getStatistics(), "Parameterized profile result should have statistics");
         Assertions.assertNotNull(complexProfileResult.getStatistics(), "Complex profile result should have statistics");
     }
 
@@ -1146,9 +1199,9 @@ public class GraphAPITest {
         Assertions.assertFalse(explainResult.isEmpty());
         // Should contain typical execution plan keywords in one of the lines
         boolean containsExpectedKeywords = explainResult.stream()
-            .anyMatch(line -> line.toLowerCase().contains("scan") || 
-                             line.toLowerCase().contains("project") ||
-                             line.toLowerCase().contains("results"));
+                .anyMatch(line -> line.toLowerCase().contains("scan")
+                        || line.toLowerCase().contains("project")
+                        || line.toLowerCase().contains("results"));
         Assertions.assertTrue(containsExpectedKeywords);
 
         // Test explain with parameters

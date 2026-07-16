@@ -3,11 +3,9 @@ package com.falkordb.impl.api;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.util.SafeEncoder;
 
@@ -26,27 +24,21 @@ public class DriverImplConfigTest {
 
     @Test
     public void testParseConfigGetResponseWithByteArrayValue() {
-        List<Object> response = Arrays.asList(
-                SafeEncoder.encode("RESULTSET_SIZE"),
-                SafeEncoder.encode("100"));
+        List<Object> response = Arrays.asList(SafeEncoder.encode("RESULTSET_SIZE"), SafeEncoder.encode("100"));
         String result = driverImpl.parseConfigGetResponse(response);
         Assertions.assertEquals("100", result);
     }
 
     @Test
     public void testParseConfigGetResponseWithLongValue() {
-        List<Object> response = Arrays.asList(
-                SafeEncoder.encode("RESULTSET_SIZE"),
-                Long.valueOf(100));
+        List<Object> response = Arrays.asList(SafeEncoder.encode("RESULTSET_SIZE"), Long.valueOf(100));
         String result = driverImpl.parseConfigGetResponse(response);
         Assertions.assertEquals("100", result);
     }
 
     @Test
     public void testParseConfigGetResponseWithNullValue() {
-        List<Object> response = Arrays.asList(
-                SafeEncoder.encode("RESULTSET_SIZE"),
-                null);
+        List<Object> response = Arrays.asList(SafeEncoder.encode("RESULTSET_SIZE"), null);
         Assertions.assertThrows(JedisDataException.class, () -> {
             driverImpl.parseConfigGetResponse(response);
         });

@@ -1,9 +1,5 @@
 package com.falkordb.impl.api;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import com.falkordb.GraphContext;
 import com.falkordb.GraphPipeline;
 import com.falkordb.GraphTransaction;
@@ -12,7 +8,9 @@ import com.falkordb.exceptions.GraphException;
 import com.falkordb.impl.Utils;
 import com.falkordb.impl.graph_cache.GraphCache;
 import com.falkordb.impl.resultset.ResultSetImpl;
-
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.util.SafeEncoder;
@@ -31,7 +29,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      * Generates a new instance with a specific Jedis connection
      * @param connection Jedis connection
      * @param cache GraphCache
-     * @param graphId graph id 
+     * @param graphId graph id
      */
     public GraphContextImpl(Jedis connection, GraphCache cache, String graphId) {
         this.connection = connection;
@@ -48,7 +46,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     protected ResultSet sendQuery(String preparedQuery) {
         try {
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>) connection.sendCommand(GraphCommand.QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
+            List<Object> rawResponse = (List<Object>)
+                    connection.sendCommand(GraphCommand.QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
             return new ResultSetImpl(rawResponse, this, this.cache);
         } catch (GraphException rt) {
             throw rt;
@@ -66,7 +65,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     protected ResultSet sendReadOnlyQuery(String preparedQuery) {
         try {
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>) connection.sendCommand(GraphCommand.RO_QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
+            List<Object> rawResponse = (List<Object>)
+                    connection.sendCommand(GraphCommand.RO_QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
             return new ResultSetImpl(rawResponse, this, this.cache);
         } catch (GraphException ge) {
             throw ge;
@@ -78,15 +78,20 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     /**
      * Sends the query over the instance only connection
      * @param preparedQuery prepared query
-     * @param timeout timeout in milliseconds 
+     * @param timeout timeout in milliseconds
      * @return Result set with the query answer
      */
     @Override
     protected ResultSet sendQuery(String preparedQuery, long timeout) {
         try {
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>) connection.sendBlockingCommand(GraphCommand.QUERY,
-                    graphId, preparedQuery, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout));
+            List<Object> rawResponse = (List<Object>) connection.sendBlockingCommand(
+                    GraphCommand.QUERY,
+                    graphId,
+                    preparedQuery,
+                    Utils.COMPACT_STRING,
+                    Utils.TIMEOUT_STRING,
+                    Long.toString(timeout));
             return new ResultSetImpl(rawResponse, this, this.cache);
         } catch (GraphException rt) {
             throw rt;
@@ -98,15 +103,20 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     /**
      * Sends the read-only query over the instance only connection
      * @param preparedQuery prepared query
-     * @param timeout timeout in milliseconds 
+     * @param timeout timeout in milliseconds
      * @return Result set with the query answer
      */
     @Override
     protected ResultSet sendReadOnlyQuery(String preparedQuery, long timeout) {
         try {
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>) connection.sendBlockingCommand(GraphCommand.RO_QUERY,
-                    graphId, preparedQuery, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout));
+            List<Object> rawResponse = (List<Object>) connection.sendBlockingCommand(
+                    GraphCommand.RO_QUERY,
+                    graphId,
+                    preparedQuery,
+                    Utils.COMPACT_STRING,
+                    Utils.TIMEOUT_STRING,
+                    Long.toString(timeout));
             return new ResultSetImpl(rawResponse, this, this.cache);
         } catch (GraphException ge) {
             throw ge;
@@ -124,7 +134,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     protected ResultSet sendProfile(String preparedQuery) {
         try {
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>) connection.sendCommand(GraphCommand.PROFILE, graphId, preparedQuery, Utils.COMPACT_STRING);
+            List<Object> rawResponse = (List<Object>)
+                    connection.sendCommand(GraphCommand.PROFILE, graphId, preparedQuery, Utils.COMPACT_STRING);
             return new ResultSetImpl(rawResponse, this, this.cache);
         } catch (GraphException ge) {
             throw ge;
@@ -139,8 +150,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public GraphTransaction multi() {
-        GraphTransactionImpl transaction = new GraphTransactionImpl(
-                connection.getConnection(), this, this.cache, this.graphId);
+        GraphTransactionImpl transaction =
+                new GraphTransactionImpl(connection.getConnection(), this, this.cache, this.graphId);
         transaction.multi();
         return transaction;
     }
@@ -197,7 +208,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             connection.close();
             throw e;
         }
-        //clear local state
+        // clear local state
         this.cache.clear();
         // caches.removeGraphCache(graphId);
         return SafeEncoder.encode((byte[]) response);
@@ -205,7 +216,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
 
     /**
      * Sends an explain command using GRAPH.EXPLAIN
-     * 
+     *
      * @param preparedQuery prepared query
      * @return execution plan as list of strings
      */
@@ -214,7 +225,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     protected List<String> sendExplain(String preparedQuery) {
         try {
             Object response = connection.sendCommand(GraphCommand.EXPLAIN, graphId, preparedQuery);
-            
+
             // GRAPH.EXPLAIN returns an array of byte arrays, convert to list of strings
             if (response instanceof List) {
                 List<Object> responseList = (List<Object>) response;
@@ -248,7 +259,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
 
     @Override
     public int hashCode() {
-       return this.connection.hashCode();
+        return this.connection.hashCode();
     }
 
     @Override

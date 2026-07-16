@@ -1,8 +1,8 @@
 package com.falkordb.graph_entities;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 public class EdgeTest {
 
@@ -24,7 +24,7 @@ public class EdgeTest {
     public void testSetAndGetRelationshipType() {
         Edge edge = new Edge();
         edge.setRelationshipType("KNOWS");
-        
+
         assertEquals("KNOWS", edge.getRelationshipType());
     }
 
@@ -32,7 +32,7 @@ public class EdgeTest {
     public void testSetAndGetSource() {
         Edge edge = new Edge();
         edge.setSource(1L);
-        
+
         assertEquals(1L, edge.getSource());
     }
 
@@ -40,7 +40,7 @@ public class EdgeTest {
     public void testSetAndGetDestination() {
         Edge edge = new Edge();
         edge.setDestination(2L);
-        
+
         assertEquals(2L, edge.getDestination());
     }
 
@@ -52,7 +52,7 @@ public class EdgeTest {
         edge.setSource(10L);
         edge.setDestination(20L);
         edge.addProperty("since", 2020);
-        
+
         assertEquals(100, edge.getId());
         assertEquals("WORKS_FOR", edge.getRelationshipType());
         assertEquals(10L, edge.getSource());
@@ -64,7 +64,7 @@ public class EdgeTest {
     public void testEqualsWithSameObject() {
         Edge edge = new Edge();
         edge.setRelationshipType("KNOWS");
-        
+
         assertEquals(edge, edge);
     }
 
@@ -75,13 +75,13 @@ public class EdgeTest {
         edge1.setRelationshipType("KNOWS");
         edge1.setSource(10L);
         edge1.setDestination(20L);
-        
+
         Edge edge2 = new Edge();
         edge2.setId(1);
         edge2.setRelationshipType("KNOWS");
         edge2.setSource(10L);
         edge2.setDestination(20L);
-        
+
         assertEquals(edge1, edge2);
     }
 
@@ -91,12 +91,12 @@ public class EdgeTest {
         edge1.setRelationshipType("KNOWS");
         edge1.setSource(10L);
         edge1.setDestination(20L);
-        
+
         Edge edge2 = new Edge();
         edge2.setRelationshipType("LIKES");
         edge2.setSource(10L);
         edge2.setDestination(20L);
-        
+
         assertNotEquals(edge1, edge2);
     }
 
@@ -106,12 +106,12 @@ public class EdgeTest {
         edge1.setRelationshipType("KNOWS");
         edge1.setSource(10L);
         edge1.setDestination(20L);
-        
+
         Edge edge2 = new Edge();
         edge2.setRelationshipType("KNOWS");
         edge2.setSource(15L);
         edge2.setDestination(20L);
-        
+
         assertNotEquals(edge1, edge2);
     }
 
@@ -121,12 +121,12 @@ public class EdgeTest {
         edge1.setRelationshipType("KNOWS");
         edge1.setSource(10L);
         edge1.setDestination(20L);
-        
+
         Edge edge2 = new Edge();
         edge2.setRelationshipType("KNOWS");
         edge2.setSource(10L);
         edge2.setDestination(25L);
-        
+
         assertNotEquals(edge1, edge2);
     }
 
@@ -149,13 +149,13 @@ public class EdgeTest {
         edge1.setRelationshipType("KNOWS");
         edge1.setSource(10L);
         edge1.setDestination(20L);
-        
+
         Edge edge2 = new Edge();
         edge2.setId(1);
         edge2.setRelationshipType("KNOWS");
         edge2.setSource(10L);
         edge2.setDestination(20L);
-        
+
         assertEquals(edge1.hashCode(), edge2.hashCode());
     }
 
@@ -167,9 +167,9 @@ public class EdgeTest {
         edge.setSource(10L);
         edge.setDestination(20L);
         edge.addProperty("weight", 1.5);
-        
+
         String result = edge.toString();
-        
+
         assertTrue(result.contains("Edge{"));
         assertTrue(result.contains("relationshipType="));
         assertTrue(result.contains("source="));
@@ -182,7 +182,7 @@ public class EdgeTest {
     public void testToStringEmptyEdge() {
         Edge edge = new Edge();
         String result = edge.toString();
-        
+
         assertNotNull(result);
         assertTrue(result.contains("Edge{"));
     }

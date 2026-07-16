@@ -4,15 +4,14 @@ import com.falkordb.GraphContext;
 import com.falkordb.GraphContextGenerator;
 import com.falkordb.ResultSet;
 import com.falkordb.impl.graph_cache.GraphCache;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.util.SafeEncoder;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.util.SafeEncoder;
 
 /**
- * An implementation of GraphContextGenerator. 
+ * An implementation of GraphContextGenerator.
  */
 public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
 
@@ -35,7 +34,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      * Overrides the abstract function.
      * Sends the query from any Jedis connection received from the Jedis pool and
      * closes it once done
-     * 
+     *
      * @param preparedQuery prepared query
      * @return Result set with the query answer
      */
@@ -50,7 +49,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      * Overrides the abstract function.
      * Sends the read-only query from any Jedis connection received from the Jedis
      * pool and closes it once done
-     * 
+     *
      * @param preparedQuery prepared query
      * @return Result set with the query answer
      */
@@ -65,7 +64,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      * Overrides the abstract function.
      * Sends the query from any Jedis connection received from the Jedis pool and
      * closes it once done
-     * 
+     *
      * @param preparedQuery prepared query
      * @param timeout timeout in milliseconds
      * @return Result set with the query answer
@@ -81,7 +80,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      * Overrides the abstract function.
      * Sends the read-only query from any Jedis connection received from the Jedis
      * pool and closes it once done
-     * 
+     *
      * @param preparedQuery prepared query
      * @param timeout timeout in milliseconds
      * @return Result set with the query answer
@@ -97,7 +96,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      * Overrides the abstract function.
      * Sends the profile query from any Jedis connection received from the Jedis
      * pool and closes it once done
-     * 
+     *
      * @param preparedQuery prepared query
      * @return Result set with execution plan and performance metrics
      */
@@ -124,7 +123,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
 
     /**
      * Deletes the entire graph
-     * 
+     *
      * @return delete running time statistics
      */
     @Override
@@ -139,7 +138,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
 
     /**
      * Sends an explain command using GRAPH.EXPLAIN
-     * 
+     *
      * @param preparedQuery prepared query
      * @return execution plan as list of strings
      */
@@ -148,7 +147,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
     protected List<String> sendExplain(String preparedQuery) {
         try (Jedis conn = driver.getConnection()) {
             Object response = conn.sendCommand(GraphCommand.EXPLAIN, graphId, preparedQuery);
-            
+
             // GRAPH.EXPLAIN returns an array of byte arrays, convert to list of strings
             if (response instanceof List) {
                 List<Object> responseList = (List<Object>) response;
@@ -171,7 +170,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
     /**
      * Returns a new ContextedGraph bounded to a Jedis connection from the Jedis
      * pool
-     * 
+     *
      * @return ContextedGraph
      */
     @Override

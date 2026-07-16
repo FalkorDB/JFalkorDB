@@ -19,5 +19,4 @@ public interface ResultSet extends Iterable<Record> {
      * @return the header of the result set
      */
     Header getHeader();
-
 }
