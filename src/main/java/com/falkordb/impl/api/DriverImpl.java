@@ -4,8 +4,13 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+
+import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.Protocol;
 import redis.clients.jedis.util.Pool;
 import redis.clients.jedis.util.SafeEncoder;
 
@@ -16,6 +21,18 @@ import com.falkordb.Driver;
  */
 public class DriverImpl implements Driver {
 
+    /**
+     * Socket (read) timeout applied to connections created by this driver: 0 means no
+     * client-side deadline. Graph queries routinely exceed Jedis' default 2000ms socket
+     * timeout (e.g. LOAD CSV, deep traversals), which would otherwise cut the connection
+     * with a read timeout while the server keeps executing the query - so retrying could
+     * duplicate writes. Query duration is governed by the server's TIMEOUT /
+     * TIMEOUT_DEFAULT configuration (or a per-query timeout) instead, matching the other
+     * FalkorDB clients. To use a different socket timeout, build your own pool and pass
+     * it to {@link #DriverImpl(Pool)}.
+     */
+    private static final int DEFAULT_SOCKET_TIMEOUT_MILLIS = 0;
+
     private final Pool<Jedis> pool;
 
     /**
@@ -25,7 +42,7 @@ public class DriverImpl implements Driver {
      * @param port Server port
      */
     public DriverImpl(String host, int port) {
-        this(new JedisPool(host, port));
+        this(new JedisPool(new HostAndPort(host, port), clientConfig(null, null)));
     }
 
     /**
@@ -37,7 +54,7 @@ public class DriverImpl implements Driver {
      * @param password password
      */
     public DriverImpl(String host, int port, String user, final String password) {
-        this(new JedisPool(host, port, user, password));
+        this(new JedisPool(new HostAndPort(host, port), clientConfig(user, password)));
     }
 
     /**
@@ -46,7 +63,26 @@ public class DriverImpl implements Driver {
      * @param uri server uri
      */
     public DriverImpl(URI uri) {
-        this(new JedisPool(uri));
+        this(new JedisPool(new GenericObjectPoolConfig<Jedis>(), uri,
+                Protocol.DEFAULT_TIMEOUT, DEFAULT_SOCKET_TIMEOUT_MILLIS));
+    }
+
+    /**
+     * Builds the client configuration used by this driver: Jedis' default connection
+     * timeout, no socket (read) timeout (see {@link #DEFAULT_SOCKET_TIMEOUT_MILLIS}),
+     * and the given credentials when provided.
+     */
+    private static DefaultJedisClientConfig clientConfig(String user, final String password) {
+        DefaultJedisClientConfig.Builder builder = DefaultJedisClientConfig.builder()
+                .connectionTimeoutMillis(Protocol.DEFAULT_TIMEOUT)
+                .socketTimeoutMillis(DEFAULT_SOCKET_TIMEOUT_MILLIS);
+        if (user != null) {
+            builder.user(user);
+        }
+        if (password != null) {
+            builder.password(password);
+        }
+        return builder.build();
     }
 
     /**
