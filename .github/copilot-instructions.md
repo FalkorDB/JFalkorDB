@@ -10,9 +10,10 @@ commons-pool2.
 ## Golden rule: drive everything through `just`
 
 For any action CI performs (build, test, coverage, format, …), run the **exact same `just` recipe CI
-uses** — never a raw `mvn …`. If a check needs changing, update the `just` recipe **and** the CI
-workflow together so they stay identical. Run `just --list` to see every recipe; recipes call the
-pinned Maven Wrapper (`./mvnw`).
+uses** for the standard PR gates rather than an ad-hoc `mvn …` (the JDK-8 dependency-verification
+build and the publish workflows are documented exceptions). If a check needs changing, update the
+`just` recipe **and** the CI workflow together so they stay identical. Run `just --list` to see every
+recipe; recipes call the pinned Maven Wrapper (`./mvnw`).
 
 | Recipe | Purpose |
 | --- | --- |

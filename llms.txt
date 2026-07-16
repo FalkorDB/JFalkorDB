@@ -17,7 +17,7 @@
 
       GraphContextGenerator client = FalkorDB.driver().graph("social");  // driver() defaults to localhost:6379
       ResultSet rs = client.query("CREATE (:Person {name: 'bsb'})");
-      long created = rs.getStatistics().nodesCreated();
+      int created = rs.getStatistics().nodesCreated();
 
 - Prefer parameterized queries over string concatenation:
 

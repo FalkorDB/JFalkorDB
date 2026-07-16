@@ -11,8 +11,12 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 4
 
-# pom.xml is tab-indented today; keep it to avoid churn (Spotless doesn't touch XML)
 [*.xml]
+indent_style = space
+indent_size = 2
+
+# pom.xml is historically tab-indented; keep just that file on tabs to avoid churn.
+[pom.xml]
 indent_style = tab
 
 [*.{yml,yaml,json}]
