@@ -112,7 +112,7 @@ public interface Graph extends Closeable {
      * @param kwargs - procedure output arguments
      * @return result set with the procedure data
      */
-    ResultSet callProcedure(String procedure, List<String> args  , Map<String, List<String>> kwargs);
+    ResultSet callProcedure(String procedure, List<String> args, Map<String, List<String>> kwargs);
 
     /**
      * Copies the graph

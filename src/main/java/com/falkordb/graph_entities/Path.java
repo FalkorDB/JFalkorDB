@@ -11,7 +11,6 @@ public final class Path {
     private final List<Node> nodes;
     private final List<Edge> edges;
 
-
     /**
      * Parametrized constructor
      * @param nodes - List of nodes.
@@ -50,7 +49,7 @@ public final class Path {
      * Return the number of nodes in the path.
      * @return Number of nodes.
      */
-    public int nodeCount(){
+    public int nodeCount() {
         return nodes.size();
     }
 
@@ -59,7 +58,7 @@ public final class Path {
      * @return First nodes in the path.
      * @throws IndexOutOfBoundsException if the path is empty.
      */
-    public Node firstNode(){
+    public Node firstNode() {
         return nodes.get(0);
     }
 
@@ -68,7 +67,7 @@ public final class Path {
      * @return Last nodes in the path.
      * @throws IndexOutOfBoundsException if the path is empty.
      */
-    public Node lastNode(){
+    public Node lastNode() {
         return nodes.get(nodes.size() - 1);
     }
 
@@ -79,7 +78,7 @@ public final class Path {
      * @throws IndexOutOfBoundsException if the index is out of range
      *         ({@code index < 0 || index >= nodesCount()})
      */
-    public Node getNode(int index){
+    public Node getNode(int index) {
         return nodes.get(index);
     }
 
@@ -90,7 +89,7 @@ public final class Path {
      * @throws IndexOutOfBoundsException if the index is out of range
      *         ({@code index < 0 || index >= length()})
      */
-    public Edge getEdge(int index){
+    public Edge getEdge(int index) {
         return edges.get(index);
     }
 
@@ -99,8 +98,7 @@ public final class Path {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Path path = (Path) o;
-        return Objects.equals(nodes, path.nodes) &&
-                Objects.equals(edges, path.edges);
+        return Objects.equals(nodes, path.nodes) && Objects.equals(edges, path.edges);
     }
 
     @Override

@@ -1,11 +1,10 @@
 package com.falkordb.impl.api;
 
+import com.falkordb.Driver;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
@@ -13,8 +12,6 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Protocol;
 import redis.clients.jedis.util.Pool;
 import redis.clients.jedis.util.SafeEncoder;
-
-import com.falkordb.Driver;
 
 /**
  * A FalkorDB Driver for managing graphs and connections.
@@ -63,8 +60,8 @@ public class DriverImpl implements Driver {
      * @param uri server uri
      */
     public DriverImpl(URI uri) {
-        this(new JedisPool(new GenericObjectPoolConfig<Jedis>(), uri,
-                Protocol.DEFAULT_TIMEOUT, DEFAULT_SOCKET_TIMEOUT_MILLIS));
+        this(new JedisPool(
+                new GenericObjectPoolConfig<Jedis>(), uri, Protocol.DEFAULT_TIMEOUT, DEFAULT_SOCKET_TIMEOUT_MILLIS));
     }
 
     /**
@@ -88,7 +85,7 @@ public class DriverImpl implements Driver {
     /**
      * Creates a client wrapping existing JedisPool
      * Should be used when you need to share the same pool between different clients
-     * 
+     *
      * Notice: might be changed in the future
      *
      * @param pool jedis pool to wrap
@@ -109,7 +106,7 @@ public class DriverImpl implements Driver {
 
     /**
      * Lists all graphs in the database
-     * 
+     *
      * @return a list of graph names
      */
     @Override
@@ -122,7 +119,7 @@ public class DriverImpl implements Driver {
 
     /**
      * Loads a User Defined Function (UDF) library.
-     * 
+     *
      * @param libraryName The name of the UDF library
      * @param script The JavaScript code containing the UDF functions
      * @param replace Whether to replace an existing library with the same name
@@ -154,7 +151,7 @@ public class DriverImpl implements Driver {
 
     /**
      * Lists all loaded UDF libraries.
-     * 
+     *
      * @return a list of UDF library information
      */
     @Override
@@ -170,7 +167,7 @@ public class DriverImpl implements Driver {
 
     /**
      * Lists UDF libraries with optional filters.
-     * 
+     *
      * @param libraryName Optional library name to filter results
      * @param withCode Whether to include the code in the response
      * @return a list of UDF library information
@@ -188,7 +185,7 @@ public class DriverImpl implements Driver {
             } else {
                 return udfList();
             }
-            
+
             if (response instanceof List<?>) {
                 return (List<Object>) response;
             }
@@ -198,7 +195,7 @@ public class DriverImpl implements Driver {
 
     /**
      * Flushes all loaded UDF libraries.
-     * 
+     *
      * @return true if libraries were flushed successfully
      * @throws redis.clients.jedis.exceptions.JedisDataException if flushing fails
      */
@@ -222,7 +219,7 @@ public class DriverImpl implements Driver {
 
     /**
      * Deletes a specific UDF library.
-     * 
+     *
      * @param libraryName The name of the library to delete
      * @return true if the library was deleted successfully
      * @throws redis.clients.jedis.exceptions.JedisDataException if deletion fails (e.g., library doesn't exist)
@@ -231,24 +228,24 @@ public class DriverImpl implements Driver {
     public boolean udfDelete(String libraryName) {
         try (Jedis conn = getConnection()) {
             Object response = conn.sendCommand(GraphCommand.UDF, "DELETE", libraryName);
-            
+
             if (response == null) {
                 return false;
             }
-            
+
             if (response instanceof Long) {
                 return ((Long) response) > 0;
             }
-            
+
             if (response instanceof String) {
                 return "OK".equalsIgnoreCase((String) response);
             }
-            
+
             if (response instanceof byte[]) {
                 String decoded = SafeEncoder.encode((byte[]) response);
                 return "OK".equalsIgnoreCase(decoded);
             }
-            
+
             // Unknown response type: conservatively report failure
             return false;
         }
@@ -256,7 +253,7 @@ public class DriverImpl implements Driver {
 
     /**
      * Gets the value of a FalkorDB configuration parameter.
-     * 
+     *
      * @param name The configuration parameter name (e.g., "RESULTSET_SIZE")
      * @return The value of the configuration parameter as a String
      * @throws redis.clients.jedis.exceptions.JedisDataException if the configuration parameter is invalid
@@ -271,7 +268,7 @@ public class DriverImpl implements Driver {
 
     /**
      * Sets the value of a FalkorDB configuration parameter.
-     * 
+     *
      * @param name The configuration parameter name (e.g., "RESULTSET_SIZE")
      * @param value The value to set
      * @return true if the configuration was set successfully
@@ -288,7 +285,7 @@ public class DriverImpl implements Driver {
     /**
      * Parses the response from GRAPH.CONFIG GET command.
      * Response format: [name, value]
-     * 
+     *
      * @param response the raw response from Redis
      * @return the configuration value as a String
      * @throws JedisDataException if the response format is unexpected
@@ -305,13 +302,12 @@ public class DriverImpl implements Driver {
                 }
             }
         }
-        throw new redis.clients.jedis.exceptions.JedisDataException(
-                "Unexpected response format from GRAPH.CONFIG GET");
+        throw new redis.clients.jedis.exceptions.JedisDataException("Unexpected response format from GRAPH.CONFIG GET");
     }
 
     /**
      * Parses the response from GRAPH.CONFIG SET command.
-     * 
+     *
      * @param response the raw response from Redis
      * @return true if the response indicates success ("OK")
      */
@@ -330,13 +326,13 @@ public class DriverImpl implements Driver {
 
     /**
      * Parses the response from GRAPH.LIST command
-     * 
+     *
      * @param response the raw response from Redis
      * @return a list of graph names
      */
     List<String> parseListResponse(Object response) {
         List<String> graphNames = new ArrayList<>();
-        
+
         if (response instanceof List<?>) {
             List<?> list = (List<?>) response;
             for (Object item : list) {
@@ -347,7 +343,7 @@ public class DriverImpl implements Driver {
                 }
             }
         }
-        
+
         return graphNames;
     }
 

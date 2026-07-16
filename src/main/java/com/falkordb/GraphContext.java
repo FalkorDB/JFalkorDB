@@ -10,7 +10,7 @@ public interface GraphContext extends Graph {
      * @return Redis transactional object, over the connection context, with graph API capabilities
      */
     GraphTransaction multi();
-    
+
     /**
      * Returns a Redis pipeline object, over the connection context, with graph API capabilities
      * @return Redis pipeline object, over the connection context, with graph API capabilities

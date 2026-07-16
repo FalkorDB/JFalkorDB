@@ -8,7 +8,7 @@ import java.util.Objects;
  */
 public class Edge extends GraphEntity {
 
-    //members
+    // members
     private String relationshipType;
     private long source;
     private long destination;
@@ -28,7 +28,7 @@ public class Edge extends GraphEntity {
     public Edge(int propertiesCapacity) {
         super(propertiesCapacity);
     }
-    //getters & setters
+    // getters & setters
 
     /**
      * @return the edge relationship type
@@ -43,7 +43,6 @@ public class Edge extends GraphEntity {
     public void setRelationshipType(String relationshipType) {
         this.relationshipType = relationshipType;
     }
-
 
     /**
      * @return The id of the source node
@@ -75,16 +74,15 @@ public class Edge extends GraphEntity {
         this.destination = destination;
     }
 
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Edge)) return false;
         if (!super.equals(o)) return false;
         Edge edge = (Edge) o;
-        return source == edge.source &&
-                destination == edge.destination &&
-                Objects.equals(relationshipType, edge.relationshipType);
+        return source == edge.source
+                && destination == edge.destination
+                && Objects.equals(relationshipType, edge.relationshipType);
     }
 
     @Override

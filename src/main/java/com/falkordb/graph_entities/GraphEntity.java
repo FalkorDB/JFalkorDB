@@ -2,13 +2,12 @@ package com.falkordb.graph_entities;
 
 import java.util.*;
 
-
 /**
  * This is an abstract class for representing a graph entity.
  * A graph entity has an id and a set of properties. The properties are mapped and accessed by their names.
  */
 public abstract class GraphEntity {
-    //members
+    // members
     /**
      * The entity's ID.
      */
@@ -26,7 +25,7 @@ public abstract class GraphEntity {
     }
 
     /**
-     * Use this constructor to reduce memory allocations 
+     * Use this constructor to reduce memory allocations
      * when properties are added to the edge
      * @param propertiesCapacity preallocate the capacity for the properties
      */
@@ -34,7 +33,7 @@ public abstract class GraphEntity {
         propertyMap = new HashMap<>(propertiesCapacity);
     }
 
-    //setters & getters
+    // setters & getters
 
     /**
      * @return entity id
@@ -49,7 +48,6 @@ public abstract class GraphEntity {
     public void setId(long id) {
         this.id = id;
     }
-
 
     /**
      * Adds a property to the entity, by composing name, type and value to a property object
@@ -84,7 +82,6 @@ public abstract class GraphEntity {
         return propertyMap.size();
     }
 
-
     /**
      * @param propertyName - property name as lookup key (String)
      * @return property object, or null if key is not found
@@ -92,7 +89,6 @@ public abstract class GraphEntity {
     public Property getProperty(String propertyName) {
         return propertyMap.get(propertyName);
     }
-
 
     /**
      * @param name - the name of the property to be removed
@@ -103,15 +99,14 @@ public abstract class GraphEntity {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o){
-             return true;
+        if (this == o) {
+            return true;
         }
-        if (!(o instanceof GraphEntity)){ 
+        if (!(o instanceof GraphEntity)) {
             return false;
         }
         GraphEntity that = (GraphEntity) o;
-        return id == that.id &&
-                Objects.equals(propertyMap, that.propertyMap);
+        return id == that.id && Objects.equals(propertyMap, that.propertyMap);
     }
 
     @Override

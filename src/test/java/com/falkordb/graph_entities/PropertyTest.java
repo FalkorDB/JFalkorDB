@@ -1,9 +1,8 @@
 package com.falkordb.graph_entities;
 
-import nl.jqno.equalsverifier.EqualsVerifier;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 public class PropertyTest {
 
@@ -19,7 +18,7 @@ public class PropertyTest {
         String name = "testName";
         String value = "testValue";
         Property<String> property = new Property<>(name, value);
-        
+
         assertEquals(name, property.getName());
         assertEquals(value, property.getValue());
     }
@@ -27,10 +26,10 @@ public class PropertyTest {
     @Test
     public void testSettersAndGetters() {
         Property<Integer> property = new Property<>();
-        
+
         property.setName("age");
         property.setValue(25);
-        
+
         assertEquals("age", property.getName());
         assertEquals(25, property.getValue());
     }
@@ -45,7 +44,7 @@ public class PropertyTest {
     public void testEqualsWithEqualProperties() {
         Property<String> property1 = new Property<>("name", "value");
         Property<String> property2 = new Property<>("name", "value");
-        
+
         assertEquals(property1, property2);
     }
 
@@ -53,7 +52,7 @@ public class PropertyTest {
     public void testEqualsWithDifferentName() {
         Property<String> property1 = new Property<>("name1", "value");
         Property<String> property2 = new Property<>("name2", "value");
-        
+
         assertNotEquals(property1, property2);
     }
 
@@ -61,7 +60,7 @@ public class PropertyTest {
     public void testEqualsWithDifferentValue() {
         Property<String> property1 = new Property<>("name", "value1");
         Property<String> property2 = new Property<>("name", "value2");
-        
+
         assertNotEquals(property1, property2);
     }
 
@@ -82,7 +81,7 @@ public class PropertyTest {
         // Test that Integer values are correctly compared as Long values
         Property<Integer> property1 = new Property<>("count", 42);
         Property<Long> property2 = new Property<>("count", 42L);
-        
+
         assertEquals(property1, property2);
     }
 
@@ -90,7 +89,7 @@ public class PropertyTest {
     public void testHashCode() {
         Property<String> property1 = new Property<>("name", "value");
         Property<String> property2 = new Property<>("name", "value");
-        
+
         assertEquals(property1.hashCode(), property2.hashCode());
     }
 
@@ -98,7 +97,7 @@ public class PropertyTest {
     public void testHashCodeWithNullValues() {
         Property<String> property1 = new Property<>(null, null);
         Property<String> property2 = new Property<>(null, null);
-        
+
         assertEquals(property1.hashCode(), property2.hashCode());
     }
 
@@ -106,7 +105,7 @@ public class PropertyTest {
     public void testToString() {
         Property<String> property = new Property<>("name", "value");
         String result = property.toString();
-        
+
         assertTrue(result.contains("name"));
         assertTrue(result.contains("value"));
         assertTrue(result.contains("Property{"));
@@ -116,7 +115,7 @@ public class PropertyTest {
     public void testToStringWithNull() {
         Property<String> property = new Property<>();
         String result = property.toString();
-        
+
         assertNotNull(result);
         assertTrue(result.contains("Property{"));
     }
@@ -126,7 +125,7 @@ public class PropertyTest {
         Property<Integer> intProperty = new Property<>("age", 25);
         Property<Double> doubleProperty = new Property<>("score", 98.5);
         Property<Boolean> boolProperty = new Property<>("active", true);
-        
+
         assertEquals(25, intProperty.getValue());
         assertEquals(98.5, doubleProperty.getValue());
         assertEquals(true, boolProperty.getValue());

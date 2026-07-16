@@ -51,15 +51,14 @@ public final class Point {
 
     @Override
     public boolean equals(Object other) {
-        if (this == other){ 
+        if (this == other) {
             return true;
-        } 
-        if (!(other instanceof Point)){
-            return false;  
-        } 
+        }
+        if (!(other instanceof Point)) {
+            return false;
+        }
         Point o = (Point) other;
-        return Math.abs(latitude - o.latitude) < EPSILON &&
-                Math.abs(longitude - o.longitude) < EPSILON;
+        return Math.abs(latitude - o.latitude) < EPSILON && Math.abs(longitude - o.longitude) < EPSILON;
     }
 
     @Override

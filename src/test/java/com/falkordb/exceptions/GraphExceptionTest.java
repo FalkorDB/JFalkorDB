@@ -1,8 +1,8 @@
 package com.falkordb.exceptions;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 public class GraphExceptionTest {
 
@@ -10,7 +10,7 @@ public class GraphExceptionTest {
     public void testGraphExceptionWithMessage() {
         String message = "Test error message";
         GraphException exception = new GraphException(message);
-        
+
         assertEquals(message, exception.getMessage());
         assertNotNull(exception);
     }
@@ -19,7 +19,7 @@ public class GraphExceptionTest {
     public void testGraphExceptionWithCause() {
         Throwable cause = new RuntimeException("Root cause");
         GraphException exception = new GraphException(cause);
-        
+
         assertEquals(cause, exception.getCause());
         assertNotNull(exception);
     }
@@ -29,7 +29,7 @@ public class GraphExceptionTest {
         String message = "Test error message";
         Throwable cause = new RuntimeException("Root cause");
         GraphException exception = new GraphException(message, cause);
-        
+
         assertEquals(message, exception.getMessage());
         assertEquals(cause, exception.getCause());
         assertNotNull(exception);
@@ -38,7 +38,7 @@ public class GraphExceptionTest {
     @Test
     public void testGraphExceptionIsThrowable() {
         GraphException exception = new GraphException("test");
-        
+
         assertThrows(GraphException.class, () -> {
             throw exception;
         });

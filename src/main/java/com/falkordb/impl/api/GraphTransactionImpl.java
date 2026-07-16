@@ -5,16 +5,14 @@ import com.falkordb.ResultSet;
 import com.falkordb.impl.Utils;
 import com.falkordb.impl.graph_cache.GraphCache;
 import com.falkordb.impl.resultset.ResultSetImpl;
-import redis.clients.jedis.*;
-import redis.clients.jedis.commands.ProtocolCommand;
-import redis.clients.jedis.util.SafeEncoder;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import redis.clients.jedis.*;
+import redis.clients.jedis.commands.ProtocolCommand;
+import redis.clients.jedis.util.SafeEncoder;
 
 /**
  * This class is extending Jedis Transaction
@@ -48,7 +46,8 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      * @param <T> the response type
      * @return the response
      */
-    protected <T> Response<T> appendWithResponse(ProtocolCommand protocolCommand, List<Object> arguments, Builder<T> builder) {
+    protected <T> Response<T> appendWithResponse(
+            ProtocolCommand protocolCommand, List<Object> arguments, Builder<T> builder) {
         CommandArguments commandArguments = new CommandArguments(protocolCommand);
         arguments.forEach(commandArguments::add);
         return this.appendCommand(new CommandObject<>(commandArguments, builder));
@@ -61,13 +60,14 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> query(String query) {
-        return appendWithResponse(GraphCommand.QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), new Builder<ResultSet>() {
-            @SuppressWarnings("unchecked")
-            @Override
-            public ResultSet build(Object o) {
-                return new ResultSetImpl((List<Object>) o, graph, cache);
-            }
-        });
+        return appendWithResponse(
+                GraphCommand.QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), new Builder<ResultSet>() {
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public ResultSet build(Object o) {
+                        return new ResultSetImpl((List<Object>) o, graph, cache);
+                    }
+                });
     }
 
     /**
@@ -77,13 +77,14 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> readOnlyQuery(String query) {
-        return appendWithResponse(GraphCommand.RO_QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), new Builder<ResultSet>() {
-            @SuppressWarnings("unchecked")
-            @Override
-            public ResultSet build(Object o) {
-                return new ResultSetImpl((List<Object>) o, graph, cache);
-            }
-        });
+        return appendWithResponse(
+                GraphCommand.RO_QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), new Builder<ResultSet>() {
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public ResultSet build(Object o) {
+                        return new ResultSetImpl((List<Object>) o, graph, cache);
+                    }
+                });
     }
 
     /**
@@ -96,14 +97,16 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> query(String query, long timeout) {
-        return appendWithResponse(GraphCommand.QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING,
-                Long.toString(timeout)), new Builder<ResultSet>() {
-            @SuppressWarnings("unchecked")
-            @Override
-            public ResultSet build(Object o) {
-                return new ResultSetImpl((List<Object>) o, graph, cache);
-            }
-        });
+        return appendWithResponse(
+                GraphCommand.QUERY,
+                Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout)),
+                new Builder<ResultSet>() {
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public ResultSet build(Object o) {
+                        return new ResultSetImpl((List<Object>) o, graph, cache);
+                    }
+                });
     }
 
     /**
@@ -116,15 +119,16 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> readOnlyQuery(String query, long timeout) {
-        return appendWithResponse(GraphCommand.RO_QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING,
-                Long.toString(timeout)), new Builder<ResultSet>() {
-            @SuppressWarnings("unchecked")
-            @Override
-            public ResultSet build(Object o) {
-                return new ResultSetImpl((List<Object>) o, graph, cache);
-            }
-        });
-
+        return appendWithResponse(
+                GraphCommand.RO_QUERY,
+                Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout)),
+                new Builder<ResultSet>() {
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public ResultSet build(Object o) {
+                        return new ResultSetImpl((List<Object>) o, graph, cache);
+                    }
+                });
     }
 
     /**
@@ -135,13 +139,16 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> query(String query, Map<String, Object> params) {
-        return appendWithResponse(GraphCommand.QUERY, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING), new Builder<ResultSet>() {
-            @SuppressWarnings("unchecked")
-            @Override
-            public ResultSet build(Object o) {
-                return new ResultSetImpl((List<Object>) o, graph, cache);
-            }
-        });
+        return appendWithResponse(
+                GraphCommand.QUERY,
+                Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING),
+                new Builder<ResultSet>() {
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public ResultSet build(Object o) {
+                        return new ResultSetImpl((List<Object>) o, graph, cache);
+                    }
+                });
     }
 
     /**
@@ -152,13 +159,16 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params) {
-        return appendWithResponse(GraphCommand.RO_QUERY, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING), new Builder<ResultSet>() {
-            @SuppressWarnings("unchecked")
-            @Override
-            public ResultSet build(Object o) {
-                return new ResultSetImpl((List<Object>) o, graph, cache);
-            }
-        });
+        return appendWithResponse(
+                GraphCommand.RO_QUERY,
+                Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING),
+                new Builder<ResultSet>() {
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public ResultSet build(Object o) {
+                        return new ResultSetImpl((List<Object>) o, graph, cache);
+                    }
+                });
     }
 
     /**
@@ -172,15 +182,21 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> query(String query, Map<String, Object> params, long timeout) {
-        return appendWithResponse(GraphCommand.QUERY, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING,
-                Utils.TIMEOUT_STRING, Long.toString(timeout)), new Builder<ResultSet>() {
-            @SuppressWarnings("unchecked")
-            @Override
-            public ResultSet build(Object o) {
-                return new ResultSetImpl((List<Object>) o, graph, cache);
-            }
-        });
-
+        return appendWithResponse(
+                GraphCommand.QUERY,
+                Arrays.asList(
+                        graphId,
+                        Utils.prepareQuery(query, params),
+                        Utils.COMPACT_STRING,
+                        Utils.TIMEOUT_STRING,
+                        Long.toString(timeout)),
+                new Builder<ResultSet>() {
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public ResultSet build(Object o) {
+                        return new ResultSetImpl((List<Object>) o, graph, cache);
+                    }
+                });
     }
 
     /**
@@ -194,14 +210,21 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params, long timeout) {
-        return appendWithResponse(GraphCommand.RO_QUERY, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING,
-                Utils.TIMEOUT_STRING, Long.toString(timeout)), new Builder<ResultSet>() {
-            @SuppressWarnings("unchecked")
-            @Override
-            public ResultSet build(Object o) {
-                return new ResultSetImpl((List<Object>) o, graph, cache);
-            }
-        });
+        return appendWithResponse(
+                GraphCommand.RO_QUERY,
+                Arrays.asList(
+                        graphId,
+                        Utils.prepareQuery(query, params),
+                        Utils.COMPACT_STRING,
+                        Utils.TIMEOUT_STRING,
+                        Long.toString(timeout)),
+                new Builder<ResultSet>() {
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public ResultSet build(Object o) {
+                        return new ResultSetImpl((List<Object>) o, graph, cache);
+                    }
+                });
     }
 
     /**
@@ -233,8 +256,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      * @return response with result set with the procedure data
      */
     @Override
-    public Response<ResultSet> callProcedure(String procedure, List<String> args,
-            Map<String, List<String>> kwargs) {
+    public Response<ResultSet> callProcedure(String procedure, List<String> args, Map<String, List<String>> kwargs) {
         String preparedProcedure = Utils.prepareProcedure(procedure, args, kwargs);
         return query(preparedProcedure);
     }
@@ -247,12 +269,13 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> profile(String query) {
-        return appendWithResponse(GraphCommand.PROFILE, Arrays.asList(graphId, query, Utils.COMPACT_STRING), new Builder<ResultSet>() {
-            @Override
-            public ResultSet build(Object data) {
-                return new ResultSetImpl((List<Object>) data, graph, cache);
-            }
-        });
+        return appendWithResponse(
+                GraphCommand.PROFILE, Arrays.asList(graphId, query, Utils.COMPACT_STRING), new Builder<ResultSet>() {
+                    @Override
+                    public ResultSet build(Object data) {
+                        return new ResultSetImpl((List<Object>) data, graph, cache);
+                    }
+                });
     }
 
     /**
@@ -264,12 +287,15 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> profile(String query, Map<String, Object> params) {
-        return appendWithResponse(GraphCommand.PROFILE, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING), new Builder<ResultSet>() {
-            @Override
-            public ResultSet build(Object data) {
-                return new ResultSetImpl((List<Object>) data, graph, cache);
-            }
-        });
+        return appendWithResponse(
+                GraphCommand.PROFILE,
+                Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING),
+                new Builder<ResultSet>() {
+                    @Override
+                    public ResultSet build(Object data) {
+                        return new ResultSetImpl((List<Object>) data, graph, cache);
+                    }
+                });
     }
 
     // Disabled due to bug in FalkorDB caused by using transactions in conjunction with graph copy
@@ -321,26 +347,29 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     @Override
     @SuppressWarnings("unchecked")
     public Response<List<String>> explain(String query, Map<String, Object> params) {
-        return appendWithResponse(GraphCommand.EXPLAIN, Arrays.asList(graphId, Utils.prepareQuery(query, params)), new Builder<List<String>>() {
-            @Override
-            public List<String> build(Object o) {
-                // GRAPH.EXPLAIN returns an array of byte arrays, convert to list of strings
-                if (o instanceof List) {
-                    List<Object> responseList = (List<Object>) o;
-                    List<String> result = new ArrayList<>(responseList.size());
-                    for (Object item : responseList) {
-                        if (item instanceof byte[]) {
-                            result.add(SafeEncoder.encode((byte[]) item));
+        return appendWithResponse(
+                GraphCommand.EXPLAIN,
+                Arrays.asList(graphId, Utils.prepareQuery(query, params)),
+                new Builder<List<String>>() {
+                    @Override
+                    public List<String> build(Object o) {
+                        // GRAPH.EXPLAIN returns an array of byte arrays, convert to list of strings
+                        if (o instanceof List) {
+                            List<Object> responseList = (List<Object>) o;
+                            List<String> result = new ArrayList<>(responseList.size());
+                            for (Object item : responseList) {
+                                if (item instanceof byte[]) {
+                                    result.add(SafeEncoder.encode((byte[]) item));
+                                } else {
+                                    result.add(item.toString());
+                                }
+                            }
+                            return result;
                         } else {
-                            result.add(item.toString());
+                            // Fallback for unexpected response format
+                            return Arrays.asList(SafeEncoder.encode((byte[]) o));
                         }
                     }
-                    return result;
-                } else {
-                    // Fallback for unexpected response format
-                    return Arrays.asList(SafeEncoder.encode((byte[]) o));
-                }
-            }
-        });
+                });
     }
 }

@@ -47,7 +47,7 @@ public abstract class AbstractGraph implements Graph {
      * @return Result set with execution plan and metrics
      */
     protected abstract ResultSet sendProfile(String preparedQuery);
-  
+
     /**
      * Sends an explain command. Implementation and context dependent
      * @param preparedQuery prepared query
@@ -60,7 +60,7 @@ public abstract class AbstractGraph implements Graph {
      * @param query Cypher query
      * @return a result set
      */
-    @Override    
+    @Override
     public ResultSet query(String query) {
         return sendQuery(query);
     }
@@ -148,17 +148,17 @@ public abstract class AbstractGraph implements Graph {
     }
 
     @Override
-    public ResultSet callProcedure(String procedure){
+    public ResultSet callProcedure(String procedure) {
         return callProcedure(procedure, Utils.DUMMY_LIST, Utils.DUMMY_MAP);
     }
 
     @Override
-    public ResultSet callProcedure(String procedure, List<String> args){
+    public ResultSet callProcedure(String procedure, List<String> args) {
         return callProcedure(procedure, args, Utils.DUMMY_MAP);
     }
 
     @Override
-    public ResultSet callProcedure(String procedure, List<String> args  , Map<String, List<String>> kwargs){
+    public ResultSet callProcedure(String procedure, List<String> args, Map<String, List<String>> kwargs) {
         String preparedProcedure = Utils.prepareProcedure(procedure, args, kwargs);
         return query(preparedProcedure);
     }
@@ -186,7 +186,7 @@ public abstract class AbstractGraph implements Graph {
         String preparedQuery = Utils.prepareQuery(query, params);
         return sendProfile(preparedQuery);
     }
-  
+
     /**
      * Get the execution plan for a given query.
      * @param query Cypher query

@@ -2,11 +2,9 @@ package com.falkordb.impl.api;
 
 import java.util.Arrays;
 import java.util.List;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import redis.clients.jedis.util.SafeEncoder;
 
 /**
@@ -26,7 +24,7 @@ public class DriverImplParseResponseTest {
     public void testParseListResponseWithEmptyList() {
         List<Object> emptyList = Arrays.asList();
         List<String> result = driverImpl.parseListResponse(emptyList);
-        
+
         Assertions.assertNotNull(result);
         Assertions.assertTrue(result.isEmpty());
     }
@@ -35,7 +33,7 @@ public class DriverImplParseResponseTest {
     public void testParseListResponseWithStringList() {
         List<Object> stringList = Arrays.asList("graph1", "graph2", "graph3");
         List<String> result = driverImpl.parseListResponse(stringList);
-        
+
         Assertions.assertNotNull(result);
         Assertions.assertEquals(3, result.size());
         Assertions.assertEquals("graph1", result.get(0));
@@ -48,9 +46,9 @@ public class DriverImplParseResponseTest {
         byte[] bytes1 = SafeEncoder.encode("graph1");
         byte[] bytes2 = SafeEncoder.encode("graph2");
         List<Object> byteArrayList = Arrays.asList(bytes1, bytes2);
-        
+
         List<String> result = driverImpl.parseListResponse(byteArrayList);
-        
+
         Assertions.assertNotNull(result);
         Assertions.assertEquals(2, result.size());
         Assertions.assertEquals("graph1", result.get(0));
@@ -62,9 +60,9 @@ public class DriverImplParseResponseTest {
         byte[] bytes1 = SafeEncoder.encode("graph1");
         String string1 = "graph2";
         List<Object> mixedList = Arrays.asList(bytes1, string1);
-        
+
         List<String> result = driverImpl.parseListResponse(mixedList);
-        
+
         Assertions.assertNotNull(result);
         Assertions.assertEquals(2, result.size());
         Assertions.assertEquals("graph1", result.get(0));
@@ -75,9 +73,9 @@ public class DriverImplParseResponseTest {
     public void testParseListResponseWithUnsupportedTypes() {
         // Test with unsupported types (Integer, null, etc.) that should be ignored
         List<Object> mixedList = Arrays.asList("graph1", 123, null, "graph2", new Object());
-        
+
         List<String> result = driverImpl.parseListResponse(mixedList);
-        
+
         Assertions.assertNotNull(result);
         Assertions.assertEquals(2, result.size());
         Assertions.assertEquals("graph1", result.get(0));
@@ -89,7 +87,7 @@ public class DriverImplParseResponseTest {
         // Test when response is not a List (should return empty list)
         String nonListResponse = "not a list";
         List<String> result = driverImpl.parseListResponse(nonListResponse);
-        
+
         Assertions.assertNotNull(result);
         Assertions.assertTrue(result.isEmpty());
     }
@@ -98,7 +96,7 @@ public class DriverImplParseResponseTest {
     public void testParseListResponseWithNullResponse() {
         // Test when response is null (should return empty list)
         List<String> result = driverImpl.parseListResponse(null);
-        
+
         Assertions.assertNotNull(result);
         Assertions.assertTrue(result.isEmpty());
     }

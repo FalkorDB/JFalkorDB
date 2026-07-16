@@ -1,20 +1,18 @@
 package com.falkordb;
 
-import java.net.URI;
-
 import com.falkordb.impl.api.DriverImpl;
+import java.net.URI;
 
 /**
  * FalkorDB driver factory
  */
-final public class FalkorDB {
+public final class FalkorDB {
 
-    private FalkorDB() {
-    }
+    private FalkorDB() {}
 
     /**
      * Creates a new driver instance
-     * 
+     *
      * @return a new driver instance
      */
     public static Driver driver() {
@@ -23,7 +21,7 @@ final public class FalkorDB {
 
     /**
      * Creates a new driver instance
-     * 
+     *
      * @param host host name
      * @param port port number
      * @return a new driver instance
@@ -34,7 +32,7 @@ final public class FalkorDB {
 
     /**
      * Creates a new driver instance
-     * 
+     *
      * @param host     host name
      * @param port     port number
      * @param user     username
@@ -47,7 +45,7 @@ final public class FalkorDB {
 
     /**
      * Creates a new driver instance
-     * 
+     *
      * @param uri server uri
      * @return a new driver instance
      */

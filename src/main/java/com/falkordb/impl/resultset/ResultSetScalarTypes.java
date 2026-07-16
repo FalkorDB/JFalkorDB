@@ -6,7 +6,7 @@ enum ResultSetScalarTypes {
     VALUE_UNKNOWN,
     VALUE_NULL,
     VALUE_STRING,
-    VALUE_INTEGER,  // 64 bit long.
+    VALUE_INTEGER, // 64 bit long.
     VALUE_BOOLEAN,
     VALUE_DOUBLE,
     VALUE_ARRAY,
@@ -24,11 +24,10 @@ enum ResultSetScalarTypes {
     private static final ResultSetScalarTypes[] values = values();
 
     public static ResultSetScalarTypes getValue(int index) {
-      try {
-        return values[index];
-      } catch(IndexOutOfBoundsException e) {
-        throw new JedisDataException("Unrecognized response type");
-      }
+        try {
+            return values[index];
+        } catch (IndexOutOfBoundsException e) {
+            throw new JedisDataException("Unrecognized response type");
+        }
     }
-
 }

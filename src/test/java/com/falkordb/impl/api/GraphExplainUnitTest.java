@@ -1,18 +1,15 @@
 package com.falkordb.impl.api;
 
+import com.falkordb.ResultSet;
+import com.falkordb.impl.Utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import com.falkordb.ResultSet;
-import com.falkordb.impl.Utils;
-
 import redis.clients.jedis.util.SafeEncoder;
 
 /**
@@ -31,14 +28,13 @@ public class GraphExplainUnitTest {
     @Test
     public void testExplainWithoutParameters() {
         String query = "MATCH (n:Person) RETURN n";
-        
+
         // Set up mock response
         List<Object> mockResponse = Arrays.asList(
-            SafeEncoder.encode("Results"),
-            SafeEncoder.encode("    Project"),
-            SafeEncoder.encode("        Filter"),
-            SafeEncoder.encode("            NodeByLabelScan")
-        );
+                SafeEncoder.encode("Results"),
+                SafeEncoder.encode("    Project"),
+                SafeEncoder.encode("        Filter"),
+                SafeEncoder.encode("            NodeByLabelScan"));
         testGraph.setMockExplainResponse(mockResponse);
 
         List<String> result = testGraph.explain(query);
@@ -59,14 +55,13 @@ public class GraphExplainUnitTest {
         String query = "MATCH (p:Person) WHERE p.name = $name RETURN p";
         Map<String, Object> params = new HashMap<>();
         params.put("name", "Alice");
-        
+
         // Set up mock response
         List<Object> mockResponse = Arrays.asList(
-            SafeEncoder.encode("Results"),
-            SafeEncoder.encode("    Project"),
-            SafeEncoder.encode("        Filter"),
-            SafeEncoder.encode("            NodeByLabelScan")
-        );
+                SafeEncoder.encode("Results"),
+                SafeEncoder.encode("    Project"),
+                SafeEncoder.encode("        Filter"),
+                SafeEncoder.encode("            NodeByLabelScan"));
         testGraph.setMockExplainResponse(mockResponse);
 
         List<String> result = testGraph.explain(query, params);
@@ -84,13 +79,10 @@ public class GraphExplainUnitTest {
     @Test
     public void testExplainResponseParsingWithByteArrays() {
         // Test response parsing logic similar to GraphImpl.sendExplain
-        List<Object> mockResponse = Arrays.asList(
-            SafeEncoder.encode("Results"),
-            SafeEncoder.encode("    Project")
-        );
-        
+        List<Object> mockResponse = Arrays.asList(SafeEncoder.encode("Results"), SafeEncoder.encode("    Project"));
+
         List<String> result = parseExplainResponse(mockResponse);
-        
+
         Assertions.assertNotNull(result);
         Assertions.assertEquals(2, result.size());
         Assertions.assertEquals("Results", result.get(0));
@@ -101,13 +93,12 @@ public class GraphExplainUnitTest {
     public void testExplainResponseParsingWithMixedTypes() {
         // Test mixed byte arrays and strings
         List<Object> mockResponse = Arrays.asList(
-            SafeEncoder.encode("Results"),
-            "    Project",  // String instead of byte array
-            SafeEncoder.encode("        Filter")
-        );
-        
+                SafeEncoder.encode("Results"),
+                "    Project", // String instead of byte array
+                SafeEncoder.encode("        Filter"));
+
         List<String> result = parseExplainResponse(mockResponse);
-        
+
         Assertions.assertNotNull(result);
         Assertions.assertEquals(3, result.size());
         Assertions.assertEquals("Results", result.get(0));
@@ -118,9 +109,9 @@ public class GraphExplainUnitTest {
     @Test
     public void testExplainResponseParsingWithEmptyList() {
         List<Object> mockResponse = new ArrayList<>();
-        
+
         List<String> result = parseExplainResponse(mockResponse);
-        
+
         Assertions.assertNotNull(result);
         Assertions.assertTrue(result.isEmpty());
     }
@@ -129,9 +120,9 @@ public class GraphExplainUnitTest {
     public void testExplainResponseParsingWithNonListResponse() {
         // Test fallback behavior when response is not a List
         byte[] singleResponse = SafeEncoder.encode("Single response");
-        
+
         List<String> result = parseExplainResponseFallback(singleResponse);
-        
+
         Assertions.assertNotNull(result);
         Assertions.assertEquals(1, result.size());
         Assertions.assertEquals("Single response", result.get(0));
@@ -143,20 +134,19 @@ public class GraphExplainUnitTest {
         Map<String, Object> params = new HashMap<>();
         params.put("minAge", 25);
         params.put("city", "New York");
-        
+
         List<Object> mockResponse = Arrays.asList(
-            SafeEncoder.encode("Results"),
-            SafeEncoder.encode("    Project"),
-            SafeEncoder.encode("        Filter"),
-            SafeEncoder.encode("            NodeByLabelScan")
-        );
+                SafeEncoder.encode("Results"),
+                SafeEncoder.encode("    Project"),
+                SafeEncoder.encode("        Filter"),
+                SafeEncoder.encode("            NodeByLabelScan"));
         testGraph.setMockExplainResponse(mockResponse);
 
         List<String> result = testGraph.explain(query, params);
 
         Assertions.assertNotNull(result);
         Assertions.assertEquals(4, result.size());
-        
+
         String preparedQuery = testGraph.getLastPreparedQuery();
         Assertions.assertTrue(preparedQuery.contains("minAge=25"));
         Assertions.assertTrue(preparedQuery.contains("city=\"New York\""));
@@ -167,17 +157,15 @@ public class GraphExplainUnitTest {
         String query = "MATCH (p:Person) WHERE p.name = $name RETURN p";
         Map<String, Object> params = new HashMap<>();
         params.put("name", "John \"The Rock\" Doe");
-        
-        List<Object> mockResponse = Arrays.asList(
-            SafeEncoder.encode("Results")
-        );
+
+        List<Object> mockResponse = Arrays.asList(SafeEncoder.encode("Results"));
         testGraph.setMockExplainResponse(mockResponse);
 
         List<String> result = testGraph.explain(query, params);
 
         Assertions.assertNotNull(result);
         Assertions.assertEquals(1, result.size());
-        
+
         // Verify that special characters are properly escaped
         String preparedQuery = testGraph.getLastPreparedQuery();
         Assertions.assertTrue(preparedQuery.contains("name=\"John \\\"The Rock\\\" Doe\""));
@@ -243,7 +231,7 @@ public class GraphExplainUnitTest {
         @Override
         protected List<String> sendExplain(String preparedQuery) {
             this.lastPreparedQuery = preparedQuery;
-            
+
             // Simulate the parsing logic from GraphImpl.sendExplain
             if (mockExplainResponse != null) {
                 List<String> result = new ArrayList<>(mockExplainResponse.size());

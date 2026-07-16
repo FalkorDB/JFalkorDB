@@ -1,21 +1,19 @@
 package com.falkordb.impl.resultset;
 
+import com.falkordb.Graph;
 import com.falkordb.Header;
 import com.falkordb.Record;
-import com.falkordb.Graph;
 import com.falkordb.ResultSet;
 import com.falkordb.Statistics;
 import com.falkordb.exceptions.GraphException;
 import com.falkordb.graph_entities.*;
 import com.falkordb.impl.graph_cache.GraphCache;
-import com.falkordb.impl.resultset.RecordImpl;
-import redis.clients.jedis.BuilderFactory;
-import redis.clients.jedis.util.SafeEncoder;
-import redis.clients.jedis.exceptions.JedisDataException;
-
 import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import redis.clients.jedis.BuilderFactory;
+import redis.clients.jedis.exceptions.JedisDataException;
+import redis.clients.jedis.util.SafeEncoder;
 
 /**
  * An implementation of the ResultSet interface.
@@ -47,8 +45,8 @@ public class ResultSetImpl implements ResultSet {
         }
 
         // Check if this is a profile response (all elements are byte arrays)
-        boolean isProfileResponse = !rawResponse.isEmpty() && 
-                                   rawResponse.stream().allMatch(item -> item instanceof byte[]);
+        boolean isProfileResponse =
+                !rawResponse.isEmpty() && rawResponse.stream().allMatch(item -> item instanceof byte[]);
 
         if (isProfileResponse) {
             // Handle profile response: each byte array is a line of execution plan
@@ -59,7 +57,8 @@ public class ResultSetImpl implements ResultSet {
 
             header = parseHeader(new ArrayList<>());
             results = new ArrayList<>();
-            statistics = rawResponse.isEmpty() ? parseStatistics(new ArrayList<Objects>())
+            statistics = rawResponse.isEmpty()
+                    ? parseStatistics(new ArrayList<Objects>())
                     : parseStatistics(rawResponse.get(rawResponse.size() - 1));
 
         } else {
@@ -266,9 +265,7 @@ public class ResultSetImpl implements ResultSet {
             property.setValue(deserializeScalar(propertyScalar));
 
             entity.addProperty(property);
-
         }
-
     }
 
     /**
@@ -307,17 +304,11 @@ public class ResultSetImpl implements ResultSet {
             case VALUE_VECTORF32:
                 return deserializeVector(obj);
             case VALUE_DATETIME:
-                return Instant.ofEpochSecond((Long) obj)
-                        .atZone(ZoneOffset.UTC)
-                        .toLocalDateTime();
+                return Instant.ofEpochSecond((Long) obj).atZone(ZoneOffset.UTC).toLocalDateTime();
             case VALUE_DATE:
-                return Instant.ofEpochSecond((Long) obj)
-                        .atZone(ZoneOffset.UTC)
-                        .toLocalDate();
+                return Instant.ofEpochSecond((Long) obj).atZone(ZoneOffset.UTC).toLocalDate();
             case VALUE_TIME:
-                return Instant.ofEpochSecond((Long) obj)
-                        .atZone(ZoneOffset.UTC)
-                        .toLocalTime();
+                return Instant.ofEpochSecond((Long) obj).atZone(ZoneOffset.UTC).toLocalTime();
             case VALUE_DURATION:
                 return Duration.ofSeconds((Long) obj);
             case VALUE_UNKNOWN:

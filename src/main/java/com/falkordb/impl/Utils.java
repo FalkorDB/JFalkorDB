@@ -1,11 +1,10 @@
 package com.falkordb.impl;
 
+import java.util.*;
+import java.util.stream.Collectors;
 import org.apache.commons.text.translate.AggregateTranslator;
 import org.apache.commons.text.translate.CharSequenceTranslator;
 import org.apache.commons.text.translate.LookupTranslator;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Utilities class
@@ -29,6 +28,7 @@ public class Utils {
     public static final String TIMEOUT_STRING = "TIMEOUT";
 
     private static final CharSequenceTranslator ESCAPE_CHYPER;
+
     static {
         final Map<CharSequence, CharSequence> escapeJavaMap = new HashMap<>();
         escapeJavaMap.put("\'", "\\'");
@@ -43,10 +43,10 @@ public class Utils {
      * @param str - a string
      * @return the input string surrounded with quotation marks, if needed
      */
-    private static String quoteString(String str){
-        StringBuilder sb = new StringBuilder(str.length()+2);
+    private static String quoteString(String str) {
+        StringBuilder sb = new StringBuilder(str.length() + 2);
         sb.append('"');
-        sb.append(str.replace("\"","\\\""));
+        sb.append(str.replace("\"", "\\\""));
         sb.append('"');
         return sb.toString();
     }
@@ -57,9 +57,9 @@ public class Utils {
      * @param params - query parameters
      * @return query with parameters header
      */
-    public static String prepareQuery(String query, Map<String, Object> params){
+    public static String prepareQuery(String query, Map<String, Object> params) {
         StringBuilder sb = new StringBuilder("CYPHER ");
-        for(Map.Entry<String, Object> entry : params.entrySet()) {
+        for (Map.Entry<String, Object> entry : params.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
             sb.append(key).append('=');
@@ -78,20 +78,19 @@ public class Utils {
     }
 
     private static String valueToString(Object value) {
-        if(value == null) return "null";
+        if (value == null) return "null";
 
-        if(value instanceof String){
+        if (value instanceof String) {
             return quoteString((String) value);
         }
-        if(value instanceof Character){
-            return quoteString(((Character)value).toString());
+        if (value instanceof Character) {
+            return quoteString(((Character) value).toString());
         }
 
-        if(value instanceof Object[]){
+        if (value instanceof Object[]) {
             return arrayToString((Object[]) value);
-
         }
-        if(value instanceof List){
+        if (value instanceof List) {
             @SuppressWarnings("unchecked")
             List<Object> list = (List<Object>) value;
             return arrayToString(list.toArray());
@@ -106,24 +105,23 @@ public class Utils {
      * @param kwargs - procedure output arguments
      * @return formatter procedure call
      */
-    public static String prepareProcedure(String procedure, List<String> args  , Map<String, List<String>> kwargs){
-        args = args.stream().map( Utils::quoteString).collect(Collectors.toList());
-        StringBuilder queryStringBuilder =  new StringBuilder();
+    public static String prepareProcedure(String procedure, List<String> args, Map<String, List<String>> kwargs) {
+        args = args.stream().map(Utils::quoteString).collect(Collectors.toList());
+        StringBuilder queryStringBuilder = new StringBuilder();
         queryStringBuilder.append("CALL ").append(procedure).append('(');
         int i = 0;
         for (; i < args.size() - 1; i++) {
             queryStringBuilder.append(args.get(i)).append(',');
         }
-        if (i == args.size()-1) {
+        if (i == args.size() - 1) {
             queryStringBuilder.append(args.get(i));
         }
         queryStringBuilder.append(')');
         List<String> kwargsList = kwargs.getOrDefault("y", null);
-        if(kwargsList != null){
+        if (kwargsList != null) {
             i = 0;
             for (; i < kwargsList.size() - 1; i++) {
                 queryStringBuilder.append(kwargsList.get(i)).append(',');
-
             }
             queryStringBuilder.append(kwargsList.get(i));
         }

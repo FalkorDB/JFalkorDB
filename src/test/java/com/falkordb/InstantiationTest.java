@@ -2,7 +2,6 @@ package com.falkordb;
 
 import java.net.URI;
 import java.util.UUID;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -39,7 +38,8 @@ public class InstantiationTest {
         try (redis.clients.jedis.Jedis admin = new redis.clients.jedis.Jedis("localhost", 6379)) {
             admin.aclSetUser(username, "on", ">testpass", "~*", "+@all");
             try {
-                client = FalkorDB.driver("localhost", 6379, username, "testpass").graph("g");
+                client =
+                        FalkorDB.driver("localhost", 6379, username, "testpass").graph("g");
                 ResultSet resultSet = client.query("CREATE ({name:'bsb'})");
                 Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
                 client.deleteGraph();
@@ -66,7 +66,8 @@ public class InstantiationTest {
         ResultSet resultSet = client.query("CREATE ({name:'bsb'})");
         long elapsedMillis = System.currentTimeMillis() - start;
         Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
-        Assertions.assertTrue(elapsedMillis >= 2000L,
+        Assertions.assertTrue(
+                elapsedMillis >= 2000L,
                 "query should have blocked through the >2s server pause instead of timing out, but took "
                         + elapsedMillis + "ms");
     }

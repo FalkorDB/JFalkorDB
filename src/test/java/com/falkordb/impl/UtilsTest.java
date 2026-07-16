@@ -1,13 +1,9 @@
 package com.falkordb.impl;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.IllegalFormatConversionException;
 import java.util.List;
 import java.util.Map;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -15,18 +11,21 @@ public class UtilsTest {
 
     @Test
     public void testPrepareProcedure() {
-        Assertions.assertEquals("CALL prc()",
-                Utils.prepareProcedure("prc", Arrays.asList(new String[]{}), new HashMap<>()));
+        Assertions.assertEquals(
+                "CALL prc()", Utils.prepareProcedure("prc", Arrays.asList(new String[] {}), new HashMap<>()));
 
-        Assertions.assertEquals("CALL prc(\"a\",\"b\")",
-                Utils.prepareProcedure("prc", Arrays.asList(new String[]{"a", "b"}), new HashMap<>()));
+        Assertions.assertEquals(
+                "CALL prc(\"a\",\"b\")",
+                Utils.prepareProcedure("prc", Arrays.asList(new String[] {"a", "b"}), new HashMap<>()));
 
         Map<String, List<String>> kwargs = new HashMap<>();
-        kwargs.put("y", Arrays.asList(new String[]{"ka", "kb"}));
-        Assertions.assertEquals("CALL prc(\"a\",\"b\")ka,kb",
-                Utils.prepareProcedure("prc", Arrays.asList(new String[]{"a", "b"}), kwargs));
+        kwargs.put("y", Arrays.asList(new String[] {"ka", "kb"}));
+        Assertions.assertEquals(
+                "CALL prc(\"a\",\"b\")ka,kb",
+                Utils.prepareProcedure("prc", Arrays.asList(new String[] {"a", "b"}), kwargs));
 
-        Assertions.assertEquals("CALL prc()ka,kb", Utils.prepareProcedure("prc", Arrays.asList(new String[]{}), kwargs));
+        Assertions.assertEquals(
+                "CALL prc()ka,kb", Utils.prepareProcedure("prc", Arrays.asList(new String[] {}), kwargs));
     }
 
     @Test
@@ -60,12 +59,11 @@ public class UtilsTest {
         Assertions.assertEquals("CYPHER param=[1, 2, 3] RETURN $param", Utils.prepareQuery("RETURN $param", params));
         String strArr[] = {"1", "2", "3"};
         params.put("param", strArr);
-        Assertions.assertEquals("CYPHER param=[\"1\", \"2\", \"3\"] RETURN $param",
-                Utils.prepareQuery("RETURN $param", params));
+        Assertions.assertEquals(
+                "CYPHER param=[\"1\", \"2\", \"3\"] RETURN $param", Utils.prepareQuery("RETURN $param", params));
         List<String> stringList = Arrays.asList("1", "2", "3");
         params.put("param", stringList);
-        Assertions.assertEquals("CYPHER param=[\"1\", \"2\", \"3\"] RETURN $param",
-                Utils.prepareQuery("RETURN $param", params));
+        Assertions.assertEquals(
+                "CYPHER param=[\"1\", \"2\", \"3\"] RETURN $param", Utils.prepareQuery("RETURN $param", params));
     }
-
 }
