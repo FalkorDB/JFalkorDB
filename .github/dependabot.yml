@@ -11,10 +11,13 @@ updates:
       interval: "daily"
     ignore:
       # This library targets Java 8 (see maven.compiler.source/target in pom.xml)
-      # and is published with a JDK 8 build. JUnit Jupiter 6.x requires Java 17, so
-      # its test sources fail to compile under JDK 8. Stay on the latest 5.x line
-      # until the minimum supported Java version is raised.
+      # and is published with a JDK 8 build. These test dependencies dropped Java 8
+      # in their latest major (JUnit Jupiter 6.x and EqualsVerifier 4.x both require
+      # Java 17), so their test sources fail to compile under JDK 8. Stay on the
+      # latest Java 8-compatible major until the minimum supported Java is raised.
       - dependency-name: "org.junit.jupiter:junit-jupiter"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "nl.jqno.equalsverifier:equalsverifier"
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
