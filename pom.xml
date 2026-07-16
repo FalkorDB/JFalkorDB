@@ -183,4 +183,32 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<!-- Static-quality gates that need a modern JDK (Java 11+). OFF by default so it never runs
+		     on the JDK-8 publish build; activate it with -Pquality (via `just fmt` / `just fmt-check`;
+		     a CI format gate is added in the reformat PR). Spotless has NO <executions> binding, so it
+		     runs only when its goal is invoked explicitly (never during `verify`/`deploy`). -->
+		<profile>
+			<id>quality</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>com.diffplug.spotless</groupId>
+						<artifactId>spotless-maven-plugin</artifactId>
+						<version>3.8.0</version>
+						<configuration>
+							<java>
+								<palantirJavaFormat>
+									<version>2.80.0</version>
+								</palantirJavaFormat>
+								<removeUnusedImports/>
+								<importOrder/>
+							</java>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>
