@@ -1,0 +1,36 @@
+# JFalkorDB
+
+> Official Java client for FalkorDB (a Redis-module graph database). Targets Java 8; a blocking client
+> over Jedis. Query with Cypher and read a header-aware ResultSet.
+
+## Install (Maven)
+
+    <dependency>
+      <groupId>com.falkordb</groupId>
+      <artifactId>jfalkordb</artifactId>
+      <version>0.9.0</version>
+    </dependency>
+
+## Core idioms
+
+- Build a driver, select a graph, run Cypher, read statistics/rows:
+
+      GraphContextGenerator client = FalkorDB.driver().graph("social");  // driver() defaults to localhost:6379
+      ResultSet rs = client.query("CREATE (:Person {name: 'bsb'})");
+      int created = rs.getStatistics().nodesCreated();
+
+- Prefer parameterized queries over string concatenation:
+
+      client.query("MATCH (n {id: $id}) RETURN n", Collections.singletonMap("id", 42));
+
+- Other connect options: `FalkorDB.driver(host, port)`, `FalkorDB.driver(host, port, user, password)`,
+  or `FalkorDB.driver(URI)`.
+
+## Pitfalls (avoid)
+
+- The current query-parameter path is **not yet guaranteed injection-safe** (escaping is incomplete
+  and parameter keys are not validated). Do not build queries from untrusted input until this is
+  hardened.
+- A read against a graph that doesn't exist yet errors — create it with a write query first.
+
+See `README.md` for the full API and examples.

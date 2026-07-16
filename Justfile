@@ -23,6 +23,10 @@ fmt:
 fmt-check:
     ./mvnw -B -Pquality spotless:check
 
+# Spellcheck the Markdown docs (CI gate). Needs `pyspelling` + `aspell` (see CONTRIBUTING.md).
+spellcheck:
+    pyspelling -c .github/spellcheck-settings.yml -n Markdown
+
 # Compile + package without tests (no server needed).
 build:
     ./mvnw -B -DskipTests -Dgpg.skip=true package

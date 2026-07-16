@@ -1,0 +1,6 @@
+# CodeRabbit configuration — https://docs.coderabbit.ai/reference/configuration
+reviews:
+  # Fewer nitpicks; focus on substantive issues.
+  profile: chill
+  auto_review:
+    enabled: true
