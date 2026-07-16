@@ -48,6 +48,6 @@ db-down:
 verify-local:
     #!/usr/bin/env bash
     set -euo pipefail
-    just db-up
     trap 'just db-down' EXIT
+    just db-up
     just verify
