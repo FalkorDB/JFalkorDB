@@ -31,6 +31,23 @@ public class InstantiationTest {
     }
 
     @Test
+    public void createClientWithUserAndPassword() {
+        try (redis.clients.jedis.Jedis admin = new redis.clients.jedis.Jedis("localhost", 6379)) {
+            admin.aclSetUser("testuser", "on", ">testpass", "~*", "+@all");
+            try {
+                client = FalkorDB.driver("localhost", 6379, "testuser", "testpass").graph("g");
+                ResultSet resultSet = client.query("CREATE ({name:'bsb'})");
+                Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
+                client.deleteGraph();
+                client.close();
+                client = null;
+            } finally {
+                admin.aclDelUser("testuser");
+            }
+        }
+    }
+
+    @Test
     public void createClientWithURL() {
         client = FalkorDB.driver(URI.create("redis://localhost:6379")).graph("g");
         ResultSet resultSet = client.query("CREATE ({name:'bsb'})");
