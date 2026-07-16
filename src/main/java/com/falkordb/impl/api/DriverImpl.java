@@ -63,7 +63,8 @@ public class DriverImpl implements Driver {
      * @param uri server uri
      */
     public DriverImpl(URI uri) {
-        this(new JedisPool(uri));
+        this(new JedisPool(new GenericObjectPoolConfig<Jedis>(), uri,
+                Protocol.DEFAULT_TIMEOUT, DEFAULT_SOCKET_TIMEOUT_MILLIS));
     }
 
     /**
