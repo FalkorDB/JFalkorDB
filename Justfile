@@ -1,6 +1,6 @@
 # Justfile — dev-cycle automation for JFalkorDB. Run `just` (or `just --list`) to see recipes.
 # Every CI job runs one of these recipes, so they reproduce CI locally. Recipes call ./mvnw
-# (the pinned Maven Wrapper). Formatting/quality recipes arrive in a later PR (Spotless).
+# (the pinned Maven Wrapper). Formatting runs in the off-by-default `quality` profile (Spotless).
 
 set shell := ["bash", "-uc"]
 
@@ -12,6 +12,16 @@ port := "6379"
 # Default: list all recipes.
 default:
     @just --list
+
+# --- Format (no server; runs in the off-by-default `quality` profile) ---
+
+# Apply palantir-java-format + import cleanup across the codebase.
+fmt:
+    ./mvnw -B -Pquality spotless:apply
+
+# Check formatting without modifying files. Not yet a CI gate (see the reformat PR).
+fmt-check:
+    ./mvnw -B -Pquality spotless:check
 
 # Compile + package without tests (no server needed).
 build:
