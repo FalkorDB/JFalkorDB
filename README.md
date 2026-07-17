@@ -3,6 +3,7 @@
 [![Maven Central Version](https://img.shields.io/maven-central/v/com.falkordb/jfalkordb)](https://central.sonatype.com/artifact/com.falkordb/jfalkordb)
 [![Javadocs](https://www.javadoc.io/badge/com.falkordb/jfalkordb.svg)](https://www.javadoc.io/doc/com.falkordb/jfalkordb)
 [![Codecov](https://codecov.io/gh/FalkorDB/JFalkorDB/branch/master/graph/badge.svg)](https://codecov.io/gh/FalkorDB/JFalkorDB)
+[![Benchmarks](https://img.shields.io/badge/benchmarks-trends-blue)](https://falkordb.github.io/JFalkorDB/dev/bench/)
 [![Known Vulnerabilities](https://snyk.io/test/github/FalkorDB/JFalkorDB/badge.svg?targetFile=pom.xml)](https://snyk.io/test/github/FalkorDB/JFalkorDB?targetFile=pom.xml)
 
 [![Discord](https://img.shields.io/discord/1146782921294884966?style=flat-square)](https://discord.gg/6M4QwDXn2w)
@@ -283,6 +284,16 @@ Driver driver = new DriverImpl(jedisPool);
 ```
 
 For more information about Jedis pool configuration options, see the [Jedis documentation](https://github.com/redis/jedis).
+
+## Benchmarks
+
+Continuous [JMH](https://openjdk.org/projects/code-tools/jmh/) benchmarks run on every push to
+`master` and on each pull request. The latest results and an interactive trend chart are published to
+GitHub Pages:
+
+**📈 [JFalkorDB benchmark trends](https://falkordb.github.io/JFalkorDB/dev/bench/)**
+
+Run them locally with `just bench` (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ## License
 
