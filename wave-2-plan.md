@@ -80,10 +80,15 @@ the next starts:
        *test-compile* failure on JDK 8, which the JDK-21 pivot removes outright); it guards the
        **different** risk that a shipped change stops *running* on Java 8. It exercises the smoke
        consumer's code path, not every method in the artifact.
-4. **Make the Java-8 guarantee actually gate merges:** the smoke job is a **new required status
-   check**. Preserve the existing required contexts **`build`** and **`format`** (don't rename them —
-   e.g. don't silently turn `build` into a matrix that changes its context) and **add the smoke
-   check to branch protection atomically** with the PR, or the guarantee is non-blocking.
+4. **Make the Java-8 guarantee actually gate merges (explicit rollout order):** the smoke job is a
+   **new required status check**, but branch protection is **not** changed by this code PR — that's a
+   separate operational step, sequenced to avoid a gap:
+   1. **Land the smoke job** (merge PR 5) so it actually runs and emits a status.
+   2. **Confirm its exact status-check context name** from a real run on `master`.
+   3. **Add that context to branch protection** as required — **after** it exists (adding it before it
+      runs would block every merge; adding it late leaves a window where it's non-blocking).
+   Throughout, **preserve the existing required contexts `build` and `format`** (don't rename them —
+   e.g. don't silently turn `build` into a matrix that changes its context).
 5. **Update the durable docs that currently assert "build on JDK 8":** `copilot-instructions.md`,
    `CONTRIBUTING.md`, `AGENTS.md`, the `Justfile` comments, the **quality-profile comment in
    `pom.xml`** (it currently references avoiding the "JDK-8 publish build"), and the **rationale** in
@@ -218,8 +223,9 @@ passes.
 ## PR 7 — JMH benchmarks (standalone) + per-PR-vs-`master` radar
 
 **What**
-- A **standalone `benchmarks/` Maven project** (its own `pom.xml`, invoked with
-  `./mvnw -f benchmarks/pom.xml`, targeting **JDK 21**, marked **non-deployable**
+- A **standalone `benchmarks/` Maven project** (its own `pom.xml`, run **only** through the
+  repository's **`just bench`** recipe — which wraps `./mvnw -f benchmarks/pom.xml` internally, per the
+  `just`=CI rule — targeting **JDK 21**, marked **non-deployable**
   `maven.deploy.skip=true`) — **not** a reactor module of the root (the root **is** the published jar;
   a reactor child could inherit GPG/Central-publishing/`release=8`/Enforcer and either get signed &
   deployed or fail enforcement on modern benchmark deps). It consumes the built core jar as a normal
@@ -284,7 +290,7 @@ benchmarks project's presence.
 | --- | --- |
 | The JDK-21 build breaks the publish | PR 5 validates `just verify` on JDK 21 **and** the real **release signing** path (snapshot uses `gpg.skip`, so it doesn't); pins/ignores stay until PR 5 lands. |
 | A Java-8 **runtime** regression slips in | The JDK-8 artifact smoke test runs the **packaged jar + full runtime graph** on **JDK 8** (real query cycle); Animal Sniffer catches Java-9+ **API** use in our code; Enforcer catches Java-9+ **dependency** bytecode. |
-| A guarantee is added but doesn't gate | The smoke job becomes a **required** check; `build`/`format` context names are preserved; branch protection updated atomically with PR 5. |
+| A guarantee is added but doesn't gate | The smoke job becomes a **required** check via an explicit post-merge rollout (land job → confirm exact context → require it); `build`/`format` context names are preserved. |
 | Recipes drift from CI | Publish workflows are converted to `just`; CodeQL uses a manual `just` build; **no raw `mvn` remains** in any workflow. |
 | Failsafe silently drops IT coverage or clobbers `.exec` | JaCoCo report moved to `verify`; append-enabled or merged exec files. |
 | Public API/behavior changes via the test override | Override lives only in the **test** endpoint factory; production `driver()` untouched; zero-arg contract test retained. |
