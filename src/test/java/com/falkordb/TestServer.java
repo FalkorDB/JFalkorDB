@@ -28,6 +28,9 @@ public final class TestServer {
     private static final int port;
     private static final boolean external;
 
+    // One driver/pool shared by all graph() callers, closed once at JVM shutdown (see graph()).
+    private static Driver sharedDriver;
+
     static {
         String envHost = System.getenv("FALKORDB_HOST");
         String envPort = System.getenv("FALKORDB_PORT");
@@ -81,8 +84,27 @@ public final class TestServer {
         return FalkorDB.driver(host, port);
     }
 
-    /** A graph context on the shared test server; the caller is responsible for closing it. */
+    /**
+     * A graph context on the shared test server, backed by a single suite-wide driver/pool that is
+     * closed once at JVM shutdown. Closing the returned graph only clears its cache (it does not own
+     * the driver), so callers must not close the underlying driver — this is what keeps each call
+     * from leaking a {@code JedisPool}.
+     */
     public static GraphContextGenerator graph(String name) {
-        return FalkorDB.driver(host, port).graph(name);
+        return sharedDriver().graph(name);
+    }
+
+    private static synchronized Driver sharedDriver() {
+        if (sharedDriver == null) {
+            sharedDriver = FalkorDB.driver(host, port);
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    sharedDriver.close();
+                } catch (Exception ignored) {
+                    // best-effort cleanup at JVM exit
+                }
+            }));
+        }
+        return sharedDriver;
     }
 }
