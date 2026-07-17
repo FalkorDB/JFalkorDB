@@ -33,14 +33,14 @@ public final class TestServer {
         String envPort = System.getenv("FALKORDB_PORT");
         boolean hasHost = envHost != null && !envHost.isEmpty();
         boolean hasPort = envPort != null && !envPort.isEmpty();
-        if (hasHost ^ hasPort) {
+        if (hasHost != hasPort) {
             throw new IllegalStateException(
                     "Set BOTH FALKORDB_HOST and FALKORDB_PORT to use an external FalkorDB, or neither.");
         }
-        if (hasHost) {
+        if (hasHost && hasPort) {
             external = true;
             host = envHost;
-            port = Integer.parseInt(envPort.trim());
+            port = parsePort(envPort);
         } else {
             external = false;
             GenericContainer<?> container =
@@ -52,6 +52,14 @@ public final class TestServer {
     }
 
     private TestServer() {}
+
+    private static int parsePort(String value) {
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalStateException("FALKORDB_PORT must be a valid integer, but was \"" + value + "\"", e);
+        }
+    }
 
     /** Host of the shared test server (container host, or the {@code FALKORDB_HOST} override). */
     public static String host() {
