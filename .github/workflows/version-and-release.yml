@@ -44,7 +44,9 @@ jobs:
         uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
 
       - name: Update version in POM
-        run: just set-version ${{ steps.get_version.outputs.VERSION }}
+        run: just set-version "$VERSION"
+        env:
+          VERSION: ${{ steps.get_version.outputs.VERSION }}
 
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7
