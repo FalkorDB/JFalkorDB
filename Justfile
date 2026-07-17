@@ -31,8 +31,8 @@ spellcheck:
 build:
     ./mvnw -B -DskipTests -Dgpg.skip=true package
 
-# Run the test suite. Requires a FalkorDB on {{port}} (use `just verify-local`, or `just db-up`),
-# or set FALKORDB_HOST/FALKORDB_PORT — otherwise the tests start their own Testcontainers server.
+# Run the fast unit tests only (Surefire, *Test — no server needed). System tests are *IT
+# and run under Failsafe in `just verify` / `just verify-local`.
 test:
     ./mvnw -B -Dgpg.skip=true test
 

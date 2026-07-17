@@ -120,6 +120,26 @@
 				<version>3.5.6</version>
 			</plugin>
 
+			<!-- Integration tests (*IT, server-backed via Testcontainers) run in integration-test/verify.
+			     @{argLine} makes Failsafe load the JaCoCo agent (append=true), so IT coverage is added
+			     to the same jacoco.exec the unit tests write, and the report at `verify` covers both. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>3.5.6</version>
+				<configuration>
+					<argLine>@{argLine}</argLine>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
@@ -132,7 +152,7 @@
 					</execution>
 					<execution>
 						<id>report</id>
-						<phase>test</phase>
+						<phase>verify</phase>
 						<goals>
 							<goal>report</goal>
 						</goals>

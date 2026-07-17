@@ -19,14 +19,16 @@ recipe; recipes call the pinned Maven Wrapper (`./mvnw`).
 | --- | --- |
 | `just verify` | Build + tests + coverage (the CI `build` gate). Auto-starts FalkorDB via Testcontainers (Docker). |
 | `just verify-local` | Run `verify` against a `just db-up` server (reused via `FALKORDB_HOST/PORT`), then tear it down — handy when Testcontainers can't reach your Docker. |
-| `just build` / `just test` | Compile-only / tests-only. |
+| `just build` / `just test` | Compile-only / fast **unit** tests only (`*Test`, no server). |
 | `just fmt` / `just fmt-check` | Apply / check palantir-java-format (runs in the `-Pquality` profile). |
 | `just spellcheck` | Spellcheck the Markdown docs (the CI `spellcheck` gate). |
 | `just db-up` / `just db-down` | Manage a local FalkorDB container. |
 
-Tests start a FalkorDB automatically via **Testcontainers** (Docker required) — no manual server
-setup. Set both `FALKORDB_HOST`/`FALKORDB_PORT` (or use `just verify-local`) to reuse an existing
-server instead.
+Server-backed **system tests are `*IT`** (run by Failsafe in `verify`) and start a FalkorDB
+automatically via **Testcontainers** (Docker required) — no manual server setup; set both
+`FALKORDB_HOST`/`FALKORDB_PORT` (or use `just verify-local`) to reuse an existing server instead.
+Pure **unit tests are `*Test`** (Surefire, no server) and run in `just test`. Name new tests
+accordingly, and use the `TestServer` helper for server access.
 
 ## Definition of done
 

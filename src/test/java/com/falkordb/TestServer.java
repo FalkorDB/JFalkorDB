@@ -14,7 +14,7 @@ import org.testcontainers.utility.DockerImageName;
  * one is rejected.
  *
  * <p><strong>External-server safety:</strong> some system tests mutate server-wide state (for example
- * {@code UdfTest} globally lists/deletes UDF libraries). When you point this at an external server via
+ * {@code UdfIT} globally lists/deletes UDF libraries). When you point this at an external server via
  * the env override, use a <em>dedicated disposable</em> instance — never a shared or production
  * server. The default container path is always safe because the container is throwaway.
  */
