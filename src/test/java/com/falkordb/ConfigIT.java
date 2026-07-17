@@ -7,7 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import redis.clients.jedis.exceptions.JedisDataException;
 
-public class ConfigTest {
+public class ConfigIT {
 
     private Driver driver;
 

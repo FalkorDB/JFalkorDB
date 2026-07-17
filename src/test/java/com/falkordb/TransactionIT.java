@@ -13,11 +13,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class TransactionTest {
+public class TransactionIT {
 
     private GraphContextGenerator api;
 
-    public TransactionTest() {}
+    public TransactionIT() {}
 
     @BeforeEach
     public void createApi() {

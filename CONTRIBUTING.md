@@ -27,7 +27,7 @@ Common recipes:
 just verify-local   # spin up FalkorDB (Docker), run the full build + tests, then tear it down
 just verify         # same build + tests; auto-starts FalkorDB via Testcontainers (Docker)
 just build          # compile + package, no tests
-just test           # tests only (auto-starts a Testcontainers server, or set FALKORDB_HOST/PORT)
+just test           # fast unit tests only (no server); system tests are *IT, run by just verify
 just fmt            # apply palantir-java-format
 just fmt-check      # check formatting
 just db-up          # start a local FalkorDB container
