@@ -63,16 +63,16 @@ bench:
     ./mvnw -B -q -DskipTests -Dgpg.skip=true install
     version="$(./mvnw -q -DforceStdout help:evaluate -Dexpression=project.version)"
     ./mvnw -B -q -f benchmarks/pom.xml -Djfalkordb.version="$version" clean package
-    java -jar benchmarks/target/benchmarks.jar -rf json -rff benchmarks/target/jmh-result.json
+    java -jar benchmarks/target/benchmarks.jar
 
-# Run a single benchmark by name/regex, e.g. `just bench-one pointMatch`.
-bench-one id:
+# Run the load sweep for specific concurrency levels only, e.g. `just bench-one "1,8,64"`.
+bench-one loads:
     #!/usr/bin/env bash
     set -euo pipefail
     ./mvnw -B -q -DskipTests -Dgpg.skip=true install
     version="$(./mvnw -q -DforceStdout help:evaluate -Dexpression=project.version)"
     ./mvnw -B -q -f benchmarks/pom.xml -Djfalkordb.version="$version" clean package
-    java -jar benchmarks/target/benchmarks.jar {{id}}
+    java -Dbench.loads="{{loads}}" -jar benchmarks/target/benchmarks.jar
 
 # Refresh the local baseline JSON (CI stores the master baseline to gh-pages automatically).
 bench-baseline:

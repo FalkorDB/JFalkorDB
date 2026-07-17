@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JFalkorDB — client latency vs throughput</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 920px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+    h1 { font-size: 1.4rem; margin-bottom: .3rem; }
+    p { color: #555; font-size: .92rem; line-height: 1.5; }
+    a { color: #2563eb; }
+    canvas { margin-top: 1rem; }
+    #err { color: #b91c1c; }
+  </style>
+</head>
+<body>
+  <h1>Client latency vs throughput</h1>
+  <p>
+    Client-side latency — <em>total round-trip minus the server's reported internal execution
+    time</em> — as concurrency (worker threads), and therefore throughput, increases. Each point is a
+    thread setting; the knee is where the client's connection/thread management (today: the Jedis
+    connection pool) saturates. Lower and further-right is better.
+    <br><a href="../">← back to benchmark trends</a>
+  </p>
+  <canvas id="chart" height="150"></canvas>
+  <p id="err"></p>
+  <script>
+    fetch('./data.json', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (rows) {
+        rows.sort(function (a, b) { return a.threads - b.threads; });
+        function series(key) { return rows.map(function (d) { return { x: d.throughput, y: d[key], threads: d.threads }; }); }
+        function ds(label, key, color) {
+          return { label: label, data: series(key), borderColor: color, backgroundColor: color, showLine: true, tension: 0.2, pointRadius: 5, pointHoverRadius: 7 };
+        }
+        new Chart(document.getElementById('chart'), {
+          type: 'scatter',
+          data: { datasets: [ds('p50', 'p50', '#2563eb'), ds('p95', 'p95', '#f59e0b'), ds('p99', 'p99', '#dc2626')] },
+          options: {
+            scales: {
+              x: { title: { display: true, text: 'throughput (ops/s)' }, beginAtZero: true },
+              y: { title: { display: true, text: 'client latency (us)' }, beginAtZero: true }
+            },
+            plugins: {
+              tooltip: { callbacks: { label: function (c) {
+                return c.dataset.label + ': ' + c.parsed.y.toFixed(0) + ' us @ ' + c.parsed.x.toFixed(0) + ' ops/s (' + c.raw.threads + ' threads)';
+              } } }
+            }
+          }
+        });
+      })
+      .catch(function (e) { document.getElementById('err').textContent = 'Failed to load data.json: ' + e; });
+  </script>
+</body>
+</html>

@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      # Push the gh-pages baseline/trend (only on master pushes) and comment on regressions (PRs).
+      # Push the gh-pages baseline/trend + curve (only on master pushes) and comment on regressions (PRs).
       contents: write
       pull-requests: write
 
@@ -35,21 +35,62 @@ jobs:
         cache: maven
     - name: Install just
       uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
-    - name: Run JMH benchmarks (via just)
+    - name: Run client load-sweep benchmark (via just)
       run: just bench
-    - name: Store baseline / compare vs master + alert (informational)
+
+    # Client latency = total round-trip minus server internal execution time (smaller is better).
+    - name: Radar — client latency
       uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
       with:
-        tool: 'jmh'
-        output-file-path: benchmarks/target/jmh-result.json
+        name: Client latency
+        tool: 'customSmallerIsBetter'
+        output-file-path: benchmarks/target/bench-latency.json
         github-token: ${{ secrets.GITHUB_TOKEN }}
         gh-pages-branch: gh-pages
-        benchmark-data-dir-path: dev/bench
-        # Benchmarks use JMH AverageTime (smaller = better), which the action reads correctly.
+        benchmark-data-dir-path: dev/bench/latency
         alert-threshold: '200%'
         comment-on-alert: true
         summary-always: true
-        # Informational only — never fail the build on a regression (shared runners are noisy).
         fail-on-alert: false
-        # Store/update the master baseline + trend only on push to master; PRs compare read-only.
         auto-push: ${{ github.event_name == 'push' }}
+
+    # Throughput at each concurrency level (bigger is better).
+    - name: Radar — throughput
+      uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+      with:
+        name: Throughput
+        tool: 'customBiggerIsBetter'
+        output-file-path: benchmarks/target/bench-throughput.json
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        gh-pages-branch: gh-pages
+        benchmark-data-dir-path: dev/bench/throughput
+        alert-threshold: '200%'
+        comment-on-alert: true
+        summary-always: true
+        fail-on-alert: false
+        auto-push: ${{ github.event_name == 'push' }}
+
+    # The latency-vs-throughput curve is a per-run snapshot (github-action-benchmark only does
+    # trend-over-time), so publish it — and the landing page — to gh-pages on master pushes only.
+    - name: Publish latency-vs-throughput curve to gh-pages
+      if: github.event_name == 'push'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -euo pipefail
+        work="$(mktemp -d)"
+        git clone --quiet --depth 1 --branch gh-pages \
+          "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$work"
+        mkdir -p "$work/dev/bench/curve"
+        cp benchmarks/index.html "$work/dev/bench/index.html"
+        cp benchmarks/curve.html "$work/dev/bench/curve/index.html"
+        cp benchmarks/target/bench-curve.json "$work/dev/bench/curve/data.json"
+        cd "$work"
+        if [ -z "$(git status --porcelain)" ]; then
+          echo "curve unchanged"; exit 0
+        fi
+        git add dev/bench/index.html dev/bench/curve
+        git -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "chore(bench): update latency-throughput curve [skip ci]"
+        git push origin gh-pages

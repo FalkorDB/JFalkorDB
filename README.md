@@ -287,11 +287,13 @@ For more information about Jedis pool configuration options, see the [Jedis docu
 
 ## Benchmarks
 
-Continuous [JMH](https://openjdk.org/projects/code-tools/jmh/) benchmarks run on every push to
-`master` and on pull requests targeting `master`. The latest results and an interactive trend chart
-are published to GitHub Pages:
+Continuous **client load-sweep** benchmarks run on every push to `master` and on pull requests
+targeting `master`. They measure the **client-side** cost — total round-trip *minus* the server's
+reported internal execution time — as concurrency (and therefore throughput) increases, so
+connection/thread-management effects are visible. Interactive charts are published to GitHub Pages:
 
-**📈 [JFalkorDB benchmark trends](https://falkordb.github.io/JFalkorDB/dev/bench/)**
+**📈 [JFalkorDB benchmarks](https://falkordb.github.io/JFalkorDB/dev/bench/)** — a latency-vs-throughput
+saturation curve plus per-PR latency & throughput trends.
 
 Run them locally with `just bench` (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 

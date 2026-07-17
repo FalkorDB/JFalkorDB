@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JFalkorDB benchmarks</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 820px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+    h1 { font-size: 1.5rem; }
+    p { color: #555; line-height: 1.5; }
+    ul { line-height: 1.9; }
+    a { color: #2563eb; }
+    code { background: #f3f4f6; padding: .1rem .3rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>JFalkorDB benchmarks</h1>
+  <p>
+    Continuous benchmarks of the JFalkorDB client. They measure <strong>client-side</strong> cost —
+    the total round-trip minus the server's reported internal execution time — under increasing
+    concurrency, to make connection/thread-management effects (and, later, non-blocking / Project-Loom
+    variants) visible. Updated on every push to <code>master</code>.
+  </p>
+  <ul>
+    <li><a href="./curve/">Client latency vs throughput</a> — the saturation curve across thread settings (latest run).</li>
+    <li><a href="./latency/">Client latency trend</a> — p50/p95/p99 per concurrency level, over time (per-PR regression radar).</li>
+    <li><a href="./throughput/">Throughput trend</a> — ops/s per concurrency level, over time.</li>
+  </ul>
+  <p>Run locally with <code>just bench</code>.</p>
+</body>
+</html>
