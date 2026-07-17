@@ -1,7 +1,7 @@
 # Wave 2 — Pivot to JDK 21 + test/bench harness (scaffolding plan)
 
 > **Status: plan for review — no implementation until approved.** This is the detailed plan for
-> **Wave 2** of the [modernization plan](project-modernizations.md); it implements that plan's
+> **Wave 2** of the overall JFalkorDB modernization effort; it implements that effort's
 > recommended-order **steps 4–6** (decision **D6** — JDK 21 + `--release 8` — is already approved).
 > Like the Wave 1 plan, this doc is a temporary planning artifact and will be closed/deleted once
 > Wave 2 lands; it is **not** referenced from any permanent project file.
@@ -26,7 +26,7 @@ the next starts:
   PR 5 lands, but deferred to a dedicated follow-up* to keep PR 5's blast radius small.
 - **Error Prone / SpotBugs / FindSecBugs / OWASP** and **retiring DeepSource** — **Wave 3** (their
   current versions need the JDK-21 build PR 5 delivers).
-- **Parameter-path hardening (§6)** and **releases / release-please (§4)** — **Wave 3**.
+- **Parameter-path hardening** and **releases / release-please** — **Wave 3**.
 - **FalkorDB-version matrix, JDK-runtime matrix, PITest** — **Wave 4** (PR 6 is their prerequisite).
 - **MRJAR overlay, Loom virtual-thread work, `CompletableFuture` facade** — **Wave 5**.
 
@@ -66,7 +66,7 @@ the next starts:
      ships a Java-9 `module-info.class`, harmless on Java 8 — so this checks the **base** classfiles,
      not literally every entry. It also doesn't prove Java-8 bytecode avoids a Java-9+ API — that's
      Animal Sniffer's job for our code.)*
-   - **JDK-8 artifact smoke test (§5d):** an **isolated downstream consumer** (a standalone project,
+   - **JDK-8 artifact smoke test:** an **isolated downstream consumer** (a standalone project,
      **not** a reactor module) that resolves the **packaged jar + its full runtime dependency graph**
      and performs a **real connect → query → read result → close** cycle under a **JDK 8 runtime**,
      against a **pinned** `falkordb/falkordb@sha256:…` server on **localhost:6379**. Have the consumer
@@ -215,7 +215,7 @@ passes.
 
 ---
 
-## PR 7 — JMH benchmarks (standalone) + per-PR-vs-`master` radar (§8)
+## PR 7 — JMH benchmarks (standalone) + per-PR-vs-`master` radar
 
 **What**
 - A **standalone `benchmarks/` Maven project** (its own `pom.xml`, invoked with
@@ -283,7 +283,7 @@ benchmarks project's presence.
 | Risk | Mitigation |
 | --- | --- |
 | The JDK-21 build breaks the publish | PR 5 validates `just verify` on JDK 21 **and** the real **release signing** path (snapshot uses `gpg.skip`, so it doesn't); pins/ignores stay until PR 5 lands. |
-| A Java-8 **runtime** regression slips in | The §5d smoke runs the **packaged jar + full runtime graph** on **JDK 8** (real query cycle); Animal Sniffer catches Java-9+ **API** use in our code; Enforcer catches Java-9+ **dependency** bytecode. |
+| A Java-8 **runtime** regression slips in | The JDK-8 artifact smoke test runs the **packaged jar + full runtime graph** on **JDK 8** (real query cycle); Animal Sniffer catches Java-9+ **API** use in our code; Enforcer catches Java-9+ **dependency** bytecode. |
 | A guarantee is added but doesn't gate | The smoke job becomes a **required** check; `build`/`format` context names are preserved; branch protection updated atomically with PR 5. |
 | Recipes drift from CI | Publish workflows are converted to `just`; CodeQL uses a manual `just` build; **no raw `mvn` remains** in any workflow. |
 | Failsafe silently drops IT coverage or clobbers `.exec` | JaCoCo report moved to `verify`; append-enabled or merged exec files. |
