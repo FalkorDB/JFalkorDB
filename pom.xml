@@ -66,8 +66,7 @@
     </distributionManagement>
 
 	<properties>
-		<maven.compiler.source>8</maven.compiler.source>
-		<maven.compiler.target>8</maven.compiler.target>
+		<maven.compiler.release>8</maven.compiler.release>
 	</properties>
 
 	<dependencies>
@@ -105,6 +104,12 @@
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.13.0</version>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.5.6</version>
 			</plugin>
@@ -124,6 +129,66 @@
 						<phase>test</phase>
 						<goals>
 							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Java-8 guardrail #1: every SHIPPED (compile/runtime) dependency classfile is
+			     <= Java-8 bytecode. Test scope is excluded (test tools may be newer now that the
+			     build runs on JDK 21). strict=false (default) skips module-info / MRJAR versioned
+			     entries, so this checks base classfiles. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<version>3.5.0</version>
+				<dependencies>
+					<dependency>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>extra-enforcer-rules</artifactId>
+						<version>1.10.0</version>
+					</dependency>
+				</dependencies>
+				<executions>
+					<execution>
+						<id>enforce-bytecode-8</id>
+						<phase>validate</phase>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<enforceBytecodeVersion>
+									<maxJdkVersion>1.8</maxJdkVersion>
+									<ignoredScopes>
+										<ignoredScope>test</ignoredScope>
+									</ignoredScopes>
+								</enforceBytecodeVersion>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- Java-8 guardrail #2: our main code calls only the Java-8 API (a stronger check than
+			     the compiler alone for API misuse it can't catch). Runs at verify. -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>animal-sniffer-maven-plugin</artifactId>
+				<version>1.24</version>
+				<configuration>
+					<signature>
+						<groupId>org.codehaus.mojo.signature</groupId>
+						<artifactId>java18</artifactId>
+						<version>1.0</version>
+					</signature>
+				</configuration>
+				<executions>
+					<execution>
+						<id>check-java8-api</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>check</goal>
 						</goals>
 					</execution>
 				</executions>
@@ -185,10 +250,10 @@
 	</build>
 
 	<profiles>
-		<!-- Static-quality gates that need a modern JDK (Java 11+). OFF by default so it never runs
-		     on the JDK-8 publish build; activate it with -Pquality (via `just fmt` / `just fmt-check`;
-		     a CI format gate is added in the reformat PR). Spotless has NO <executions> binding, so it
-		     runs only when its goal is invoked explicitly (never during `verify`/`deploy`). -->
+		<!-- Static-quality gates (Spotless / palantir-java-format). OFF by default and kept as a
+		     separate explicit gate: activate with -Pquality (via `just fmt` / `just fmt-check`, and the
+		     `format` CI job). Spotless has NO <executions> binding, so it runs only when its goal is
+		     invoked explicitly (never during `verify`/`deploy`), keeping the aggregate build fast. -->
 		<profile>
 			<id>quality</id>
 			<build>

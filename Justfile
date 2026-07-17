@@ -19,7 +19,7 @@ default:
 fmt:
     ./mvnw -B -Pquality spotless:apply
 
-# Check formatting without modifying files. Not yet a CI gate (see the reformat PR).
+# Check formatting without modifying files. This is the CI `format` gate.
 fmt-check:
     ./mvnw -B -Pquality spotless:check
 
@@ -38,6 +38,35 @@ test:
 # Full build + tests + coverage (JaCoCo) — the aggregate gate CI runs. Requires a server.
 verify:
     ./mvnw -B -Dgpg.skip=true verify
+
+# Prove the PUBLISHED artifact runs on a Java-8 runtime: build+install the jar on the build JDK,
+# then compile+run the standalone JDK-8 runtime smoke against it (pinned to the root project's
+# version). Pass the JDK-8 home, and run a FalkorDB on {{port}} first. CI provides both; locally
+# e.g. `just db-up && just verify-jdk8 ~/.sdkman/candidates/java/8.0.492-zulu`.
+verify-jdk8 jdk8_home:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ./mvnw -B -DskipTests -Dgpg.skip=true install
+    version="$(./mvnw -q -DforceStdout help:evaluate -Dexpression=project.version)"
+    JAVA_HOME="{{jdk8_home}}" ./mvnw -B -f smoke-test/pom.xml -Djfalkordb.version="$version" test
+
+# --- Publish (run by the snapshot/release CI workflows; not for day-to-day local use) ---
+
+# Pre-fetch dependencies (snapshot workflow warm-up).
+fetch-deps:
+    ./mvnw -B -q dependency:go-offline
+
+# Set the project version (release workflow, from the git tag).
+set-version version:
+    ./mvnw -B versions:set -DnewVersion={{version}} -DgenerateBackupPoms=false
+
+# Deploy a -SNAPSHOT to Maven Central (no signing, no tests).
+deploy-snapshot:
+    ./mvnw -B -DskipTests -Dgpg.skip=true deploy
+
+# Build, sign, test, and deploy a release to Maven Central.
+deploy-release:
+    ./mvnw -B --no-transfer-progress clean deploy
 
 # --- Dockerized FalkorDB for local runs (readiness-probed) ---
 

@@ -4,8 +4,9 @@ Thanks for contributing! This guide covers the local workflow and the `just` rec
 
 ## Prerequisites
 
-- **JDK 17** (the PR build JDK). The artifact targets Java 8, but you don't need a JDK 8 for
-  day-to-day work.
+- **JDK 21** (the build JDK for PRs, snapshots, and releases). The artifact still targets Java 8
+  (compiled with `--release 8`); for day-to-day work you don't need a JDK 8 — only the
+  `just verify-jdk8` runtime smoke uses one.
 - **[`just`](https://github.com/casey/just)** — `brew install just`, `cargo install just`, or your
   package manager.
 - **Docker** — for a local FalkorDB (the tests need a running server).
@@ -43,4 +44,5 @@ just db-down        # stop it
 - **Don't merge to `master` yourself** — a maintainer reviews and merges.
 
 See [`.github/copilot-instructions.md`](.github/copilot-instructions.md) for the full engineering
-conventions, including the Java-8 / JDK-8-publish constraints.
+conventions, including the Java-8 guarantee (JDK-21 build with `--release 8` plus the Java-8
+guardrails).

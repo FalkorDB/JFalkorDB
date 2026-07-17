@@ -17,7 +17,7 @@ jobs:
       - name: Set up publishing to maven central
         uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5
         with:
-          java-version: '8'
+          java-version: '21'
           distribution: 'temurin'
           cache: maven
           server-id: central
@@ -34,13 +34,14 @@ jobs:
             /var/cache/apt
           key: jfalkordb-${{hashFiles('**/pom.xml')}}
 
-      - name: mvn offline
-        run: |
-          mvn -q dependency:go-offline
-          
-      - name: deploy
-        run: |
-          mvn -DskipTests -Dgpg.skip=true deploy
+      - name: Install just
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+
+      - name: Fetch dependencies (via just)
+        run: just fetch-deps
+
+      - name: Deploy snapshot (via just)
+        run: just deploy-snapshot
         env:
           CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
           CENTRAL_TOKEN: ${{ secrets.CENTRAL_TOKEN }}
