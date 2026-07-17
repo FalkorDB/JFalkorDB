@@ -15,7 +15,7 @@ public class PipelineTest {
 
     @BeforeEach
     public void createApi() {
-        api = FalkorDB.driver().graph("social");
+        api = TestServer.graph("social");
     }
 
     @AfterEach
@@ -257,7 +257,7 @@ public class PipelineTest {
             originalResultSetIterator = originalResultSet.iterator();
         }
 
-        GraphContextGenerator api2 = FalkorDB.driver().graph("social-copied");
+        GraphContextGenerator api2 = TestServer.graph("social-copied");
         try {
             // Compare graph contents
             ResultSet copiedResultSet = api2.query("MATCH (p:person)-[rel:knows]->(p2:person) RETURN p,rel,p2");

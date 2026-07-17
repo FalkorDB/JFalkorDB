@@ -31,11 +31,13 @@ spellcheck:
 build:
     ./mvnw -B -DskipTests -Dgpg.skip=true package
 
-# Run the test suite. Requires a FalkorDB on {{port}} (use `just verify-local`, or `just db-up`).
+# Run the test suite. Requires a FalkorDB on {{port}} (use `just verify-local`, or `just db-up`),
+# or set FALKORDB_HOST/FALKORDB_PORT — otherwise the tests start their own Testcontainers server.
 test:
     ./mvnw -B -Dgpg.skip=true test
 
-# Full build + tests + coverage (JaCoCo) — the aggregate gate CI runs. Requires a server.
+# Full build + tests + coverage (JaCoCo) — the aggregate gate CI runs. Tests start a FalkorDB
+# automatically via Testcontainers (Docker required); no manual server needed.
 verify:
     ./mvnw -B -Dgpg.skip=true verify
 
@@ -87,10 +89,12 @@ db-up:
 db-down:
     -docker rm -f {{container}}
 
-# Manage Docker and run the full `verify` locally; tears the server down even on failure.
+# Manage Docker and run the full `verify` locally against that server, reusing it via the
+# FALKORDB_HOST/PORT override so the tests don't also start a Testcontainers server; tears the
+# server down even on failure. Handy when Testcontainers can't reach your local Docker.
 verify-local:
     #!/usr/bin/env bash
     set -euo pipefail
     trap 'just db-down' EXIT
     just db-up
-    just verify
+    FALKORDB_HOST=localhost FALKORDB_PORT={{port}} just verify

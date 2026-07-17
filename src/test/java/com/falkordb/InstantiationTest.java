@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 public class InstantiationTest {
@@ -11,6 +12,12 @@ public class InstantiationTest {
 
     @Test
     public void createDefaultClient() {
+        // The no-arg driver() targets localhost:6379; this is only meaningful when the test server
+        // actually runs there (external FALKORDB_HOST/PORT override, or local). The dynamic-port
+        // Testcontainers path is covered by the smoke-jdk8 job, so skip otherwise.
+        Assumptions.assumeTrue(
+                "localhost".equals(TestServer.host()) && TestServer.port() == 6379,
+                "no-arg driver() requires a server on localhost:6379");
         client = FalkorDB.driver().graph("g");
         ResultSet resultSet = client.query("CREATE ({name:'bsb'})");
         Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
@@ -18,14 +25,15 @@ public class InstantiationTest {
 
     @Test
     public void createClientWithHostAndPort() {
-        client = FalkorDB.driver("localhost", 6379).graph("g");
+        client = FalkorDB.driver(TestServer.host(), TestServer.port()).graph("g");
         ResultSet resultSet = client.query("CREATE ({name:'bsb'})");
         Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
     }
 
     @Test
     public void createClientWithHostAndPortNoUser() {
-        client = FalkorDB.driver("localhost", 6379, null, null).graph("g");
+        client = FalkorDB.driver(TestServer.host(), TestServer.port(), null, null)
+                .graph("g");
         ResultSet resultSet = client.query("CREATE ({name:'bsb'})");
         Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
     }
@@ -35,11 +43,11 @@ public class InstantiationTest {
         // Unique username so the test never overwrites or deletes a pre-existing
         // ACL user when run against a shared/dev server.
         String username = "jfalkordb_test_" + UUID.randomUUID().toString().replace("-", "");
-        try (redis.clients.jedis.Jedis admin = new redis.clients.jedis.Jedis("localhost", 6379)) {
+        try (redis.clients.jedis.Jedis admin = new redis.clients.jedis.Jedis(TestServer.host(), TestServer.port())) {
             admin.aclSetUser(username, "on", ">testpass", "~*", "+@all");
             try {
-                client =
-                        FalkorDB.driver("localhost", 6379, username, "testpass").graph("g");
+                client = FalkorDB.driver(TestServer.host(), TestServer.port(), username, "testpass")
+                        .graph("g");
                 ResultSet resultSet = client.query("CREATE ({name:'bsb'})");
                 Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
                 client.deleteGraph();
@@ -57,9 +65,9 @@ public class InstantiationTest {
         // read timeout would abort a read that takes longer than 2s. With the driver
         // disabling the client-side socket timeout, a command issued while the server
         // is paused for >2s must still succeed instead of failing with a read timeout.
-        client = FalkorDB.driver("localhost", 6379).graph("g");
+        client = FalkorDB.driver(TestServer.host(), TestServer.port()).graph("g");
         client.query("RETURN 1"); // establish a pooled connection before pausing the server
-        try (redis.clients.jedis.Jedis admin = new redis.clients.jedis.Jedis("localhost", 6379)) {
+        try (redis.clients.jedis.Jedis admin = new redis.clients.jedis.Jedis(TestServer.host(), TestServer.port())) {
             admin.clientPause(2500L); // pause command processing for 2.5s (> old 2000ms timeout)
         }
         long start = System.currentTimeMillis();
@@ -74,7 +82,8 @@ public class InstantiationTest {
 
     @Test
     public void createClientWithURL() {
-        client = FalkorDB.driver(URI.create("redis://localhost:6379")).graph("g");
+        client = FalkorDB.driver(URI.create("redis://" + TestServer.host() + ":" + TestServer.port()))
+                .graph("g");
         ResultSet resultSet = client.query("CREATE ({name:'bsb'})");
         Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
     }

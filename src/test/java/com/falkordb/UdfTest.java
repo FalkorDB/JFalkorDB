@@ -12,7 +12,7 @@ public class UdfTest {
 
     @BeforeEach
     public void setUp() {
-        driver = FalkorDB.driver();
+        driver = TestServer.driver();
         // Clean up any existing UDF libraries before each test
         try {
             driver.udfFlush();
