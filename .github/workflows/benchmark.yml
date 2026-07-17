@@ -69,6 +69,9 @@ jobs:
         summary-always: true
         fail-on-alert: false
         auto-push: ${{ github.event_name == 'push' }}
+        # The latency step above already fetched/checked out gh-pages in this job; re-fetching here
+        # fails ("refusing to fetch into checked-out gh-pages"), so reuse that checkout.
+        skip-fetch-gh-pages: true
 
     # The latency-vs-throughput curve is a per-run snapshot (github-action-benchmark only does
     # trend-over-time), so publish it — and the landing page — to gh-pages on master pushes only.
