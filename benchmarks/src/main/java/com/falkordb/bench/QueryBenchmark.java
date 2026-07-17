@@ -50,7 +50,7 @@ public class QueryBenchmark {
         String host = System.getenv("FALKORDB_HOST");
         String port = System.getenv("FALKORDB_PORT");
         if (host != null && !host.isEmpty() && port != null && !port.isEmpty()) {
-            driver = FalkorDB.driver(host, Integer.parseInt(port.trim()));
+            driver = FalkorDB.driver(host, parsePort(port));
         } else {
             container = new GenericContainer<>(IMAGE)
                     .withExposedPorts(6379)
@@ -59,7 +59,20 @@ public class QueryBenchmark {
             driver = FalkorDB.driver(container.getHost(), container.getMappedPort(6379));
         }
         graph = driver.graph("bench");
+        try {
+            graph.deleteGraph(); // clear any leftovers from an aborted run (best-effort)
+        } catch (Exception ignored) {
+            // graph didn't exist — nothing to clean
+        }
         graph.query("UNWIND range(0, 999) AS i CREATE (:N {id: i})");
+    }
+
+    private static int parsePort(String value) {
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalStateException("FALKORDB_PORT must be a valid integer, but was \"" + value + "\"", e);
+        }
     }
 
     @TearDown(Level.Trial)
