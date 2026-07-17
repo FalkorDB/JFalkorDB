@@ -23,6 +23,7 @@ recipe; recipes call the pinned Maven Wrapper (`./mvnw`).
 | `just fmt` / `just fmt-check` | Apply / check palantir-java-format (runs in the `-Pquality` profile). |
 | `just spellcheck` | Spellcheck the Markdown docs (the CI `spellcheck` gate). |
 | `just db-up` / `just db-down` | Manage a local FalkorDB container. |
+| `just bench` / `just bench-one <id>` | Run all / one JMH benchmark (standalone `benchmarks/` module; feeds the per-PR-vs-`master` radar). |
 
 Server-backed **system tests are `*IT`** (run by Failsafe in `verify`) and start a FalkorDB
 automatically via **Testcontainers** (Docker required) — no manual server setup; set both

@@ -32,6 +32,7 @@ just fmt            # apply palantir-java-format
 just fmt-check      # check formatting
 just db-up          # start a local FalkorDB container
 just db-down        # stop it
+just bench          # run the JMH benchmarks (writes JSON for the per-PR-vs-master radar)
 ```
 
 ## Before opening a PR

@@ -1,0 +1,55 @@
+name: Benchmark
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: benchmark-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Push the gh-pages baseline/trend (only on master pushes) and comment on regressions (PRs).
+      contents: write
+      pull-requests: write
+
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      with:
+        persist-credentials: false
+    - name: Set up JDK 21
+      uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+    - name: Install just
+      uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+    - name: Run JMH benchmarks (via just)
+      run: just bench
+    - name: Store baseline / compare vs master + alert (informational)
+      uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+      with:
+        tool: 'jmh'
+        output-file-path: benchmarks/target/jmh-result.json
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        gh-pages-branch: gh-pages
+        benchmark-data-dir-path: dev/bench
+        # Benchmarks use JMH AverageTime (smaller = better), which the action reads correctly.
+        alert-threshold: '200%'
+        comment-on-alert: true
+        summary-always: true
+        # Informational only — never fail the build on a regression (shared runners are noisy).
+        fail-on-alert: false
+        # Store/update the master baseline + trend only on push to master; PRs compare read-only.
+        auto-push: ${{ github.event_name == 'push' }}
