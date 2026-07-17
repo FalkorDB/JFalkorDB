@@ -13,7 +13,7 @@ public class ConfigTest {
 
     @BeforeEach
     public void setUp() {
-        driver = FalkorDB.driver();
+        driver = TestServer.driver();
     }
 
     @AfterEach

@@ -13,7 +13,7 @@ public class IterableTest {
 
     @BeforeEach
     public void createApi() {
-        api = FalkorDB.driver().graph("social");
+        api = TestServer.graph("social");
     }
 
     @AfterEach

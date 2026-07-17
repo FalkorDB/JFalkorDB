@@ -3,9 +3,9 @@ package com.falkordb.exceptions;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.falkordb.FalkorDB;
 import com.falkordb.GraphContext;
 import com.falkordb.GraphContextGenerator;
+import com.falkordb.TestServer;
 import java.util.HashMap;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -18,7 +18,7 @@ public class GraphErrorTest {
 
     @BeforeEach
     public void createApi() {
-        api = FalkorDB.driver().graph("social");
+        api = TestServer.graph("social");
         Assertions.assertNotNull(api.query("CREATE (:person{mixed_prop: 'strval'}), (:person{mixed_prop: 50})"));
     }
 

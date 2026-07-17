@@ -11,7 +11,7 @@ public class ListGraphsTest {
 
     @BeforeEach
     public void setUp() {
-        driver = FalkorDB.driver();
+        driver = TestServer.driver();
     }
 
     @Test

@@ -27,16 +27,6 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    # Service containers to run with `test-job`
-    services:
-      # Label used to access the service container
-      falkordb:
-        # Docker Hub image
-        image: falkordb/falkordb:edge
-        # Map port 6379 on the Docker host to port 6379 on the FalkorDB container
-        ports:
-          - 6379:6379
-
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       with:
