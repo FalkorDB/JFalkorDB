@@ -288,8 +288,8 @@ For more information about Jedis pool configuration options, see the [Jedis docu
 ## Benchmarks
 
 Continuous [JMH](https://openjdk.org/projects/code-tools/jmh/) benchmarks run on every push to
-`master` and on each pull request. The latest results and an interactive trend chart are published to
-GitHub Pages:
+`master` and on pull requests targeting `master`. The latest results and an interactive trend chart
+are published to GitHub Pages:
 
 **📈 [JFalkorDB benchmark trends](https://falkordb.github.io/JFalkorDB/dev/bench/)**
 
