@@ -13,7 +13,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicReference;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
@@ -29,13 +33,15 @@ import org.testcontainers.utility.DockerImageName;
  * between a connection pool, a single non-blocking connection, and Project-Loom virtual threads.
  * A single command is dominated by server execution, so only a load sweep reveals these effects.
  *
- * <p>Outputs two {@code github-action-benchmark} custom-format files under {@code benchmarks/target}:
- * {@code bench-latency.json} (client p50/p95/p99, smaller-is-better) and {@code bench-throughput.json}
- * (ops/s, bigger-is-better).
+ * <p>Outputs three files under {@code benchmarks/target}: {@code bench-latency.json} (client
+ * p50/p95/p99, smaller-is-better) and {@code bench-throughput.json} (ops/s, bigger-is-better) for the
+ * github-action-benchmark radar, plus {@code bench-curve.json} (per-thread-setting throughput +
+ * latencies) for the latency-vs-throughput curve page.
  *
- * <p>Config via system properties: {@code bench.loads} (default {@code 1,2,4,8,16,32,64}),
- * {@code bench.warmupMs} (2000), {@code bench.measureMs} (3000). Uses a pinned Testcontainers
- * FalkorDB by default, or an external one via {@code FALKORDB_HOST}/{@code FALKORDB_PORT}.
+ * <p>Config via system properties: {@code bench.loads} (default {@code 1,2,4,8,16,32,64}, all
+ * positive), {@code bench.warmupMs} (2000, &ge;0), {@code bench.measureMs} (3000, &gt;0),
+ * {@code bench.graph} (default a unique per-run name). Uses a pinned Testcontainers FalkorDB by
+ * default, or an external one via {@code FALKORDB_HOST}/{@code FALKORDB_PORT}.
  */
 public final class LoadBenchmark {
 
@@ -43,15 +49,17 @@ public final class LoadBenchmark {
     private static final DockerImageName IMAGE = DockerImageName.parse(
             "falkordb/falkordb@sha256:9042fdc4e53f5390ca5a3993aa71506523970efb40ffb9a98e6a4b1a9a4f8862");
 
-    private static final String GRAPH = "bench";
+    // Unique per run by default, so pointing at an external server never touches a pre-existing graph.
+    private static final String GRAPH =
+            System.getProperty("bench.graph", "jfalkordb_bench_" + UUID.randomUUID().toString().replace("-", ""));
     private static final int SEED_NODES = 1000;
 
     private LoadBenchmark() {}
 
     public static void main(String[] args) throws Exception {
         int[] loads = parseLoads(System.getProperty("bench.loads", "1,2,4,8,16,32,64"));
-        long warmupMs = Long.getLong("bench.warmupMs", 2000L);
-        long measureMs = Long.getLong("bench.measureMs", 3000L);
+        long warmupMs = requireNonNegative("bench.warmupMs", Long.getLong("bench.warmupMs", 2000L));
+        long measureMs = requirePositive("bench.measureMs", Long.getLong("bench.measureMs", 3000L));
 
         GenericContainer<?> container = null;
         String host;
@@ -81,6 +89,7 @@ public final class LoadBenchmark {
                 List<Worker> workers = phase(driver, load, measureMs, true); // measured
                 LoadResult r = summarize(workers, measureMs);
                 System.out.printf(
+                        Locale.ROOT,
                         "load=%-3d ops=%-8d throughput=%9.0f ops/s   client p50=%7.1f p95=%7.1f p99=%7.1f us%n",
                         load, r.ops, r.throughput, r.p50Us, r.p95Us, r.p99Us);
                 latency.add(new Metric("client_p50 @load=" + load, "us", r.p50Us));
@@ -124,22 +133,37 @@ public final class LoadBenchmark {
         }
     }
 
-    /** Runs {@code load} worker threads for {@code durationMs}; returns them (with samples if recording). */
+    /**
+     * Runs {@code load} worker threads for {@code durationMs} and returns them (with samples when
+     * recording). All workers are released from a start gate simultaneously so high-concurrency phases
+     * don't ramp up gradually (which would bias throughput and the saturation curve); any worker
+     * failure is propagated so the run fails instead of publishing partial metrics.
+     */
     private static List<Worker> phase(Driver driver, int load, long durationMs, boolean record)
             throws InterruptedException {
-        long endNanos = System.nanoTime() + durationMs * 1_000_000L;
+        CountDownLatch ready = new CountDownLatch(load);
+        CountDownLatch go = new CountDownLatch(1);
+        long[] deadlineNanos = new long[1];
+        AtomicReference<Throwable> failure = new AtomicReference<>();
         List<Worker> workers = new ArrayList<>(load);
         List<Thread> threads = new ArrayList<>(load);
         for (int i = 0; i < load; i++) {
-            Worker w = new Worker(driver, endNanos, record);
+            Worker w = new Worker(driver, ready, go, deadlineNanos, record, failure);
             workers.add(w);
             threads.add(new Thread(w, "bench-" + load + "-" + i));
         }
         for (Thread t : threads) {
             t.start();
         }
+        ready.await(); // every worker is constructed and parked at the gate
+        deadlineNanos[0] = System.nanoTime() + durationMs * 1_000_000L;
+        go.countDown(); // release all workers together; timing starts now
         for (Thread t : threads) {
             t.join();
+        }
+        Throwable f = failure.get();
+        if (f != null) {
+            throw new IllegalStateException("benchmark worker failed at load=" + load, f);
         }
         return workers;
     }
@@ -158,14 +182,10 @@ public final class LoadBenchmark {
         Arrays.sort(all);
         double throughput = total / (measureMs / 1000.0);
         return new LoadResult(
-                total,
-                throughput,
-                percentileUs(all, 50),
-                percentileUs(all, 95),
-                percentileUs(all, 99));
+                total, throughput, percentileUs(all, 50), percentileUs(all, 95), percentileUs(all, 99));
     }
 
-    private static double percentileUs(long[] sortedNanos, double p) {
+    static double percentileUs(long[] sortedNanos, double p) {
         if (sortedNanos.length == 0) {
             return 0.0;
         }
@@ -188,13 +208,47 @@ public final class LoadBenchmark {
         }
     }
 
-    private static int[] parseLoads(String csv) {
+    static int[] parseLoads(String csv) {
         String[] parts = csv.split(",");
-        int[] loads = new int[parts.length];
-        for (int i = 0; i < parts.length; i++) {
-            loads[i] = Integer.parseInt(parts[i].trim());
+        List<Integer> loads = new ArrayList<>();
+        for (String part : parts) {
+            String tok = part.trim();
+            if (tok.isEmpty()) {
+                continue;
+            }
+            int v;
+            try {
+                v = Integer.parseInt(tok);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("bench.loads has a non-integer value: \"" + tok + "\"", e);
+            }
+            if (v <= 0) {
+                throw new IllegalArgumentException("bench.loads must be positive, got " + v);
+            }
+            loads.add(v);
         }
-        return loads;
+        if (loads.isEmpty()) {
+            throw new IllegalArgumentException("bench.loads must contain at least one positive integer");
+        }
+        int[] out = new int[loads.size()];
+        for (int i = 0; i < out.length; i++) {
+            out[i] = loads.get(i);
+        }
+        return out;
+    }
+
+    private static long requirePositive(String name, long v) {
+        if (v <= 0) {
+            throw new IllegalArgumentException(name + " must be positive, got " + v);
+        }
+        return v;
+    }
+
+    private static long requireNonNegative(String name, long v) {
+        if (v < 0) {
+            throw new IllegalArgumentException(name + " must be >= 0, got " + v);
+        }
+        return v;
     }
 
     private static int parsePort(String value) {
@@ -205,7 +259,7 @@ public final class LoadBenchmark {
         }
     }
 
-    private static void writeJson(Path path, List<Metric> metrics) throws IOException {
+    static void writeJson(Path path, List<Metric> metrics) throws IOException {
         StringBuilder sb = new StringBuilder("[\n");
         for (int i = 0; i < metrics.size(); i++) {
             Metric m = metrics.get(i);
@@ -214,7 +268,7 @@ public final class LoadBenchmark {
                     .append("\", \"unit\": \"")
                     .append(m.unit)
                     .append("\", \"value\": ")
-                    .append(String.format("%.3f", m.value))
+                    .append(String.format(Locale.ROOT, "%.3f", m.value))
                     .append(i < metrics.size() - 1 ? "},\n" : "}\n");
         }
         sb.append("]\n");
@@ -223,11 +277,12 @@ public final class LoadBenchmark {
     }
 
     /** Writes the per-thread-setting latency-vs-throughput curve consumed by curve.html. */
-    private static void writeCurveJson(Path path, List<CurveRow> rows) throws IOException {
+    static void writeCurveJson(Path path, List<CurveRow> rows) throws IOException {
         StringBuilder sb = new StringBuilder("[\n");
         for (int i = 0; i < rows.size(); i++) {
             CurveRow r = rows.get(i);
             sb.append(String.format(
+                    Locale.ROOT,
                     "  {\"threads\": %d, \"throughput\": %.3f, \"p50\": %.3f, \"p95\": %.3f, \"p99\": %.3f}%s%n",
                     r.threads, r.throughput, r.p50Us, r.p95Us, r.p99Us, i < rows.size() - 1 ? "," : ""));
         }
@@ -239,31 +294,50 @@ public final class LoadBenchmark {
     /** A worker that issues point-lookup queries and records client latency (total - server). */
     private static final class Worker implements Runnable {
         private final GraphContextGenerator graph;
-        private final long endNanos;
+        private final CountDownLatch ready;
+        private final CountDownLatch go;
+        private final long[] deadlineNanos;
         private final boolean record;
+        private final AtomicReference<Throwable> failure;
         private long[] samples = new long[1024];
         private int count;
 
-        Worker(Driver driver, long endNanos, boolean record) {
+        Worker(
+                Driver driver,
+                CountDownLatch ready,
+                CountDownLatch go,
+                long[] deadlineNanos,
+                boolean record,
+                AtomicReference<Throwable> failure) {
             this.graph = driver.graph(GRAPH);
-            this.endNanos = endNanos;
+            this.ready = ready;
+            this.go = go;
+            this.deadlineNanos = deadlineNanos;
             this.record = record;
+            this.failure = failure;
         }
 
         @Override
         public void run() {
-            while (System.nanoTime() < endNanos) {
-                int id = ThreadLocalRandom.current().nextInt(SEED_NODES);
-                long start = System.nanoTime();
-                ResultSet rs = graph.query("MATCH (n:N {id: " + id + "}) RETURN n.id");
-                long totalNs = System.nanoTime() - start;
-                if (record) {
-                    long clientNs = Math.max(0L, totalNs - serverNanos(rs));
-                    if (count == samples.length) {
-                        samples = Arrays.copyOf(samples, samples.length * 2);
+            try {
+                ready.countDown();
+                go.await();
+                long end = deadlineNanos[0];
+                while (System.nanoTime() < end) {
+                    int id = ThreadLocalRandom.current().nextInt(SEED_NODES);
+                    long start = System.nanoTime();
+                    ResultSet rs = graph.query("MATCH (n:N {id: " + id + "}) RETURN n.id");
+                    long totalNs = System.nanoTime() - start;
+                    if (record) {
+                        long clientNs = Math.max(0L, totalNs - serverNanos(rs));
+                        if (count == samples.length) {
+                            samples = Arrays.copyOf(samples, samples.length * 2);
+                        }
+                        samples[count++] = clientNs;
                     }
-                    samples[count++] = clientNs;
                 }
+            } catch (Throwable t) {
+                failure.compareAndSet(null, t);
             }
         }
     }
@@ -284,7 +358,7 @@ public final class LoadBenchmark {
         }
     }
 
-    private static final class Metric {
+    static final class Metric {
         final String name;
         final String unit;
         final double value;
@@ -296,7 +370,7 @@ public final class LoadBenchmark {
         }
     }
 
-    private static final class CurveRow {
+    static final class CurveRow {
         final int threads;
         final double throughput;
         final double p50Us;
