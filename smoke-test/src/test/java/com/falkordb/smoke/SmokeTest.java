@@ -8,6 +8,7 @@ import com.falkordb.FalkorDB;
 import com.falkordb.GraphContextGenerator;
 import com.falkordb.Record;
 import com.falkordb.ResultSet;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -23,8 +24,11 @@ class SmokeTest {
 
     @Test
     void connectQueryClose() throws Exception {
+        // Unique per run so the smoke never touches a pre-existing graph (deterministic MATCH, and
+        // deleteGraph() only ever removes this run's throwaway graph — safe against a shared server).
+        String graphId = "jdk8-smoke-" + UUID.randomUUID();
         try (Driver driver = FalkorDB.driver()) { // no-arg => localhost:6379 default contract
-            GraphContextGenerator graph = driver.graph("jdk8-smoke");
+            GraphContextGenerator graph = driver.graph(graphId);
             try {
                 ResultSet created = graph.query("CREATE (:N {v: 1})");
                 assertEquals(1, created.getStatistics().nodesCreated());

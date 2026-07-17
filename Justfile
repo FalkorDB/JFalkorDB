@@ -40,12 +40,15 @@ verify:
     ./mvnw -B -Dgpg.skip=true verify
 
 # Prove the PUBLISHED artifact runs on a Java-8 runtime: build+install the jar on the build JDK,
-# then compile+run the standalone JDK-8 runtime smoke against it. Pass the JDK-8 home, and run a
-# FalkorDB on {{port}} first. CI provides both; locally e.g.
-# `just db-up && just verify-jdk8 ~/.sdkman/candidates/java/8.0.492-zulu`.
+# then compile+run the standalone JDK-8 runtime smoke against it (pinned to the root project's
+# version). Pass the JDK-8 home, and run a FalkorDB on {{port}} first. CI provides both; locally
+# e.g. `just db-up && just verify-jdk8 ~/.sdkman/candidates/java/8.0.492-zulu`.
 verify-jdk8 jdk8_home:
+    #!/usr/bin/env bash
+    set -euo pipefail
     ./mvnw -B -DskipTests -Dgpg.skip=true install
-    JAVA_HOME={{jdk8_home}} ./mvnw -B -f smoke-test/pom.xml test
+    version="$(./mvnw -q -DforceStdout help:evaluate -Dexpression=project.version)"
+    JAVA_HOME="{{jdk8_home}}" ./mvnw -B -f smoke-test/pom.xml -Djfalkordb.version="$version" test
 
 # --- Publish (run by the snapshot/release CI workflows; not for day-to-day local use) ---
 
