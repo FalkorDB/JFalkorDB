@@ -89,7 +89,7 @@ the next starts:
       runs would block every merge; adding it late leaves a window where it's non-blocking).
    Throughout, **preserve the existing required contexts `build` and `format`** (don't rename them —
    e.g. don't silently turn `build` into a matrix that changes its context).
-5. **Update the durable docs that currently assert "build on JDK 8":** `copilot-instructions.md`,
+5. **Update the durable docs that currently assert "build on JDK 8":** `.github/copilot-instructions.md`,
    `CONTRIBUTING.md`, `AGENTS.md`, the `Justfile` comments, the **quality-profile comment in
    `pom.xml`** (it currently references avoiding the "JDK-8 publish build"), and the **rationale** in
    `.github/dependabot.yml` (the pins remain, but "because the deploy compiles tests on JDK 8" is no
@@ -308,7 +308,7 @@ benchmarks project's presence.
   **trend chart publishes to Pages from `master`**; alerts are informational.
 - **Unchanged:** the artifact's **Java-8 runtime contract**, **public API**, and **dependency
   versions** (unpinning is a deliberate later follow-up).
-- The durable docs (`copilot-instructions.md`, `CONTRIBUTING.md`, `AGENTS.md`, `Justfile` comments,
+- The durable docs (`.github/copilot-instructions.md`, `CONTRIBUTING.md`, `AGENTS.md`, `Justfile` comments,
   `.github/dependabot.yml` rationale) reflect the **JDK-21-build / `--release 8`** reality and the
   automated Java-8 guardrails.
 
