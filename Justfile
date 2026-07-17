@@ -52,6 +52,26 @@ verify-jdk8 jdk8_home:
     version="$(./mvnw -q -DforceStdout help:evaluate -Dexpression=project.version)"
     JAVA_HOME="{{jdk8_home}}" ./mvnw -B -f smoke-test/pom.xml -Djfalkordb.version="$version" test
 
+# --- Benchmarks (JMH; standalone module in benchmarks/, never shipped) ---
+
+# Build + run all JMH benchmarks, writing JSON for the per-PR radar. Starts a Testcontainers
+# FalkorDB by default, or set FALKORDB_HOST/FALKORDB_PORT to reuse one — locally e.g.
+# `just db-up && FALKORDB_HOST=localhost FALKORDB_PORT=6379 just bench`.
+bench:
+    ./mvnw -B -q -DskipTests -Dgpg.skip=true install
+    ./mvnw -B -q -f benchmarks/pom.xml clean package
+    java -jar benchmarks/target/benchmarks.jar -rf json -rff benchmarks/target/jmh-result.json
+
+# Run a single benchmark by name/regex, e.g. `just bench-one pointMatch`.
+bench-one id:
+    ./mvnw -B -q -DskipTests -Dgpg.skip=true install
+    ./mvnw -B -q -f benchmarks/pom.xml clean package
+    java -jar benchmarks/target/benchmarks.jar {{id}}
+
+# Refresh the local baseline JSON (CI stores the master baseline to gh-pages automatically).
+bench-baseline:
+    just bench
+
 # --- Publish (run by the snapshot/release CI workflows; not for day-to-day local use) ---
 
 # Pre-fetch dependencies (snapshot workflow warm-up).
