@@ -10,8 +10,8 @@ commons-pool2.
 ## Golden rule: drive everything through `just`
 
 For any action CI performs (build, test, coverage, format, …), run the **exact same `just` recipe CI
-uses** for the standard PR gates rather than an ad-hoc `mvn …` (the JDK-8 dependency-verification
-build and the publish workflows are documented exceptions). If a check needs changing, update the
+uses** rather than an ad-hoc `mvn …` — this now includes the publish workflows, which call
+`just deploy-snapshot` / `just deploy-release`. If a check needs changing, update the
 `just` recipe **and** the CI workflow together so they stay identical. Run `just --list` to see every
 recipe; recipes call the pinned Maven Wrapper (`./mvnw`).
 
@@ -39,17 +39,23 @@ Tests connect to `localhost:6379`; prefer `just verify-local`, which manages Doc
 6. **Never self-merge to `master`.** Open the PR, get it green, and wait for a maintainer to approve
    and merge.
 
-## Backward compatibility & the JDK-8 publish (important)
+## Backward compatibility & the Java-8 guarantee (important)
 
-- The published artifact must keep running on **Java 8** (`maven.compiler.source/target = 8`). The PR
-  build runs on **JDK 17**; the snapshot/release publish builds on **JDK 8**.
-- Because `mvn deploy` on JDK 8 also **compiles test sources**, every test-scope dependency must be
-  Java-8-compatible. This is why **`junit-jupiter` is pinned to 5.x** and **`equalsverifier` to 3.x**
-  (Dependabot ignores their semver-major bumps). Verify dependency bumps with a JDK-8
-  `mvn -DskipTests -Dgpg.skip=true package`, not just JDK 17.
-- Any tool that needs Java 11+ (e.g. Spotless / palantir-java-format) must live in the
-  **off-by-default `quality` Maven profile**, never on the default lifecycle, so it never runs on the
-  JDK-8 deploy.
+- The published artifact must keep running on **Java 8**, but the build now runs on **JDK 21**
+  (PR, snapshot, and release) compiling with **`maven.compiler.release = 8`** — it emits Java-8
+  bytecode (class-file 52) while compiling against the real Java-8 API.
+- Four automated guardrails keep the Java-8 promise (all reachable via `just`):
+  - **`--release 8`** — our source compiles against the Java-8 API and emits class-file 52.
+  - **Animal Sniffer** (`java18` signature, at `verify`) — our main code calls only the Java-8 API.
+  - **Enforcer `enforceBytecodeVersion`** (`maxJdkVersion=1.8`, test scope excluded, at `validate`) —
+    every **shipped** dependency is Java-8 bytecode.
+  - **`just verify-jdk8`** (the `smoke-jdk8` CI job) — runs the packaged jar + full runtime graph on a
+    real **JDK 8** against FalkorDB via the no-arg `driver()`, proving Java-8 *runtime* compatibility.
+- **`junit-jupiter` stays on 5.x** and **`equalsverifier` on 3.x** (Dependabot ignores their
+  semver-major bumps). The JDK-21 build *could* now compile their 6.x/4.x, but raising them is a
+  deliberate later change, not automatic — so keep the pins for now.
+- Any Java-11+ tool (e.g. Spotless / palantir-java-format) still lives in the **off-by-default
+  `quality` Maven profile**, kept as a separate explicit gate off the aggregate lifecycle.
 
 ## Releasing
 

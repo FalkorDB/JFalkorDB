@@ -30,18 +30,21 @@ jobs:
           realversion="${realversion//v/}"
           echo "VERSION=$realversion" >> $GITHUB_OUTPUT
 
-      - name: Set up JDK 8 for publishing to Maven Central
+      - name: Set up JDK 21 for publishing to Maven Central
         uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5
         with:
-          java-version: '8'
+          java-version: '21'
           distribution: 'temurin'
           cache: maven
           server-id: central
           server-username: MAVEN_CENTRAL_USERNAME
           server-password: MAVEN_CENTRAL_TOKEN
 
+      - name: Install just
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+
       - name: Update version in POM
-        run: mvn versions:set -DnewVersion=${{ steps.get_version.outputs.VERSION }}
+        run: just set-version ${{ steps.get_version.outputs.VERSION }}
 
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7
@@ -50,10 +53,7 @@ jobs:
           passphrase: ${{ secrets.OSSH_GPG_SECRET_KEY_PASSWORD }}
 
       - name: Build and deploy to Maven Central
-        run: |
-          mvn --no-transfer-progress \
-            --batch-mode \
-            clean deploy
+        run: just deploy-release
         env:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
           MAVEN_CENTRAL_TOKEN: ${{ secrets.CENTRAL_TOKEN }}
