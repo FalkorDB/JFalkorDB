@@ -77,8 +77,12 @@ public class QueryBenchmark {
 
     @TearDown(Level.Trial)
     public void tearDown() {
-        if (graph != null) {
-            graph.deleteGraph();
+        try {
+            if (graph != null) {
+                graph.deleteGraph();
+            }
+        } catch (Exception ignored) {
+            // best-effort cleanup — keep going so the driver/container are still released
         }
         if (driver != null) {
             try {

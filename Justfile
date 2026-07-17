@@ -58,14 +58,20 @@ verify-jdk8 jdk8_home:
 # FalkorDB by default, or set FALKORDB_HOST/FALKORDB_PORT to reuse one — locally e.g.
 # `just db-up && FALKORDB_HOST=localhost FALKORDB_PORT=6379 just bench`.
 bench:
+    #!/usr/bin/env bash
+    set -euo pipefail
     ./mvnw -B -q -DskipTests -Dgpg.skip=true install
-    ./mvnw -B -q -f benchmarks/pom.xml clean package
+    version="$(./mvnw -q -DforceStdout help:evaluate -Dexpression=project.version)"
+    ./mvnw -B -q -f benchmarks/pom.xml -Djfalkordb.version="$version" clean package
     java -jar benchmarks/target/benchmarks.jar -rf json -rff benchmarks/target/jmh-result.json
 
 # Run a single benchmark by name/regex, e.g. `just bench-one pointMatch`.
 bench-one id:
+    #!/usr/bin/env bash
+    set -euo pipefail
     ./mvnw -B -q -DskipTests -Dgpg.skip=true install
-    ./mvnw -B -q -f benchmarks/pom.xml clean package
+    version="$(./mvnw -q -DforceStdout help:evaluate -Dexpression=project.version)"
+    ./mvnw -B -q -f benchmarks/pom.xml -Djfalkordb.version="$version" clean package
     java -jar benchmarks/target/benchmarks.jar {{id}}
 
 # Refresh the local baseline JSON (CI stores the master baseline to gh-pages automatically).
