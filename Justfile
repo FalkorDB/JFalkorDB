@@ -52,10 +52,11 @@ verify-jdk8 jdk8_home:
     version="$(./mvnw -q -DforceStdout help:evaluate -Dexpression=project.version)"
     JAVA_HOME="{{jdk8_home}}" ./mvnw -B -f smoke-test/pom.xml -Djfalkordb.version="$version" test
 
-# --- Benchmarks (JMH; standalone module in benchmarks/, never shipped) ---
+# --- Benchmarks (client load-sweep; standalone module in benchmarks/, never shipped) ---
 
-# Build + run all JMH benchmarks, writing JSON for the per-PR radar. Starts a Testcontainers
-# FalkorDB by default, or set FALKORDB_HOST/FALKORDB_PORT to reuse one — locally e.g.
+# Build + run the client load-sweep benchmark, writing the latency/throughput/curve JSON for the
+# per-PR radar + Pages curve. Starts a Testcontainers FalkorDB by default, or set
+# FALKORDB_HOST/FALKORDB_PORT to reuse one — locally e.g.
 # `just db-up && FALKORDB_HOST=localhost FALKORDB_PORT=6379 just bench`.
 bench:
     #!/usr/bin/env bash

@@ -5,12 +5,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <!--
-      Standalone (non-reactor, non-deployable) JMH benchmark harness.
+      Standalone (non-reactor, non-deployable) client load-sweep benchmark harness.
 
       Run only through the repository's `just bench` recipe (which wraps
       `./mvnw -f benchmarks/pom.xml`). It depends on the published core jar and is NEVER part of the
-      main reactor or the published artifact, so JMH/Testcontainers never touch the shipped POM. It
-      targets JDK 21 (benchmarks are not shipped, so the Java-8 constraint does not apply).
+      main reactor or the published artifact, so its Testcontainers/JUnit deps never touch the
+      shipped POM. It targets JDK 21 (benchmarks are not shipped, so the Java-8 constraint does not
+      apply).
     -->
     <groupId>com.falkordb.bench</groupId>
     <artifactId>jfalkordb-benchmarks</artifactId>
