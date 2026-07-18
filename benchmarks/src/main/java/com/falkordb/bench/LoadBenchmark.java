@@ -213,11 +213,22 @@ public final class LoadBenchmark {
 
     /** Parses the server internal execution time ("0.23 milliseconds") into nanoseconds. */
     static long parseServerNanos(String value) {
-        if (value == null || value.trim().isEmpty()) {
+        if (value == null) {
             throw new IllegalStateException(
                     "server did not report QUERY_INTERNAL_EXECUTION_TIME; cannot isolate client latency");
         }
-        String token = value.trim().split("\\s+")[0];
+        // Extract the leading numeric token by hand — this runs on every measured sample, so a
+        // regex split (which recompiles a Pattern each call) would add GC/CPU noise to the hot loop.
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalStateException(
+                    "server did not report QUERY_INTERNAL_EXECUTION_TIME; cannot isolate client latency");
+        }
+        int end = 0;
+        while (end < trimmed.length() && !Character.isWhitespace(trimmed.charAt(end))) {
+            end++;
+        }
+        String token = trimmed.substring(0, end);
         try {
             return (long) (Double.parseDouble(token) * 1_000_000.0);
         } catch (NumberFormatException e) {
