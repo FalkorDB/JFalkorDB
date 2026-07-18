@@ -195,22 +195,28 @@ public final class LoadBenchmark {
     }
 
     /**
-     * Parses the server's internal execution time ("0.23 milliseconds") into nanoseconds. Fails fast
-     * (rather than returning 0) if the value is missing or unparseable — otherwise the client-latency
-     * metric would silently collapse back into full round-trip latency and publish misleading results.
+     * Reads and parses the server's internal execution time. Fails fast (rather than returning 0) if
+     * the value is missing or unparseable — otherwise the client-latency metric would silently
+     * collapse back into full round-trip latency and publish misleading results.
      */
     private static long serverNanos(ResultSet rs) {
-        String v = rs.getStatistics().getStringValue(Statistics.Label.QUERY_INTERNAL_EXECUTION_TIME);
-        if (v == null || v.trim().isEmpty()) {
+        return parseServerNanos(
+                rs.getStatistics().getStringValue(Statistics.Label.QUERY_INTERNAL_EXECUTION_TIME));
+    }
+
+    /** Parses the server internal execution time ("0.23 milliseconds") into nanoseconds. */
+    static long parseServerNanos(String value) {
+        if (value == null || value.trim().isEmpty()) {
             throw new IllegalStateException(
                     "server did not report QUERY_INTERNAL_EXECUTION_TIME; cannot isolate client latency");
         }
-        String token = v.trim().split("\\s+")[0];
+        String token = value.trim().split("\\s+")[0];
         try {
             return (long) (Double.parseDouble(token) * 1_000_000.0);
         } catch (NumberFormatException e) {
             throw new IllegalStateException(
-                    "could not parse QUERY_INTERNAL_EXECUTION_TIME \"" + v + "\" — the server format may have changed",
+                    "could not parse QUERY_INTERNAL_EXECUTION_TIME \"" + value
+                            + "\" — the server format may have changed",
                     e);
         }
     }

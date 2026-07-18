@@ -72,4 +72,24 @@ class LoadBenchmarkTest {
             Locale.setDefault(previous);
         }
     }
+
+    @Test
+    void parseServerNanosParsesTheReportedFormat() {
+        assertEquals(500000L, LoadBenchmark.parseServerNanos("0.5 milliseconds"));
+        assertEquals(2000000L, LoadBenchmark.parseServerNanos("2 milliseconds"));
+        assertEquals(250000L, LoadBenchmark.parseServerNanos("0.25")); // no unit suffix
+        assertEquals(1500000L, LoadBenchmark.parseServerNanos("  1.5 milliseconds  ")); // surrounding whitespace
+        assertTrue(LoadBenchmark.parseServerNanos("0.229334 milliseconds") > 0); // realistic value
+    }
+
+    @Test
+    void parseServerNanosFailsFastOnMissingOrUnparseableValue() {
+        String[] bad = {null, "", "   ", "milliseconds", "abc", "1.2.3", "ms 0.5", "N/A", "0x10"};
+        for (String value : bad) {
+            assertThrows(
+                    IllegalStateException.class,
+                    () -> LoadBenchmark.parseServerNanos(value),
+                    "expected failure for input: " + value);
+        }
+    }
 }
