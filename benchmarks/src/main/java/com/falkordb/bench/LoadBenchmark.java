@@ -56,9 +56,12 @@ public final class LoadBenchmark {
             System.getProperty("bench.graph", "jfalkordb_bench_" + UUID.randomUUID().toString().replace("-", ""));
     private static final int SEED_NODES = 1000;
 
-    // Constant, parameterized point-lookup so the server can reuse a cached plan and each sample
-    // doesn't pay for Cypher string building + re-parse/re-plan — that server-side work isn't in
-    // QUERY_INTERNAL_EXECUTION_TIME and would otherwise inflate the reported client latency.
+    // Parameterized point-lookup with a constant query body: the id is passed as a parameter instead
+    // of being concatenated into the Cypher text, so the server can reuse one cached plan across
+    // iterations rather than re-parsing/re-planning a distinct query each time — that server-side
+    // parse/plan cost isn't in QUERY_INTERNAL_EXECUTION_TIME and would otherwise inflate the reported
+    // client latency. The client still serializes the id into a "CYPHER id=<v> <body>" string per
+    // call (Utils.prepareQuery); that's legitimate client-side cost this benchmark is meant to measure.
     private static final String LOOKUP_QUERY = "MATCH (n:N {id: $id}) RETURN n.id";
 
     private LoadBenchmark() {}
