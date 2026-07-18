@@ -12,8 +12,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
@@ -53,6 +55,11 @@ public final class LoadBenchmark {
     private static final String GRAPH =
             System.getProperty("bench.graph", "jfalkordb_bench_" + UUID.randomUUID().toString().replace("-", ""));
     private static final int SEED_NODES = 1000;
+
+    // Constant, parameterized point-lookup so the server can reuse a cached plan and each sample
+    // doesn't pay for Cypher string building + re-parse/re-plan — that server-side work isn't in
+    // QUERY_INTERNAL_EXECUTION_TIME and would otherwise inflate the reported client latency.
+    private static final String LOOKUP_QUERY = "MATCH (n:N {id: $id}) RETURN n.id";
 
     private LoadBenchmark() {}
 
@@ -333,13 +340,14 @@ public final class LoadBenchmark {
         @Override
         public void run() {
             try {
+                Map<String, Object> params = new HashMap<>(2);
                 ready.countDown();
                 go.await();
                 long end = deadlineNanos[0];
                 while (System.nanoTime() < end) {
-                    int id = ThreadLocalRandom.current().nextInt(SEED_NODES);
+                    params.put("id", ThreadLocalRandom.current().nextInt(SEED_NODES));
                     long start = System.nanoTime();
-                    ResultSet rs = graph.query("MATCH (n:N {id: " + id + "}) RETURN n.id");
+                    ResultSet rs = graph.query(LOOKUP_QUERY, params);
                     long totalNs = System.nanoTime() - start;
                     if (record) {
                         long clientNs = Math.max(0L, totalNs - serverNanos(rs));
