@@ -64,7 +64,19 @@ public final class LoadBenchmark {
     // call (Utils.prepareQuery); that's legitimate client-side cost this benchmark is meant to measure.
     private static final String LOOKUP_QUERY = "MATCH (n:N {id: $id}) RETURN n.id";
 
+    // Pre-boxed lookup ids so the measured loop reuses Integer instances instead of autoboxing a
+    // fresh one each iteration — that allocation/GC isn't client-library cost and would add noise.
+    private static final Integer[] IDS = buildIds(SEED_NODES);
+
     private LoadBenchmark() {}
+
+    private static Integer[] buildIds(int n) {
+        Integer[] ids = new Integer[n];
+        for (int i = 0; i < n; i++) {
+            ids[i] = i;
+        }
+        return ids;
+    }
 
     public static void main(String[] args) throws Exception {
         int[] loads = parseLoads(System.getProperty("bench.loads", "1,2,4,8,16,32,64"));
@@ -182,11 +194,15 @@ public final class LoadBenchmark {
     }
 
     private static LoadResult summarize(List<Worker> workers, long measureMs) {
-        int total = 0;
+        long total = 0;
         for (Worker w : workers) {
             total += w.count;
         }
-        long[] all = new long[total];
+        if (total > Integer.MAX_VALUE) {
+            throw new IllegalStateException(
+                    "collected too many samples (" + total + ") to summarize in one array; reduce bench.measureMs");
+        }
+        long[] all = new long[(int) total];
         int off = 0;
         for (Worker w : workers) {
             System.arraycopy(w.samples, 0, all, off, w.count);
@@ -378,7 +394,7 @@ public final class LoadBenchmark {
                 go.await();
                 long end = deadlineNanos[0];
                 while (System.nanoTime() < end) {
-                    params.put("id", ThreadLocalRandom.current().nextInt(SEED_NODES));
+                    params.put("id", IDS[ThreadLocalRandom.current().nextInt(SEED_NODES)]);
                     long start = System.nanoTime();
                     ResultSet rs = graph.query(LOOKUP_QUERY, params);
                     long totalNs = System.nanoTime() - start;
