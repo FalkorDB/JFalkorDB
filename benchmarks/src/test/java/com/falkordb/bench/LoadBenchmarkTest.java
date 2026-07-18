@@ -107,4 +107,19 @@ class LoadBenchmarkTest {
                     "expected failure for unexpected unit: " + value);
         }
     }
+
+    @Test
+    void parseServerNanosRejectsNonFiniteOrNegativeValues() {
+        // Double.parseDouble accepts these, but casting them to nanoseconds yields 0/garbage and
+        // silently corrupts the "client latency = total - server" metric, so they must fail fast.
+        String[] bad = {
+            "NaN", "Infinity", "-Infinity", "NaN milliseconds", "Infinity ms", "-1 milliseconds", "-0.5", "1e999"
+        };
+        for (String value : bad) {
+            assertThrows(
+                    IllegalStateException.class,
+                    () -> LoadBenchmark.parseServerNanos(value),
+                    "expected failure for non-finite/negative value: " + value);
+        }
+    }
 }

@@ -241,7 +241,12 @@ public final class LoadBenchmark {
                     + "\" (expected milliseconds); the server format may have changed");
         }
         try {
-            return (long) (Double.parseDouble(token) * 1_000_000.0);
+            double ms = Double.parseDouble(token);
+            if (!Double.isFinite(ms) || ms < 0) {
+                throw new IllegalStateException("QUERY_INTERNAL_EXECUTION_TIME reported a non-finite or negative value \""
+                        + value + "\"; cannot isolate client latency");
+            }
+            return (long) (ms * 1_000_000.0);
         } catch (NumberFormatException e) {
             throw new IllegalStateException(
                     "could not parse QUERY_INTERNAL_EXECUTION_TIME \"" + value
