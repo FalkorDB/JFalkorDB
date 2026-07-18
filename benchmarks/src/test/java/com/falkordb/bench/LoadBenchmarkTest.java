@@ -79,6 +79,8 @@ class LoadBenchmarkTest {
         assertEquals(2000000L, LoadBenchmark.parseServerNanos("2 milliseconds"));
         assertEquals(250000L, LoadBenchmark.parseServerNanos("0.25")); // no unit suffix
         assertEquals(1500000L, LoadBenchmark.parseServerNanos("  1.5 milliseconds  ")); // surrounding whitespace
+        assertEquals(500000L, LoadBenchmark.parseServerNanos("0.5 ms")); // abbreviated unit
+        assertEquals(500000L, LoadBenchmark.parseServerNanos("0.5 MILLISECOND")); // singular, any case
         assertTrue(LoadBenchmark.parseServerNanos("0.229334 milliseconds") > 0); // realistic value
     }
 
@@ -90,6 +92,19 @@ class LoadBenchmarkTest {
                     IllegalStateException.class,
                     () -> LoadBenchmark.parseServerNanos(value),
                     "expected failure for input: " + value);
+        }
+    }
+
+    @Test
+    void parseServerNanosRejectsUnexpectedUnits() {
+        // A parseable number with a non-millisecond unit must fail fast rather than silently
+        // miscomputing client latency if the server ever changes the reported unit.
+        String[] wrongUnit = {"0.5 seconds", "500 microseconds", "500000 ns", "0.5 s", "1 minute"};
+        for (String value : wrongUnit) {
+            assertThrows(
+                    IllegalStateException.class,
+                    () -> LoadBenchmark.parseServerNanos(value),
+                    "expected failure for unexpected unit: " + value);
         }
     }
 }

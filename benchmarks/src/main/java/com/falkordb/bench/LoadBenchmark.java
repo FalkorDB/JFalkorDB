@@ -85,11 +85,12 @@ public final class LoadBenchmark {
             port = container.getMappedPort(6379);
         }
 
-        Driver driver = FalkorDB.driver(host, port);
+        Driver driver = null;
         List<Metric> latency = new ArrayList<>();
         List<Metric> throughput = new ArrayList<>();
         List<CurveRow> curve = new ArrayList<>();
         try {
+            driver = FalkorDB.driver(host, port);
             seed(driver);
             for (int load : loads) {
                 phase(driver, load, warmupMs, false); // warmup (discarded)
@@ -109,15 +110,17 @@ public final class LoadBenchmark {
             writeJson(Paths.get("benchmarks", "target", "bench-throughput.json"), throughput);
             writeCurveJson(Paths.get("benchmarks", "target", "bench-curve.json"), curve);
         } finally {
-            try {
-                driver.graph(GRAPH).deleteGraph();
-            } catch (Exception ignored) {
-                // best-effort cleanup
-            }
-            try {
-                driver.close();
-            } catch (Exception ignored) {
-                // best-effort cleanup
+            if (driver != null) {
+                try {
+                    driver.graph(GRAPH).deleteGraph();
+                } catch (Exception ignored) {
+                    // best-effort cleanup
+                }
+                try {
+                    driver.close();
+                } catch (Exception ignored) {
+                    // best-effort cleanup
+                }
             }
             if (container != null) {
                 container.stop();
@@ -229,6 +232,11 @@ public final class LoadBenchmark {
             end++;
         }
         String token = trimmed.substring(0, end);
+        String unit = trimmed.substring(end).trim();
+        if (!unit.isEmpty() && !isMilliseconds(unit)) {
+            throw new IllegalStateException("QUERY_INTERNAL_EXECUTION_TIME reported an unexpected unit \"" + unit
+                    + "\" (expected milliseconds); the server format may have changed");
+        }
         try {
             return (long) (Double.parseDouble(token) * 1_000_000.0);
         } catch (NumberFormatException e) {
@@ -237,6 +245,12 @@ public final class LoadBenchmark {
                             + "\" — the server format may have changed",
                     e);
         }
+    }
+
+    private static boolean isMilliseconds(String unit) {
+        return unit.equalsIgnoreCase("ms")
+                || unit.equalsIgnoreCase("millisecond")
+                || unit.equalsIgnoreCase("milliseconds");
     }
 
     static int[] parseLoads(String csv) {
