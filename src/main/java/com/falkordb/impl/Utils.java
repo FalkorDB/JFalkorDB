@@ -310,7 +310,9 @@ public class Utils {
         StringBuilder sb = new StringBuilder(limit + 4).append('"');
         for (int i = 0; i < limit; i++) {
             char c = s.charAt(i);
-            if (c < 0x20 || c == 0x7f) {
+            // Escape all control characters (C0, DEL, C1) and the Unicode line/paragraph separators,
+            // any of which could forge or split a log line.
+            if (Character.isISOControl(c) || c == '\u2028' || c == '\u2029') {
                 sb.append(String.format("\\u%04x", (int) c));
             } else {
                 sb.append(c);

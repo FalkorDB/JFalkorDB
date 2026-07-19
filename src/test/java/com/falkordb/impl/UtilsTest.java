@@ -187,6 +187,14 @@ public class UtilsTest {
         badKey.put("k\r`", "v");
         IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class, () -> q(badKey));
         assertFalse(e2.getMessage().contains("\r"), "key message must not contain a raw carriage return");
+
+        // Also escape C1 controls (U+0085 NEL) and Unicode line/paragraph separators (U+2028/U+2029).
+        Map<String, Object> unicodeName = new HashMap<>();
+        unicodeName.put("bad\u2028\u0085name", 1);
+        IllegalArgumentException e3 =
+                assertThrows(IllegalArgumentException.class, () -> Utils.prepareQuery("RETURN 1", unicodeName));
+        assertFalse(e3.getMessage().contains("\u2028"), "message must not contain a raw line separator");
+        assertFalse(e3.getMessage().contains("\u0085"), "message must not contain a raw NEL");
     }
 
     @Test
