@@ -21,6 +21,8 @@ recipe; recipes call the pinned Maven Wrapper (`./mvnw`).
 | `just verify-local` | Run `verify` against a `just db-up` server (reused via `FALKORDB_HOST/PORT`), then tear it down — handy when Testcontainers can't reach your Docker. |
 | `just build` / `just test` | Compile-only / fast **unit** tests only (`*Test`, no server). |
 | `just fmt` / `just fmt-check` | Apply / check palantir-java-format (runs in the `-Pquality` profile). |
+| `just lint` | Static analysis (the CI `lint` gate): format check + **SpotBugs/FindSecBugs** + **Error Prone**, all in the off-by-default `-Pquality` profile. |
+| `just audit` | OWASP dependency-check CVE scan of the shipped deps. Slow + needs `NVD_API_KEY`; run by the scheduled/manual **`audit`** workflow, not on every PR. |
 | `just spellcheck` | Spellcheck the Markdown docs (the CI `spellcheck` gate). |
 | `just db-up` / `just db-down` | Manage a local FalkorDB container. |
 | `just bench` / `just bench-one <loads>` | Client load-sweep benchmark — client latency (total − server) vs throughput across concurrency levels; feeds the per-PR-vs-`master` radar + Pages curve. |
@@ -59,8 +61,10 @@ accordingly, and use the `TestServer` helper for server access.
 - **`junit-jupiter` stays on 5.x** and **`equalsverifier` on 3.x** (Dependabot ignores their
   semver-major bumps). The JDK-21 build *could* now compile their 6.x/4.x, but raising them is a
   deliberate later change, not automatic — so keep the pins for now.
-- Any Java-11+ tool (e.g. Spotless / palantir-java-format) still lives in the **off-by-default
-  `quality` Maven profile**, kept as a separate explicit gate off the aggregate lifecycle.
+- Any Java-11+ tool (e.g. Spotless / palantir-java-format, SpotBugs/FindSecBugs, Error Prone, OWASP
+  dependency-check) still lives in the **off-by-default `quality` Maven profile**, kept as a separate
+  explicit gate off the aggregate lifecycle (`just lint` / `just audit`). Static analysis is in-build
+  and reproducible; there is no external DeepSource integration.
 
 ## Releasing
 

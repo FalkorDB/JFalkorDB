@@ -285,6 +285,38 @@
 			<id>quality</id>
 			<build>
 				<plugins>
+					<!-- Error Prone: compile-time bug patterns. Runs only in this profile (JDK 16+ needs
+					     the compiler add-exports/add-opens flags and a forked compiler), so the default
+					     release-8 build stays untouched. -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-compiler-plugin</artifactId>
+						<configuration>
+							<fork>true</fork>
+							<compilerArgs>
+								<arg>-XDcompilePolicy=simple</arg>
+								<arg>--should-stop=ifError=FLOW</arg>
+								<arg>-Xplugin:ErrorProne</arg>
+								<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
+								<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
+								<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+								<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
+								<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
+								<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+								<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+								<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+								<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+								<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+							</compilerArgs>
+							<annotationProcessorPaths>
+								<path>
+									<groupId>com.google.errorprone</groupId>
+									<artifactId>error_prone_core</artifactId>
+									<version>2.36.0</version>
+								</path>
+							</annotationProcessorPaths>
+						</configuration>
+					</plugin>
 					<plugin>
 						<groupId>com.diffplug.spotless</groupId>
 						<artifactId>spotless-maven-plugin</artifactId>
@@ -297,6 +329,52 @@
 								<removeUnusedImports/>
 								<importOrder/>
 							</java>
+						</configuration>
+					</plugin>
+					<!-- SpotBugs + FindSecBugs: bytecode bug & security analysis of the shipped classes.
+					     Runs on the JDK-21 build; never part of the default lifecycle (Java-8 guarantee). -->
+					<plugin>
+						<groupId>com.github.spotbugs</groupId>
+						<artifactId>spotbugs-maven-plugin</artifactId>
+						<version>4.8.6.6</version>
+						<configuration>
+							<effort>Max</effort>
+							<threshold>Medium</threshold>
+							<includeTests>false</includeTests>
+							<excludeFilterFile>spotbugs-exclude.xml</excludeFilterFile>
+							<plugins>
+								<plugin>
+									<groupId>com.h3xstream.findsecbugs</groupId>
+									<artifactId>findsecbugs-plugin</artifactId>
+									<version>1.13.0</version>
+								</plugin>
+							</plugins>
+						</configuration>
+						<executions>
+							<execution>
+								<id>spotbugs-check</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>check</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<!-- OWASP dependency-check: known-CVE scan of the shipped dependency graph. Slow and
+					     needs an NVD API key, so it is NOT bound to a phase — it is invoked on demand via
+					     `just audit` (the dedicated scheduled/manual `audit` workflow), never in `verify`. -->
+					<plugin>
+						<groupId>org.owasp</groupId>
+						<artifactId>dependency-check-maven</artifactId>
+						<version>12.2.2</version>
+						<configuration>
+							<failBuildOnCVSS>7</failBuildOnCVSS>
+							<skipProvidedScope>true</skipProvidedScope>
+							<skipTestScope>true</skipTestScope>
+							<nvdApiKeyEnvironmentVariable>NVD_API_KEY</nvdApiKeyEnvironmentVariable>
+							<suppressionFiles>
+								<suppressionFile>owasp-suppressions.xml</suppressionFile>
+							</suppressionFiles>
 						</configuration>
 					</plugin>
 				</plugins>

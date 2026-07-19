@@ -18,7 +18,7 @@ import redis.clients.jedis.util.SafeEncoder;
 /**
  * An implementation of the ResultSet interface.
  */
-public class ResultSetImpl implements ResultSet {
+public final class ResultSetImpl implements ResultSet {
 
     private final Header header;
     private final Statistics statistics;

@@ -2,9 +2,7 @@ package com.falkordb.impl;
 
 import java.lang.reflect.Array;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,13 +21,13 @@ import java.util.regex.Pattern;
  */
 public class Utils {
     /**
-     * A dummy list.
+     * An immutable empty list, used as an empty default argument.
      */
-    public static final List<String> DUMMY_LIST = new ArrayList<>(0);
+    public static final List<String> DUMMY_LIST = Collections.emptyList();
     /**
-     * A dummy map.
+     * An immutable empty map, used as an empty default argument.
      */
-    public static final Map<String, List<String>> DUMMY_MAP = new HashMap<>(0);
+    public static final Map<String, List<String>> DUMMY_MAP = Collections.emptyMap();
     /**
      * The compact string.
      */

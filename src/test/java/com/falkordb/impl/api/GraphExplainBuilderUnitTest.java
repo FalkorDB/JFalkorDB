@@ -2,6 +2,7 @@ package com.falkordb.impl.api;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -66,7 +67,7 @@ public class GraphExplainBuilderUnitTest {
     @Test
     public void testExplainBuilderWithSingleItemResponse() {
         // Test Builder logic with single item response
-        List<Object> singleItemResponse = Arrays.asList(SafeEncoder.encode("Single result"));
+        List<Object> singleItemResponse = Collections.<Object>singletonList(SafeEncoder.encode("Single result"));
 
         List<String> result = buildExplainResponse(singleItemResponse);
 
