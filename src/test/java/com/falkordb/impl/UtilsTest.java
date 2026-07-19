@@ -205,6 +205,32 @@ public class UtilsTest {
     }
 
     @Test
+    public void testSafeDisplayDoesNotSplitSurrogatePairs() {
+        // An invalid name whose emoji (surrogate pair) straddles the 64-code-unit truncation boundary.
+        StringBuilder name = new StringBuilder();
+        for (int i = 0; i < 63; i++) {
+            name.append('a');
+        }
+        name.append("\ud83d\ude00"); // 😀
+        Map<String, Object> params = new HashMap<>();
+        params.put(name.toString(), 1);
+        IllegalArgumentException e =
+                assertThrows(IllegalArgumentException.class, () -> Utils.prepareQuery("RETURN 1", params));
+        String msg = e.getMessage();
+        for (int i = 0; i < msg.length(); i++) {
+            char c = msg.charAt(i);
+            if (Character.isHighSurrogate(c)) {
+                assertTrue(
+                        i + 1 < msg.length() && Character.isLowSurrogate(msg.charAt(i + 1)),
+                        "message has an unpaired high surrogate");
+                i++;
+            } else {
+                assertFalse(Character.isLowSurrogate(c), "message has an unpaired low surrogate");
+            }
+        }
+    }
+
+    @Test
     public void testSharedNonCyclicReferenceIsAllowed() {
         // The same (non-cyclic) list appearing twice as siblings must not be flagged as a cycle.
         List<Integer> shared = Arrays.asList(1, 2);

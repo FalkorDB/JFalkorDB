@@ -310,12 +310,19 @@ public class Utils {
             return "null";
         }
         int limit = Math.min(s.length(), 64);
-        StringBuilder sb = new StringBuilder(limit + 4).append('"');
+        StringBuilder sb = new StringBuilder(limit + 6).append('"');
         for (int i = 0; i < limit; i++) {
             char c = s.charAt(i);
-            // Escape all control characters (C0, DEL, C1) and the Unicode line/paragraph separators,
-            // any of which could forge or split a log line.
-            if (Character.isISOControl(c) || c == '\u2028' || c == '\u2029') {
+            if (Character.isHighSurrogate(c) && i + 1 < limit && Character.isLowSurrogate(s.charAt(i + 1))) {
+                // A valid surrogate pair (e.g. an emoji): keep both halves together.
+                sb.append(c).append(s.charAt(++i));
+            } else if (Character.isISOControl(c)
+                    || c == '\u2028'
+                    || c == '\u2029'
+                    || Character.isHighSurrogate(c)
+                    || Character.isLowSurrogate(c)) {
+                // Control chars (C0/DEL/C1), line/paragraph separators, and unpaired surrogates
+                // (including one split at the truncation boundary) are escaped, never emitted raw.
                 sb.append(String.format("\\u%04x", (int) c));
             } else {
                 sb.append(c);
