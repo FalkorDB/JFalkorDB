@@ -9,8 +9,8 @@
 > The **default branch is `master`** (not `main`); every "baseline" below means `master`.
 >
 > **Notation:** references like **§4 / §6** point to sections of the overall modernization **master
-> plan** (`project-modernizations.md`), not to this document; **"PR N"** refers to the Wave 3 PRs
-> defined here.
+> plan** (a separate planning artifact, not a file in this branch), not to this document; **"PR N"**
+> refers to the Wave 3 PRs defined here.
 >
 > **Prerequisite (met):** Wave 2 has landed — JDK 21 + `--release 8` (#302), Testcontainers + `*IT`
 > split (#312/#313), and the per-PR benchmark radar (#314/#315). Wave 3's newer quality tools and
@@ -75,7 +75,8 @@ recommended execution order:
 
 > **Guiding rule (from review): don't invent the grammar — verify it.** The exact set of escapes and
 > the key/number rules FalkorDB accepts must be **pinned by a server round-trip `*IT`** against the
-> Wave-2 `falkordb/falkordb@sha256:…` digest (not by a locally-assumed grammar). The encoder below is
+> **same pinned `falkordb/falkordb` digest already used by `TestServer`** (see
+> `src/test/java/com/falkordb/TestServer.java`), not a locally-assumed grammar. The encoder below is
 > the *starting hypothesis*; PR 8 confirms/derives the real rules empirically and encodes them.
 
 **What**
@@ -166,7 +167,7 @@ private static String quoteString(String s) {
     return sb.append('"').toString();
 }
 
-private static final java.util.regex.Pattern PARAM_KEY = java.util.regex.Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
+private static final java.util.regex.Pattern PARAM_KEY = java.util.regex.Pattern.compile("^[A-Za-z_][A-Za-z0-9_]*$");
 ```
 
 ---
@@ -264,8 +265,8 @@ rule); their current versions need the JDK-21 build Wave 2 delivered. *(D4 / D4b
   **and** update their `jfalkordb.version` properties (+ any README/`llms.txt` version fields).
 - Once release-please owns the version, **remove `set-version`** from the release workflow; have the
   deploy **check out the created tag** and assert **tag == `v${project.version}`** (the tag is
-  `vX.Y.Z`, the POM version is `X.Y.Z`). Merging the Release PR tags +
-  creates the GitHub Release, which (via the 10b App/PAT trigger) runs the existing Maven Central
+  `vX.Y.Z`, the POM version is `X.Y.Z`). Merging the Release PR tags the commit and creates the
+  GitHub Release, which (via the 10b App/PAT trigger) runs the existing Maven Central
   publish and opens the follow-up `-SNAPSHOT`-bump PR.
 - **Land last** — after 10a/10b are green on `master`.
 
