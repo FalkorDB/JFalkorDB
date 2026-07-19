@@ -213,13 +213,15 @@ rule); their current versions need the JDK-21 build Wave 2 delivered. *(D4 / D4b
 
 ### PR 10a — PR-title gate + API-diff gate
 - **Conventional-commit PR-title lint** (pinned action, e.g. `amannn/action-semantic-pull-request`).
-  Because a title gate only constrains history if the **squash subject** is the PR title, this PR also
-  **enforces squash-only merges** and sets the repository **`squash_merge_commit_title = PR_TITLE`**
-  setting (the action validates the PR title; the repo setting is what makes the squash commit *use*
-  that title) — otherwise rebase/merge commits bypass it. **Configure the allowed types explicitly** —
-  the repo uses `bench:` and will use `release:`/`build:`/`ci:`, none of which are in the action's
-  default set, and must include **`chore`** (the release-please PRs are titled `chore(main): release …`).
-  Map each type to a release-please changelog section (or use `perf(bench):`/`chore(release):`).
+  A title gate only constrains history if the **squash subject** is the PR title, which depends on two
+  **repository settings an admin must change** (a workflow can't set them itself): enable
+  **squash-only merges** and set **`squash_merge_commit_title = PR_TITLE`**. This PR adds the
+  title-lint workflow and **documents those settings as a required operational step** (like the
+  branch-protection step below) — otherwise a rebase/merge commit bypasses the gate. **Configure the
+  allowed types explicitly** — the repo uses `bench:` and will use `release:`/`build:`/`ci:`, none of
+  which are in the action's default set, and must include **`chore`** (the release-please PRs are
+  titled `chore(main): release …`). Map each type to a release-please changelog section (or use
+  `perf(bench):`/`chore(release):`).
 - **japicmp API-diff gate:** `japicmp-maven-plugin` comparing the built jar against the **last
   released** artifact, configured to **fail** on binary/source-incompatible **public** API changes.
   Specifics this PR must nail down: **baseline = `0.9.0`** (the Central artifact; fail loudly if the
@@ -230,9 +232,10 @@ rule); their current versions need the JDK-21 build Wave 2 delivered. *(D4 / D4b
   + CI job), so it never blocks a release deploy.
 
 ### PR 10b — Release-workflow safeguards
-- **`snapshot.yml` `-SNAPSHOT`-only guard:** deploy only when `help:evaluate
-  -Dexpression=project.version` ends in `-SNAPSHOT`, so a release commit on `master` can't trigger an
-  unsigned/duplicate snapshot deploy.
+- **`snapshot.yml` `-SNAPSHOT`-only guard:** deploy only when
+  `./mvnw -q -DforceStdout help:evaluate -Dexpression=project.version` (the `-q -DforceStdout` form the
+  `Justfile` already uses, so the output is `[INFO]`-free and parseable) ends in `-SNAPSHOT`, so a
+  release commit on `master` can't trigger an unsigned/duplicate snapshot deploy.
 - **Deterministic release deploy (chosen design):** `version-and-release.yml` derives `VERSION` from
   the pushed tag (`GITHUB_REF`), sets the POM via **`just set-version "$VERSION"`** (which wraps
   `versions:set`), then `clean deploy` re-runs tests against the server image (currently `edge`).
