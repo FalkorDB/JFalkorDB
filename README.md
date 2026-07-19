@@ -146,8 +146,9 @@ graph.query("MATCH (p:person {name: $name}) RETURN p", Collections.singletonMap(
 
 Values must be an encodable type (null, `String`, `Character`, `Boolean`, a boxed integer or
 floating-point number, a `BigInteger` within signed 64-bit range, or an array/`List`/`Map` of such
-values); unsupported types (including `BigDecimal`), out-of-range integers, non-finite floating-point
-values, cyclic containers, and invalid parameter names are rejected with `IllegalArgumentException`.
+values, where every `Map` key is a `String`); unsupported types (including `BigDecimal`), out-of-range
+integers, non-finite floating-point values, cyclic containers, non-String map keys, and invalid
+parameter names are rejected with `IllegalArgumentException`.
 This safety covers parameter **values** only — it does not extend to the query text, dynamic
 labels/identifiers, or procedure names, so never build those from untrusted input.
 

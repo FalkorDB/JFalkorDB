@@ -46,10 +46,11 @@ public interface Graph extends Closeable {
      * cannot break out and inject Cypher — always pass untrusted input as a parameter rather than
      * concatenating it into {@code query}. Values must be an encodable type (null, String, Character,
      * Boolean, a boxed integer or floating-point number, a {@link java.math.BigInteger} within signed
-     * 64-bit range, or an array/List/Map of such values); other types (including
-     * {@link java.math.BigDecimal}), out-of-range integers, non-finite floating-point values, cyclic
-     * containers, and invalid parameter names are rejected with {@link IllegalArgumentException}. This
-     * does not cover the query text itself, dynamic labels/identifiers, or procedure names.
+     * 64-bit range, or an array/List/Map of such values, where every Map key is a String); other types
+     * (including {@link java.math.BigDecimal}), out-of-range integers, non-finite floating-point
+     * values, cyclic containers, non-String map keys, and invalid parameter names are rejected with
+     * {@link IllegalArgumentException}. This does not cover the query text itself, dynamic
+     * labels/identifiers, or procedure names.
      *
      * @param query Cypher query.
      * @param params parameters map.
