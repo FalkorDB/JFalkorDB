@@ -23,7 +23,7 @@ recipe; recipes call the pinned Maven Wrapper (`./mvnw`).
 | `just fmt` / `just fmt-check` | Apply / check palantir-java-format (runs in the `-Pquality` profile). |
 | `just lint` | Static analysis (the CI `lint` gate): format check + **SpotBugs/FindSecBugs** + **Error Prone**, all in the off-by-default `-Pquality` profile. |
 | `just audit` | OWASP dependency-check CVE scan of the shipped deps. Slow + needs `NVD_API_KEY`; run by the scheduled/manual **`audit`** workflow, not on every PR. |
-| `just api-diff` | Public-API compatibility diff vs the last release on Maven Central (japicmp, the CI **`api-diff`** gate): fails on binary/source-incompatible changes to the public API (`com.falkordb.impl` excluded), in the off-by-default `-Pquality` profile. Approve a reviewed break with the `breaking-change` PR label. |
+| `just api-diff` | Public-API compatibility diff vs the last release on Maven Central (japicmp, the CI **`api-diff`** gate): fails on binary/source-incompatible changes to the public/protected API (`com.falkordb.impl` excluded), in the off-by-default `-Pquality` profile. Approve a reviewed break with the `breaking-change` PR label. |
 | `just spellcheck` | Spellcheck the Markdown docs (the CI `spellcheck` gate). |
 | `just db-up` / `just db-down` | Manage a local FalkorDB container. |
 | `just bench` / `just bench-one <loads>` | Client load-sweep benchmark — client latency (total − server) vs throughput across concurrency levels; feeds the per-PR-vs-`master` radar + Pages curve. |
@@ -68,9 +68,10 @@ accordingly, and use the `TestServer` helper for server access.
   separate explicit gate off the aggregate lifecycle (`just lint` / `just audit` / `just api-diff`).
   Static analysis is in-build and reproducible; there is no external DeepSource integration.
 - The **`api-diff`** gate (japicmp, `just api-diff`) is a **PR-only** check that diffs the built jar
-  against the last release on Maven Central and fails on public-API breaks (`com.falkordb.impl` is
-  internal and excluded); approve a reviewed, intentional break with the `breaking-change` PR label.
-  A user-facing break is at least a **minor** bump (the project is pre-1.0).
+  against the last release on Maven Central and fails on public/protected-API breaks
+  (`com.falkordb.impl` is internal and excluded); approve a reviewed, intentional break with the
+  `breaking-change` PR label. A user-facing break is at least a **minor** bump (the project is
+  pre-1.0).
 
 ## Releasing
 
