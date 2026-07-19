@@ -52,10 +52,11 @@ verify-jdk8 jdk8_home:
     version="$(./mvnw -q -DforceStdout help:evaluate -Dexpression=project.version)"
     JAVA_HOME="{{jdk8_home}}" ./mvnw -B -f smoke-test/pom.xml -Djfalkordb.version="$version" test
 
-# --- Benchmarks (JMH; standalone module in benchmarks/, never shipped) ---
+# --- Benchmarks (client load-sweep; standalone module in benchmarks/, never shipped) ---
 
-# Build + run all JMH benchmarks, writing JSON for the per-PR radar. Starts a Testcontainers
-# FalkorDB by default, or set FALKORDB_HOST/FALKORDB_PORT to reuse one — locally e.g.
+# Build + run the client load-sweep benchmark, writing the latency/throughput/curve JSON for the
+# per-PR radar + Pages curve. Starts a Testcontainers FalkorDB by default, or set
+# FALKORDB_HOST/FALKORDB_PORT to reuse one — locally e.g.
 # `just db-up && FALKORDB_HOST=localhost FALKORDB_PORT=6379 just bench`.
 bench:
     #!/usr/bin/env bash
@@ -63,16 +64,16 @@ bench:
     ./mvnw -B -q -DskipTests -Dgpg.skip=true install
     version="$(./mvnw -q -DforceStdout help:evaluate -Dexpression=project.version)"
     ./mvnw -B -q -f benchmarks/pom.xml -Djfalkordb.version="$version" clean package
-    java -jar benchmarks/target/benchmarks.jar -rf json -rff benchmarks/target/jmh-result.json
+    java -jar benchmarks/target/benchmarks.jar
 
-# Run a single benchmark by name/regex, e.g. `just bench-one pointMatch`.
-bench-one id:
+# Run the load sweep for specific concurrency levels only, e.g. `just bench-one "1,8,64"`.
+bench-one loads:
     #!/usr/bin/env bash
     set -euo pipefail
     ./mvnw -B -q -DskipTests -Dgpg.skip=true install
     version="$(./mvnw -q -DforceStdout help:evaluate -Dexpression=project.version)"
     ./mvnw -B -q -f benchmarks/pom.xml -Djfalkordb.version="$version" clean package
-    java -jar benchmarks/target/benchmarks.jar {{id}}
+    java -Dbench.loads="{{loads}}" -jar benchmarks/target/benchmarks.jar
 
 # Refresh the local baseline JSON (CI stores the master baseline to gh-pages automatically).
 bench-baseline:
