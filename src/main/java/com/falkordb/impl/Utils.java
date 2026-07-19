@@ -170,10 +170,13 @@ public class Utils {
             sb.append(value.toString());
         } else if (value instanceof BigInteger) {
             BigInteger bi = (BigInteger) value;
-            if (bi.bitLength() > 63) {
-                throw new IllegalArgumentException("Integer parameter out of signed 64-bit range: " + bi);
+            long exact;
+            try {
+                exact = bi.longValueExact();
+            } catch (ArithmeticException e) {
+                throw new IllegalArgumentException("Integer parameter out of signed 64-bit range: " + bi, e);
             }
-            sb.append(bi.toString());
+            sb.append(Long.toString(exact));
         } else if (value instanceof Float) {
             float f = (Float) value;
             if (!isFinite(f)) {

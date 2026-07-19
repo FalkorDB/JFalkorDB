@@ -117,10 +117,17 @@ public class UtilsTest {
     public void testNumericBounds() {
         assertEquals("CYPHER `param`=9223372036854775807 RETURN $param", q(Long.MAX_VALUE));
         assertEquals("CYPHER `param`=9223372036854775807 RETURN $param", q(BigInteger.valueOf(Long.MAX_VALUE)));
-        // Out-of-int64-range BigInteger and non-finite doubles are rejected.
+        // Long.MIN_VALUE is in range (both as a boxed long and a BigInteger).
+        assertEquals("CYPHER `param`=-9223372036854775808 RETURN $param", q(Long.MIN_VALUE));
+        assertEquals("CYPHER `param`=-9223372036854775808 RETURN $param", q(BigInteger.valueOf(Long.MIN_VALUE)));
+        // Out-of-int64-range BigInteger (both signs) and non-finite doubles are rejected.
         assertThrows(
                 IllegalArgumentException.class,
                 () -> q(BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE)));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> q(BigInteger.valueOf(Long.MIN_VALUE).subtract(BigInteger.ONE)));
+        assertThrows(IllegalArgumentException.class, () -> q(BigInteger.TEN.pow(30)));
         assertThrows(IllegalArgumentException.class, () -> q(Double.NaN));
         assertThrows(IllegalArgumentException.class, () -> q(Double.POSITIVE_INFINITY));
         assertThrows(IllegalArgumentException.class, () -> q(Float.NEGATIVE_INFINITY));
