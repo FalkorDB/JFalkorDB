@@ -133,6 +133,23 @@ public class GraphExample {
 }
 ```
 
+## Query parameters
+
+Always pass values as **parameters** rather than concatenating them into the Cypher string. Parameter
+values are safely encoded as Cypher literals, so caller-supplied input cannot break out of the literal
+and inject Cypher:
+
+```java
+// safe — the value is encoded, never interpolated into the query text
+graph.query("MATCH (p:person {name: $name}) RETURN p", Collections.singletonMap("name", untrustedInput));
+```
+
+Values must be an encodable type (null, `String`, `Character`, `Boolean`, a boxed integer or
+floating-point number, or an array/`List`/`Map` of such values); unsupported types, out-of-range
+integers, non-finite floating-point values, and invalid parameter names are rejected with
+`IllegalArgumentException`. This safety covers parameter **values** only — it does not extend to the
+query text, dynamic labels/identifiers, or procedure names, so never build those from untrusted input.
+
 ## Configuring Connection Pool
 
 You can customize the connection pool to optimize performance and resource usage. JFalkorDB uses [Jedis](https://github.com/redis/jedis) internally, which provides comprehensive pool configuration options.

@@ -41,6 +41,15 @@ public interface Graph extends Closeable {
 
     /**
      * Executes a cypher query with parameters.
+     *
+     * <p>Parameter <em>values</em> are safely encoded as Cypher literals, so caller-supplied values
+     * cannot break out and inject Cypher — always pass untrusted input as a parameter rather than
+     * concatenating it into {@code query}. Values must be an encodable type (null, String, Character,
+     * Boolean, a boxed integer/floating-point number, or an array/List/Map of such values); other
+     * types, out-of-range integers, non-finite floating-point values, and invalid parameter names are
+     * rejected with {@link IllegalArgumentException}. This does not cover the query text itself,
+     * dynamic labels/identifiers, or procedure names.
+     *
      * @param query Cypher query.
      * @param params parameters map.
      * @return a result set.

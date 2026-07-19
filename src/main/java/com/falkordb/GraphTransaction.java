@@ -46,6 +46,13 @@ public interface GraphTransaction
 
     /**
      * Executes a cypher query with parameters.
+     *
+     * <p>Parameter <em>values</em> are safely encoded as Cypher literals, so caller-supplied values
+     * cannot break out and inject Cypher — always pass untrusted input as a parameter rather than
+     * concatenating it into {@code query}. Unsupported value types, out-of-range integers, non-finite
+     * floating-point values, and invalid parameter names are rejected with
+     * {@link IllegalArgumentException}.
+     *
      * @param query Cypher query.
      * @param params parameters map.
      * @return  a response which builds the result set with the query answer.

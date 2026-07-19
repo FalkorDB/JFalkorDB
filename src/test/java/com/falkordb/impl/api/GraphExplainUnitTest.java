@@ -73,7 +73,7 @@ public class GraphExplainUnitTest {
         // Verify that query was properly prepared with parameters
         String expectedPreparedQuery = Utils.prepareQuery(query, params);
         Assertions.assertEquals(expectedPreparedQuery, testGraph.getLastPreparedQuery());
-        Assertions.assertTrue(testGraph.getLastPreparedQuery().contains("name=\"Alice\""));
+        Assertions.assertTrue(testGraph.getLastPreparedQuery().contains("`name`=\"Alice\""));
     }
 
     @Test
@@ -148,8 +148,8 @@ public class GraphExplainUnitTest {
         Assertions.assertEquals(4, result.size());
 
         String preparedQuery = testGraph.getLastPreparedQuery();
-        Assertions.assertTrue(preparedQuery.contains("minAge=25"));
-        Assertions.assertTrue(preparedQuery.contains("city=\"New York\""));
+        Assertions.assertTrue(preparedQuery.contains("`minAge`=25"));
+        Assertions.assertTrue(preparedQuery.contains("`city`=\"New York\""));
     }
 
     @Test
@@ -168,7 +168,7 @@ public class GraphExplainUnitTest {
 
         // Verify that special characters are properly escaped
         String preparedQuery = testGraph.getLastPreparedQuery();
-        Assertions.assertTrue(preparedQuery.contains("name=\"John \\\"The Rock\\\" Doe\""));
+        Assertions.assertTrue(preparedQuery.contains("`name`=\"John \\\"The Rock\\\" Doe\""));
     }
 
     /**
