@@ -135,7 +135,7 @@ public class Utils {
     private static void appendParamName(StringBuilder sb, String name) {
         if (name == null || !IDENTIFIER.matcher(name).matches()) {
             throw new IllegalArgumentException(
-                    "Invalid query parameter name: " + name + " (must match [A-Za-z_][A-Za-z0-9_]*)");
+                    "Invalid query parameter name: " + safeDisplay(name) + " (must match [A-Za-z_][A-Za-z0-9_]*)");
         }
         // Backtick-quote the (already validated, backtick-free) name so an identifier that happens to
         // be a header keyword such as "CYPHER" is not stripped/misparsed by the server's header parser.
@@ -263,7 +263,8 @@ public class Utils {
         // inside such a key, so a key containing one (or a NUL) is unrepresentable and rejected. Reject
         // unpaired surrogates too, so a key can't be silently mangled to '?' by UTF-8 encoding.
         if (k.indexOf('`') >= 0 || k.indexOf('\0') >= 0) {
-            throw new IllegalArgumentException("Map parameter key cannot contain a backtick or NUL character: " + k);
+            throw new IllegalArgumentException(
+                    "Map parameter key cannot contain a backtick or NUL character: " + safeDisplay(k));
         }
         requireWellFormedUtf16(k);
         sb.append('`').append(k).append('`');
@@ -295,6 +296,31 @@ public class Utils {
 
     private static boolean isFinite(float f) {
         return !Float.isNaN(f) && !Float.isInfinite(f);
+    }
+
+    /**
+     * Renders a caller-supplied string for an exception message with control characters escaped and the
+     * length bounded, so an invalid parameter name/key can't forge log entries or bloat the message.
+     */
+    private static String safeDisplay(String s) {
+        if (s == null) {
+            return "null";
+        }
+        int limit = Math.min(s.length(), 64);
+        StringBuilder sb = new StringBuilder(limit + 4).append('"');
+        for (int i = 0; i < limit; i++) {
+            char c = s.charAt(i);
+            if (c < 0x20 || c == 0x7f) {
+                sb.append(String.format("\\u%04x", (int) c));
+            } else {
+                sb.append(c);
+            }
+        }
+        sb.append('"');
+        if (s.length() > limit) {
+            sb.append("...");
+        }
+        return sb.toString();
     }
 
     /**

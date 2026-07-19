@@ -1,6 +1,7 @@
 package com.falkordb.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -169,6 +170,23 @@ public class UtilsTest {
         Map<String, Object> cyclicMap = new HashMap<>();
         cyclicMap.put("self", cyclicMap);
         assertThrows(IllegalArgumentException.class, () -> q(cyclicMap));
+    }
+
+    @Test
+    public void testExceptionMessagesEscapeControlChars() {
+        // A rejected parameter name/key must not leak a raw newline into the exception message
+        // (log-forging); safeDisplay escapes control characters.
+        Map<String, Object> badName = new HashMap<>();
+        badName.put("bad\nname", 1);
+        IllegalArgumentException e1 =
+                assertThrows(IllegalArgumentException.class, () -> Utils.prepareQuery("RETURN 1", badName));
+        assertFalse(e1.getMessage().contains("\n"), "name message must not contain a raw newline");
+        assertTrue(e1.getMessage().contains("\\u000a"));
+
+        Map<String, Object> badKey = new HashMap<>();
+        badKey.put("k\r`", "v");
+        IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class, () -> q(badKey));
+        assertFalse(e2.getMessage().contains("\r"), "key message must not contain a raw carriage return");
     }
 
     @Test
