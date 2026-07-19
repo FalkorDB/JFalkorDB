@@ -1,0 +1,45 @@
+name: API diff
+
+# PR-only public-API compatibility gate (japicmp): fails on binary/source-incompatible changes to the
+# published API vs the last release on Maven Central. A reviewed, intentional break is approved by
+# adding the `breaking-change` label to the PR — hence the `labeled`/`unlabeled` triggers, so
+# adding/removing the label re-runs the gate without needing a new commit. This lives in its own
+# workflow (not a `Java CI with Maven` job) so label toggles don't needlessly re-run the whole
+# build/test matrix. Runs only on PRs: a reviewed break is approved per-PR via the label, so the
+# post-merge master push (which has no PR label) would re-flag an already approved break; direct
+# pushes to master are disallowed, so PR coverage is sufficient.
+
+on:
+  pull_request:
+    branches: [ "master" ]
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+concurrency:
+  group: api-diff-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  api-diff:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      with:
+        persist-credentials: false
+    - name: Set up JDK 21
+      uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+    - name: Install just
+      uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+    - name: Public-API compatibility diff vs the last release (via just)
+      # Fails on binary/source-incompatible PUBLIC/PROTECTED-API changes vs the last release on Maven
+      # Central. Approve a reviewed, intentional break by adding the `breaking-change` label to the PR,
+      # which flips the japicmp gate to non-failing for this run.
+      run: just api-diff ${{ contains(github.event.pull_request.labels.*.name, 'breaking-change') && '-Dapi.diff.fail=false' || '' }}
