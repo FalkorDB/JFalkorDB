@@ -4,6 +4,7 @@ import com.falkordb.ResultSet;
 import com.falkordb.impl.Utils;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -158,7 +159,7 @@ public class GraphExplainUnitTest {
         Map<String, Object> params = new HashMap<>();
         params.put("name", "John \"The Rock\" Doe");
 
-        List<Object> mockResponse = Arrays.asList(SafeEncoder.encode("Results"));
+        List<Object> mockResponse = Collections.<Object>singletonList(SafeEncoder.encode("Results"));
         testGraph.setMockExplainResponse(mockResponse);
 
         List<String> result = testGraph.explain(query, params);

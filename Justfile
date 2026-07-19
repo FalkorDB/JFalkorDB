@@ -23,6 +23,17 @@ fmt:
 fmt-check:
     ./mvnw -B -Pquality spotless:check
 
+# Static analysis (no server): format check + SpotBugs/FindSecBugs + Error Prone, all in the
+# off-by-default `quality` profile. This is the CI `lint` gate. `clean` forces a full recompile so
+# Error Prone always runs (incremental compilation would otherwise skip up-to-date sources).
+lint:
+    ./mvnw -B -Pquality -Dgpg.skip=true clean spotless:check test-compile spotbugs:check
+
+# Dependency CVE scan (OWASP dependency-check). Slow + wants an NVD API key: set NVD_API_KEY in the
+# environment (the scheduled/manual `audit` workflow provides it). Not part of `verify`.
+audit:
+    ./mvnw -B -Pquality -DskipTests -Dgpg.skip=true org.owasp:dependency-check-maven:check
+
 # Spellcheck the Markdown docs (CI gate). Needs `pyspelling` + `aspell` (see CONTRIBUTING.md).
 spellcheck:
     pyspelling -c .github/spellcheck-settings.yml -n Markdown

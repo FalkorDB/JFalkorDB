@@ -904,7 +904,7 @@ public class GraphAPIIT {
 
     @Test
     public void test64bitnumber() {
-        long value = 1 << 40;
+        long value = 1L << 40;
         Map<String, Object> params = new HashMap<>();
         params.put("val", value);
         ResultSet resultSet = client.query("CREATE (n {val:$val}) RETURN n.val", params);

@@ -14,6 +14,8 @@ class GraphCacheList {
 
     private final String procedure;
     private final List<String> data = new CopyOnWriteArrayList<>();
+    // Serializes cache refresh; don't synchronize on `data` itself (it's a concurrent collection).
+    private final Object refreshLock = new Object();
 
     /**
      * @param procedure - exact procedure command
@@ -29,7 +31,7 @@ class GraphCacheList {
      */
     public String getCachedData(int index, Graph graph) {
         if (index >= data.size()) {
-            synchronized (data) {
+            synchronized (refreshLock) {
                 if (index >= data.size()) {
                     getProcedureInfo(graph);
                 }

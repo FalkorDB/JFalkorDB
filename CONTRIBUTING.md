@@ -30,6 +30,8 @@ just build          # compile + package, no tests
 just test           # fast unit tests only (no server); system tests are *IT, run by just verify
 just fmt            # apply palantir-java-format
 just fmt-check      # check formatting
+just lint           # static analysis: format check + SpotBugs/FindSecBugs + Error Prone (-Pquality)
+just audit          # OWASP dependency-check CVE scan (slow; needs NVD_API_KEY; run by the audit workflow)
 just db-up          # start a local FalkorDB container
 just db-down        # stop it
 just bench          # client load-sweep benchmark (client latency vs throughput; feeds the radar)
