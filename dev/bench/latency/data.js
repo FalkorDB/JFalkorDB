@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784468707493,
+  "lastUpdate": 1784482539859,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -257,6 +257,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 68581.719,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "651f985573e4cd423c8bad5abe911ec073ab7751",
+          "message": "build: add SpotBugs/FindSecBugs + Error Prone + OWASP quality gates; retire DeepSource (#318)\n\n* build: add SpotBugs/FindSecBugs + Error Prone + OWASP quality gates; retire DeepSource\n\nWave 3 PR 9. Extends the off-by-default quality profile with three static-analysis\ntools (kept off the default lifecycle so the Java-8 artifact is unaffected):\n\n- SpotBugs + FindSecBugs (threshold Medium for security coverage; EI_EXPOSE_REP\n  defensive-copy noise excluded via spotbugs-exclude.xml), bound to verify in-profile.\n- Error Prone (error_prone_core, forked compiler + JDK-21 add-exports/add-opens).\n- OWASP dependency-check (unbound; failBuildOnCVSS=7; NVD key via env var), run by a\n  dedicated scheduled/manual audit workflow.\n\nAdds 'just lint' (Spotless-check + SpotBugs/FindSecBugs + Error Prone) and 'just\naudit' (OWASP), a 'lint' CI job in maven.yml, and .github/workflows/audit.yml.\nRetires DeepSource (deletes .deepsource.toml; documents in-build gates in\ncopilot-instructions/CONTRIBUTING). Fixes the findings the tools surfaced:\nUtils.DUMMY_LIST/DUMMY_MAP immutable; GraphCacheList locks on a private object;\nResultSetImpl final (CT_CONSTRUCTOR_THROW); test '1 << 40' -> '1L << 40';\nArrays.asList(byte[]) -> Collections.<Object>singletonList(...).\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* ci(audit): bucket the OWASP NVD cache key by ISO week, not run_id (Copilot)\n\nA github.run_id key never hits exactly, so actions/cache re-saved a new entry on\nevery run. Key on runner.os + ISO week instead: re-runs/dispatches within a week\nreuse it exactly, it rotates weekly, and restore-keys still seeds from the prior\nweek's data — keeping the NVD cache fresh without unbounded growth.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-19T20:34:06+03:00",
+          "tree_id": "c8cde3447c3e3e09a0703a16c1e6590679915849",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/651f985573e4cd423c8bad5abe911ec073ab7751"
+        },
+        "date": 1784482539549,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 161.769,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 198.674,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 235.739,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 203.751,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 245.433,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 270.445,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 262.124,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 406.452,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 497.347,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 420.363,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 718.624,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 899.482,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 496.156,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 4811.778,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 10256.888,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 497.798,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 13548.689,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 29672.317,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 494.353,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 31393.966,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 70201.445,
             "unit": "us"
           }
         ]
