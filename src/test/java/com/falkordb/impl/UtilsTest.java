@@ -140,6 +140,14 @@ public class UtilsTest {
     }
 
     @Test
+    public void testHugeBigIntegerRejectedWithBoundedMessage() {
+        BigInteger huge = BigInteger.TEN.pow(100_000); // ~100k digits
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> q(huge));
+        assertTrue(e.getMessage().length() < 200, "message must not materialize the full value");
+        assertTrue(e.getMessage().contains("bitLength"));
+    }
+
+    @Test
     public void testRejectsUnsupportedTypes() {
         assertThrows(IllegalArgumentException.class, () -> q(new java.math.BigDecimal("1.5")));
         assertThrows(IllegalArgumentException.class, () -> q(new Object()));

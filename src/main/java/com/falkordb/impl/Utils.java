@@ -180,7 +180,10 @@ public class Utils {
             try {
                 exact = bi.longValueExact();
             } catch (ArithmeticException e) {
-                throw new IllegalArgumentException("Integer parameter out of signed 64-bit range: " + bi, e);
+                // Report the bit length rather than the full value: a huge BigInteger would otherwise
+                // materialize an enormous decimal string just to be rejected.
+                throw new IllegalArgumentException(
+                        "Integer parameter out of signed 64-bit range (bitLength=" + bi.bitLength() + ")", e);
             }
             sb.append(Long.toString(exact));
         } else if (value instanceof Float) {
