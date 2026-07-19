@@ -126,7 +126,12 @@ public class UtilsTest {
         // Long.MIN_VALUE is in range (both as a boxed long and a BigInteger).
         assertEquals("CYPHER `param`=-9223372036854775808 RETURN $param", q(Long.MIN_VALUE));
         assertEquals("CYPHER `param`=-9223372036854775808 RETURN $param", q(BigInteger.valueOf(Long.MIN_VALUE)));
-        // Out-of-int64-range BigInteger (both signs) and non-finite doubles are rejected.
+        // The remaining boxed numeric wrappers and a finite float/double.
+        assertEquals("CYPHER `param`=7 RETURN $param", q((byte) 7));
+        assertEquals("CYPHER `param`=7 RETURN $param", q((short) 7));
+        assertEquals("CYPHER `param`=1.5 RETURN $param", q(1.5f));
+        assertEquals("CYPHER `param`=1.5 RETURN $param", q(1.5d));
+        // Out-of-int64-range BigInteger (both signs) and non-finite floats/doubles are rejected.
         assertThrows(
                 IllegalArgumentException.class,
                 () -> q(BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE)));
@@ -136,7 +141,54 @@ public class UtilsTest {
         assertThrows(IllegalArgumentException.class, () -> q(BigInteger.TEN.pow(30)));
         assertThrows(IllegalArgumentException.class, () -> q(Double.NaN));
         assertThrows(IllegalArgumentException.class, () -> q(Double.POSITIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class, () -> q(Float.NaN));
         assertThrows(IllegalArgumentException.class, () -> q(Float.NEGATIVE_INFINITY));
+    }
+
+    @Test
+    public void testRejectsNullParameterName() {
+        // A HashMap permits a single null key; it must be rejected (and its safeDisplay renders "null").
+        Map<String, Object> params = new HashMap<>();
+        params.put(null, 1);
+        IllegalArgumentException e =
+                assertThrows(IllegalArgumentException.class, () -> Utils.prepareQuery("RETURN 1", params));
+        assertTrue(e.getMessage().contains("null"));
+    }
+
+    @Test
+    public void testValueStringTrailingHighSurrogateRejected() {
+        // A value ending in a lone high surrogate (nothing follows) must be rejected.
+        assertThrows(IllegalArgumentException.class, () -> q("x\ud800"));
+    }
+
+    @Test
+    public void testInvalidParamNameWithEmojiIsRejectedAndDisplayedSafely() {
+        // A valid surrogate pair (emoji) inside an invalid name exercises safeDisplay's pair branch.
+        Map<String, Object> params = new HashMap<>();
+        params.put("bad\ud83d\ude00name", 1);
+        assertThrows(IllegalArgumentException.class, () -> Utils.prepareQuery("RETURN 1", params));
+    }
+
+    @Test
+    public void testMapKeyEdgeCases() {
+        // A non-identifier key with a valid surrogate pair (emoji) is accepted and backtick-quoted.
+        Map<String, Object> emojiKey = new LinkedHashMap<>();
+        emojiKey.put("a \ud83d\ude00", 1);
+        assertEquals("CYPHER `param`={`a \ud83d\ude00`: 1} RETURN $param", q(emojiKey));
+
+        // Null key, NUL in key, a lone low surrogate, and a trailing high surrogate are all rejected.
+        Map<Object, Object> nullKey = new HashMap<>();
+        nullKey.put(null, "v");
+        assertThrows(IllegalArgumentException.class, () -> q(nullKey));
+        assertThrows(IllegalArgumentException.class, () -> q(mapOf("a\u0000b", "v")));
+        assertThrows(IllegalArgumentException.class, () -> q(mapOf("a \udc00", "v")));
+        assertThrows(IllegalArgumentException.class, () -> q(mapOf("a \ud800", "v")));
+    }
+
+    private static Map<String, Object> mapOf(String key, Object value) {
+        Map<String, Object> m = new HashMap<>();
+        m.put(key, value);
+        return m;
     }
 
     @Test
@@ -211,11 +263,24 @@ public class UtilsTest {
 
         // Also escape C1 controls (U+0085 NEL) and Unicode line/paragraph separators (U+2028/U+2029).
         Map<String, Object> unicodeName = new HashMap<>();
-        unicodeName.put("bad\u2028\u0085name", 1);
+        unicodeName.put("bad\u2028\u2029\u0085name", 1);
         IllegalArgumentException e3 =
                 assertThrows(IllegalArgumentException.class, () -> Utils.prepareQuery("RETURN 1", unicodeName));
         assertFalse(e3.getMessage().contains("\u2028"), "message must not contain a raw line separator");
+        assertFalse(e3.getMessage().contains("\u2029"), "message must not contain a raw paragraph separator");
         assertFalse(e3.getMessage().contains("\u0085"), "message must not contain a raw NEL");
+    }
+
+    @Test
+    public void testSafeDisplayEscapesUnpairedSurrogatesInMessage() {
+        // Lone surrogates in a rejected name must be escaped (not emitted raw) in the message.
+        for (String bad : new String[] {"bad\ud800", "\udc00bad", "a\ud800b"}) {
+            Map<String, Object> params = new HashMap<>();
+            params.put(bad, 1);
+            IllegalArgumentException e =
+                    assertThrows(IllegalArgumentException.class, () -> Utils.prepareQuery("RETURN 1", params));
+            assertNoUnpairedSurrogate(e.getMessage());
+        }
     }
 
     @Test
@@ -230,7 +295,10 @@ public class UtilsTest {
         params.put(name.toString(), 1);
         IllegalArgumentException e =
                 assertThrows(IllegalArgumentException.class, () -> Utils.prepareQuery("RETURN 1", params));
-        String msg = e.getMessage();
+        assertNoUnpairedSurrogate(e.getMessage());
+    }
+
+    private static void assertNoUnpairedSurrogate(String msg) {
         for (int i = 0; i < msg.length(); i++) {
             char c = msg.charAt(i);
             if (Character.isHighSurrogate(c)) {
