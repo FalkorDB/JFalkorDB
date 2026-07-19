@@ -32,14 +32,20 @@ jobs:
         cache: maven
     - name: Install just
       uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
-    # Cache the NVD data the plugin downloads so subsequent runs only fetch the delta.
+    # Cache the NVD data the plugin downloads so subsequent runs only fetch the delta. The key is
+    # bucketed by ISO week so re-runs/dispatches within a week reuse it exactly (a true hit, no
+    # re-save), while it rotates weekly and picks up the previous week's data via restore-keys — so
+    # the cache stays fresh without growing unbounded from a per-run key.
+    - name: Compute weekly cache bucket
+      id: cache-bucket
+      run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
     - name: Cache OWASP dependency-check data
       uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
       with:
         path: ~/.m2/repository/org/owasp/dependency-check-data
-        key: owasp-data-${{ github.run_id }}
+        key: owasp-data-${{ runner.os }}-${{ steps.cache-bucket.outputs.week }}
         restore-keys: |
-          owasp-data-
+          owasp-data-${{ runner.os }}-
     - name: Dependency CVE scan (via just)
       env:
         NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
