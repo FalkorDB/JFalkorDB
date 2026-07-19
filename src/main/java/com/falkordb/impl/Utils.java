@@ -151,10 +151,22 @@ public class Utils {
             sb.append(quoteString(value.toString()));
         } else if (value instanceof Boolean) {
             sb.append(((Boolean) value) ? "true" : "false");
-        } else if (value instanceof Byte
-                || value instanceof Short
-                || value instanceof Integer
-                || value instanceof Long) {
+        } else if (value instanceof Number) {
+            appendNumber(sb, (Number) value);
+        } else if (value.getClass().isArray()) {
+            appendArray(sb, value, seen);
+        } else if (value instanceof List) {
+            appendList(sb, (List<?>) value, seen);
+        } else if (value instanceof Map) {
+            appendMap(sb, (Map<?, ?>) value, seen);
+        } else {
+            throw new IllegalArgumentException(
+                    "Unsupported query parameter type: " + value.getClass().getName());
+        }
+    }
+
+    private static void appendNumber(StringBuilder sb, Number value) {
+        if (value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long) {
             sb.append(value.toString());
         } else if (value instanceof BigInteger) {
             BigInteger bi = (BigInteger) value;
@@ -174,17 +186,11 @@ public class Utils {
                 throw new IllegalArgumentException("Non-finite floating-point parameter: " + d);
             }
             sb.append(Double.toString(d));
-        } else if (value.getClass().isArray()) {
-            appendArray(sb, value, seen);
-        } else if (value instanceof List) {
-            appendList(sb, (List<?>) value, seen);
-        } else if (value instanceof Map) {
-            appendMap(sb, (Map<?, ?>) value, seen);
         } else {
-            // BigDecimal and arbitrary objects are rejected: the server stores decimals as double, so
-            // silently emitting value.toString() could inject or lose precision.
+            // BigDecimal and other Number subtypes (e.g. AtomicInteger) are rejected: the server stores
+            // decimals as double, so emitting an unbounded/foreign representation could lose precision.
             throw new IllegalArgumentException(
-                    "Unsupported query parameter type: " + value.getClass().getName());
+                    "Unsupported numeric parameter type: " + value.getClass().getName());
         }
     }
 
