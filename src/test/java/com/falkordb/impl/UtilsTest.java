@@ -23,6 +23,12 @@ public class UtilsTest {
     }
 
     @Test
+    public void testRejectsNullQueryOrParams() {
+        assertThrows(IllegalArgumentException.class, () -> Utils.prepareQuery(null, new HashMap<>()));
+        assertThrows(IllegalArgumentException.class, () -> Utils.prepareQuery("RETURN 1", null));
+    }
+
+    @Test
     public void testPrepareProcedure() {
         assertEquals("CALL prc()", Utils.prepareProcedure("prc", Arrays.asList(new String[] {}), new HashMap<>()));
 

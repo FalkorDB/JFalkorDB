@@ -120,6 +120,12 @@ public class Utils {
      *     an encodable type
      */
     public static String prepareQuery(String query, Map<String, Object> params) {
+        if (query == null) {
+            throw new IllegalArgumentException("query must not be null");
+        }
+        if (params == null) {
+            throw new IllegalArgumentException("params must not be null");
+        }
         StringBuilder sb = new StringBuilder("CYPHER ");
         Set<Object> seen = Collections.newSetFromMap(new IdentityHashMap<>());
         for (Map.Entry<String, Object> entry : params.entrySet()) {
