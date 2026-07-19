@@ -48,12 +48,12 @@ public interface Graph extends Closeable {
      * Boolean, a boxed integer or floating-point number, a {@link java.math.BigInteger} within signed
      * 64-bit range, or an array/List/Map of such values, where every Map key is a String); other types
      * (including {@link java.math.BigDecimal}), out-of-range integers, non-finite floating-point
-     * values, cyclic containers, non-String map keys, and invalid parameter names are rejected with
-     * {@link IllegalArgumentException}. This does not cover the query text itself, dynamic
-     * labels/identifiers, or procedure names.
+     * values, cyclic containers, non-String map keys, invalid parameter names, and a null
+     * {@code query} or {@code params} are rejected with {@link IllegalArgumentException}. This does not
+     * cover the query text itself, dynamic labels/identifiers, or procedure names.
      *
-     * @param query Cypher query.
-     * @param params parameters map.
+     * @param query Cypher query. Must not be {@code null}.
+     * @param params parameters map. Must not be {@code null}.
      * @return a result set.
      */
     ResultSet query(String query, Map<String, Object> params);

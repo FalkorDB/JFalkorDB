@@ -51,12 +51,12 @@ public interface GraphPipeline
      * cannot break out and inject Cypher — always pass untrusted input as a parameter rather than
      * concatenating it into {@code query}. Unsupported value types (including
      * {@link java.math.BigDecimal}), out-of-range integers, non-finite floating-point values, cyclic
-     * containers, non-String map keys, and invalid parameter names are rejected with
-     * {@link IllegalArgumentException}. This safety covers parameter values only — not the query text
-     * itself, dynamic labels/identifiers, or procedure names.
+     * containers, non-String map keys, invalid parameter names, and a null {@code query} or
+     * {@code params} are rejected with {@link IllegalArgumentException}. This safety covers parameter
+     * values only — not the query text itself, dynamic labels/identifiers, or procedure names.
      *
-     * @param query Cypher query.
-     * @param params parameters map.
+     * @param query Cypher query. Must not be {@code null}.
+     * @param params parameters map. Must not be {@code null}.
      * @return  a response which builds the result set with the query answer.
      */
     Response<ResultSet> query(String query, Map<String, Object> params);
