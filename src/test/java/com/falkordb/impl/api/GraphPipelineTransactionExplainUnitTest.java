@@ -26,7 +26,7 @@ public class GraphPipelineTransactionExplainUnitTest {
         String expectedPreparedQuery = Utils.prepareQuery(query, params);
 
         // Verify the query preparation logic works correctly
-        Assertions.assertTrue(expectedPreparedQuery.contains("name=\"Alice\""));
+        Assertions.assertTrue(expectedPreparedQuery.contains("`name`=\"Alice\""));
         Assertions.assertTrue(expectedPreparedQuery.startsWith("CYPHER"));
     }
 
@@ -40,7 +40,7 @@ public class GraphPipelineTransactionExplainUnitTest {
         String expectedPreparedQuery = Utils.prepareQuery(query, params);
 
         // Verify the query preparation logic works correctly
-        Assertions.assertTrue(expectedPreparedQuery.contains("minAge=30"));
+        Assertions.assertTrue(expectedPreparedQuery.contains("`minAge`=30"));
         Assertions.assertTrue(expectedPreparedQuery.startsWith("CYPHER"));
     }
 
@@ -78,9 +78,9 @@ public class GraphPipelineTransactionExplainUnitTest {
 
         String preparedQuery = Utils.prepareQuery(query, params);
 
-        Assertions.assertTrue(preparedQuery.contains("name=\"John Doe\""));
-        Assertions.assertTrue(preparedQuery.contains("age=25"));
-        Assertions.assertTrue(preparedQuery.contains("active=true"));
+        Assertions.assertTrue(preparedQuery.contains("`name`=\"John Doe\""));
+        Assertions.assertTrue(preparedQuery.contains("`age`=25"));
+        Assertions.assertTrue(preparedQuery.contains("`active`=true"));
     }
 
     @Test
@@ -148,7 +148,7 @@ public class GraphPipelineTransactionExplainUnitTest {
 
         // Verify that quotes are properly escaped
         Assertions.assertTrue(preparedQuery.contains("\\\""));
-        Assertions.assertTrue(preparedQuery.contains("desc="));
+        Assertions.assertTrue(preparedQuery.contains("`desc`="));
     }
 
     @Test
@@ -160,7 +160,7 @@ public class GraphPipelineTransactionExplainUnitTest {
 
         String preparedQuery = Utils.prepareQuery(query, params);
 
-        Assertions.assertTrue(preparedQuery.contains("names=["));
+        Assertions.assertTrue(preparedQuery.contains("`names`=["));
         Assertions.assertTrue(preparedQuery.contains("\"Alice\""));
         Assertions.assertTrue(preparedQuery.contains("\"Bob\""));
         Assertions.assertTrue(preparedQuery.contains("\"Charlie\""));
@@ -175,7 +175,7 @@ public class GraphPipelineTransactionExplainUnitTest {
 
         String preparedQuery = Utils.prepareQuery(query, params);
 
-        Assertions.assertTrue(preparedQuery.contains("ages=[25, 30, 35]"));
+        Assertions.assertTrue(preparedQuery.contains("`ages`=[25, 30, 35]"));
     }
 
     @Test

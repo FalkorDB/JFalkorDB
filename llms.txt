@@ -19,7 +19,8 @@
       ResultSet rs = client.query("CREATE (:Person {name: 'bsb'})");
       int created = rs.getStatistics().nodesCreated();
 
-- Prefer parameterized queries over string concatenation:
+- Always parameterize queries instead of concatenating values into Cypher — parameter **values** are
+  safely encoded (a value can't break out and inject Cypher):
 
       client.query("MATCH (n {id: $id}) RETURN n", Collections.singletonMap("id", 42));
 
@@ -28,9 +29,9 @@
 
 ## Pitfalls (avoid)
 
-- The current query-parameter path is **not yet guaranteed injection-safe** (escaping is incomplete
-  and parameter keys are not validated). Do not build queries from untrusted input until this is
-  hardened.
+- Parameter **values** are safely encoded, so they can't inject Cypher. This does **not** extend to
+  the query text itself, dynamic **labels/identifiers**, or procedure names — never build those from
+  untrusted input.
 - A read against a graph that doesn't exist yet errors — create it with a write query first.
 
 See `README.md` for the full API and examples.

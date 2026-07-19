@@ -41,8 +41,19 @@ public interface Graph extends Closeable {
 
     /**
      * Executes a cypher query with parameters.
-     * @param query Cypher query.
-     * @param params parameters map.
+     *
+     * <p>Parameter <em>values</em> are safely encoded as Cypher literals, so caller-supplied values
+     * cannot break out and inject Cypher — always pass untrusted input as a parameter rather than
+     * concatenating it into {@code query}. Values must be an encodable type (null, String, Character,
+     * Boolean, a boxed integer or floating-point number, a {@link java.math.BigInteger} within signed
+     * 64-bit range, or an array/List/Map of such values, where every Map key is a String); other types
+     * (including {@link java.math.BigDecimal}), out-of-range integers, non-finite floating-point
+     * values, cyclic containers, non-String map keys, invalid parameter names, and a null
+     * {@code query} or {@code params} are rejected with {@link IllegalArgumentException}. This does not
+     * cover the query text itself, dynamic labels/identifiers, or procedure names.
+     *
+     * @param query Cypher query. Must not be {@code null}.
+     * @param params parameters map. Must not be {@code null}.
      * @return a result set.
      */
     ResultSet query(String query, Map<String, Object> params);
