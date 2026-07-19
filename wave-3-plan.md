@@ -8,6 +8,10 @@
 >
 > The **default branch is `master`** (not `main`); every "baseline" below means `master`.
 >
+> **Notation:** references like **§4 / §6** point to sections of the overall modernization **master
+> plan** (`project-modernizations.md`), not to this document; **"PR N"** refers to the Wave 3 PRs
+> defined here.
+>
 > **Prerequisite (met):** Wave 2 has landed — JDK 21 + `--release 8` (#302), Testcontainers + `*IT`
 > split (#312/#313), and the per-PR benchmark radar (#314/#315). Wave 3's newer quality tools and
 > API-diff plugin need that JDK-21 build, so it is unblocked.
@@ -96,17 +100,22 @@ recommended execution order:
      document the lossy `double` conversion) rather than emitting an unparseable literal. Format
      **locale-independently** (`Locale.ROOT`).
    - **Arrays** (`Object[]` **and** primitive arrays) and **`List`s** of allowed values → `[…]`
-     (recursive); **Cypher maps** (`Map` with **String** keys) → `{key: value, …}` with the same key
-     rules + recursive value encoding (reject non-String map keys). **Guard against cyclic
-     references** (bounded depth / identity set) so a self-referential collection can't infinite-loop.
+     (recursive); **Cypher maps** (`Map` with **String** keys) → `{key: value, …}`, recursively
+     encoding values. **Map-literal keys use their own encoding — not the parameter-name regex:** a
+     key that is a bare identifier may be emitted bare, but any key with spaces, operators, Unicode,
+     backticks, or that is empty must be **backtick-quoted** (escaping embedded backticks) — the
+     parameter-name rules apply only to the top-level `CYPHER k=v` names, not to map keys. Reject
+     non-String map keys. **Guard against cyclic references** (bounded depth / identity set) so a
+     self-referential collection can't infinite-loop.
    - **Reject** every other type with a clear exception instead of a silent `toString()`.
 4. **Tests** (this PR carries them — "non-trivial changes ship with tests"):
    - **Adversarial unit tests** (`*Test`, Surefire — pure, no server): values with `"`, `\`, trailing
-     `\`, control chars, Unicode incl. astral/surrogate pairs, `NUL`; breakout attempts; invalid keys
-     (spaces, operators, empty, leading digit); **`CYPHER`/`CYPHERx` keys asserted per the chosen
-     policy** (rejected if we reject the prefix; round-tripped if we backtick-quote); rejected values
-     (POJO, non-finite double, out-of-`long` `BigInteger`, non-String map key, **cyclic `List`, `Map`,
-     and `Object[]`**).
+     `\`, control chars, Unicode incl. astral/surrogate pairs, `NUL`; breakout attempts; invalid
+     **parameter names** (spaces, operators, empty, leading digit); **`CYPHER`/`CYPHERx` names asserted
+     per the chosen policy** (rejected if we reject the prefix; round-tripped if we backtick-quote);
+     **map-literal keys** (bare identifier stays bare; keys with spaces/operators/backticks/Unicode/
+     empty are backtick-quoted with backticks escaped); rejected values (POJO, non-finite double,
+     out-of-`long` `BigInteger`, non-String map key, **cyclic `List`, `Map`, and `Object[]`**).
    - **jqwik property tests** (Java-8 compatible; add `net.jqwik:jqwik` **test** scope): for any
      generated valid string, the encoded literal opens/closes with an **unescaped** `"` and contains
      no other unescaped `"`.
@@ -223,13 +232,16 @@ rule); their current versions need the JDK-21 build Wave 2 delivered. *(D4 / D4b
 - **`snapshot.yml` `-SNAPSHOT`-only guard:** deploy only when `help:evaluate
   -Dexpression=project.version` ends in `-SNAPSHOT`, so a release commit on `master` can't trigger an
   unsigned/duplicate snapshot deploy.
-- **Deterministic release deploy (chosen design):** `version-and-release.yml` `clean deploy` re-runs
-  tests against the server image (currently `edge`) and mutates the POM with `versions:set`. **Adopt
-  skip-tests-on-deploy** (`-Dmaven.test.skip=true`) — the required PR CI (Testcontainers `*IT` on the
-  pinned digest) has already validated the commit, so the deploy shouldn't re-run tests against a
-  moving image at all; *(the pinned-digest approach is the fallback if we ever want tests on deploy)*.
-  Provide a **`workflow_dispatch` with a required `tag` input** so a publish can be re-run manually for
-  a given tag (don't gate the deploy job *only* on `release_created`, which can't be retried).
+- **Deterministic release deploy (chosen design):** `version-and-release.yml` derives `VERSION` from
+  the pushed tag (`GITHUB_REF`), sets the POM via **`just set-version "$VERSION"`** (which wraps
+  `versions:set`), then `clean deploy` re-runs tests against the server image (currently `edge`).
+  **Adopt skip-tests-on-deploy** (`-Dmaven.test.skip=true`) — the required PR CI (Testcontainers `*IT`
+  on the pinned digest) has already validated the commit, so the deploy shouldn't re-run tests against
+  a moving image at all; *(the pinned-digest approach is the fallback if we ever want tests on
+  deploy)*. Add a **`workflow_dispatch` with a required `tag` input** for manual re-runs, and make the
+  "get version" step **prefer that input over `GITHUB_REF`** and **check the tag out** — a dispatch
+  input alone won't deploy the requested tag otherwise (don't gate the deploy *only* on
+  `release_created`, which can't be retried).
 - **Release trigger via App/PAT (not just an alternative):** a Release **and** the release/snapshot
   **PRs** created by the default `GITHUB_TOKEN` trigger **no** workflows — so `release: published`
   won't fire **and** required `build`/`lint`/`api-diff`/title checks would be **absent** on the
