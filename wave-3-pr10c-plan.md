@@ -9,7 +9,7 @@
 ## Goal
 
 Replace the manual "publish a GitHub Release by hand" flow with **conventional-commit-driven,
-changelog-backed releases** via [release-please], preserving the JDK-8 Maven Central publish
+changelog-backed releases** via [release-please](https://github.com/googleapis/release-please), preserving the JDK-8 Maven Central publish
 (`version-and-release.yml`, hardened in 10b) and the Wave-3 gates.
 
 Lands **last**, after 10a (#319) and 10b (#325) — both merged.
