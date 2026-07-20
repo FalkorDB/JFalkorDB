@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784482539859,
+  "lastUpdate": 1784524361352,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -386,6 +386,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 70201.445,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "04e2bf918f375b38d5934f52353dd8722e2a5337",
+          "message": "ci: add PR-title lint + japicmp public-API diff gates (#319)\n\n* ci: add PR-title lint + japicmp public-API diff gates\n\nTwo Wave-3 release gates, both off the default lifecycle so the Java-8 artifact and\n`just verify` are untouched:\n\n- PR-title lint (.github/workflows/pr-title.yml): amannn/action-semantic-pull-request\n  (pinned v6.1.1) enforces a Conventional-Commit PR title on pull_request events.\n\n- API-diff gate (japicmp): compares the built jar against the last release\n  (`api.diff.baseline`, currently 0.9.0) on Maven Central and fails on binary/source-\n  incompatible public/protected API changes; `com.falkordb.impl` and its subpackages\n  are internal and excluded. Declared unbound in the off-by-default `-Pquality`\n  profile; run via `just api-diff` and the dedicated PR-only `api-diff` workflow. A\n  reviewed, intentional break is approved with the `breaking-change` PR label\n  (labeled/unlabeled re-run the gate without a new commit).\n\nDocs (CONTRIBUTING, copilot-instructions) and the wordlist updated.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs: say \"public/protected API\" for the api-diff gate scope\n\nThe japicmp gate uses accessModifier=protected, so it covers public AND protected\nAPI. Make the copilot-instructions recipe-table row and breaking-change guidance\nconsistent with that (addresses CodeRabbit review on #319).\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-20T08:11:12+03:00",
+          "tree_id": "a3e86a7d0b2523c780fe5775fc0154813a877185",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/04e2bf918f375b38d5934f52353dd8722e2a5337"
+        },
+        "date": 1784524360658,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 121.523,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 144.358,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 157.958,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 154.097,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 187.443,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 215.857,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 200.923,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 309.744,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 380.745,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 318.791,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 541.257,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 670.983,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 383.698,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 3573.384,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 7920.351,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 393.765,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 10109.794,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 22440.675,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 387.255,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 23604.198,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 53259.373,
             "unit": "us"
           }
         ]
