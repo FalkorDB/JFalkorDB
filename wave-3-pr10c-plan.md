@@ -57,7 +57,7 @@ release, PR, labels, comments; there is no separate `releases` permission). Inst
 | `.github/workflows/release-please.yml` | **New.** Mints the App token; runs `release-please-action` (v5, pinned). |
 | `.github/workflows/version-and-release.yml` | Automatic path: assert `tag == v${project.version}` (no `set-version`). `workflow_dispatch` recovery path keeps `set-version`. |
 | `.github/copilot-instructions.md`, `CONTRIBUTING.md` | Document the release-please flow + the manual `api.diff.baseline` bump. |
-| `.github/wordlist.txt` | flagged prose terms only, e.g. `changelog`, `webhook` (`release-please` is two dictionary words, not flagged). |
+| `.github/wordlist.txt` | (in the impl PR) any prose terms `just spellcheck` flags; `release-please` is two dictionary words, so it is not flagged. |
 
 ## `release-please-config.json` (corrected)
 
