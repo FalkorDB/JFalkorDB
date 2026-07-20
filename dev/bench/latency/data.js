@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784552291611,
+  "lastUpdate": 1784553066716,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -773,6 +773,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 66098.284,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9ceb32bfb1714e9bd4c4ce0e07cc572bddf08829",
+          "message": "docs: Wave 3 PR 10c plan (enable release-please) (#326)\n\nReviewed plan doc for the release-please enablement (impl in #327). Temporary artifact.",
+          "timestamp": "2026-07-20T16:09:32+03:00",
+          "tree_id": "99aa6920c04684c385945d13517fe7aa125fa01c",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/9ceb32bfb1714e9bd4c4ce0e07cc572bddf08829"
+        },
+        "date": 1784553066013,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 108.79,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 136.621,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 157.384,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 121.776,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 148.782,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 164.077,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 145.009,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 238.67,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 312.505,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 229.093,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 399.066,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 502.568,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 273.251,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 2447.282,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 5508.991,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 279.338,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 7070.671,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 15501.983,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 267.256,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 16657.984,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 35248.28,
             "unit": "us"
           }
         ]
