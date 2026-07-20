@@ -8,10 +8,18 @@ import java.util.Objects;
  */
 public final class Point {
 
-    private static final double EPSILON = 1e-5;
+    // FalkorDB stores point coordinates in single precision, so a round-tripped coordinate can differ
+    // from the original by up to ~1e-5. Coordinates are therefore compared on a 1e-5 grid: this keeps
+    // equals reflexive/symmetric/**transitive** and consistent with hashCode — unlike a raw epsilon
+    // "within tolerance" check, which is non-transitive and can't have a matching hashCode.
+    private static final double GRID = 1e-5;
 
     private final double latitude;
     private final double longitude;
+
+    private static long cell(double coordinate) {
+        return Math.round(coordinate / GRID);
+    }
 
     /**
      * @param latitude The latitude in degrees. It must be in the range [-90.0, +90.0]
@@ -58,12 +66,12 @@ public final class Point {
             return false;
         }
         Point o = (Point) other;
-        return Math.abs(latitude - o.latitude) < EPSILON && Math.abs(longitude - o.longitude) < EPSILON;
+        return cell(latitude) == cell(o.latitude) && cell(longitude) == cell(o.longitude);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(latitude, longitude);
+        return Objects.hash(cell(latitude), cell(longitude));
     }
 
     @Override

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Arrays;
 import java.util.Collections;
+import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
 public class PointTest {
@@ -176,5 +177,27 @@ public class PointTest {
         // Test min longitude
         Point point4 = new Point(0.0, -180.0);
         assertEquals(-180.0, point4.getLongitude());
+    }
+
+    @Test
+    public void equalsHashCodeContract() {
+        EqualsVerifier.forClass(Point.class).verify();
+    }
+
+    @Test
+    public void toleratesSinglePrecisionRoundTripDrift() {
+        // FalkorDB returns points in single precision, so the original and the round-tripped value
+        // differ slightly (see GraphAPIIT#testGeoPointLatLon). They must still be equal AND share a
+        // hashCode — the regression that the old epsilon-equals/exact-hashCode pair violated.
+        Point original = new Point(30.27822306, -97.75134723);
+        Point roundTripped = new Point(30.2782230377197, -97.751350402832);
+        assertEquals(original, roundTripped);
+        assertEquals(original.hashCode(), roundTripped.hashCode());
+    }
+
+    @Test
+    public void distinctPointsAreNotEqual() {
+        assertNotEquals(new Point(1.0, 2.0), new Point(3.0, 4.0));
+        assertNotEquals(new Point(1.0, 2.0), new Point(1.0, 9.0));
     }
 }
