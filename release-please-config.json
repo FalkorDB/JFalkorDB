@@ -1,0 +1,13 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/v17.6.0/schemas/config.json",
+  "always-update": true,
+  "packages": {
+    ".": {
+      "release-type": "java",
+      "bump-minor-pre-major": true,
+      "extra-files": [
+        { "type": "pom", "path": "pom.xml" }
+      ]
+    }
+  }
+}

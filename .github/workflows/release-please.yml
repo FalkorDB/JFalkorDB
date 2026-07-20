@@ -1,0 +1,39 @@
+name: release-please
+
+# Conventional-commit-driven releases. release-please maintains a Release PR that bumps the root
+# pom.xml <version> (via the `pom` extra-files updater) and CHANGELOG.md; merging it tags `vX.Y.Z`
+# and creates the GitHub Release, which triggers `version-and-release.yml` to publish to Maven Central.
+#
+# It runs under a GitHub **App** token (NOT the default GITHUB_TOKEN): a Release/PR created by the
+# default token does not trigger further workflows, which would leave the Release PR without required
+# CI and stop the publish from firing. See docs/release-please-setup.md for the one-time App setup.
+
+on:
+  push:
+    branches: [ master ]
+
+# The write scope comes from the App token minted below, not from GITHUB_TOKEN.
+permissions:
+  contents: read
+
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint a GitHub App installation token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.RELEASE_PLEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_PLEASE_APP_PRIVATE_KEY }}
+
+      - name: Run release-please
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
