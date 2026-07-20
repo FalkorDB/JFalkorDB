@@ -104,9 +104,10 @@ bench-baseline:
 fetch-deps:
     ./mvnw -B -q dependency:go-offline
 
-# Set the project version (release workflow, from the git tag).
+# Set the project version (release workflow, from the git tag). `quote(...)` shell-escapes the value
+# so it is always passed to Maven as a single literal argument (defense-in-depth for any caller).
 set-version version:
-    ./mvnw -B versions:set -DnewVersion={{version}} -DgenerateBackupPoms=false
+    ./mvnw -B versions:set -DnewVersion={{ quote(version) }} -DgenerateBackupPoms=false
 
 # Print the resolved project version (used by the snapshot-publish -SNAPSHOT guard in CI). The
 # `-q -DforceStdout` form yields an [INFO]-free, parseable single line.
