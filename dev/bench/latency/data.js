@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784553066716,
+  "lastUpdate": 1784557767994,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -902,6 +902,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 35248.28,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "73a955c8749aafc1cc47ef325c6376915e905a1f",
+          "message": "build(deps): combined Dependabot bumps (testcontainers 2, Error Prone 2.50, SpotBugs, FindSecBugs, jqwik) (#328)\n\nConsolidates #320-#324; adds the EP 2.50 JDK-21 compiler flag; bumps testcontainers to 2.0.5 in root + benchmarks. All gates green.",
+          "timestamp": "2026-07-20T17:27:50+03:00",
+          "tree_id": "591daa22b6c670d04978ab0900ac7cb434b0ad48",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/73a955c8749aafc1cc47ef325c6376915e905a1f"
+        },
+        "date": 1784557767094,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 208.708,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 241.853,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 260.952,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 241.561,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 301.183,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 366.735,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 308.226,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 477.423,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 586.157,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 510.134,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 860.78,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1057.839,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 593.471,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5509.079,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 10847.64,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 590.976,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 15399.038,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 31547.933,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 600.934,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 35770.388,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 71572.653,
             "unit": "us"
           }
         ]
