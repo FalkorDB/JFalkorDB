@@ -75,8 +75,13 @@ accordingly, and use the `TestServer` helper for server access.
 
 ## Releasing
 
-Cut a release by publishing a **GitHub Release tagged `vX.Y.Z`** on `master` (`version-and-release.yml`
-derives the version from the tag and deploys to Maven Central with `autoPublish`). Afterward, bump the
-pom to the next `-SNAPSHOT`, and bump the `api.diff.baseline` property to the just-released version so
-the **`api-diff`** gate compares against the new release (a later Wave-3 release PR automates this).
-Use semver — a user-facing behavior change is at least a **minor** bump (the project is pre-1.0).
+Releases are automated by **release-please** (`release-please.yml`, run under a GitHub **App** token —
+see `docs/release-please-setup.md`). Conventional-commit merges to `master` accrue into a **Release
+PR** that bumps the root `pom.xml` `<version>` and `CHANGELOG.md`. **Merging that Release PR** tags
+`vX.Y.Z`, creates the GitHub Release, and (via `version-and-release.yml`) deploys to Maven Central;
+release-please then opens the next `-SNAPSHOT` PR. `bump-minor-pre-major` means a pre-1.0
+breaking change bumps `0.x` → `0.(x+1)` (semver §6). After a release publishes, bump the
+`api.diff.baseline` property to the just-released version (a manual step for now, so the **`api-diff`**
+gate compares against the new release; a safe post-publish automation is a possible later enhancement).
+`version-and-release.yml` also has a `workflow_dispatch(tag)` recovery path to re-deploy a specific
+tag manually.

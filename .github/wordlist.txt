@@ -36,3 +36,6 @@ YAML
 wordlist
 namespace
 xpath
+uncheck
+webhook
+Webhook

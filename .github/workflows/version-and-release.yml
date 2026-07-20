@@ -80,10 +80,25 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
 
-      - name: Update version in POM
-        run: just set-version "$VERSION"
+      - name: Align the POM version with the release tag
         env:
+          EVENT_NAME: ${{ github.event_name }}
           VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            # Manual recovery: the requested tag may predate release-please, so force the POM version.
+            just set-version "$VERSION"
+          else
+            # Automatic release: release-please already wrote the released version into the tagged
+            # commit's POM (its `pom` updater), so assert they match — a mismatched or hand-made tag
+            # must not publish. %q keeps any odd value single-line/escaped in the log.
+            pom_version="$(just project-version)"
+            if [ "$pom_version" != "$VERSION" ]; then
+              printf '::error::Tag/POM mismatch: tag implies %q but the POM is %q.\n' "$VERSION" "$pom_version" >&2
+              exit 1
+            fi
+            echo "POM version $pom_version matches the release tag."
+          fi
 
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7
