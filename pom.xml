@@ -67,6 +67,14 @@
 
 	<properties>
 		<maven.compiler.release>8</maven.compiler.release>
+		<!-- API-diff gate (japicmp, `-Pquality`). `api.diff.baseline` is the last PUBLISHED release the
+		     public API is compared against — it must be bumped to the new version as part of releasing
+		     (a later Wave-3 release PR automates this). `api.diff.fail` fails the build on public-API
+		     breaks by default; a reviewed, intentional break is approved by overriding it to false (the
+		     CI `api-diff` job sets -Dapi.diff.fail=false when the PR carries the `breaking-change`
+		     label). -->
+		<api.diff.baseline>0.9.0</api.diff.baseline>
+		<api.diff.fail>true</api.diff.fail>
 	</properties>
 
 	<dependencies>
@@ -375,6 +383,47 @@
 							<suppressionFiles>
 								<suppressionFile>owasp-suppressions.xml</suppressionFile>
 							</suppressionFiles>
+						</configuration>
+					</plugin>
+					<!-- japicmp: public-API compatibility diff of the freshly built jar against the last
+					     release on Maven Central (`api.diff.baseline`). Unbound (like OWASP above) —
+					     invoked on demand via `just api-diff` (the dedicated `api-diff` workflow), never
+					     in `verify`/`deploy`. Fails on binary- OR source-incompatible changes to the
+					     PUBLIC/PROTECTED API only (`com.falkordb.impl` and its subpackages are internal
+					     and excluded; `accessModifier=protected` also guards the protected subclassing
+					     surface of the public value classes). A reviewed, intentional break is approved
+					     by overriding -Dapi.diff.fail=false. Fails loudly when the baseline can't be
+					     resolved (ignoreMissingOldVersion=false). -->
+					<plugin>
+						<groupId>com.github.siom79.japicmp</groupId>
+						<artifactId>japicmp-maven-plugin</artifactId>
+						<version>0.26.1</version>
+						<configuration>
+							<oldVersion>
+								<dependency>
+									<groupId>com.falkordb</groupId>
+									<artifactId>jfalkordb</artifactId>
+									<version>${api.diff.baseline}</version>
+									<type>jar</type>
+								</dependency>
+							</oldVersion>
+							<newVersion>
+								<file>
+									<path>${project.build.directory}/${project.build.finalName}.jar</path>
+								</file>
+							</newVersion>
+							<parameter>
+								<onlyModified>true</onlyModified>
+								<accessModifier>protected</accessModifier>
+								<breakBuildOnBinaryIncompatibleModifications>${api.diff.fail}</breakBuildOnBinaryIncompatibleModifications>
+								<breakBuildOnSourceIncompatibleModifications>${api.diff.fail}</breakBuildOnSourceIncompatibleModifications>
+								<ignoreMissingOldVersion>false</ignoreMissingOldVersion>
+								<ignoreMissingNewVersion>false</ignoreMissingNewVersion>
+								<excludes>
+									<exclude>com.falkordb.impl</exclude>
+								</excludes>
+								<skipXmlReport>true</skipXmlReport>
+							</parameter>
 						</configuration>
 					</plugin>
 				</plugins>

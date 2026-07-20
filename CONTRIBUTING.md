@@ -32,6 +32,7 @@ just fmt            # apply palantir-java-format
 just fmt-check      # check formatting
 just lint           # static analysis: format check + SpotBugs/FindSecBugs + Error Prone (-Pquality)
 just audit          # OWASP dependency-check CVE scan (slow; needs NVD_API_KEY; run by the audit workflow)
+just api-diff       # public-API compatibility diff vs the last release (japicmp; the CI api-diff gate)
 just db-up          # start a local FalkorDB container
 just db-down        # stop it
 just bench          # client load-sweep benchmark (client latency vs throughput; feeds the radar)
@@ -41,7 +42,7 @@ just bench          # client load-sweep benchmark (client latency vs throughput;
 
 - Run `just verify-local` and keep documentation in sync with your change.
 - Use a **Conventional-Commit** branch and PR title (`feat:`, `fix:`, `build:`, `docs:`, `ci:`,
-  `chore:`).
+  `chore:`, `bench:`); the PR title is checked by the **`PR title`** workflow.
 - After opening the PR, **resolve every Copilot and CodeRabbit review thread** (reply + mark
   resolved).
 - **Don't merge to `master` yourself** — a maintainer reviews and merges.

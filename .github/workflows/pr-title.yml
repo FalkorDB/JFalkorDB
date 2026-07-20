@@ -1,0 +1,45 @@
+name: PR title
+
+# Enforces a Conventional-Commit PR title so squash-merge subjects stay conventional and feed the
+# (Wave 3) release automation. NOTE: this only constrains history when the repository is set to
+# squash-only merges with the squash commit title taken from the PR title
+# (Settings → General → Pull Requests: "Allow squash merging" only, default message = "Pull request
+# title"). That is an admin/repo setting a workflow cannot set itself.
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  pull-requests: read
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  lint-title:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check the PR title is a Conventional Commit
+      uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        # Allowed types. Includes the repo's own `bench:` and the release-automation types
+        # (`release`, and `chore` for release-please's `chore(main): release …` PRs).
+        types: |
+          feat
+          fix
+          build
+          chore
+          ci
+          docs
+          perf
+          refactor
+          style
+          test
+          bench
+          release

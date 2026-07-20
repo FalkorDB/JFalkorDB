@@ -23,6 +23,7 @@ recipe; recipes call the pinned Maven Wrapper (`./mvnw`).
 | `just fmt` / `just fmt-check` | Apply / check palantir-java-format (runs in the `-Pquality` profile). |
 | `just lint` | Static analysis (the CI `lint` gate): format check + **SpotBugs/FindSecBugs** + **Error Prone**, all in the off-by-default `-Pquality` profile. |
 | `just audit` | OWASP dependency-check CVE scan of the shipped deps. Slow + needs `NVD_API_KEY`; run by the scheduled/manual **`audit`** workflow, not on every PR. |
+| `just api-diff` | Public-API compatibility diff vs the last release on Maven Central (japicmp, the CI **`api-diff`** gate): fails on binary/source-incompatible changes to the public/protected API (`com.falkordb.impl` excluded), in the off-by-default `-Pquality` profile. Approve a reviewed break with the `breaking-change` PR label. |
 | `just spellcheck` | Spellcheck the Markdown docs (the CI `spellcheck` gate). |
 | `just db-up` / `just db-down` | Manage a local FalkorDB container. |
 | `just bench` / `just bench-one <loads>` | Client load-sweep benchmark — client latency (total − server) vs throughput across concurrency levels; feeds the per-PR-vs-`master` radar + Pages curve. |
@@ -40,7 +41,8 @@ accordingly, and use the `TestServer` helper for server access.
 3. **Validate locally via `just`** — `just verify` (or `just verify-local`) green, and **`just
    spellcheck`** whenever you touch Markdown (new technical terms go in `.github/wordlist.txt`).
 4. Open a PR on a **Conventional-Commit** branch (`feat:` / `fix:` / `build:` / `docs:` / `ci:` /
-   `chore:`); the PR **title** must be a Conventional Commit.
+   `chore:` / `bench:`); the PR **title** must be a Conventional Commit (enforced by the **`PR
+   title`** check).
 5. **Resolve every AI review thread** — Copilot **and** CodeRabbit — reply *and* mark resolved —
    before merge.
 6. **Never self-merge to `master`.** Open the PR, get it green, and wait for a maintainer to approve
@@ -62,13 +64,19 @@ accordingly, and use the `TestServer` helper for server access.
   semver-major bumps). The JDK-21 build *could* now compile their 6.x/4.x, but raising them is a
   deliberate later change, not automatic — so keep the pins for now.
 - Any Java-11+ tool (e.g. Spotless / palantir-java-format, SpotBugs/FindSecBugs, Error Prone, OWASP
-  dependency-check) still lives in the **off-by-default `quality` Maven profile**, kept as a separate
-  explicit gate off the aggregate lifecycle (`just lint` / `just audit`). Static analysis is in-build
-  and reproducible; there is no external DeepSource integration.
+  dependency-check, japicmp) still lives in the **off-by-default `quality` Maven profile**, kept as a
+  separate explicit gate off the aggregate lifecycle (`just lint` / `just audit` / `just api-diff`).
+  Static analysis is in-build and reproducible; there is no external DeepSource integration.
+- The **`api-diff`** gate (japicmp, `just api-diff`) is a **PR-only** check that diffs the built jar
+  against the last release on Maven Central and fails on public/protected-API breaks
+  (`com.falkordb.impl` is internal and excluded); approve a reviewed, intentional break with the
+  `breaking-change` PR label. A user-facing break is at least a **minor** bump (the project is
+  pre-1.0).
 
 ## Releasing
 
 Cut a release by publishing a **GitHub Release tagged `vX.Y.Z`** on `master` (`version-and-release.yml`
 derives the version from the tag and deploys to Maven Central with `autoPublish`). Afterward, bump the
-pom to the next `-SNAPSHOT`. Use semver — a user-facing behavior change is at least a **minor** bump
-(the project is pre-1.0).
+pom to the next `-SNAPSHOT`, and bump the `api.diff.baseline` property to the just-released version so
+the **`api-diff`** gate compares against the new release (a later Wave-3 release PR automates this).
+Use semver — a user-facing behavior change is at least a **minor** bump (the project is pre-1.0).
