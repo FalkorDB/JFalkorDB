@@ -303,6 +303,8 @@
 							<fork>true</fork>
 							<compilerArgs>
 								<arg>-XDcompilePolicy=simple</arg>
+								<!-- Required by Error Prone on JDK 16+ (enforced since EP 2.4x). -->
+								<arg>-XDaddTypeAnnotationsToSymbol=true</arg>
 								<arg>--should-stop=ifError=FLOW</arg>
 								<arg>-Xplugin:ErrorProne</arg>
 								<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
