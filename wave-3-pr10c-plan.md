@@ -57,7 +57,7 @@ release, PR, labels, comments; there is no separate `releases` permission). Inst
 | `.github/workflows/release-please.yml` | **New.** Mints the App token; runs `release-please-action` (v5, pinned). |
 | `.github/workflows/version-and-release.yml` | Automatic path: assert `tag == v${project.version}` (no `set-version`). `workflow_dispatch` recovery path keeps `set-version`. |
 | `.github/copilot-instructions.md`, `CONTRIBUTING.md` | Document the release-please flow + the manual `api.diff.baseline` bump. |
-| `.github/wordlist.txt` | `release-please`, `changelog`, etc. |
+| `.github/wordlist.txt` | flagged prose terms only, e.g. `changelog`, `webhook` (`release-please` is two dictionary words, not flagged). |
 
 ## `release-please-config.json` (corrected)
 
@@ -132,7 +132,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/create-github-app-token@bcd2ba4… # v3.2.0
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         id: app-token
         with:
           app-id: ${{ secrets.RELEASE_PLEASE_APP_ID }}
