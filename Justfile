@@ -108,13 +108,21 @@ fetch-deps:
 set-version version:
     ./mvnw -B versions:set -DnewVersion={{version}} -DgenerateBackupPoms=false
 
+# Print the resolved project version (used by the snapshot-publish -SNAPSHOT guard in CI). The
+# `-q -DforceStdout` form yields an [INFO]-free, parseable single line.
+project-version:
+    @./mvnw -q -DforceStdout help:evaluate -Dexpression=project.version
+
 # Deploy a -SNAPSHOT to Maven Central (no signing, no tests).
 deploy-snapshot:
     ./mvnw -B -DskipTests -Dgpg.skip=true deploy
 
-# Build, sign, test, and deploy a release to Maven Central.
+# Build, sign, and deploy a release to Maven Central. Skips tests on purpose: the required PR CI
+# already validated the commit (Testcontainers *IT on the pinned FalkorDB digest), so the deploy
+# must not re-run tests against a moving image. The Java-8 guardrails (enforcer + animal-sniffer)
+# still run, and there is no JaCoCo coverage `check` to trip on the missing test data.
 deploy-release:
-    ./mvnw -B --no-transfer-progress clean deploy
+    ./mvnw -B --no-transfer-progress -Dmaven.test.skip=true clean deploy
 
 # --- Dockerized FalkorDB for local runs (readiness-probed) ---
 

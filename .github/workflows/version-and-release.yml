@@ -3,32 +3,63 @@ name: Release
 on:
   release:
     types: [published]
+  # Manual re-run / recovery path: deploy a specific already-published tag. Needed because gating a
+  # deploy only on `release: published` can't be retried (and a bot-created release under the default
+  # GITHUB_TOKEN doesn't emit that event at all).
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to (re)deploy, e.g. v0.10.0'
+        required: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    # Service containers to run with `test-job`
-    services:
-      # Label used to access the service container
-      falkordb:
-        # Docker Hub image
-        image: falkordb/falkordb:edge
-        # Map port 6379 on the Docker host to port 6379 on the FalkorDB container
-        ports:
-          - 6379:6379
+    # No FalkorDB service container on purpose: the deploy skips tests (`just deploy-release`), since
+    # the required PR CI already validated the commit against the pinned FalkorDB digest — so the
+    # release must not re-run *IT against a moving image.
 
     steps:
+      - name: Resolve the release tag, version, and ref
+        id: release
+        # Prefer the workflow_dispatch input; otherwise use the release event's tag. Values pass via
+        # env (never inlined into the script) to avoid injection, and the tag is strictly validated so
+        # the derived `version` is safe to hand to Maven.
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            tag="$INPUT_TAG"
+            # Manual recovery: deploy the commit this tag currently points at (fully-qualified ref so
+            # a like-named branch can't shadow the tag).
+            ref="refs/tags/$tag"
+          else
+            tag="$RELEASE_TAG"
+            # Automatic release: pin to the exact commit the release points at, immune to a moved tag.
+            ref="$RELEASE_SHA"
+          fi
+          if ! printf '%s' "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
+            echo "::error::Refusing to deploy: '$tag' is not a valid vX.Y.Z release tag." >&2
+            exit 1
+          fi
+          version="${tag#v}"
+          {
+            echo "tag=$tag"
+            echo "version=$version"
+            echo "ref=$ref"
+          } >> "$GITHUB_OUTPUT"
+          echo "Releasing tag '$tag' (ref '$ref') as version '$version'"
+
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
+          # Check out the resolved commit/tag so a release deploys its exact commit and a
+          # workflow_dispatch re-run deploys the requested tag, not the default branch.
+          ref: ${{ steps.release.outputs.ref }}
           persist-credentials: false
-
-      - name: Get version from tag
-        id: get_version
-        run: |
-          realversion="${GITHUB_REF/refs\/tags\//}"
-          realversion="${realversion//v/}"
-          echo "VERSION=$realversion" >> $GITHUB_OUTPUT
 
       - name: Set up JDK 21 for publishing to Maven Central
         uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
@@ -46,7 +77,7 @@ jobs:
       - name: Update version in POM
         run: just set-version "$VERSION"
         env:
-          VERSION: ${{ steps.get_version.outputs.VERSION }}
+          VERSION: ${{ steps.release.outputs.version }}
 
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7
