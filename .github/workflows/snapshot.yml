@@ -6,9 +6,50 @@ on:
       - '[0-9].x'
   workflow_dispatch:
 
+# Least privilege: the deploy authenticates to Maven Central with its own secrets (not the
+# GITHUB_TOKEN) and only needs to read the repository.
+permissions:
+  contents: read
+
 jobs:
+  # Guard: only publish when the POM is a -SNAPSHOT. A release-version commit on a deploy branch
+  # (e.g. the release-please PR that bumps the POM to the release version) must NOT trigger an
+  # unsigned/duplicate snapshot deploy — this job gates the deploy below on `is_snapshot`.
+  check-version:
+    name: Check version is -SNAPSHOT
+    runs-on: ubuntu-latest
+    outputs:
+      is_snapshot: ${{ steps.check.outputs.is_snapshot }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+      - name: Set up JDK 21
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      - name: Install just
+        uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+      - name: Read project.version and check for -SNAPSHOT
+        id: check
+        run: |
+          version="$(just project-version)"
+          # %q escapes the value to a single line so a stray newline can't inject `::workflow::`
+          # commands into the log stream.
+          printf 'project.version = %q\n' "$version"
+          if [[ "$version" == *-SNAPSHOT ]]; then
+            echo "is_snapshot=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_snapshot=false" >> "$GITHUB_OUTPUT"
+            printf '::notice::Skipping snapshot deploy: project.version %q is not a -SNAPSHOT.\n' "$version"
+          fi
+
   snapshot:
     name: Deploy Snapshot
+    needs: check-version
+    if: needs.check-version.outputs.is_snapshot == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
