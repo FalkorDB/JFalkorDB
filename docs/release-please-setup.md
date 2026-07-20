@@ -60,7 +60,7 @@ In **`FalkorDB/JFalkorDB` → Settings → Secrets and variables → Actions →
 ## 5. Verify
 
 After the secrets exist, the next push to `master` runs the **release-please** workflow. On the first
-run it should open a **Release PR** (titled like `chore(main): release 0.10.0`) that bumps
+run it should open a **Release PR** (titled like `chore(master): release 0.10.0`) that bumps
 `pom.xml` and adds `CHANGELOG.md`. Merging that PR tags `v0.10.0`, creates the Release, and triggers
 the Maven Central publish.
 
@@ -69,7 +69,7 @@ are set (the private key must be the complete `.pem`).
 
 ## Branch protection
 
-Ensure the required status checks (`build`, `format`, `lint`, `smoke-jdk8`, `api-diff`, `PR title`)
+Ensure the required status checks (`build`, `format`, `lint`, `smoke-jdk8`, `api-diff`, `lint-title`)
 apply to the Release PR — the App-token PR runs them normally. Do **not** require the push-only
 `release-please` workflow itself as a status check.
 
