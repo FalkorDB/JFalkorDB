@@ -224,7 +224,7 @@ label. So a public-API break that is merged as `fix:` (label-approved for `api-d
 | Risk | Mitigation |
 | --- | --- |
 | **First run makes a `0.9.1-SNAPSHOT` bump, not the `0.10.0` release** (unrecognized manual snapshot bump) | **Hard dry-run gate**; remediate with a `chore(master): release 0.10.0-SNAPSHOT` marker commit (preferred) or `skip-snapshot: true`. |
-| App token missing/misscoped → Release PR has no CI, or release doesn't publish | Verify perms on the first Release PR before merge; documented App scopes. |
+| App token missing/mis-scoped → Release PR has no CI, or release doesn't publish | Verify perms on the first Release PR before merge; documented App scopes. |
 | `java` doesn't bump the POM (docs-confirmed) | Explicit `pom` `extra-files` updater; dry-run asserts the POM changed. |
 | `maven` would bump harness POMs | Use `java` + single-file `extra-files`; harnesses never listed. |
 | `api.diff.baseline` deadlock | Not release-please-managed; bumped **post-publish** (manual now). |
