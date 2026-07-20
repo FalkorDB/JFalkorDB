@@ -6,6 +6,11 @@ on:
       - '[0-9].x'
   workflow_dispatch:
 
+# Least privilege: the deploy authenticates to Maven Central with its own secrets (not the
+# GITHUB_TOKEN) and only needs to read the repository.
+permissions:
+  contents: read
+
 jobs:
   # Guard: only publish when the POM is a -SNAPSHOT. A release-version commit on a deploy branch
   # (e.g. the release-please PR that bumps the POM to the release version) must NOT trigger an
