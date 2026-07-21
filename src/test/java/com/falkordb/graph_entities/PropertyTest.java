@@ -2,6 +2,8 @@ package com.falkordb.graph_entities;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.jupiter.api.Test;
 
 public class PropertyTest {
@@ -83,6 +85,26 @@ public class PropertyTest {
         Property<Long> property2 = new Property<>("count", 42L);
 
         assertEquals(property1, property2);
+    }
+
+    @Test
+    public void integerAndLongValuesShareHashCode() {
+        // equals() normalizes Integer to Long, so hashCode() must agree. Use a negative value, where
+        // Integer.hashCode() != Long.hashCode(), so this actually exercises the contract (42 wouldn't).
+        Property<Integer> intProperty = new Property<>("count", -1);
+        Property<Long> longProperty = new Property<>("count", -1L);
+
+        assertEquals(intProperty, longProperty);
+        assertEquals(intProperty.hashCode(), longProperty.hashCode());
+    }
+
+    @Test
+    public void equalsHashCodeContract() {
+        // Property is a mutable, non-final entity compared with instanceof, so relax those checks;
+        // the equals/hashCode contract itself (incl. the Integer/Long normalization) must still hold.
+        EqualsVerifier.forClass(Property.class)
+                .suppress(Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
+                .verify();
     }
 
     @Test
