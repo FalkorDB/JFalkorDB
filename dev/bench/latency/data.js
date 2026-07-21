@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784614622928,
+  "lastUpdate": 1784618588732,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -1160,6 +1160,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 62217.21,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "42d3bc22e9287be70979d01c7902025844605f91",
+          "message": "fix: align Property.hashCode with its Integer/Long-normalizing equals (#334)\n\nProperty.equals treats an Integer value as equal to the numerically-equal\nLong (valueEquals normalizes Integer->Long), but hashCode hashed the raw\nvalue. For negative values Integer.hashCode != Long.hashCode (e.g.\nInteger(-1)==-1 vs Long(-1L)==0), so equal Properties could hash\ndifferently - an equals/hashCode contract violation that breaks\nHashMap/HashSet lookups and which equalsverifier (Wave 4) rejects.\n\nApply the same normalization in hashCode via a shared normalizeValue()\nhelper. Adds a negative-value contract test and an EqualsVerifier check\n(NONFINAL_FIELDS/STRICT_INHERITANCE suppressed for this mutable,\ninstanceof-compared entity).\n\nWave 4 - PR 12a (Property), following #330 (Point).\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-21T10:21:41+03:00",
+          "tree_id": "80cec49fc04f79eb40fbda74dbb48c886da09b3f",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/42d3bc22e9287be70979d01c7902025844605f91"
+        },
+        "date": 1784618588282,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 196.27,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 237.157,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 274.647,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 229.1,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 273.786,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 318.44,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 308.394,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 508.637,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 654.613,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 513.397,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 854.62,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1037.614,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 594.856,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5343.641,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 10732.347,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 599.843,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 15146.433,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 30884.141,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 600,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 34873.299,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 71026.791,
             "unit": "us"
           }
         ]
