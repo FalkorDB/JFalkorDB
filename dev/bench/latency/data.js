@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784619462705,
+  "lastUpdate": 1784620553445,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -1418,6 +1418,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 43224.165,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "62ca7b0c5ff62d95ccbd719ccbf1a1a0cf527f50",
+          "message": "ci: don't fail the CodeRabbit check on review rate limit (#336)\n\nCodeRabbit's commit status has been showing up as a failing \"CodeRabbit\"\ncheck with \"Review rate limited\" on PRs (e.g. #335). A transient rate\nlimit is not a code problem and should not present as a failed check.\n\nSet reviews.fail_commit_status: false to override the org-level setting, so\nCodeRabbit no longer marks the commit status 'failure' when it cannot run a\nreview. Successful reviews still report via the normal pending -> success\ncommit status.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-21T10:54:19+03:00",
+          "tree_id": "d79f2eb03091466000d96facc06d4cb929eb72bc",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/62ca7b0c5ff62d95ccbd719ccbf1a1a0cf527f50"
+        },
+        "date": 1784620552487,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 207.147,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 248.264,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 285.061,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 238.645,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 280.984,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 313.809,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 308.876,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 481.798,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 598.736,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 489.021,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 822.386,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1025.744,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 585.953,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5395.664,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 11163.571,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 583.799,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 14831.746,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 30533.282,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 593.828,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 35016.502,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 70463.245,
             "unit": "us"
           }
         ]
