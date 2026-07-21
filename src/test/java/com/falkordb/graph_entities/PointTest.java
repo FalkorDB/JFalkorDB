@@ -212,4 +212,12 @@ public class PointTest {
         assertThrows(IllegalArgumentException.class, () -> new Point(Arrays.asList(Double.NaN, 0.0)));
         assertThrows(IllegalArgumentException.class, () -> new Point(Arrays.asList(0.0, Double.POSITIVE_INFINITY)));
     }
+
+    @Test
+    public void rejectsNullListElements() {
+        // A null element unboxes to no coordinate, so the list constructor rejects it fail-fast
+        // rather than throwing a NullPointerException.
+        assertThrows(IllegalArgumentException.class, () -> new Point(Arrays.<Double>asList(null, 2.0)));
+        assertThrows(IllegalArgumentException.class, () -> new Point(Arrays.<Double>asList(1.0, null)));
+    }
 }

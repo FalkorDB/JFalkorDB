@@ -8,10 +8,12 @@ import java.util.Objects;
  */
 public final class Point {
 
-    // FalkorDB stores point coordinates in single precision, so a round-tripped coordinate can differ
-    // from the original by up to ~1e-5. Coordinates are therefore compared on a 1e-5 grid: this keeps
-    // equals reflexive, symmetric and transitive, and consistent with hashCode - unlike a raw epsilon
-    // "within tolerance" check, which is non-transitive and can't have a matching hashCode.
+    // FalkorDB stores point coordinates in single precision, so a round-tripped coordinate drifts
+    // slightly from the original. Coordinates are quantized onto a 1e-5 grid (see cell()) before
+    // comparison, so nearby values usually collapse to the same cell while equals stays reflexive,
+    // symmetric and transitive, and consistent with hashCode - unlike a raw epsilon "within
+    // tolerance" check, which is non-transitive and can't have a matching hashCode. The trade-off is
+    // that two coordinates straddling a cell boundary compare unequal even when close.
     private static final double GRID = 1e-5;
 
     private final double latitude;
@@ -48,8 +50,13 @@ public final class Point {
         if (values == null || values.size() != 2) {
             throw new IllegalArgumentException("Point requires two doubles.");
         }
-        this.latitude = requireFinite(values.get(0), "latitude");
-        this.longitude = requireFinite(values.get(1), "longitude");
+        Double lat = values.get(0);
+        Double lon = values.get(1);
+        if (lat == null || lon == null) {
+            throw new IllegalArgumentException("Point requires two doubles.");
+        }
+        this.latitude = requireFinite(lat, "latitude");
+        this.longitude = requireFinite(lon, "longitude");
     }
 
     /**
