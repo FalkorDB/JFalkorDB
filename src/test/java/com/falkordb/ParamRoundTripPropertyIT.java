@@ -33,8 +33,12 @@ class ParamRoundTripPropertyIT {
     @AfterProperty
     void deleteGraph() {
         if (client != null) {
-            client.deleteGraph();
-            client.close();
+            try {
+                client.deleteGraph();
+            } finally {
+                client.close();
+                client = null;
+            }
         }
     }
 
@@ -56,8 +60,10 @@ class ParamRoundTripPropertyIT {
     }
 
     /**
-     * Strings biased toward the dangerous characters (backslash, quote, control chars) but excluding NUL
-     * and surrogates, which the encoder rejects outright (covered by {@code UtilsTest}).
+     * Strings biased toward the dangerous characters (backslash, quote, control chars), drawn from the
+     * BMP but excluding NUL and the surrogate range — so the generator never emits an unpaired
+     * surrogate, which (along with NUL) is what the encoder rejects (see {@code UtilsTest}). Valid
+     * surrogate pairs (e.g. emoji) round-trip and are exercised by {@code ParameterRoundTripIT}.
      */
     @Provide
     Arbitrary<String> safeStrings() {
