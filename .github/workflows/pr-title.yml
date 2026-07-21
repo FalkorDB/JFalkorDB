@@ -8,7 +8,7 @@ name: PR title
 
 on:
   pull_request:
-    types: [opened, edited, reopened, synchronize]
+    types: [opened, edited, reopened, synchronize, labeled, unlabeled]
 
 permissions:
   pull-requests: read
@@ -43,3 +43,22 @@ jobs:
           test
           bench
           release
+
+    # Closes the semver label<->commit gap: the `breaking-change` label approves an intentional
+    # public-API break in the `api-diff` gate, but release-please derives the bump from the commit
+    # subject - so a `breaking-change`-labelled `fix:`/`feat:` (no `!`) would still release as a
+    # patch/minor instead of a breaking bump. Require the `!` marker whenever the label is present.
+    # Triggering on labeled/unlabeled (above) makes this re-check when the label is toggled.
+    - name: Breaking-change label requires a "!"-marked title
+      if: contains(github.event.pull_request.labels.*.name, 'breaking-change')
+      env:
+        # Read the title via env (never interpolate ${{ }} into the script) to avoid shell injection.
+        PR_TITLE: ${{ github.event.pull_request.title }}
+      run: |
+        if [[ "$PR_TITLE" =~ ^[a-zA-Z]+(\([^\)]+\))?!: ]]; then
+          echo "OK: 'breaking-change' label matches a '!'-marked Conventional Commit title."
+        else
+          echo "::error::PR carries the 'breaking-change' label but its title is not marked breaking."
+          echo "Add a '!' before the colon so release-please cuts the right version, e.g. 'fix!: ...' or 'feat(scope)!: ...'."
+          exit 1
+        fi
