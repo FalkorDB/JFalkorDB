@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784641102277,
+  "lastUpdate": 1784641252134,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -1934,6 +1934,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 69243.076,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e57d45d9b26ef11855a814a7c1523227d599e502",
+          "message": "ci: require a '!' title when the breaking-change label is present (#341)\n\nCloses the semver label<->commit gap flagged in Wave 3 (10c): the\nbreaking-change label approves an intentional public-API break in api-diff,\nbut release-please derives the version bump from the commit subject, so a\nbreaking-change-labelled fix:/feat: without '!' would still release as a\npatch/minor. Require the '!' marker whenever the label is present, and\nre-check on labeled/unlabeled.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-21T16:39:17+03:00",
+          "tree_id": "a5d06439fbaa09afa7dbb3a834d57e845e2ac923",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/e57d45d9b26ef11855a814a7c1523227d599e502"
+        },
+        "date": 1784641251619,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 207.459,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 246.578,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 279.511,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 253.191,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 289.339,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 316.621,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 317.652,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 516.803,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 644.912,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 503.828,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 852.191,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1058.273,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 605.238,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5361.858,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 11260.353,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 595.97,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 15254.022,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 31689.205,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 599.818,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 35557.699,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 70690.014,
             "unit": "us"
           }
         ]
