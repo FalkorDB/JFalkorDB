@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784638059371,
+  "lastUpdate": 1784639414875,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -1676,6 +1676,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 70096.237,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4e89e666278ceb9d59b063c2a0839c97a4c11e61",
+          "message": "test: parameterized value/round-trip matrices (boundaries, unicode, collections) (#338)\n\n* test: parameterized value/round-trip matrices (boundaries, unicode, collections)\n\nWave 4 - 12b (part 2). Adds @ParameterizedTest round-trip matrices to\nParameterRoundTripIT, filling genuine gaps beyond the existing ad-hoc cases:\n- integer boundaries: 0, -1, Integer.MIN/MAX, Long.MIN/MAX\n- doubles: representative magnitudes/signs\n- unicode: accents, CJK, Nordic, ZWJ emoji, regional indicators, combining\n  marks, bidirectional scripts, astral-plane math alphanumerics\n- collections: empty list/map, nested, and null-inside-list\n\nValidated against a real FalkorDB (just db-up): 31 tests green. The double\nmatrix was tuned empirically: FalkorDB returns doubles with ~15 significant\ndigits and a finite range, so full-precision values (Math.PI) come back\nrounded and Double.MAX_VALUE overflows to Infinity - server-side numeric\nfidelity, not a client bug (documented in the provider).\n\njust fmt-check + lint green.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test: assert nested-list element values, not just size\n\nAddress Copilot review on #338: the nested-collection round-trip test only\nchecked the inner list's size. Assert the actual normalized element values\n(1L, 2L, in order) so a corrupted/misordered round-trip is caught.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-21T16:08:32+03:00",
+          "tree_id": "ffac78e926931f607cc64d06668349c74d48ec1f",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/4e89e666278ceb9d59b063c2a0839c97a4c11e61"
+        },
+        "date": 1784639414538,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 159.09,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 201.665,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 255.542,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 200.282,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 242.302,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 263.727,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 265.871,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 431.742,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 552.305,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 417.892,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 703.683,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 860.259,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 509.54,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 4851.659,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 9946.589,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 496.7,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 12954.16,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 27555.848,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 498.979,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 30201.04,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 64779.81,
             "unit": "us"
           }
         ]
