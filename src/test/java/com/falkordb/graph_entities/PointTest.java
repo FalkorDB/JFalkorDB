@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Arrays;
 import java.util.Collections;
+import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
 public class PointTest {
@@ -176,5 +177,47 @@ public class PointTest {
         // Test min longitude
         Point point4 = new Point(0.0, -180.0);
         assertEquals(-180.0, point4.getLongitude());
+    }
+
+    @Test
+    public void equalsHashCodeContract() {
+        EqualsVerifier.forClass(Point.class).verify();
+    }
+
+    @Test
+    public void toleratesSinglePrecisionRoundTripDrift() {
+        // FalkorDB returns points in single precision, so the original and the round-tripped value
+        // differ slightly (see GraphAPIIT#testGeoPointLatLon). They must still be equal AND share a
+        // hashCode — the regression that the old epsilon-equals/exact-hashCode pair violated.
+        Point original = new Point(30.27822306, -97.75134723);
+        Point roundTripped = new Point(30.2782230377197, -97.751350402832);
+        assertEquals(original, roundTripped);
+        assertEquals(original.hashCode(), roundTripped.hashCode());
+    }
+
+    @Test
+    public void distinctPointsAreNotEqual() {
+        assertNotEquals(new Point(1.0, 2.0), new Point(3.0, 4.0));
+        assertNotEquals(new Point(1.0, 2.0), new Point(1.0, 9.0));
+    }
+
+    @Test
+    public void rejectsNonFiniteCoordinates() {
+        // Non-finite coordinates have no grid cell (Math.round(NaN) == 0 would collide with 0.0),
+        // so both constructors reject them fail-fast.
+        assertThrows(IllegalArgumentException.class, () -> new Point(Double.NaN, 0.0));
+        assertThrows(IllegalArgumentException.class, () -> new Point(0.0, Double.NaN));
+        assertThrows(IllegalArgumentException.class, () -> new Point(Double.POSITIVE_INFINITY, 0.0));
+        assertThrows(IllegalArgumentException.class, () -> new Point(0.0, Double.NEGATIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class, () -> new Point(Arrays.asList(Double.NaN, 0.0)));
+        assertThrows(IllegalArgumentException.class, () -> new Point(Arrays.asList(0.0, Double.POSITIVE_INFINITY)));
+    }
+
+    @Test
+    public void rejectsNullListElements() {
+        // A null element unboxes to no coordinate, so the list constructor rejects it fail-fast
+        // rather than throwing a NullPointerException.
+        assertThrows(IllegalArgumentException.class, () -> new Point(Arrays.<Double>asList(null, 2.0)));
+        assertThrows(IllegalArgumentException.class, () -> new Point(Arrays.<Double>asList(1.0, null)));
     }
 }

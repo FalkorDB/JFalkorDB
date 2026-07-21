@@ -1020,7 +1020,8 @@ public class GraphAPIIT {
         Assertions.assertEquals(30.27822306, result.getLatitude(), 0.01);
         Assertions.assertEquals(-97.75134723, result.getLongitude(), 0.01);
         Assertions.assertEquals("Point{latitude=30.2782230377197, longitude=-97.751350402832}", result.toString());
-        Assertions.assertEquals(-132320535, result.hashCode());
+        // Equal points must share a hashCode (contract); assert that rather than a brittle magic value.
+        Assertions.assertEquals(point.hashCode(), result.hashCode());
     }
 
     @Test
