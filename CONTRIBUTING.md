@@ -7,7 +7,7 @@ Thanks for contributing! This guide covers the local workflow and the `just` rec
 - **JDK 21** (the build JDK for PRs, snapshots, and releases). The artifact still targets Java 8
   (compiled with `--release 8`); for day-to-day work you don't need a JDK 8 — only the
   `just verify-jdk8` runtime smoke uses one (`just verify-jdk <home>` runs the same smoke on any JDK;
-  the `smoke-jdk` CI matrix covers 8/11/17/21).
+  CI covers 8/11/17/21 via `smoke-jdk8` plus the `smoke-jdk` 11/17/21 matrix).
 - **[`just`](https://github.com/casey/just)** — `brew install just`, `cargo install just`, or your
   package manager.
 - **Docker** — for a local FalkorDB (the tests need a running server).
