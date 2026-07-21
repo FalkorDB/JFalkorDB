@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784620553445,
+  "lastUpdate": 1784638059371,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -1547,6 +1547,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 70463.245,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "02e44bc17f28c5dd56c6cf64a080c3428f067567",
+          "message": "test: EqualsVerifier contracts for all value-type implementations (#337)\n\nWave 4 - 12b (part 1). Adds an EqualsVerifier equals/hashCode contract\ntest for every value implementation that lacked one (Point/Property/Path\nalready had verifiers): Node, Edge, GraphEntity, StatisticsImpl,\nRecordImpl, HeaderImpl.\n\nAll test-only - no production changes. Suppressions are justified and do\nnot mask reachable bugs:\n- NONFINAL_FIELDS: these are mutable entities (setters/mutable state).\n- STRICT_INHERITANCE: Node/Edge have no subclasses and GraphEntity is\n  abstract, so the instanceof equals is symmetric for every reachable\n  concrete instance.\n- NULL_FIELDS (StatisticsImpl/HeaderImpl): the skipped fields are\n  final/constructor-initialized and never null for these internal,\n  driver-built result types.\n- withIgnoredFields(\"raw\") (HeaderImpl): equals and hashCode both use the\n  schema derived from raw (getSchemaTypes/getSchemaNames), so raw is\n  legitimately not part of identity.\n\njust test: 170 unit tests green (was 164). fmt-check + lint green.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-21T15:46:10+03:00",
+          "tree_id": "bdfe9de6f4f606b53051a062ae48b5db6704a5f6",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/02e44bc17f28c5dd56c6cf64a080c3428f067567"
+        },
+        "date": 1784638059063,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 199.475,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 239.15,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 264.717,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 241.272,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 276.258,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 299.693,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 310.263,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 517.111,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 677.092,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 497.905,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 838.915,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1030.054,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 589.877,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5351.464,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 11226.964,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 591.461,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 15172.567,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 31052.293,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 588.505,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 34765.335,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 70096.237,
             "unit": "us"
           }
         ]
