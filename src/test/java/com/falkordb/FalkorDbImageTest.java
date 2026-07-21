@@ -1,6 +1,7 @@
 package com.falkordb;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
@@ -32,5 +33,29 @@ class FalkorDbImageTest {
     @Test
     void rejectsMalformedOverride() {
         assertThrows(IllegalStateException.class, () -> FalkorDbImage.resolve("bad image::"));
+    }
+
+    @Test
+    void pickOverridePrefersNonBlankProperty() {
+        assertEquals("prop", FalkorDbImage.pickOverride("prop", "env"));
+        assertEquals("  prop  ", FalkorDbImage.pickOverride("  prop  ", null));
+    }
+
+    @Test
+    void pickOverrideFallsBackToEnvWhenPropertyBlankOrNull() {
+        assertEquals("env", FalkorDbImage.pickOverride(null, "env"));
+        assertEquals("env", FalkorDbImage.pickOverride("", "env"));
+        assertEquals("env", FalkorDbImage.pickOverride("   ", "env"));
+        assertNull(FalkorDbImage.pickOverride(null, null));
+    }
+
+    @Test
+    void blankPropertyDoesNotShadowEnvImage() {
+        // Regression: -DFALKORDB_IMAGE= (blank) must not override a real env image and fall back to the
+        // default; the non-blank env value wins.
+        assertEquals(
+                "falkordb/falkordb:edge",
+                FalkorDbImage.resolve(FalkorDbImage.pickOverride("", "falkordb/falkordb:edge"))
+                        .asCanonicalNameString());
     }
 }

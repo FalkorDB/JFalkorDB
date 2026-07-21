@@ -20,6 +20,19 @@ final class FalkorDbImage {
     private FalkorDbImage() {}
 
     /**
+     * Picks the effective override from its two sources: the system {@code property} if non-blank,
+     * otherwise the {@code env} value (which may itself be null/blank). A blank system property (e.g.
+     * {@code -DFALKORDB_IMAGE=}) therefore does not shadow a non-blank environment variable.
+     *
+     * @param property the {@code FALKORDB_IMAGE} system property value; may be null
+     * @param env the {@code FALKORDB_IMAGE} environment value; may be null
+     * @return the value to hand to {@link #resolve(String)}
+     */
+    static String pickOverride(String property, String env) {
+        return (property != null && !property.trim().isEmpty()) ? property : env;
+    }
+
+    /**
      * Resolves the container image: the trimmed {@code override} if non-blank, otherwise
      * {@link #DEFAULT}. The result is marked as a compatible substitute for {@code falkordb/falkordb}
      * so Testcontainers accepts a custom tag or digest.

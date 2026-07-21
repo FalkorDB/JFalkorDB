@@ -47,8 +47,8 @@ public final class TestServer {
             port = parsePort(envPort);
         } else {
             external = false;
-            DockerImageName image =
-                    FalkorDbImage.resolve(System.getProperty("FALKORDB_IMAGE", System.getenv("FALKORDB_IMAGE")));
+            DockerImageName image = FalkorDbImage.resolve(
+                    FalkorDbImage.pickOverride(System.getProperty("FALKORDB_IMAGE"), System.getenv("FALKORDB_IMAGE")));
             GenericContainer<?> container =
                     new GenericContainer<>(image).withExposedPorts(6379).waitingFor(Wait.forListeningPort());
             container.start(); // shared for the whole JVM; Testcontainers' Ryuk stops it at exit
