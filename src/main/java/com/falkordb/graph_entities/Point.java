@@ -33,8 +33,8 @@ public final class Point {
     }
 
     /**
-     * @param latitude The latitude in degrees. It must be in the range [-90.0, +90.0]
-     * @param longitude The longitude in degrees. It must be in the range [-180.0, +180.0]
+     * @param latitude The latitude in degrees, normally in the range [-90.0, +90.0]. Must be finite.
+     * @param longitude The longitude in degrees, normally in the range [-180.0, +180.0]. Must be finite.
      * @throws IllegalArgumentException if either coordinate is NaN or infinite
      */
     public Point(double latitude, double longitude) {
