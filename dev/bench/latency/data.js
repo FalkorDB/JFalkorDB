@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784639414875,
+  "lastUpdate": 1784641102277,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -1805,6 +1805,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 64779.81,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fc5f95bc0a45599c6df7ad81eef77c378a7c689f",
+          "message": "test: generative server round-trip property for params (jqwik) (#340)\n\n* test: generative server round-trip property for params (jqwik)\n\nWave 4 - 12b (part 3). Adds ParamRoundTripPropertyIT: jqwik properties that\nsend a *generated* value as a parameter to a real FalkorDB server and assert\nit comes back unchanged - the full serialize->server->deserialize round-trip.\n\nComplements the existing coverage:\n- ParameterRoundTripIT: fixed round-trip cases.\n- UtilsParamPropertyTest: generative but serialize-side only (well-formed\n  literal, no server).\n\nSo an escaping bug that emitted a well-formed but semantically wrong literal\nis now caught generatively end-to-end. Covers arbitrary strings (biased to\nbackslash/quote/control chars, excluding NUL/surrogates the encoder rejects)\nand arbitrary longs. Validated against a live FalkorDB (just db-up): both\nproperties green (300 + 200 tries). fmt-check + lint green.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test: guard roundTrip() with hasNext() for a clear failure message\n\nAddress Copilot review on #340: roundTrip() called iterator().next()\ndirectly, which would throw a cryptic NoSuchElementException if a query\nunexpectedly returned no rows. Assert hasNext() first (mirroring\nParameterRoundTripIT.roundTrip) so the failure names the cause.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test: robust @AfterProperty cleanup + accurate surrogate Javadoc\n\nAddress Copilot review on #340:\n- @AfterProperty now closes the client in a finally block (and nulls the\n  field) so a throwing deleteGraph() can't leak the connection.\n- Correct the safeStrings Javadoc: the encoder rejects NUL and *unpaired*\n  surrogates; valid surrogate pairs (emoji) are accepted and round-trip\n  (covered by ParameterRoundTripIT).\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test: rename to ParameterRoundTripPropertyIT and make it public\n\nAddress Copilot review on #340: match the sibling ITs' naming and\nvisibility - rename ParamRoundTripPropertyIT -> ParameterRoundTripPropertyIT\n(no 'Param' abbreviation, consistent with ParameterRoundTripIT) and declare\nthe class public like the other *IT classes for consistent test discovery.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-21T16:36:41+03:00",
+          "tree_id": "d845be3be1fa1fee3e18f411e90f8c851b29d2e1",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/fc5f95bc0a45599c6df7ad81eef77c378a7c689f"
+        },
+        "date": 1784641100511,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 191.799,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 228.748,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 248.745,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 227.696,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 266.828,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 296.18,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 307.945,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 506.386,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 646.813,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 479.426,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 806.488,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1004.477,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 566.579,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5249.809,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 10424.654,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 571.959,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 13813.259,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 29476.433,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 578.301,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 33981.44,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 69243.076,
             "unit": "us"
           }
         ]
