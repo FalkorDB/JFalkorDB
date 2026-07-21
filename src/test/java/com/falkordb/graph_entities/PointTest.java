@@ -200,4 +200,16 @@ public class PointTest {
         assertNotEquals(new Point(1.0, 2.0), new Point(3.0, 4.0));
         assertNotEquals(new Point(1.0, 2.0), new Point(1.0, 9.0));
     }
+
+    @Test
+    public void rejectsNonFiniteCoordinates() {
+        // Non-finite coordinates have no grid cell (Math.round(NaN) == 0 would collide with 0.0),
+        // so both constructors reject them fail-fast.
+        assertThrows(IllegalArgumentException.class, () -> new Point(Double.NaN, 0.0));
+        assertThrows(IllegalArgumentException.class, () -> new Point(0.0, Double.NaN));
+        assertThrows(IllegalArgumentException.class, () -> new Point(Double.POSITIVE_INFINITY, 0.0));
+        assertThrows(IllegalArgumentException.class, () -> new Point(0.0, Double.NEGATIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class, () -> new Point(Arrays.asList(Double.NaN, 0.0)));
+        assertThrows(IllegalArgumentException.class, () -> new Point(Arrays.asList(0.0, Double.POSITIVE_INFINITY)));
+    }
 }
