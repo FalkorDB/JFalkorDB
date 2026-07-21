@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784557767994,
+  "lastUpdate": 1784614622928,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -1031,6 +1031,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 71572.653,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "68d27a362340c47f0106586431908e9cdac78c81",
+          "message": "fix: make Point equals/hashCode a consistent, drift-tolerant contract (#330)\n\n* fix: make Point equals/hashCode a consistent, drift-tolerant contract\n\nPoint.equals used an epsilon \"within tolerance\" check while hashCode hashed the\nexact doubles. That violates the equals/hashCode contract (equal points could hash\ndifferently) and epsilon equality is also non-transitive — equalsverifier rejects\nit.\n\nThe epsilon tolerance is intentional: FalkorDB stores point coordinates in single\nprecision, so a round-tripped point differs from the original by ~1e-5 (see\nGraphAPIIT#testGeoPointLatLon: 30.27822306 comes back as 30.2782230377197). So\n\"just drop epsilon / use exact equality\" is wrong — it would break that round-trip.\n\nFix: compare coordinates on a 1e-5 grid (quantize in both equals and hashCode).\nThis keeps the drift tolerance, is transitive, and is hashCode-consistent.\n\nTests: equalsverifier on Point, a single-precision-drift regression using the exact\nGraphAPIIT values, and a distinct-points check.\n\nWave 4 PR 12a. The equalsverifier tests for the other value types (Node/Edge/\nGraphEntity/Property) need only equalsverifier config (inheritance/finality), not\nfixes — they land in PR 12b.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test: assert Point hashCode contract instead of a brittle magic value\n\nThe grid-based Point.hashCode() (commit 4fbd700) changed the raw hash,\nbreaking the hard-coded -132320535 assertion in assertTestGeoPoint.\nAssert that equal points share a hashCode (the actual contract) rather\nthan a magic constant that drifts with the implementation.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* fix: reject non-finite Point coordinates and drop Markdown from comment\n\nAddress AI review on PR #330:\n- Math.round(NaN) == 0, so a Point with NaN/Infinity coordinates could\n  collide with grid cell 0 (compare equal to 0.0) - a regression vs the\n  old epsilon equals. Both constructors now reject non-finite coordinates\n  fail-fast via requireFinite(), so cell() only ever sees finite values.\n- Rephrase the grid comment without Markdown (**transitive**) so it reads\n  cleanly in source.\n\nAdds PointTest.rejectsNonFiniteCoordinates covering both constructors.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* fix: reject null Point list elements and clarify grid comment\n\nAddress follow-up AI review on PR #330:\n- Point(List<Double>) unboxed elements before validating, so a null\n  element threw NullPointerException instead of the documented\n  IllegalArgumentException. Guard nulls explicitly so both constructors\n  fail fast with a consistent contract. Adds rejectsNullListElements.\n- Reword the grid comment: it claimed round-trip drift of \"up to ~1e-5\",\n  a bound the quantization doesn't strictly guarantee (boundary straddle).\n  Describe the mechanism and its trade-off instead of a numeric bound.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs: align Point constructor Javadoc with actual validation\n\nAddress AI review on PR #330: the Javadoc said latitude/longitude \"must\"\nbe within [-90,90]/[-180,180], but only finiteness is enforced. Soften the\nrange wording to \"normally in the range ...\" and state \"Must be finite\" so\nthe docs match behavior. Range enforcement is intentionally out of scope\nfor this equals/hashCode fix.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-21T09:15:32+03:00",
+          "tree_id": "7c6ce65e213e4897a531ffb3fb64cd625eaacfbf",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/68d27a362340c47f0106586431908e9cdac78c81"
+        },
+        "date": 1784614622346,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 161.038,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 204.832,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 239.734,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 203.641,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 257.515,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 313.828,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 262.638,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 401.473,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 489.333,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 434.22,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 737.891,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 921.782,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 507.479,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 4741.697,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 9820.237,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 514.24,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 13241.279,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 28305.56,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 520.308,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 30006.196,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 62217.21,
             "unit": "us"
           }
         ]
