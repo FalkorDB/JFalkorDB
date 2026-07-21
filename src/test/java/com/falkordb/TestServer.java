@@ -13,16 +13,17 @@ import org.testcontainers.utility.DockerImageName;
  * FALKORDB_PORT} to reuse an already-running server instead (no container is started); setting only
  * one is rejected.
  *
+ * <p>Set {@code FALKORDB_IMAGE} (system property or env var, e.g. {@code falkordb/falkordb:edge}) to
+ * run the container against a specific image/tag — used to matrix over FalkorDB versions; unset/blank
+ * uses the pinned {@link FalkorDbImage#DEFAULT} digest. Ignored when the {@code FALKORDB_HOST}/{@code
+ * FALKORDB_PORT} external override is in effect.
+ *
  * <p><strong>External-server safety:</strong> some system tests mutate server-wide state (for example
  * {@code UdfIT} globally lists/deletes UDF libraries). When you point this at an external server via
  * the env override, use a <em>dedicated disposable</em> instance — never a shared or production
  * server. The default container path is always safe because the container is throwaway.
  */
 public final class TestServer {
-
-    // Pinned digest (v4.20.1) so the suite is reproducible; matches the smoke-jdk8 CI job's image.
-    private static final DockerImageName IMAGE = DockerImageName.parse(
-            "falkordb/falkordb@sha256:9042fdc4e53f5390ca5a3993aa71506523970efb40ffb9a98e6a4b1a9a4f8862");
 
     private static final String host;
     private static final int port;
@@ -46,8 +47,10 @@ public final class TestServer {
             port = parsePort(envPort);
         } else {
             external = false;
+            DockerImageName image =
+                    FalkorDbImage.resolve(System.getProperty("FALKORDB_IMAGE", System.getenv("FALKORDB_IMAGE")));
             GenericContainer<?> container =
-                    new GenericContainer<>(IMAGE).withExposedPorts(6379).waitingFor(Wait.forListeningPort());
+                    new GenericContainer<>(image).withExposedPorts(6379).waitingFor(Wait.forListeningPort());
             container.start(); // shared for the whole JVM; Testcontainers' Ryuk stops it at exit
             host = container.getHost();
             port = container.getMappedPort(6379);
