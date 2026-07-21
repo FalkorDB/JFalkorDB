@@ -60,16 +60,22 @@ test:
 verify:
     ./mvnw -B -Dgpg.skip=true verify
 
-# Prove the PUBLISHED artifact runs on a Java-8 runtime: build+install the jar on the build JDK,
-# then compile+run the standalone JDK-8 runtime smoke against it (pinned to the root project's
-# version). Pass the JDK-8 home, and run a FalkorDB on {{port}} first. CI provides both; locally
-# e.g. `just db-up && just verify-jdk8 ~/.sdkman/candidates/java/8.0.492-zulu`.
-verify-jdk8 jdk8_home:
+# Prove the PUBLISHED artifact runs on a given JDK runtime: build+install the jar on the build JDK,
+# then compile (with `release 8`) + run the standalone runtime smoke against it on the JDK at
+# `jdk_home` (pinned to the root project's version). Proves the Java-8 artifact loads and works on
+# that runtime. Pass the target JDK home, and run a FalkorDB on {{port}} first. CI provides both;
+# locally e.g. `just db-up && just verify-jdk ~/.sdkman/candidates/java/11.0.24-tem`.
+verify-jdk jdk_home:
     #!/usr/bin/env bash
     set -euo pipefail
     ./mvnw -B -DskipTests -Dgpg.skip=true install
     version="$(./mvnw -q -DforceStdout help:evaluate -Dexpression=project.version)"
-    JAVA_HOME="{{jdk8_home}}" ./mvnw -B -f smoke-test/pom.xml -Djfalkordb.version="$version" test
+    JAVA_HOME="{{jdk_home}}" ./mvnw -B -f smoke-test/pom.xml -Djfalkordb.version="$version" test
+
+# Java-8 runtime smoke — the required `smoke-jdk8` CI context; a thin alias for `verify-jdk`.
+# e.g. `just db-up && just verify-jdk8 ~/.sdkman/candidates/java/8.0.492-zulu`.
+verify-jdk8 jdk8_home:
+    just verify-jdk "{{jdk8_home}}"
 
 # --- Benchmarks (client load-sweep; standalone module in benchmarks/, never shipped) ---
 

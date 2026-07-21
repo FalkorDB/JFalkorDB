@@ -60,6 +60,8 @@ accordingly, and use the `TestServer` helper for server access.
     every **shipped** dependency is Java-8 bytecode.
   - **`just verify-jdk8`** (the `smoke-jdk8` CI job) — runs the packaged jar + full runtime graph on a
     real **JDK 8** against FalkorDB via the no-arg `driver()`, proving Java-8 *runtime* compatibility.
+    The generalized **`just verify-jdk <home>`** runs that same smoke on any JDK, and the **`smoke-jdk`**
+    CI matrix exercises **JDK 11/17/21** too (8 stays in `smoke-jdk8` for its branch-protection context).
 - **`junit-jupiter` stays on 5.x** and **`equalsverifier` on 3.x** (Dependabot ignores their
   semver-major bumps). The JDK-21 build *could* now compile their 6.x/4.x, but raising them is a
   deliberate later change, not automatic — so keep the pins for now.
