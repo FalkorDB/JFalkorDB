@@ -1,8 +1,10 @@
 package com.falkordb;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
+import java.util.Iterator;
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
@@ -38,7 +40,9 @@ class ParamRoundTripPropertyIT {
 
     private Object roundTrip(Object value) {
         ResultSet rs = client.query("RETURN $p AS v", Collections.singletonMap("p", value));
-        return rs.iterator().next().getValue("v");
+        Iterator<Record> it = rs.iterator();
+        assertTrue(it.hasNext(), "expected a row");
+        return it.next().getValue("v");
     }
 
     @Property(tries = 300)
