@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784641252134,
+  "lastUpdate": 1784642865790,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -2063,6 +2063,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 70690.014,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e4df9d500c54c7c574ed303d6d8ee20410cb0298",
+          "message": "test: make the FalkorDB test image overridable via FALKORDB_IMAGE (#342)\n\n* test: make the FalkorDB test image overridable via FALKORDB_IMAGE\n\nWave 4 - 13a (foundation for the compatibility matrices). Extract the\ncontainer image resolution into FalkorDbImage.resolve(override): the trimmed\nFALKORDB_IMAGE system property or env var if non-blank, else the pinned\ndigest (DEFAULT). The result is marked asCompatibleSubstituteFor(\n\"falkordb/falkordb\") so Testcontainers accepts a custom tag/digest, and the\nparse is wrapped so a malformed value fails with a clear message instead of a\nraw ArrayIndexOutOfBoundsException.\n\nExtracted into its own class so the resolution is unit-testable without\ntriggering TestServer's static container start. Adds FalkorDbImageTest\n(default/blank, trimmed override, malformed) - runs without Docker.\n\nLets the suite matrix over FalkorDB versions (e.g.\n-DFALKORDB_IMAGE=falkordb/falkordb:edge); the CI version/JDK matrices that\nconsume it are the follow-up (13b).\n\njust test: 173 unit green; ConfigIT green via Testcontainers (default path);\nfmt-check + lint green.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test: fix FALKORDB_IMAGE precedence so a blank property can't shadow env\n\nAddress Copilot review on #342: System.getProperty(key, envDefault) only\nuses the env default when the property is *absent*, so a blank property\n(-DFALKORDB_IMAGE=) returned \"\" and shadowed a non-blank env var, falling\nback to the default. Add FalkorDbImage.pickOverride(property, env): the\nproperty wins only when non-blank, else the env value. Adds precedence unit\ntests incl. a regression that a blank property no longer shadows an env image.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test: read FALKORDB_IMAGE env lazily (Supplier), only when property is blank\n\nAddress Copilot review on #342: passing System.getenv(...) as an argument\nevaluated it eagerly even when the system property is set (and could throw\nSecurityException in restricted environments). pickOverride now takes a\nSupplier<String> for the env and calls it only when the property is blank.\nAdds a laziness test asserting the env supplier is never consulted when the\nproperty is set.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test: trim FALKORDB_IMAGE override once in resolve()\n\nMinor cleanup: compute the trimmed override a single time instead of calling\ntrim() in both the blank-check and the assignment.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-21T17:05:59+03:00",
+          "tree_id": "b18c601752d721c097bd89b87a5d9c1db8e92806",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/e4df9d500c54c7c574ed303d6d8ee20410cb0298"
+        },
+        "date": 1784642864867,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 210.089,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 243.261,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 272.035,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 240.206,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 283.709,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 318.331,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 313.521,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 497.764,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 619.991,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 495.961,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 823.138,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1011.228,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 597.98,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5329.255,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 11062.625,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 580.558,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 15165.3,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 31423.279,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 580.146,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 34780.957,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 73064.969,
             "unit": "us"
           }
         ]
