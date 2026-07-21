@@ -2,9 +2,10 @@
 reviews:
   # Fewer nitpicks; focus on substantive issues.
   profile: chill
-  # Don't fail the "CodeRabbit" commit status when a review can't run (e.g. transient "Review rate
-  # limited"); that is not a code problem and shouldn't show as a failing check. Overrides the
-  # org-level setting. Successful reviews still report via the normal (pending -> success) commit status.
-  fail_commit_status: false
+  # Don't post a "CodeRabbit" commit status at all. `fail_commit_status: false` alone did NOT stop the
+  # transient "Review rate limited" status from showing up red (that status isn't governed by it), so
+  # disable the commit status entirely. CodeRabbit still posts its review comments/walkthrough; it just
+  # no longer adds a pass/fail check that can go red on a rate limit.
+  commit_status: false
   auto_review:
     enabled: true
