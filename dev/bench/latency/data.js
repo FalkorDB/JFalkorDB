@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784618588732,
+  "lastUpdate": 1784619462705,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -1289,6 +1289,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 71026.791,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f778d8b658a953232e3e1b8750d8fcadc9d95d18",
+          "message": "ci: exclude auto-generated CHANGELOG.md from spellcheck (#335)\n\nrelease-please generates CHANGELOG.md from commit subjects + short SHAs\n(e.g. fdc, af, dae) and code identifiers (e.g. hashCode, getResponse,\nequalsverifier) - plus historical commit-message typos - none of which\nare meaningfully spellcheckable. This blocked the release PR (#331) and\nwould block every future release PR.\n\nExclude CHANGELOG.md from the pyspelling sources via the '|!' negation;\nREADME/CONTRIBUTING/docs prose is still checked. Unlike falkordb-rs\n(release-plz with a header-only, hand-written changelog that stays\nspellcheckable), JFalkorDB's changelog is machine-generated, so excluding\nit is the robust fix.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-21T10:36:09+03:00",
+          "tree_id": "e45f3f2fd01d60dac1fad9a071a3ea38f6faa2d9",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/f778d8b658a953232e3e1b8750d8fcadc9d95d18"
+        },
+        "date": 1784619461851,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 134.564,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 164.796,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 192.528,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 163.337,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 195.867,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 220.816,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 186.838,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 287.204,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 351.183,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 304.305,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 521.082,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 653.32,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 375.797,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 3368.15,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 6385.732,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 373.497,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 9187.53,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 18005.376,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 373.566,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 20938.843,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 43224.165,
             "unit": "us"
           }
         ]
