@@ -2,6 +2,8 @@ package com.falkordb.graph_entities;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.jupiter.api.Test;
 
 public class EdgeTest {
@@ -185,5 +187,15 @@ public class EdgeTest {
 
         assertNotNull(result);
         assertTrue(result.contains("Edge{"));
+    }
+
+    @Test
+    public void equalsHashCodeContract() {
+        // Edge is a mutable, non-final entity extending the stateful GraphEntity base and comparing
+        // with instanceof; it has no subclasses, so relax the mutability/inheritance checks. The
+        // contract itself (id + properties + relationshipType + source + destination) is still verified.
+        EqualsVerifier.forClass(Edge.class)
+                .suppress(Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
+                .verify();
     }
 }

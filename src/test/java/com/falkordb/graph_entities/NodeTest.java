@@ -2,6 +2,8 @@ package com.falkordb.graph_entities;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.jupiter.api.Test;
 
 public class NodeTest {
@@ -163,5 +165,15 @@ public class NodeTest {
 
         assertNotNull(result);
         assertTrue(result.contains("Node{"));
+    }
+
+    @Test
+    public void equalsHashCodeContract() {
+        // Node is a mutable, non-final entity extending the stateful GraphEntity base and comparing
+        // with instanceof; it has no subclasses, so relax the mutability/inheritance checks. The
+        // contract itself (id + properties + labels) is still fully verified.
+        EqualsVerifier.forClass(Node.class)
+                .suppress(Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
+                .verify();
     }
 }
