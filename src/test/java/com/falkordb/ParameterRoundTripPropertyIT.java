@@ -21,7 +21,7 @@ import net.jqwik.api.lifecycle.BeforeProperty;
  * well-formedness only, no server) — so an escaping bug that produced a well-formed but semantically
  * wrong literal would be caught here.
  */
-class ParamRoundTripPropertyIT {
+public class ParameterRoundTripPropertyIT {
 
     private GraphContextGenerator client;
 
