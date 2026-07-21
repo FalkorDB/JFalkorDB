@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784641104172,
+  "lastUpdate": 1784641253637,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -884,6 +884,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11433,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e57d45d9b26ef11855a814a7c1523227d599e502",
+          "message": "ci: require a '!' title when the breaking-change label is present (#341)\n\nCloses the semver label<->commit gap flagged in Wave 3 (10c): the\nbreaking-change label approves an intentional public-API break in api-diff,\nbut release-please derives the version bump from the commit subject, so a\nbreaking-change-labelled fix:/feat: without '!' would still release as a\npatch/minor. Require the '!' marker whenever the label is present, and\nre-check on labeled/unlabeled.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-21T16:39:17+03:00",
+          "tree_id": "a5d06439fbaa09afa7dbb3a834d57e845e2ac923",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/e57d45d9b26ef11855a814a7c1523227d599e502"
+        },
+        "date": 1784641253617,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3426,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 5870.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 8737.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11540,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 10974.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11032,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11027,
             "unit": "ops/s"
           }
         ]
