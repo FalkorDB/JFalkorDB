@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784620555058,
+  "lastUpdate": 1784638060596,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -707,6 +707,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11198.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "02e44bc17f28c5dd56c6cf64a080c3428f067567",
+          "message": "test: EqualsVerifier contracts for all value-type implementations (#337)\n\nWave 4 - 12b (part 1). Adds an EqualsVerifier equals/hashCode contract\ntest for every value implementation that lacked one (Point/Property/Path\nalready had verifiers): Node, Edge, GraphEntity, StatisticsImpl,\nRecordImpl, HeaderImpl.\n\nAll test-only - no production changes. Suppressions are justified and do\nnot mask reachable bugs:\n- NONFINAL_FIELDS: these are mutable entities (setters/mutable state).\n- STRICT_INHERITANCE: Node/Edge have no subclasses and GraphEntity is\n  abstract, so the instanceof equals is symmetric for every reachable\n  concrete instance.\n- NULL_FIELDS (StatisticsImpl/HeaderImpl): the skipped fields are\n  final/constructor-initialized and never null for these internal,\n  driver-built result types.\n- withIgnoredFields(\"raw\") (HeaderImpl): equals and hashCode both use the\n  schema derived from raw (getSchemaTypes/getSchemaNames), so raw is\n  legitimately not part of identity.\n\njust test: 170 unit tests green (was 164). fmt-check + lint green.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-21T15:46:10+03:00",
+          "tree_id": "bdfe9de6f4f606b53051a062ae48b5db6704a5f6",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/02e44bc17f28c5dd56c6cf64a080c3428f067567"
+        },
+        "date": 1784638060576,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3554.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6129,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 8880.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11801,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11251.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11184.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11232.667,
             "unit": "ops/s"
           }
         ]
