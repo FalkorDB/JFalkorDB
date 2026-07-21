@@ -160,7 +160,10 @@ public class ParameterRoundTripIT {
         assertEquals(2, list.size());
         assertTrue(((List<Object>) list.get(0)).isEmpty());
         Map<String, Object> outMap = (Map<String, Object>) list.get(1);
-        assertEquals(2, ((List<Object>) outMap.get("nums")).size());
+        List<Object> nums = (List<Object>) outMap.get("nums");
+        assertEquals(2, nums.size());
+        assertEquals(1L, ((Number) nums.get(0)).longValue());
+        assertEquals(2L, ((Number) nums.get(1)).longValue());
     }
 
     @Test
