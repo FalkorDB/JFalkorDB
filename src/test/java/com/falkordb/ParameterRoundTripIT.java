@@ -2,6 +2,7 @@ package com.falkordb;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.falkordb.graph_entities.Node;
@@ -11,9 +12,13 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * End-to-end verification that {@link com.falkordb.impl.Utils#prepareQuery} encodes parameters so
@@ -93,6 +98,79 @@ public class ParameterRoundTripIT {
         Map<String, Object> map = (Map<String, Object>) out;
         assertEquals(1L, ((Number) map.get("bareKey")).longValue());
         assertEquals("value with \" quote", map.get("needs quoting!"));
+    }
+
+    @ParameterizedTest(name = "integer {0} round-trips as long")
+    @MethodSource("integerBoundaries")
+    public void integerBoundariesRoundTrip(Object input, long expected) {
+        assertEquals(expected, ((Number) roundTrip(input)).longValue());
+    }
+
+    static Stream<Arguments> integerBoundaries() {
+        return Stream.of(
+                Arguments.of(0, 0L),
+                Arguments.of(-1, -1L),
+                Arguments.of(Integer.MIN_VALUE, (long) Integer.MIN_VALUE),
+                Arguments.of(Integer.MAX_VALUE, (long) Integer.MAX_VALUE),
+                Arguments.of(Long.MIN_VALUE, Long.MIN_VALUE),
+                Arguments.of(Long.MAX_VALUE, Long.MAX_VALUE));
+    }
+
+    @ParameterizedTest(name = "double {0} round-trips")
+    @MethodSource("doubleBoundaries")
+    public void doubleBoundariesRoundTrip(double input) {
+        assertEquals(input, ((Number) roundTrip(input)).doubleValue(), 0.0);
+    }
+
+    static Stream<Double> doubleBoundaries() {
+        // FalkorDB returns doubles with ~15 significant digits and a finite range: full-precision values
+        // such as Math.PI (17 digits) come back rounded, and Double.MAX_VALUE overflows to Infinity. This
+        // matrix therefore exercises representative magnitudes/signs that round-trip within that fidelity.
+        return Stream.of(0.0, 1.5, -1.5, 0.25, 1.0e-10, 1.0e10, 6.022e23, -2.5e-100);
+    }
+
+    @ParameterizedTest(name = "unicode [{index}] round-trips")
+    @MethodSource("unicodeStrings")
+    public void unicodeStringsRoundTrip(String value) {
+        assertEquals(value, roundTrip(value), () -> "round-trip mismatch for: " + escape(value));
+    }
+
+    static Stream<String> unicodeStrings() {
+        return Stream.of(
+                "café ☕ 😀", // accents, symbol, astral emoji
+                "日本語のテキスト", // CJK
+                "Ålesund Øystein Þórr", // Nordic letters
+                "family 👨‍👩‍👧‍👦 zwj", // ZWJ emoji sequence
+                "flag 🇮🇱 regional", // regional-indicator surrogate pairs
+                "combining e\u0301 = é", // combining acute accent
+                "rtl مرحبا שלום ltr", // bidirectional scripts
+                "astral 𝕏 𝟛 math"); // astral-plane math alphanumerics
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void emptyAndNestedCollectionsRoundTrip() {
+        assertTrue(((List<Object>) roundTrip(Collections.emptyList())).isEmpty());
+        assertTrue(((Map<String, Object>) roundTrip(Collections.emptyMap())).isEmpty());
+
+        Map<String, Object> inner = new LinkedHashMap<>();
+        inner.put("nums", Arrays.asList(1, 2));
+        Object out = roundTrip(Arrays.asList(Collections.emptyList(), inner));
+        List<Object> list = (List<Object>) out;
+        assertEquals(2, list.size());
+        assertTrue(((List<Object>) list.get(0)).isEmpty());
+        Map<String, Object> outMap = (Map<String, Object>) list.get(1);
+        assertEquals(2, ((List<Object>) outMap.get("nums")).size());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void nullInsideCollectionsRoundTrips() {
+        List<Object> list = (List<Object>) roundTrip(Arrays.asList("a", null, 3));
+        assertEquals(3, list.size());
+        assertEquals("a", list.get(0));
+        assertNull(list.get(1));
+        assertEquals(3L, ((Number) list.get(2)).longValue());
     }
 
     @Test
