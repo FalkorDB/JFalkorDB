@@ -55,10 +55,18 @@ public class Property<T> {
         this.value = value;
     }
 
+    // equals() treats an Integer value as equal to the numerically-equal Long (the server can return
+    // either width for the same value). hashCode() must apply the SAME normalization, otherwise equal
+    // properties can hash differently - e.g. Integer(-1).hashCode() == -1 but Long(-1L).hashCode() == 0.
+    private static Object normalizeValue(Object value) {
+        if (value instanceof Integer) {
+            return Long.valueOf(((Integer) value).longValue());
+        }
+        return value;
+    }
+
     private boolean valueEquals(Object value1, Object value2) {
-        if (value1 instanceof Integer) value1 = Long.valueOf(((Integer) value1).longValue());
-        if (value2 instanceof Integer) value2 = Long.valueOf(((Integer) value2).longValue());
-        return Objects.equals(value1, value2);
+        return Objects.equals(normalizeValue(value1), normalizeValue(value2));
     }
 
     @Override
@@ -71,7 +79,7 @@ public class Property<T> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, value);
+        return Objects.hash(name, normalizeValue(value));
     }
 
     /**
