@@ -45,7 +45,8 @@ final class FalkorDbImage {
      * @throws IllegalStateException if {@code override} is not a well-formed Docker image reference
      */
     static DockerImageName resolve(String override) {
-        String image = (override == null || override.trim().isEmpty()) ? DEFAULT : override.trim();
+        String trimmed = (override == null) ? "" : override.trim();
+        String image = trimmed.isEmpty() ? DEFAULT : trimmed;
         try {
             return DockerImageName.parse(image).asCompatibleSubstituteFor("falkordb/falkordb");
         } catch (RuntimeException e) {
