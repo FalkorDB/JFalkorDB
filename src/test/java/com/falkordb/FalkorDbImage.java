@@ -1,5 +1,6 @@
 package com.falkordb;
 
+import java.util.function.Supplier;
 import org.testcontainers.utility.DockerImageName;
 
 /**
@@ -21,15 +22,17 @@ final class FalkorDbImage {
 
     /**
      * Picks the effective override from its two sources: the system {@code property} if non-blank,
-     * otherwise the {@code env} value (which may itself be null/blank). A blank system property (e.g.
-     * {@code -DFALKORDB_IMAGE=}) therefore does not shadow a non-blank environment variable.
+     * otherwise the value from {@code env} (which may itself be null/blank). A blank system property
+     * (e.g. {@code -DFALKORDB_IMAGE=}) therefore does not shadow a non-blank environment variable. The
+     * {@code env} supplier is consulted lazily — only when the property is blank.
      *
      * @param property the {@code FALKORDB_IMAGE} system property value; may be null
-     * @param env the {@code FALKORDB_IMAGE} environment value; may be null
+     * @param env supplies the {@code FALKORDB_IMAGE} environment value; read only if {@code property}
+     *     is blank
      * @return the value to hand to {@link #resolve(String)}
      */
-    static String pickOverride(String property, String env) {
-        return (property != null && !property.trim().isEmpty()) ? property : env;
+    static String pickOverride(String property, Supplier<String> env) {
+        return (property != null && !property.trim().isEmpty()) ? property : env.get();
     }
 
     /**

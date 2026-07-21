@@ -37,16 +37,24 @@ class FalkorDbImageTest {
 
     @Test
     void pickOverridePrefersNonBlankProperty() {
-        assertEquals("prop", FalkorDbImage.pickOverride("prop", "env"));
-        assertEquals("  prop  ", FalkorDbImage.pickOverride("  prop  ", null));
+        assertEquals("prop", FalkorDbImage.pickOverride("prop", () -> "env"));
+        assertEquals("  prop  ", FalkorDbImage.pickOverride("  prop  ", () -> null));
     }
 
     @Test
     void pickOverrideFallsBackToEnvWhenPropertyBlankOrNull() {
-        assertEquals("env", FalkorDbImage.pickOverride(null, "env"));
-        assertEquals("env", FalkorDbImage.pickOverride("", "env"));
-        assertEquals("env", FalkorDbImage.pickOverride("   ", "env"));
-        assertNull(FalkorDbImage.pickOverride(null, null));
+        assertEquals("env", FalkorDbImage.pickOverride(null, () -> "env"));
+        assertEquals("env", FalkorDbImage.pickOverride("", () -> "env"));
+        assertEquals("env", FalkorDbImage.pickOverride("   ", () -> "env"));
+        assertNull(FalkorDbImage.pickOverride(null, () -> null));
+    }
+
+    @Test
+    void pickOverrideDoesNotReadEnvWhenPropertyIsSet() {
+        // The env supplier must be consulted lazily — not at all when the property is non-blank.
+        assertEquals("prop", FalkorDbImage.pickOverride("prop", () -> {
+            throw new AssertionError("env supplier must not be read when the property is set");
+        }));
     }
 
     @Test
@@ -55,7 +63,7 @@ class FalkorDbImageTest {
         // default; the non-blank env value wins.
         assertEquals(
                 "falkordb/falkordb:edge",
-                FalkorDbImage.resolve(FalkorDbImage.pickOverride("", "falkordb/falkordb:edge"))
+                FalkorDbImage.resolve(FalkorDbImage.pickOverride("", () -> "falkordb/falkordb:edge"))
                         .asCanonicalNameString());
     }
 }
