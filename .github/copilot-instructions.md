@@ -28,7 +28,8 @@ recipe; recipes call the pinned Maven Wrapper (`./mvnw`).
 | `just javadoc` | Javadoc gate (the CI **`javadoc`** gate): strict `doclint=all` + `failOnWarnings` on the public/protected API (`com.falkordb.impl` excluded), in the off-by-default `-Pquality` profile. |
 | `just spellcheck` | Spellcheck the Markdown docs (the CI `spellcheck` gate). |
 | `just db-up` / `just db-down` | Manage a local FalkorDB container. |
-| `just bench` / `just bench-one <loads>` | Client load-sweep benchmark — client latency (total − server) vs throughput across concurrency levels; feeds the per-PR-vs-`master` radar + Pages curve. |
+| `just bench` / `just bench-one <loads>` | Client load-sweep benchmark — client latency (total − server) vs throughput across concurrency levels; feeds the `master` gh-pages trend radar + Pages curve. |
+| `just bench-compare <base_ref>` | Same-machine A/B: benchmark HEAD vs `<base_ref>` back-to-back on one machine and compare (the CI **`benchmark-pr`** job). Cancels hosted-runner speed variance, unlike the cross-runner stored-baseline radar. Needs a clean tree + a server (like `just bench`). |
 
 Server-backed **system tests are `*IT`** (run by Failsafe in `verify`) and start a FalkorDB
 automatically via **Testcontainers** (Docker required) — no manual server setup; set both
