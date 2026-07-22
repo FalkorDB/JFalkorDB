@@ -2,6 +2,7 @@ package com.falkordb.impl.api;
 
 import com.falkordb.Driver;
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
@@ -10,6 +11,7 @@ import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Protocol;
+import redis.clients.jedis.SslOptions;
 import redis.clients.jedis.util.Pool;
 import redis.clients.jedis.util.SafeEncoder;
 
@@ -26,9 +28,28 @@ public class DriverImpl implements Driver {
      * duplicate writes. Query duration is governed by the server's TIMEOUT /
      * TIMEOUT_DEFAULT configuration (or a per-query timeout) instead, matching the other
      * FalkorDB clients. To use a different socket timeout, build your own pool and pass
-     * it to {@link #DriverImpl(Pool)}.
+     * it to {@link #DriverImpl(Pool)}. Also the default socket timeout applied by {@link #create}
+     * when the caller does not specify one.
      */
-    private static final int DEFAULT_SOCKET_TIMEOUT_MILLIS = 0;
+    public static final int DEFAULT_SOCKET_TIMEOUT_MILLIS = 0;
+
+    /**
+     * Default connection (connect) timeout in milliseconds applied by {@link #create} when the
+     * caller does not specify one: Jedis' {@link Protocol#DEFAULT_TIMEOUT} (2000&nbsp;ms).
+     */
+    public static final int DEFAULT_CONNECTION_TIMEOUT_MILLIS = Protocol.DEFAULT_TIMEOUT;
+
+    /** Default maximum pool size ({@code maxTotal}) applied by {@link #create}: commons-pool2's {@code 8}. */
+    public static final int DEFAULT_POOL_MAX_TOTAL = GenericObjectPoolConfig.DEFAULT_MAX_TOTAL;
+
+    /** Default maximum idle connections ({@code maxIdle}) applied by {@link #create}: commons-pool2's {@code 8}. */
+    public static final int DEFAULT_POOL_MAX_IDLE = GenericObjectPoolConfig.DEFAULT_MAX_IDLE;
+
+    /**
+     * Default pool borrow wait ({@code maxWait}) applied by {@link #create}: commons-pool2's
+     * {@code -1ms}, i.e. wait indefinitely for a connection when the pool is exhausted.
+     */
+    public static final Duration DEFAULT_POOL_MAX_WAIT = GenericObjectPoolConfig.DEFAULT_MAX_WAIT;
 
     private final Pool<Jedis> pool;
 
@@ -65,21 +86,87 @@ public class DriverImpl implements Driver {
     }
 
     /**
-     * Builds the client configuration used by this driver: Jedis' default connection
-     * timeout, no socket (read) timeout (see {@link #DEFAULT_SOCKET_TIMEOUT_MILLIS}),
-     * and the given credentials when provided.
+     * Builds the client configuration used by the legacy host/port factories: Jedis' default
+     * connection timeout, no socket (read) timeout (see {@link #DEFAULT_SOCKET_TIMEOUT_MILLIS}),
+     * and the given credentials when provided. Delegates to {@link #buildClientConfig} so the
+     * {@code driver(host, port[, user, password])} factories and the {@code FalkorDB.builder()}
+     * defaults resolve to an identical configuration.
      */
-    private static DefaultJedisClientConfig clientConfig(String user, final String password) {
+    static DefaultJedisClientConfig clientConfig(String user, final String password) {
+        return buildClientConfig(
+                user, password, false, DEFAULT_CONNECTION_TIMEOUT_MILLIS, DEFAULT_SOCKET_TIMEOUT_MILLIS);
+    }
+
+    /**
+     * Creates a driver from already-resolved connection settings (used by {@code FalkorDB.builder()}).
+     *
+     * <p>Assembles a Jedis client config (credentials, optional TLS, and the two timeouts) and a
+     * commons-pool2 pool config (sizing plus borrow-wait), then wraps a {@link JedisPool} built from
+     * them. This is internal wiring — prefer {@code com.falkordb.FalkorDB.builder()} over calling it
+     * directly.
+     *
+     * @param host                     server host
+     * @param port                     server port
+     * @param user                     username, or {@code null} for none
+     * @param password                 password, or {@code null} for none
+     * @param ssl                      whether to connect over TLS
+     * @param connectionTimeoutMillis  connection (connect) timeout in milliseconds
+     * @param socketTimeoutMillis      socket (read) timeout in milliseconds ({@code 0} = no deadline)
+     * @param poolMaxTotal             maximum pool size
+     * @param poolMaxIdle              maximum idle connections in the pool
+     * @param poolMaxWait              maximum time to wait for a connection when the pool is exhausted
+     *                                 (negative = wait indefinitely, {@link Duration#ZERO} = fail fast)
+     * @return a new driver backed by the assembled pool
+     */
+    public static Driver create(
+            String host,
+            int port,
+            String user,
+            String password,
+            boolean ssl,
+            int connectionTimeoutMillis,
+            int socketTimeoutMillis,
+            int poolMaxTotal,
+            int poolMaxIdle,
+            Duration poolMaxWait) {
+        return new DriverImpl(new JedisPool(
+                buildPoolConfig(poolMaxTotal, poolMaxIdle, poolMaxWait),
+                new HostAndPort(host, port),
+                buildClientConfig(user, password, ssl, connectionTimeoutMillis, socketTimeoutMillis)));
+    }
+
+    /**
+     * Builds a Jedis client config from resolved settings. TLS is enabled through the non-deprecated
+     * {@link SslOptions#defaults()} path rather than the deprecated {@code ssl(boolean)} setter.
+     */
+    static DefaultJedisClientConfig buildClientConfig(
+            String user, String password, boolean ssl, int connectionTimeoutMillis, int socketTimeoutMillis) {
         DefaultJedisClientConfig.Builder builder = DefaultJedisClientConfig.builder()
-                .connectionTimeoutMillis(Protocol.DEFAULT_TIMEOUT)
-                .socketTimeoutMillis(DEFAULT_SOCKET_TIMEOUT_MILLIS);
+                .connectionTimeoutMillis(connectionTimeoutMillis)
+                .socketTimeoutMillis(socketTimeoutMillis);
         if (user != null) {
             builder.user(user);
         }
         if (password != null) {
             builder.password(password);
         }
+        if (ssl) {
+            builder.sslOptions(SslOptions.defaults());
+        }
         return builder.build();
+    }
+
+    /**
+     * Builds a commons-pool2 config from resolved sizing settings. {@code maxWait} is passed through
+     * as a {@link Duration} with commons-pool2's native semantics (negative = wait indefinitely,
+     * {@link Duration#ZERO} = fail fast when exhausted).
+     */
+    static GenericObjectPoolConfig<Jedis> buildPoolConfig(int maxTotal, int maxIdle, Duration maxWait) {
+        GenericObjectPoolConfig<Jedis> poolConfig = new GenericObjectPoolConfig<>();
+        poolConfig.setMaxTotal(maxTotal);
+        poolConfig.setMaxIdle(maxIdle);
+        poolConfig.setMaxWait(maxWait);
+        return poolConfig;
     }
 
     /**
