@@ -1,0 +1,72 @@
+name: Javadoc → Pages
+
+# Publishes the public-API Javadoc to the gh-pages branch under /dev/api on master pushes (the
+# unreleased "dev" docs). The benchmark workflow publishes /dev/bench on the SAME branch, so to avoid
+# clobbering it or racing it this job (a) only ever touches /dev/api and (b) pushes with a rebase-retry
+# loop. It does NOT change the Pages source (still the gh-pages branch), so it cannot break the
+# benchmark site.
+
+on:
+  push:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: javadoc-pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      with:
+        persist-credentials: false
+    - name: Set up JDK 21
+      uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+    - name: Install just
+      uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+    - name: Generate the public-API Javadoc (via just)
+      run: just javadoc
+    - name: Publish Javadoc to gh-pages /dev/api
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -euo pipefail
+        src="target/reports/apidocs"
+        test -f "$src/index.html"
+        work="$(mktemp -d)"
+        git clone --quiet --branch gh-pages \
+          "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$work"
+        # Replace only /dev/api; /dev/bench and the landing page are left untouched.
+        rm -rf "$work/dev/api"
+        mkdir -p "$work/dev/api"
+        cp -R "$src/." "$work/dev/api/"
+        cd "$work"
+        if [ -z "$(git status --porcelain)" ]; then
+          echo "Javadoc unchanged"; exit 0
+        fi
+        git add dev/api
+        git -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "chore(docs): update dev Javadoc [skip ci]"
+        # A concurrent benchmark push (which only touches /dev/bench) can't conflict with /dev/api, so
+        # rebase-and-retry on a non-fast-forward push.
+        for _ in 1 2 3 4 5; do
+          if git push origin gh-pages; then exit 0; fi
+          git pull --rebase origin gh-pages
+        done
+        echo "failed to push Javadoc to gh-pages after retries" >&2
+        exit 1
