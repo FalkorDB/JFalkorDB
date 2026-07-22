@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784702806537,
+  "lastUpdate": 1784707158424,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -1179,6 +1179,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 10877.333,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "98568d6dda63d1bbb696c3f9e2a619ba08efbb4d",
+          "message": "ci: publish Javadoc to gh-pages /dev/api + semver policy doc (#347)\n\n* ci: publish public-API Javadoc to gh-pages /dev/api + semver policy doc\n\nWave 4 - PR 17b (completes 17). On master pushes, generate the public-API\nJavadoc (the 'just javadoc' gate output) and publish it to the gh-pages\nbranch under /dev/api - the unreleased 'dev' docs.\n\nCoordinates with the benchmark publisher, which writes /dev/bench on the same\nbranch: this job only ever touches /dev/api (verified by a local dry-run that\nstages nothing under /dev/bench or the landing page) and pushes with a\nrebase-retry loop so a concurrent benchmark push can't race it. It does NOT\nswitch the Pages source (still the gh-pages branch), so it can't break the\nbenchmark site.\n\nAlso adds docs/semver-policy.md (references api-diff, the breaking-change\nlabel + PR-title '!' gate, javadoc, and release-please) and 'semver' to the\nspellcheck wordlist.\n\nValidated: 'just javadoc' generates target/reports/apidocs; workflow YAML\nvalid; publish script dry-run touches only /dev/api; 'just spellcheck' green.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* ci: robust apidocs path + shallow gh-pages clone; fix semver attribution\n\nAddress Copilot review on #347:\n- Publish script accepts target/reports/apidocs OR target/site/apidocs\n  (javadoc output dir varies by Maven version), guarded by test -f.\n- Clone gh-pages shallow (--depth 1 --single-branch) instead of full history;\n  the rebase-retry still works (git deepens as needed).\n- semver-policy.md: the 0.x -> 0.(x+1) rule is the bump-minor-pre-major\n  convention configured in release-please, not SemVer clause 6 (which leaves\n  0.y.z unconstrained). Reword accordingly.\n\njust spellcheck green; workflow YAML valid.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* ci: serialize all gh-pages publishers via a shared concurrency group\n\nAddress Copilot review on #347: the Javadoc publisher's rebase-retry only\nprotects its own push; the benchmark master publisher does a plain,\nnon-retrying git push (+ github-action-benchmark auto-push), so a concurrent\nJavadoc push could make the benchmark push fail non-fast-forward.\n\nPut both publish jobs in one shared job-level concurrency group\n'gh-pages-publish' with cancel-in-progress: false, so they queue and never\npush to gh-pages simultaneously. (Replaces the Javadoc workflow's own\nper-ref group.) The rebase-retry stays as defense-in-depth.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-22T10:57:48+03:00",
+          "tree_id": "ce373f830a8a844dc0f5564e27577d0b63859fcf",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/98568d6dda63d1bbb696c3f9e2a619ba08efbb4d"
+        },
+        "date": 1784707158408,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 5559.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 9017.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 13934.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 17712.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 17009.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 16682.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 16821.667,
             "unit": "ops/s"
           }
         ]
