@@ -32,7 +32,7 @@ support is retained throughout.**
 The rubber-duck review showed the original "four independent tracks" was too optimistic. The honest
 structure is **two primary parallel tracks**, with docs trailing and the MRJAR **deferred**:
 
-```
+```text
 Track 1 (de-pinning):   A  →  B          (A depinned first; B's pinning harness must also cover cold
                                           pool creation, so A+B are stacked, not parallel to each other)
 Track 2 (async facade): D                (independent of Track 1; pure Java-8, additive)
@@ -51,15 +51,15 @@ Deferred:               E, F (MRJAR)      not worth this wave (see §Scope); F a
 
 ## Sub-PRs
 
-### A. De-pin our code + document the upstream pool hazard (7c) — Track 1
-**Our code (the fix):** `impl/graph_cache/GraphCacheList.java:34` `getCachedData(int, Graph)` holds
+### A. Remove our pinning site + document the upstream pool hazard (7c) — Track 1
+**Our code (the fix — done in #354):** `impl/graph_cache/GraphCacheList.java` `getCachedData(int, Graph)` held
 `synchronized (refreshLock)` across a blocking `graph.callProcedure(...)` — the **only** `synchronized`
-in `src/main/java/com/falkordb/**` (grep-verified). Replace `refreshLock` with a
+in `src/main/java/com/falkordb/**` (grep-verified). We replaced `refreshLock` with a
 `java.util.concurrent.locks.ReentrantLock` (`lock()` … `finally { unlock(); }`), keeping the
-double-checked refresh (`CopyOnWriteArrayList` gives the needed visibility). Do **not** vaguely "hoist"
+double-checked refresh (`CopyOnWriteArrayList` gives the needed visibility). We did **not** vaguely "hoist"
 the fetch outside the lock — that can duplicate appends; if optimized, split *fetch* from *locked
-publication*. Also either serialize `clear()` (line 59) with the refresh lock or **document concurrent
-close/delete during a refresh as unsupported**.
+publication*. `clear()` is now serialized under the **same** refresh lock, so a concurrent refresh can't
+publish stale data after a close/delete.
 
 **Upstream (document + scope, NOT a one-class win):** the hot path is **not** fully pin-free as an
 earlier audit claimed. Jedis **7.5.3** resolves **commons-pool2 2.12.1** (verified via
@@ -70,15 +70,22 @@ lock/condition deque and is fine; `Jedis` `Connection`/`Protocol` send/read are 
 **upstream, not ours**. Mitigations to document (and/or feed upstream): **warm the pool up front** —
 since the builder exposes `poolMaxIdle` but **not** `minIdle`/`preparePool` (15a deferred `minIdle`, as
 it needs an evictor thread), use a documented **borrow-and-hold** step (concurrently borrow then return
-N connections before the workload, with `poolMaxIdle ≥ N` so they're retained), so connections aren't
+N connections before the workload, with **both** `poolMaxTotal ≥ N` so N connections can be created
+**and** `poolMaxIdle ≥ N` so they're retained), so connections aren't
 created on the hot path under load; rely on JDK-21 carrier **compensation** (it adds carriers when one
 blocks in `Object.wait()`, and JEP 491/JDK 24 removes the pin entirely); and set a finite `poolMaxWait`.
 A commons-pool2 version bump alone does **not** fix it. *(Optional: A could instead add a supported
 warm-up — expose `minIdle` + evictor, or a `preparePool()` — see open questions.)*
 
 ### B. Pinning CI check (7c) — Track 1, after A
-A JFR / `jdk.VirtualThreadPinned` (`-Djdk.tracePinnedThreads`) check under a virtual-thread load test
-that **fails on pins originating in `com.falkordb` frames**. It **must exercise cold pool creation and
+A JFR / `jdk.VirtualThreadPinned` check under a virtual-thread load test
+that **fails on pins originating in `com.falkordb` frames**. **Detection differs by JDK and must be
+split:** on **JDK 21–23**, `-Djdk.tracePinnedThreads` still gives per-pin stack attribution (a
+`synchronized` held across a blocking call pins), so key the check off it; on **JDK 24+**, JEP 491 both
+removed `-Djdk.tracePinnedThreads` **and** eliminated monitor/`synchronized` pinning, so rely instead on
+the JFR **`jdk.VirtualThreadPinned`** event (enabled by default, **20 ms** threshold — short pins may not
+surface, and only native/VM-frame pins remain). Keep the JDK 21–23 trace path and a separate JDK 24+
+JFR-event expectation; select by runtime version. It **must exercise cold pool creation and
 replenishment** (not just steady state) so it actually reflects real workloads, and must **not blanket
 allow-list** the commons-pool2 path — instead assert *our* frames are pin-free and record the upstream
 `create()` pin as a known, documented item (note `Object.wait()` may not even surface as
@@ -90,14 +97,16 @@ vthread load tests are timing-sensitive on shared runners.
 Document, in `README.md`/`docs/`, the recommended JDK-21+ model ("a virtual-thread-per-task executor +
 the blocking client"), how to **size the pool** for fan-out (`poolMaxTotal` — Wave-4 15a already exposes
 it; default `maxTotal=8` caps real concurrency), **and** — from A — to **warm the pool** with a
-borrow-and-hold step (sizing `poolMaxIdle` to the warmed count, since `minIdle` isn't exposed) and a
+borrow-and-hold step (sizing **both** `poolMaxTotal` and `poolMaxIdle` to the warmed count, since `minIdle` isn't exposed) and a
 finite `poolMaxWait` to keep cold-creation off the hot path. Do not publish this before A/B land.
 
 ### D. `CompletableFuture` async facade (7d) — Track 2, pure Java-8
 New **public** types, pure Java-8, additive (api-diff green), **no MRJAR overlay**:
 - **`com.falkordb.AsyncGraph`** — an interface mirroring the 17 query ops of `Graph`, each returning
-  `CompletableFuture<T>`, plus a `graph()` escape hatch. **Not** mirrored: `close()` and the stateful,
-  connection-bound context/transaction/pipeline APIs.
+  `CompletableFuture<T>`, plus a `graph()` escape hatch that **returns the wrapped concurrency-safe
+  `GraphContextGenerator`** (never a connection-bound raw `Graph`), so callers that drop to synchronous
+  calls stay on the pool-per-call type and can't overlap operations on one connection. **Not** mirrored:
+  `close()` and the stateful, connection-bound context/transaction/pipeline APIs.
 - **Entry point takes a concurrent-safe graph, not raw `Graph`.** `GraphContext extends Graph` but is
   **connection-bound** (one `Jedis`); wrapping it for concurrent submission would corrupt the protocol.
   The pool-per-call, concurrency-safe type is **`GraphContextGenerator`** (`Driver.graph(id)` →
@@ -116,10 +125,12 @@ Semantics to document precisely (rubber-duck-corrected):
   waiter *count*. Document "active DB concurrency is pool-limited; there is no built-in admission
   bound," and, if bounded rejection is wanted later, define it explicitly (convert
   `RejectedExecutionException` into an exceptionally-completed future).
-- **Cancellation is best-effort:** `cancel()` frees the caller but does **not** interrupt an in-flight
-  read **and does not remove the queued runnable**; rely on per-query/server timeouts or a finite
-  `socketTimeout` (#282) to reclaim a stuck worker/connection.
-- **Mutable-arg hazard:** the `Map`/`List` params are read *later* on the worker thread — document that
+- **Cancellation is best-effort but honors cancel-before-start:** cancelling the future *before its task
+  starts* skips the query — `supplyAsync`'s task checks completion and does **not** invoke the supplier
+  once the future is cancelled (the queued runnable still runs, but no-ops); cancelling *after* the
+  blocking read is in flight cannot interrupt it (and the runnable isn't dequeued). Rely on
+  per-query/server timeouts or a finite `socketTimeout` (#282) to reclaim a stuck worker/connection.
+- **Mutable-argument hazard:** the `Map`/`List` parameters are read *later* on the worker thread — document that
   callers must not mutate them until completion (or the impl snapshots them).
 - **Exceptions:** blocking `GraphException`/`IllegalArgumentException` surface as the future completing
   exceptionally — `join()` throws `CompletionException`, `get()` throws `ExecutionException` (unwrap via
@@ -137,9 +148,9 @@ compile); Java-8 runtime coverage in `smoke-test`; a JDK-21 IT for the vthread f
 ### E. MRJAR `versions/21` overlay infrastructure (7b) — **deferred (see §Scope)**
 If pursued, prove it with a **no-op overlay first**: an extra `maven-compiler-plugin` execution compiles
 `src/main/java21` with `<release>21</release>` (per-execution `<compileSourceRoots>`, **not**
-`build-helper add-source`) into a **separate** dir (`target/classes-java21`), staged into
+`build-helper add-source`) into a **separate** directory (`target/classes-java21`), staged into
 `target/mrjar/` for packaging with `Multi-Release: true` (pin the currently-undeclared
-`maven-jar-plugin`). The separate dir is required because **Animal Sniffer scans `target/classes`
+`maven-jar-plugin`). The separate directory is required because **Animal Sniffer scans `target/classes`
 recursively** (incl. `META-INF/versions/*`) and would fail `java18` on Loom APIs. CI: `jar --validate`
 (JDK 21) + the existing `smoke-jdk8`/`smoke-jdk`-21 legs asserting the loaded variant (class-file major
 **52** vs **65**, via reflection).
@@ -147,7 +158,7 @@ recursively** (incl. `META-INF/versions/*`) and would fail `java18` on Loom APIs
 **Correction:** japicmp is **not** MR-aware — the `api-diff` gate points at the packaged jar and japicmp
 0.26.1 enumerates all `JarFile` entries (base **and** overlay), so **prototype `just api-diff` against a
 real MRJAR** rather than assuming it's unaffected (it likely still passes because `jar --validate`
-requires identical exported APIs, but verify). Enforcer (deps-only) and javadoc (source-roots) are
+requires identical exported APIs, but verify). Enforcer (dependencies-only) and javadoc (source-roots) are
 genuinely unaffected. If MRJAR ships, add a **JDK-25** runtime smoke (the matrix currently ends at 21).
 
 ### F. Facade Java-21 default-executor overlay (7b + 7d) — **deferred with E**
@@ -163,7 +174,8 @@ base). This makes the facade **create + own** an executor → it must expose lif
 
 ## Validation (via `just` = CI)
 Per PR: `just verify` · `just lint` · `just fmt-check` · `just api-diff` (green — additive) ·
-`just javadoc` · `just verify-jdk8` (+ `smoke-jdk`). New: the **pinning check** (B). If E ships:
+`just javadoc` · `just verify-jdk8` (+ `smoke-jdk`) · `just spellcheck` (for any Markdown/docs change —
+e.g. C). New: the **pinning check** (B). If E ships:
 `jar --validate` + 8/21(/25) smoke + a **prototyped** `api-diff` against the MRJAR. Java-8 guardrails
 stay green throughout.
 
@@ -171,7 +183,7 @@ stay green throughout.
 
 | Risk | Mitigation |
 | --- | --- |
-| Cold-creation pinning is **upstream** (commons-pool2 2.12.1 `create()`/`allocate()`), not ours | Fix our one site (A); document + warm the pool (borrow-and-hold, sized by `poolMaxIdle`) + finite `poolMaxWait`; rely on JDK-21 carrier compensation / JEP 491; feed upstream. B tests cold creation. |
+| Cold-creation pinning is **upstream** (commons-pool2 2.12.1 `create()`/`allocate()`), not ours | Fix our one site (A); document + warm the pool (borrow-and-hold, sized by `poolMaxTotal`+`poolMaxIdle`) + finite `poolMaxWait`; rely on JDK-21 carrier compensation / JEP 491; feed upstream. B tests cold creation. |
 | Facade wraps a connection-bound `GraphContext` and corrupts the protocol | Entry point takes **`GraphContextGenerator`** (pool-per-call), not raw `Graph`; document close/delete must not race outstanding ops. |
 | Tests can't use JDK-21 APIs (release-8 test compile) | Reflection for the virtual executor; JDK-21/Java-8 coverage in `smoke-test`. |
 | Adding F later breaks D's API (japicmp can't see it) | Decide F now; ship `ManagedAsyncGraph extends AsyncGraph, Closeable` up front, or drop F. |
@@ -186,7 +198,7 @@ stay green throughout.
 2. **F / MRJAR** — **defer E + F** this wave (recommended: D needs no overlay; F's only payoff is a
    default executor with an ownership cost)? If kept, ship `ManagedAsyncGraph` in **D** now.
 3. **Upstream pool pinning / warm-up** — is the documented **borrow-and-hold** warm-up (sized by
-   `poolMaxIdle`) enough, or should A add a **supported** warm-up (expose `minIdle` + an evictor, or a
+   both `poolMaxTotal` and `poolMaxIdle`) enough, or should A add a **supported** warm-up (expose `minIdle` + an evictor, or a
    `preparePool()`), and/or raise the pinning upstream / evaluate a commons-pool2 bump?
 4. **Pinning-check gate** — required PR gate or scheduled (vthread load tests are runner-timing
    sensitive)?
