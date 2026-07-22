@@ -34,7 +34,7 @@ public class Node extends GraphEntity {
     /**
      * Adds a label to the node.
      *
-     * @param label - a label to be add
+     * @param label - a label to be added
      */
     public void addLabel(String label) {
         labels.add(label);

@@ -478,7 +478,6 @@
 							<failOnWarnings>true</failOnWarnings>
 							<excludePackageNames>com.falkordb.impl:com.falkordb.impl.*</excludePackageNames>
 							<notimestamp>true</notimestamp>
-							<quiet>true</quiet>
 						</configuration>
 					</plugin>
 				</plugins>
