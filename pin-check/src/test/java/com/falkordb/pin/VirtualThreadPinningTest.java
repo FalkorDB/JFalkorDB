@@ -78,9 +78,15 @@ class VirtualThreadPinningTest {
         int port;
         String envHost = System.getenv("FALKORDB_HOST");
         String envPort = System.getenv("FALKORDB_PORT");
-        if (envHost != null && !envHost.isEmpty() && envPort != null && !envPort.isEmpty()) {
+        boolean hasHost = envHost != null && !envHost.isEmpty();
+        boolean hasPort = envPort != null && !envPort.isEmpty();
+        if (hasHost != hasPort) {
+            throw new IllegalStateException(
+                    "Set both FALKORDB_HOST and FALKORDB_PORT to use an external server, or neither to use Testcontainers");
+        }
+        if (hasHost) {
             host = envHost;
-            port = Integer.parseInt(envPort.trim());
+            port = parsePort(envPort);
         } else {
             container = new GenericContainer<>(IMAGE).withExposedPorts(6379).waitingFor(Wait.forListeningPort());
             container.start();
@@ -125,6 +131,14 @@ class VirtualThreadPinningTest {
             if (container != null) {
                 container.stop();
             }
+        }
+    }
+
+    private static int parsePort(String value) {
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException notANumber) {
+            throw new IllegalStateException("FALKORDB_PORT must be a number, but was: " + value, notANumber);
         }
     }
 
