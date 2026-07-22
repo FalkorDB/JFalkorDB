@@ -1,0 +1,41 @@
+name: Virtual-thread pinning check
+
+# Wave 5 (Project Loom): verifies the blocking client does not pin carrier threads when driven from
+# virtual threads on JDK 21+. It warms the connection pool (so the KNOWN upstream commons-pool2
+# cold-creation pin is excluded), then runs a virtual-thread query workload over the warm pool under a
+# JFR recording and fails if any jdk.VirtualThreadPinned event runs through our com.falkordb code.
+# Virtual-thread load timing is runner-sensitive, so this runs on a schedule (and on demand) rather
+# than as a per-PR gate. See `just pin-check`.
+
+on:
+  schedule:
+    - cron: '0 5 * * 1' # weekly, Mondays 05:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pin-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pin-check:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      with:
+        persist-credentials: false
+    - name: Set up JDK 21
+      uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+    - name: Install just
+      uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+    # Starts a Testcontainers FalkorDB (Docker is available on ubuntu-latest); no FALKORDB_HOST needed.
+    - name: Virtual-thread pinning check (via just)
+      run: just pin-check

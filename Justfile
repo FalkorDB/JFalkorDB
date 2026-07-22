@@ -99,6 +99,19 @@ examples:
     version="$(./mvnw -q -DforceStdout help:evaluate -Dexpression=project.version)"
     ./mvnw -B -f examples/pom.xml -Djfalkordb.version="$version" clean compile
 
+# Virtual-thread pinning check (Wave 5 / Project Loom; standalone module in pin-check/, never shipped).
+# Warms the connection pool, then runs a virtual-thread query workload over it under a JFR recording and
+# FAILS if any jdk.VirtualThreadPinned event runs through our com.falkordb code (i.e. we pin carriers).
+# Needs JDK 21+. Starts a Testcontainers FalkorDB by default, or set FALKORDB_HOST/FALKORDB_PORT to reuse
+# one — e.g. `just db-up && FALKORDB_HOST=localhost FALKORDB_PORT=6379 just pin-check`. The scheduled
+# `pin-check` CI job runs this.
+pin-check:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ./mvnw -B -q -DskipTests -Dgpg.skip=true install
+    version="$(./mvnw -q -DforceStdout help:evaluate -Dexpression=project.version)"
+    ./mvnw -B -f pin-check/pom.xml -Djfalkordb.version="$version" test
+
 # --- Benchmarks (client load-sweep; standalone module in benchmarks/, never shipped) ---
 
 # Build + run the client load-sweep benchmark, writing the latency/throughput/curve JSON for the
