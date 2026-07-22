@@ -135,6 +135,7 @@ public class DriverImpl implements Driver {
         if (host == null || host.trim().isEmpty()) {
             throw new IllegalArgumentException("host must not be null or blank");
         }
+        String normalizedHost = host.trim();
         if (port < 1 || port > 65535) {
             throw new IllegalArgumentException("port must be in [1, 65535], but was " + port);
         }
@@ -161,7 +162,7 @@ public class DriverImpl implements Driver {
         }
         return new DriverImpl(new JedisPool(
                 buildPoolConfig(poolMaxTotal, poolMaxIdle, poolMaxWait),
-                new HostAndPort(host, port),
+                new HostAndPort(normalizedHost, port),
                 buildClientConfig(user, password, ssl, connectionTimeoutMillis, socketTimeoutMillis)));
     }
 

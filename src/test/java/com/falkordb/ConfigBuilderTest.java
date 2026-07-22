@@ -68,6 +68,12 @@ class ConfigBuilderTest {
     }
 
     @Test
+    void acceptsWhitespacePaddedHost() {
+        // A padded host is trimmed rather than rejected (and is not passed padded on to DNS lookup).
+        assertDoesNotThrow(() -> FalkorDB.builder().host(" localhost ").build().close());
+    }
+
+    @Test
     void rejectsPortOutOfRange() {
         assertThrows(
                 IllegalArgumentException.class, () -> FalkorDB.builder().port(0).build());
