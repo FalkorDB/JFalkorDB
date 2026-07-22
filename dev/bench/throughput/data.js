@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784725343684,
+  "lastUpdate": 1784727616896,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -1474,6 +1474,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11198.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "57b90f483e3236f74f8d410077ba16fe48645d81",
+          "message": "docs: add runnable examples module (FalkorDB.builder()) (#352)\n\n* docs: add runnable examples module + finish Wave 4\n\nAdds a standalone, non-deployable examples/ Maven module with runnable\npublic-API examples that showcase FalkorDB.builder() (from 15a):\n- QuickStart: build a driver, run queries, iterate results\n- ConfiguredDriver: the full builder config surface (credentials, TLS, pool\n  sizing, timeouts)\n\nCompiled in CI with --release 8 against the built jar (new `examples` gate +\n`just examples` recipe) so the documented examples can't drift from the API.\nNot part of the reactor or the published artifact.\n\nWave-4 wrap-up: deletes the temporary pr15-config-builder-plan.md and prunes\nthe throwaway wordlist terms it added (spellcheck stays green).\n\nCloses #332.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs: reword examples README to drop 'classpath' (Copilot review)\n\nexamples/README.md is not in the spellcheck scope (the pyspelling sources are\nroot '*.md' + 'docs/*.md', both non-recursive), so this never failed the gate,\nbut rewording removes the pruned term and future-proofs against a glob change.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs: make QuickStart graph cleanup best-effort (Copilot review)\n\nWrap deleteGraph() in the finally so a cleanup failure can't mask a real\nerror thrown by the queries above — good practice to demonstrate in the\nexample.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-22T16:38:35+03:00",
+          "tree_id": "5c08e325361a815de4f05cfe79c1b64ffd922ce9",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/57b90f483e3236f74f8d410077ba16fe48645d81"
+        },
+        "date": 1784727616868,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3273,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 5965.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9548.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11752.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 10988,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11229.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11176.333,
             "unit": "ops/s"
           }
         ]
