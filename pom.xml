@@ -428,6 +428,42 @@
 							</parameter>
 						</configuration>
 					</plugin>
+					<!-- PITest mutation testing: OBSERVABILITY ONLY — never bound to a phase or a gate.
+					     Invoked on demand via `just mutation` (the scheduled/manual `mutation` workflow).
+					     Scoped to the pure-unit packages whose fast unit tests can actually kill mutants;
+					     `*IT` (server-backed) and the expensive jqwik property test are excluded so PIT
+					     doesn't discover + re-run them per mutation. -->
+					<plugin>
+						<groupId>org.pitest</groupId>
+						<artifactId>pitest-maven</artifactId>
+						<version>1.19.4</version>
+						<dependencies>
+							<dependency>
+								<groupId>org.pitest</groupId>
+								<artifactId>pitest-junit5-plugin</artifactId>
+								<version>1.2.3</version>
+							</dependency>
+						</dependencies>
+						<configuration>
+							<targetClasses>
+								<param>com.falkordb.graph_entities.*</param>
+								<param>com.falkordb.impl.Utils*</param>
+							</targetClasses>
+							<targetTests>
+								<param>com.falkordb.graph_entities.*Test</param>
+								<param>com.falkordb.impl.UtilsTest</param>
+							</targetTests>
+							<excludedTestClasses>
+								<param>com.falkordb.impl.UtilsParamPropertyTest</param>
+							</excludedTestClasses>
+							<outputFormats>
+								<param>HTML</param>
+								<param>XML</param>
+							</outputFormats>
+							<timestampedReports>false</timestampedReports>
+							<failWhenNoMutations>false</failWhenNoMutations>
+						</configuration>
+					</plugin>
 				</plugins>
 			</build>
 		</profile>
