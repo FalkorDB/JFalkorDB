@@ -68,23 +68,31 @@ Design decisions (rationale from the review):
 2. **`Duration`** timeouts (java.time, Java-8-safe). **Two distinct paths — do not share a helper:**
    - **`connectionTimeout` / `socketTimeout`** → the Jedis `Duration → int millis` helper (§B): rejects
      `null`/negative and `> Integer.MAX_VALUE` ms; a **positive sub-millisecond** value rounds **up to
-     1 ms** (never silently truncates to 0/“infinite”); `Duration.ZERO → 0` (“no deadline”, matching
-     #282). These map to `DefaultJedisClientConfig.connectionTimeoutMillis/socketTimeoutMillis`.
+     1 ms** (never silently truncates to 0/“infinite”). Note the two **defaults differ**:
+     `connectionTimeout` defaults to **2000 ms** (`Protocol.DEFAULT_TIMEOUT`) — passing `Duration.ZERO`
+     is *allowed* but means an **infinite connect wait**, which is **not** the encouraged path;
+     `socketTimeout` defaults to **`Duration.ZERO → 0`** = **no read deadline**, and *that* zero is the
+     **#282** behavior (server-side query timeouts govern duration). These map to
+     `DefaultJedisClientConfig.connectionTimeoutMillis` / `socketTimeoutMillis` respectively.
    - **`poolMaxWait`** → passed **directly** to commons-pool2 `GenericObjectPoolConfig.setMaxWait(
      Duration)` — **no int conversion**. Its semantics are **different**: **negative = wait
      indefinitely** (the default, `-1 ms`), **`Duration.ZERO` = fail immediately** when the pool is
      exhausted, positive = bounded wait. So `poolMaxWait` is **not** run through the Jedis helper and a
      negative value is **allowed** (means “forever”); document this explicitly.
-3. **`build()` returns `Driver`** (interface unchanged). It resolves a **public immutable config spec**
-   in `com.falkordb.impl.api` (public so `FalkorDB.Builder` in `com.falkordb` can construct it; in
-   `impl`, so **excluded from api-diff**) and hands it to a new **public** `DriverImpl` factory that owns
-   all Jedis wiring (`DefaultJedisClientConfig` + `GenericObjectPoolConfig` + `new JedisPool(poolCfg,
-   HostAndPort, clientCfg)` → `new DriverImpl(pool)`). Keeping Jedis imports in `impl` avoids leaking
-   them into `com.falkordb`; making the spec **public** (not package-private) is what lets the
-   cross-package call compile.
-4. **Defaults ≡ `driver()`** exactly: `localhost:6379`, no creds, `ssl=false`, `connTimeout=2000`,
-   `socketTimeout=0`, pool `maxTotal=8 / maxIdle=8 / maxWait=-1`. A unit test locks the builder-default
-   **spec** to these values (see §D — not object-equality on Jedis configs).
+3. **`build()` returns `Driver`** (interface unchanged). **No new public type ships.** The `Builder`
+   (package `com.falkordb`) resolves its defaults **locally** and passes the collected values
+   **directly** to a **public `DriverImpl` static factory** (`DriverImpl.create(host, port, user,
+   password, ssl, connectMillis, socketMillis, poolMaxTotal, poolMaxIdle, poolMaxWait)` — a *method* on
+   the already-public `DriverImpl`, in `com.falkordb.impl`, excluded from api-diff) that owns all Jedis
+   wiring (`DefaultJedisClientConfig` + `GenericObjectPoolConfig` + `new JedisPool(poolCfg, HostAndPort,
+   clientCfg)` → `new DriverImpl(pool)`). This keeps Jedis imports in `impl` **and** avoids introducing
+   a new public class (per review: even an `impl` public *type* still ships in the jar and could be
+   depended on). The **testable seam** is a set of **package-private** getters on `Builder` (co-located
+   with a same-package unit test) — not a shipped type.
+4. **Defaults ≡ `driver()`** exactly: `localhost:6379`, no creds, `ssl=false`, `connectMillis=2000`,
+   `socketMillis=0`, pool `maxTotal=8 / maxIdle=8 / maxWait=-1 ms`. A unit test locks the
+   builder-default **resolved values** (via the package-private getters) to these (see §D — not
+   object-equality on Jedis configs).
 5. **`ssl(boolean)`** stays the public knob; internally mapped through `SslOptions.defaults()` if the
    raw `ssl(boolean)` builder method is deprecated in 7.5.3 (tests then assert on `getSslOptions()`,
    else `isSsl()`).
@@ -108,17 +116,17 @@ keeps `DriverImpl(pool)` examples for these until/unless the builder grows them.
 
 ## B. Impl wiring (`com.falkordb.impl`)
 
-- Add a **public** immutable **config spec** in `com.falkordb.impl.api` (host, port, user, password,
-  ssl, connectionTimeoutMillis `int`, socketTimeoutMillis `int`, poolMaxTotal, poolMaxIdle,
-  **poolMaxWait `Duration`**) with getters — the **testable seam**. It is public so `FalkorDB.Builder`
-  (package `com.falkordb`) can construct it across packages; being in `impl` it is **excluded from
-  api-diff**.
-- Add a **public** `DriverImpl` static factory / constructor taking that spec, which assembles the
-  `DefaultJedisClientConfig` (creds + `ssl` via `SslOptions.defaults()` + the two **int-millis**
-  timeouts) + `GenericObjectPoolConfig` (`setMaxTotal/ setMaxIdle`, and **`setMaxWait(Duration)`
-  directly** — commons-pool2 native, negative=forever/zero=fail-fast) + `new JedisPool(poolCfg,
-  HostAndPort, clientCfg)` and returns a `DriverImpl`. All new `impl` surface is excluded from
-  `api-diff`.
+- **No new public type.** Add a **public static factory** on the already-public `DriverImpl`,
+  `DriverImpl.create(String host, int port, String user, String password, boolean ssl,
+  int connectMillis, int socketMillis, int poolMaxTotal, int poolMaxIdle, Duration poolMaxWait)`,
+  taking the builder’s **already-resolved** values directly (in `com.falkordb.impl`, excluded from
+  `api-diff`). It assembles the `DefaultJedisClientConfig` (creds + `ssl` via `SslOptions.defaults()`
+  + the two **int-millis** timeouts) + `GenericObjectPoolConfig` (`setMaxTotal` / `setMaxIdle`, and
+  **`setMaxWait(Duration)` directly** — commons-pool2 native, negative=forever / zero=fail-fast) +
+  `new JedisPool(poolCfg, HostAndPort, clientCfg)`, and returns a `DriverImpl`. Adding a *method* to an
+  existing public class avoids shipping a brand-new public class that consumers could latch onto.
+- The **testable seam** stays in `com.falkordb`: `Builder` exposes **package-private** getters for its
+  resolved values, asserted by a same-package unit test (see §D). Nothing new ships.
 - A single `Duration → int millis` helper (used **only** for connection/socket timeouts, never for
   `poolMaxWait`) implements the §A(2) rules in one place.
 
@@ -140,11 +148,12 @@ keeps `DriverImpl(pool)` examples for these until/unless the builder grows them.
 
 ## D. Tests
 
-- **Unit** (`*Test`, no server): builder → **config spec** mapping (host/port/creds/ssl/timeouts/pool);
-  **all validation errors**; the **defaults regression** — builder-default spec **field-by-field ==**
-  the `driver()` reference values (do **not** `assertEquals` on `DefaultJedisClientConfig` /
-  `GenericObjectPoolConfig`; neither overrides `equals`, and Jedis hides the client config in
-  `JedisFactory`). TLS mapping asserted via `getSslOptions()`/`isSsl()`.
+- **Unit** (`*Test`, no server): `Builder` → **resolved-values** mapping
+  (host/port/creds/ssl/timeouts/pool) via the package-private getters; **all validation errors**; the
+  **defaults regression** — builder-default resolved values **field-by-field ==** the `driver()`
+  reference values (do **not** `assertEquals` on `DefaultJedisClientConfig` / `GenericObjectPoolConfig`;
+  neither overrides `equals`, and Jedis hides the client config in `JedisFactory`). TLS mapping asserted
+  via `getSslOptions()`/`isSsl()`.
 - **IT** (`*IT`, Testcontainers): `builder().build()` connect → query → close (mirror
   `InstantiationIT`), plaintext.
 - **`api-diff`**: green (additions only) — no `Driver`/factory changes.
@@ -164,7 +173,7 @@ it), including the default value and units for each option.
 | Risk | Mitigation |
 | --- | --- |
 | Builder breaks `api-diff` | Additive only; `public static final Builder` + **private** ctor (no generated public ctor); `Driver`/factories untouched. |
-| Jedis hides client config → can’t assert defaults | Internal immutable **spec** seam; compare getters field-by-field, never object-equals/`toString`. |
+| Jedis hides client config → can’t assert defaults | Resolve values in `Builder`; **package-private getters** + same-package test compare field-by-field, never object-equals/`toString`. |
 | `.uri()` + `.ssl()/.credentials()` silently downgrades TLS/auth | **Defer `.uri()`** from 15a; document correct tri-state recipe for later. |
 | `Duration→int` overflow / sub-ms truncation | Central helper: reject null/negative/`>Int.MAX` ms; round positive sub-ms up to 1 ms. |
 | `poolMinIdle` ineffective without evictor | **Defer** `poolMinIdle`; ship `maxTotal/maxIdle/maxWait` (matches README + Loom need). |
@@ -175,7 +184,8 @@ it), including the default value and units for each option.
 ## H. Proposed sub-PR split
 
 - **15a** — `FalkorDB.builder()` (host/port/creds/ssl/`maxTotal`/`maxIdle`/`maxWait`/conn+socket
-  timeouts) + config-spec seam + public `DriverImpl` factory + unit/IT tests + Javadoc. **No JSpecify.**
+  timeouts) + package-private resolved-values seam + public `DriverImpl.create` factory + unit/IT tests
+  + Javadoc. **No JSpecify.**
 - **15b** — `org.jspecify:jspecify` dependency + package `@NullMarked` + per-member `@Nullable` audit +
   JDK-8 annotation-loading smoke.
 
