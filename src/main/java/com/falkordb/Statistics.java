@@ -1,5 +1,7 @@
 package com.falkordb;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * An interface for the statistics of a result set.
  */
@@ -67,7 +69,7 @@ public interface Statistics {
          * @param value label text
          * @return the matching Label
          */
-        public static Label getEnum(String value) {
+        public static @Nullable Label getEnum(String value) {
             for (Label v : values()) {
                 if (v.toString().equalsIgnoreCase(value)) return v;
             }
@@ -81,6 +83,7 @@ public interface Statistics {
      * @param label the requested statistic label
      * @return a String representation of the specific statistic or null
      */
+    @Nullable
     String getStringValue(Statistics.Label label);
 
     /**

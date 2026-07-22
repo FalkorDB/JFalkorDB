@@ -2,12 +2,17 @@ package com.falkordb.smoke;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.falkordb.Driver;
 import com.falkordb.FalkorDB;
 import com.falkordb.GraphContextGenerator;
 import com.falkordb.Record;
 import com.falkordb.ResultSet;
+import com.falkordb.graph_entities.GraphEntity;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedType;
+import java.lang.reflect.Method;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -41,5 +46,29 @@ class SmokeTest {
                 graph.deleteGraph();
             }
         }
+    }
+
+    /**
+     * Proves the shipped JSpecify nullability annotations load and are reflectively visible on a
+     * JDK-8 runtime: {@code GraphEntity.getProperty(String)} carries a runtime-retained, TYPE_USE
+     * {@code @Nullable} on its return. (We deliberately reflect on a member annotation, not on the
+     * package {@code @NullMarked}, to avoid JSpecify's documented Java-8 {@code ElementType.MODULE}
+     * reflection caveat.)
+     */
+    @Test
+    void jspecifyNullableIsVisibleAtRuntimeOnJava8() throws Exception {
+        Method getProperty = GraphEntity.class.getMethod("getProperty", String.class);
+        AnnotatedType returnType = getProperty.getAnnotatedReturnType();
+        boolean nullablePresent = false;
+        for (Annotation annotation : returnType.getAnnotations()) {
+            if ("org.jspecify.annotations.Nullable".equals(
+                    annotation.annotationType().getName())) {
+                nullablePresent = true;
+                break;
+            }
+        }
+        assertTrue(
+                nullablePresent,
+                "GraphEntity.getProperty(String) should carry a runtime-visible @Nullable on JDK 8");
     }
 }

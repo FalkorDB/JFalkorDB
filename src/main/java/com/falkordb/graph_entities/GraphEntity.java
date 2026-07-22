@@ -1,6 +1,7 @@
 package com.falkordb.graph_entities;
 
 import java.util.*;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This is an abstract class for representing a graph entity.
@@ -59,7 +60,7 @@ public abstract class GraphEntity {
      * @param name property name
      * @param value property value
      */
-    public void addProperty(String name, Object value) {
+    public void addProperty(String name, @Nullable Object value) {
         addProperty(new Property(name, value));
     }
 
@@ -96,7 +97,7 @@ public abstract class GraphEntity {
      * @param propertyName - property name as lookup key (String)
      * @return property object, or null if key is not found
      */
-    public Property getProperty(String propertyName) {
+    public @Nullable Property getProperty(String propertyName) {
         return propertyMap.get(propertyName);
     }
 

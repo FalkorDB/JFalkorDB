@@ -3,6 +3,7 @@ package com.falkordb;
 import java.io.Closeable;
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.commands.PipelineBinaryCommands;
 import redis.clients.jedis.commands.PipelineCommands;
@@ -160,6 +161,7 @@ public interface GraphTransaction
      * executes the transaction
      * @return a list of the executed transaction commands answers, in case of successful transaction, null otherwise
      */
+    @Nullable
     List<Object> exec();
 
     /**

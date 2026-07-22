@@ -3,6 +3,7 @@ package com.falkordb;
 import com.falkordb.impl.api.DriverImpl;
 import java.net.URI;
 import java.time.Duration;
+import org.jspecify.annotations.Nullable;
 
 /**
  * FalkorDB driver factory
@@ -92,14 +93,14 @@ public final class FalkorDB {
 
         private String host = "localhost";
         private int port = 6379;
-        private String user;
-        private String password;
+        private @Nullable String user;
+        private @Nullable String password;
         private boolean ssl;
-        private Duration connectionTimeout;
-        private Duration socketTimeout;
-        private Integer poolMaxTotal;
-        private Integer poolMaxIdle;
-        private Duration poolMaxWait;
+        private @Nullable Duration connectionTimeout;
+        private @Nullable Duration socketTimeout;
+        private @Nullable Integer poolMaxTotal;
+        private @Nullable Integer poolMaxIdle;
+        private @Nullable Duration poolMaxWait;
 
         private Builder() {}
 
