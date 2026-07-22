@@ -14,14 +14,16 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: javadoc-pages-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   publish:
 
     runs-on: ubuntu-latest
+
+    # Serialize every gh-pages publisher (this + the benchmark master publish) via one shared group so
+    # their pushes never race — the benchmark publisher does a plain, non-retrying `git push`.
+    concurrency:
+      group: gh-pages-publish
+      cancel-in-progress: false
 
     permissions:
       contents: write

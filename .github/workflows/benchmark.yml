@@ -83,6 +83,12 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    # Serialize with the Javadoc publisher via the shared gh-pages-publish group so gh-pages pushes
+    # never race (this job's `git push` below does not retry).
+    concurrency:
+      group: gh-pages-publish
+      cancel-in-progress: false
+
     permissions:
       contents: write
 
