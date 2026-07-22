@@ -13,7 +13,9 @@ reported for information only.
 Usage:
   compare_bench.py BASE_LAT HEAD_LAT BASE_TPUT HEAD_TPUT [--threshold 1.25] [--base-label ..] [--head-label ..]
 
-Exit code: 0 if no gated regression beyond the threshold, 1 otherwise.
+Exit code: 0 normally (report-only — a regression is reported but does not change the exit code unless
+--fail-on-regression is given, in which case a gated regression exits 1); 2 when the two runs share no
+comparable load levels.
 """
 import argparse
 import json

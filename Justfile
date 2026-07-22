@@ -124,15 +124,16 @@ bench-baseline:
 bench-compare base_ref threshold="1.25" loads="1,2,4,8,16,32,64":
     #!/usr/bin/env bash
     set -euo pipefail
-    if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+    if [ -n "$(git status --porcelain)" ]; then
         echo "bench-compare needs a clean working tree (it checks out {{base_ref}} and back); commit or stash first." >&2
         exit 1
     fi
     orig_ref="$(git symbolic-ref -q --short HEAD || git rev-parse HEAD)"
     base_sha="$(git rev-parse --short "{{base_ref}}")"
     out="$(mktemp -d)"
-    restore() { git checkout -q "$orig_ref"; }
-    trap restore EXIT
+    # Always restore the original ref and remove the temp dir, even if a bench/checkout fails midway.
+    cleanup() { git checkout -q "$orig_ref" 2>/dev/null || true; rm -rf "$out"; }
+    trap cleanup EXIT
     echo "==> benchmarking HEAD ($orig_ref)"
     just bench-one "{{loads}}"
     cp benchmarks/target/bench-latency.json "$out/head-latency.json"
@@ -142,8 +143,7 @@ bench-compare base_ref threshold="1.25" loads="1,2,4,8,16,32,64":
     just bench-one "{{loads}}"
     cp benchmarks/target/bench-latency.json "$out/base-latency.json"
     cp benchmarks/target/bench-throughput.json "$out/base-throughput.json"
-    restore
-    trap - EXIT
+    git checkout -q "$orig_ref"  # back on HEAD so the comparator below is the current one
     echo "==> comparing head ($orig_ref) vs base ({{base_ref}}), threshold {{threshold}}x"
     mkdir -p benchmarks/target
     python3 benchmarks/compare_bench.py \
