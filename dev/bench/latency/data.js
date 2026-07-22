@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784727615313,
+  "lastUpdate": 1784733216188,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -3353,6 +3353,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 69681.68,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d9bca2f708ac80adc7c0a8a90196d0fd1ce241d4",
+          "message": "perf: de-pin GraphCacheList cache refresh for virtual threads (#354)\n\n* perf: de-pin GraphCacheList cache refresh for virtual threads\n\nReplace the `synchronized (refreshLock)` in GraphCacheList.getCachedData —\nheld across a blocking `graph.callProcedure(...)` — with a ReentrantLock\n(lock/finally-unlock, same double-checked refresh). On JDK 21-23 a\n`synchronized` monitor held across a blocking call pins the carrier thread,\nso many concurrent queries on virtual threads would not scale; a\nReentrantLock across the same call does not pin (and stays reentrant).\nclear() now takes the same lock so it can't interleave with an in-flight\nrefresh.\n\nThis is our only pinning site. Cold connection creation inside\ncommons-pool2's GenericObjectPool.create() is itself synchronized and\nremains an upstream pinning path (documented; mitigate by warming the pool).\n\nWave 5 (#333), Track 1 · PR A.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test: fail fast on worker hang in GraphCacheList concurrency test\n\nBound the latch await and worker Thread.join() with a 10s timeout and\nassert each worker terminated, so a regression that deadlocks the refresh\npath fails the test fast instead of hanging the whole suite.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-22T18:11:37+03:00",
+          "tree_id": "86aab86814146fec1da41313d539e151db2ccd96",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/d9bca2f708ac80adc7c0a8a90196d0fd1ce241d4"
+        },
+        "date": 1784733215803,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 191.847,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 231.702,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 261.357,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 229.508,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 272.34,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 305.459,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 297.862,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 463.956,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 585.632,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 496.065,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 835.559,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1027.602,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 581.959,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5372.155,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 11034.718,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 592.968,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 14970.83,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 29411.905,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 587.074,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 34332.22,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 69462.948,
             "unit": "us"
           }
         ]
