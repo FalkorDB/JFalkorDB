@@ -1,0 +1,50 @@
+name: FalkorDB version canary
+
+# Non-blocking early warning that the client still works against the moving FalkorDB `edge` and
+# `latest` images. Runs on a schedule (and on demand) — NOT on pushes/PRs — so upstream breakage never
+# gates a merge: the required `build`/`smoke-jdk8`/`smoke-jdk` jobs pin the digest (v4.20.1), which is
+# also the current minimum supported version. Uses the `FALKORDB_IMAGE` override so Testcontainers runs
+# the full `just verify` suite against each tag.
+
+on:
+  schedule:
+    - cron: '0 5 * * 1' # weekly, Mondays 05:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: version-canary-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  canary:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - falkordb/falkordb:edge
+          - falkordb/falkordb:latest
+
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      with:
+        persist-credentials: false
+    - name: Set up JDK 21
+      uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+    - name: Install just
+      uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+    # FALKORDB_IMAGE is read by the TestServer harness (FalkorDbImage.resolve) so the whole suite runs
+    # against this tag instead of the pinned default digest.
+    - name: Build & test against ${{ matrix.image }} (via just)
+      env:
+        FALKORDB_IMAGE: ${{ matrix.image }}
+      run: just verify
