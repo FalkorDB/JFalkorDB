@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.falkordb"},{"l":"com.falkordb.exceptions"},{"l":"com.falkordb.graph_entities"}];updateSearchResults();
