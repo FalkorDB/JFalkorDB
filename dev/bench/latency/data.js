@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784696435634,
+  "lastUpdate": 1784700304789,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -2321,6 +2321,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 70278.616,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cec49ba3c99143a50aeff3e19eed8a8dc7489e2f",
+          "message": "build: add PITest mutation testing (observability, scheduled) (#345)\n\nWave 4 - PR 14. Add pitest-maven 1.19.4 + pitest-junit5-plugin 1.2.3 to the\noff-by-default quality profile (unbound, like OWASP) - invoked via a new\n'just mutation' recipe and a scheduled/manual 'mutation' workflow, never a\nrequired gate.\n\nScoped to the pure-unit packages whose fast unit tests can actually kill\nmutants (com.falkordb.graph_entities.*, com.falkordb.impl.Utils*); *IT\n(server-backed) and the expensive jqwik property test (UtilsParamPropertyTest)\nare excluded so PIT doesn't discover + re-run them per mutation - so no\nFalkorDB server is needed.\n\nValidated locally: 'just mutation' green - 205 mutations, 193 killed (94%),\ntest strength 96%, line coverage 97%, no run/memory errors. 'just lint' still\ngreen (quality profile healthy). The scheduled job uploads the HTML report as\nan artifact.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-22T09:03:25+03:00",
+          "tree_id": "e529170b709ef930ac75a70c3c86e8d2b498d524",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/cec49ba3c99143a50aeff3e19eed8a8dc7489e2f"
+        },
+        "date": 1784700304497,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 210.145,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 258.805,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 289.424,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 245.481,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 280.777,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 305.314,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 297.559,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 453.532,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 542.541,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 490.432,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 826.953,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1024.584,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 574.379,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5276.364,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 10776.738,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 580.46,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 14905.976,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 30281.713,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 589.959,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 34418.553,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 66321.367,
             "unit": "us"
           }
         ]
