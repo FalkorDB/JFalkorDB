@@ -100,10 +100,10 @@ public class DriverImpl implements Driver {
     /**
      * Creates a driver from already-resolved connection settings (used by {@code FalkorDB.builder()}).
      *
-     * <p>Assembles a Jedis client config (credentials, optional TLS, and the two timeouts) and a
-     * commons-pool2 pool config (sizing plus borrow-wait), then wraps a {@link JedisPool} built from
-     * them. This is internal wiring — prefer {@code com.falkordb.FalkorDB.builder()} over calling it
-     * directly.
+     * <p>Validates its arguments, then assembles a Jedis client config (credentials, optional TLS, and
+     * the two timeouts) and a commons-pool2 pool config (sizing plus borrow-wait), and wraps a {@link
+     * JedisPool} built from them. This is internal wiring — prefer {@code com.falkordb.FalkorDB.builder()}
+     * over calling it directly.
      *
      * @param host                     server host
      * @param port                     server port
@@ -117,6 +117,9 @@ public class DriverImpl implements Driver {
      * @param poolMaxWait              maximum time to wait for a connection when the pool is exhausted
      *                                 (negative = wait indefinitely, {@link Duration#ZERO} = fail fast)
      * @return a new driver backed by the assembled pool
+     * @throws IllegalArgumentException if {@code host} is null/blank, {@code port} is outside
+     *                                  {@code [1, 65535]}, the pool sizing is invalid, a timeout is
+     *                                  negative, or {@code poolMaxWait} is null
      */
     public static Driver create(
             String host,
@@ -129,6 +132,33 @@ public class DriverImpl implements Driver {
             int poolMaxTotal,
             int poolMaxIdle,
             Duration poolMaxWait) {
+        if (host == null || host.trim().isEmpty()) {
+            throw new IllegalArgumentException("host must not be null or blank");
+        }
+        if (port < 1 || port > 65535) {
+            throw new IllegalArgumentException("port must be in [1, 65535], but was " + port);
+        }
+        if (poolMaxTotal < 1) {
+            throw new IllegalArgumentException("poolMaxTotal must be at least 1, but was " + poolMaxTotal);
+        }
+        if (poolMaxIdle < 0) {
+            throw new IllegalArgumentException("poolMaxIdle must not be negative, but was " + poolMaxIdle);
+        }
+        if (poolMaxIdle > poolMaxTotal) {
+            throw new IllegalArgumentException(
+                    "poolMaxIdle (" + poolMaxIdle + ") must not exceed poolMaxTotal (" + poolMaxTotal + ")");
+        }
+        if (connectionTimeoutMillis < 0) {
+            throw new IllegalArgumentException(
+                    "connectionTimeoutMillis must not be negative, but was " + connectionTimeoutMillis);
+        }
+        if (socketTimeoutMillis < 0) {
+            throw new IllegalArgumentException(
+                    "socketTimeoutMillis must not be negative, but was " + socketTimeoutMillis);
+        }
+        if (poolMaxWait == null) {
+            throw new IllegalArgumentException("poolMaxWait must not be null");
+        }
         return new DriverImpl(new JedisPool(
                 buildPoolConfig(poolMaxTotal, poolMaxIdle, poolMaxWait),
                 new HostAndPort(host, port),

@@ -223,30 +223,14 @@ public final class FalkorDB {
 
         /**
          * Validates the configuration and builds a driver. Unset options use the same defaults as
-         * {@link FalkorDB#driver()}.
+         * {@link FalkorDB#driver()}. Range validation happens in {@link DriverImpl#create}.
          *
          * @return a new driver
          * @throws IllegalArgumentException if any option is out of range (see the individual setters)
          */
         public Driver build() {
-            if (host == null || host.trim().isEmpty()) {
-                throw new IllegalArgumentException("host must not be null or blank");
-            }
-            if (port < 1 || port > 65535) {
-                throw new IllegalArgumentException("port must be in [1, 65535], but was " + port);
-            }
             int maxTotal = poolMaxTotal == null ? DriverImpl.DEFAULT_POOL_MAX_TOTAL : poolMaxTotal;
-            if (maxTotal < 1) {
-                throw new IllegalArgumentException("poolMaxTotal must be at least 1, but was " + maxTotal);
-            }
             int maxIdle = poolMaxIdle == null ? DriverImpl.DEFAULT_POOL_MAX_IDLE : poolMaxIdle;
-            if (maxIdle < 0) {
-                throw new IllegalArgumentException("poolMaxIdle must not be negative, but was " + maxIdle);
-            }
-            if (maxIdle > maxTotal) {
-                throw new IllegalArgumentException(
-                        "poolMaxIdle (" + maxIdle + ") must not exceed poolMaxTotal (" + maxTotal + ")");
-            }
             Duration maxWait = poolMaxWait == null ? DriverImpl.DEFAULT_POOL_MAX_WAIT : poolMaxWait;
             int connectMillis = connectionTimeout == null
                     ? DriverImpl.DEFAULT_CONNECTION_TIMEOUT_MILLIS
@@ -260,8 +244,9 @@ public final class FalkorDB {
 
         /**
          * Converts a Jedis timeout {@link Duration} to non-negative {@code int} milliseconds: rejects
-         * {@code null}/negative and values above {@link Integer#MAX_VALUE} ms, and rounds a positive
+         * negative values and values above {@link Integer#MAX_VALUE} ms, and rounds a positive
          * sub-millisecond duration up to {@code 1} ms so it never collapses to {@code 0} ("infinite").
+         * A {@code null} duration never reaches here — {@link #build()} maps it to the default instead.
          */
         private static int toTimeoutMillis(Duration duration, String name) {
             if (duration.isNegative()) {

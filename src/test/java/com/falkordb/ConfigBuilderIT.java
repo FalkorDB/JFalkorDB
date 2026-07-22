@@ -40,11 +40,14 @@ public class ConfigBuilderIT {
 
     @AfterEach
     public void closeClient() throws IOException {
-        if (client != null) {
-            client.deleteGraph();
-        }
-        if (driver != null) {
-            driver.close();
+        try {
+            if (client != null) {
+                client.deleteGraph();
+            }
+        } finally {
+            if (driver != null) {
+                driver.close();
+            }
         }
     }
 }

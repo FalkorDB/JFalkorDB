@@ -3,6 +3,7 @@ package com.falkordb.impl.api;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Duration;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
@@ -93,5 +94,23 @@ class DriverConfigTest {
         assertEquals(64, config.getMaxTotal());
         assertEquals(16, config.getMaxIdle());
         assertEquals(Duration.ofSeconds(30), config.getMaxWaitDuration());
+    }
+
+    @Test
+    void createValidatesItsArguments() {
+        // create() is a public boundary (used by FalkorDB.builder()); it must reject invalid input
+        // with IllegalArgumentException rather than surfacing a downstream NPE/other exception.
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> DriverImpl.create(null, 6379, null, null, false, 2000, 0, 8, 8, Duration.ofMillis(-1)));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> DriverImpl.create("localhost", 0, null, null, false, 2000, 0, 8, 8, Duration.ofMillis(-1)));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> DriverImpl.create("localhost", 6379, null, null, false, 2000, 0, 0, 8, Duration.ofMillis(-1)));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> DriverImpl.create("localhost", 6379, null, null, false, 2000, 0, 8, 8, null));
     }
 }
