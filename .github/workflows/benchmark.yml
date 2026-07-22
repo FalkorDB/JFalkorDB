@@ -14,9 +14,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Pull requests run untrusted PR code (`just bench` executes the PR's own Justfile), so they get
-  # least privilege: no `contents: write`. They only compare against the master baseline and comment
-  # regressions (needs `pull-requests: write`); they never push to gh-pages.
+  # Pull requests run untrusted PR code (`just bench-compare` executes the PR's own Justfile), so they
+  # get least privilege: no `contents: write`. They benchmark the PR head and its base back-to-back on
+  # the SAME runner and compare the two directly (needs `pull-requests: write` for the sticky comment);
+  # they never push to gh-pages. A same-machine A/B cancels hosted-runner speed variance — the
+  # stored-baseline radar (benchmark-master, below) compares across different runners and so emits
+  # false ~2x alerts, which is why the PR gate no longer uses it.
   benchmark-pr:
     if: github.event_name == 'pull_request'
 
@@ -30,6 +33,8 @@ jobs:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       with:
         persist-credentials: false
+        # Full history so the PR's base commit is present to check out and benchmark on this runner.
+        fetch-depth: 0
     - name: Set up JDK 21
       uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
       with:
@@ -38,43 +43,43 @@ jobs:
         cache: maven
     - name: Install just
       uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
-    - name: Run client load-sweep benchmark (via just)
-      run: just bench
-
-    # Client latency = total round-trip minus server internal execution time (smaller is better).
-    - name: Radar — client latency
-      uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
-      with:
-        name: Client latency
-        tool: 'customSmallerIsBetter'
-        output-file-path: benchmarks/target/bench-latency.json
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        gh-pages-branch: gh-pages
-        benchmark-data-dir-path: dev/bench/latency
-        alert-threshold: '200%'
-        comment-on-alert: true
-        summary-always: true
-        fail-on-alert: false
-        auto-push: false
-
-    # Throughput at each concurrency level (bigger is better).
-    - name: Radar — throughput
-      uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
-      with:
-        name: Throughput
-        tool: 'customBiggerIsBetter'
-        output-file-path: benchmarks/target/bench-throughput.json
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        gh-pages-branch: gh-pages
-        benchmark-data-dir-path: dev/bench/throughput
-        alert-threshold: '200%'
-        comment-on-alert: true
-        summary-always: true
-        fail-on-alert: false
-        auto-push: false
-        # The latency step above already fetched/checked out gh-pages in this job; re-fetching here
-        # fails ("refusing to fetch into checked-out gh-pages"), so reuse that checkout.
-        skip-fetch-gh-pages: true
+    # Benchmarks PR head vs base back-to-back on this runner, writing benchmarks/target/bench-compare.md.
+    # Regressions are reported (in the comment + job summary) but do not fail the job; a non-zero exit
+    # here means the benchmark itself broke, which should.
+    - name: Same-machine A/B benchmark (PR head vs base)
+      run: just bench-compare ${{ github.event.pull_request.base.sha }}
+    - name: Publish comparison to the job summary
+      if: always()
+      run: |
+        if [ -s benchmarks/target/bench-compare.md ]; then
+          cat benchmarks/target/bench-compare.md >> "$GITHUB_STEP_SUMMARY"
+        fi
+    - name: Upsert the comparison as a sticky PR comment
+      if: always()
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: |
+        set -euo pipefail
+        file=benchmarks/target/bench-compare.md
+        if [ ! -s "$file" ]; then
+          echo "no comparison output (benchmark step failed earlier); skipping comment"
+          exit 0
+        fi
+        # Posting is best-effort: fork PRs get a read-only GITHUB_TOKEN, so a 403 here must not fail
+        # the job (the report is still in the job summary above).
+        warn() { echo "::warning::could not post the benchmark comment (read-only token on a fork PR?); see the job summary"; exit 0; }
+        marker='<!-- bench-compare -->'
+        id="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --paginate \
+          --jq "map(select(.body | contains(\"${marker}\"))) | .[0].id // empty")" || warn
+        body="$(cat "$file")"
+        if [ -n "$id" ]; then
+          gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${id}" -f body="$body" >/dev/null || warn
+          echo "updated sticky comment ${id}"
+        else
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" -f body="$body" >/dev/null || warn
+          echo "created sticky comment"
+        fi
 
   # Master pushes are trusted and are the only runs that publish: they store the baseline/trend and
   # the curve to gh-pages, so this job gets `contents: write`.

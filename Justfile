@@ -115,6 +115,43 @@ bench-one loads:
 bench-baseline:
     just bench
 
+# Same-machine A/B: benchmark HEAD vs <base_ref> back-to-back on THIS machine, then compare — so
+# absolute runner speed cancels out (unlike the stored-baseline radar, which compares across
+# different hosted runners and therefore emits false ~2x alerts). This is exactly what the
+# `benchmark-pr` CI job runs. Needs a clean working tree (it checks out <base_ref> and back) and a
+# server like the other bench recipes, e.g.
+# `just db-up && FALKORDB_HOST=localhost FALKORDB_PORT=6379 just bench-compare origin/master`.
+bench-compare base_ref threshold="1.25" loads="1,2,4,8,16,32,64":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -n "$(git status --porcelain)" ]; then
+        echo "bench-compare needs a clean working tree (it checks out {{base_ref}} and back); commit or stash first." >&2
+        exit 1
+    fi
+    orig_ref="$(git symbolic-ref -q --short HEAD || git rev-parse HEAD)"
+    base_sha="$(git rev-parse --short "{{base_ref}}")"
+    out="$(mktemp -d)"
+    # Always restore the original ref and remove the temp dir, even if a bench/checkout fails midway.
+    cleanup() { git checkout -q "$orig_ref" 2>/dev/null || true; rm -rf "$out"; }
+    trap cleanup EXIT
+    echo "==> benchmarking HEAD ($orig_ref)"
+    just bench-one "{{loads}}"
+    cp benchmarks/target/bench-latency.json "$out/head-latency.json"
+    cp benchmarks/target/bench-throughput.json "$out/head-throughput.json"
+    echo "==> benchmarking base ({{base_ref}} = $base_sha)"
+    git checkout -q "{{base_ref}}"
+    just bench-one "{{loads}}"
+    cp benchmarks/target/bench-latency.json "$out/base-latency.json"
+    cp benchmarks/target/bench-throughput.json "$out/base-throughput.json"
+    git checkout -q "$orig_ref"  # back on HEAD so the comparator below is the current one
+    echo "==> comparing head ($orig_ref) vs base ({{base_ref}}), threshold {{threshold}}x"
+    mkdir -p benchmarks/target
+    python3 benchmarks/compare_bench.py \
+        "$out/base-latency.json" "$out/head-latency.json" \
+        "$out/base-throughput.json" "$out/head-throughput.json" \
+        --threshold "{{threshold}}" --base-label "{{base_ref}}" --head-label "$orig_ref" \
+        | tee benchmarks/target/bench-compare.md
+
 # --- Publish (run by the snapshot/release CI workflows; not for day-to-day local use) ---
 
 # Pre-fetch dependencies (snapshot workflow warm-up).
