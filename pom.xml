@@ -464,6 +464,22 @@
 							<failWhenNoMutations>false</failWhenNoMutations>
 						</configuration>
 					</plugin>
+					<!-- Javadoc gate: strict doclint on the PUBLIC/protected API (`com.falkordb.impl` is
+					     internal and excluded, matching the `api-diff` boundary). `failOnWarnings` turns
+					     any doclint gap into a failure. Off-lifecycle — invoked via `just javadoc`. -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<version>3.12.0</version>
+						<configuration>
+							<source>8</source>
+							<show>protected</show>
+							<doclint>all</doclint>
+							<failOnWarnings>true</failOnWarnings>
+							<excludePackageNames>com.falkordb.impl:com.falkordb.impl.*</excludePackageNames>
+							<notimestamp>true</notimestamp>
+						</configuration>
+					</plugin>
 				</plugins>
 			</build>
 		</profile>

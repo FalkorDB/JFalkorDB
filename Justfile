@@ -40,6 +40,11 @@ audit:
 mutation:
     ./mvnw -B -Pquality -Dgpg.skip=true test-compile org.pitest:pitest-maven:mutationCoverage
 
+# Javadoc gate: strict doclint (`all`) on the public/protected API, failing on ANY warning. This is
+# the CI `javadoc` gate. `com.falkordb.impl` is internal and excluded (matching `api-diff`).
+javadoc:
+    ./mvnw -B -Pquality -Dgpg.skip=true javadoc:javadoc
+
 # Public-API compatibility diff (japicmp): package the jar, then compare it against the last release
 # on Maven Central and fail on binary/source-incompatible PUBLIC-API changes (`com.falkordb.impl` is
 # internal and excluded). This is the CI `api-diff` gate. A reviewed, intentional break is approved

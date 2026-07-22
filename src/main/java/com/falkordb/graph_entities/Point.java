@@ -33,6 +33,8 @@ public final class Point {
     }
 
     /**
+     * Creates a point from a latitude and longitude in degrees.
+     *
      * @param latitude The latitude in degrees, normally in the range [-90.0, +90.0]. Must be finite.
      * @param longitude The longitude in degrees, normally in the range [-180.0, +180.0]. Must be finite.
      * @throws IllegalArgumentException if either coordinate is NaN or infinite
@@ -43,6 +45,8 @@ public final class Point {
     }
 
     /**
+     * Creates a point from a two-element {@code [latitude, longitude]} list.
+     *
      * @param values {@code [latitude, longitude]}
      * @throws IllegalArgumentException if {@code values} is not exactly two finite doubles
      */

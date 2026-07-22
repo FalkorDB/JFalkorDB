@@ -32,13 +32,17 @@ public class Node extends GraphEntity {
     }
 
     /**
-     * @param label - a label to be add
+     * Adds a label to the node.
+     *
+     * @param label - a label to be added
      */
     public void addLabel(String label) {
         labels.add(label);
     }
 
     /**
+     * Removes a label from the node.
+     *
      * @param label - a label to be removed
      */
     public void removeLabel(String label) {
@@ -46,8 +50,10 @@ public class Node extends GraphEntity {
     }
 
     /**
+     * Returns the label at the given index.
+     *
      * @param index - label index
-     * @return the property label
+     * @return the label at the given index
      * @throws IndexOutOfBoundsException if the index is out of range
      *                                   ({@code index < 0 || index >= getNumberOfLabels()})
      */
@@ -56,6 +62,7 @@ public class Node extends GraphEntity {
     }
 
     /**
+     * Returns the number of labels.
      *
      * @return the number of labels
      */

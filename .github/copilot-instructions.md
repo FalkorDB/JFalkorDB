@@ -23,7 +23,9 @@ recipe; recipes call the pinned Maven Wrapper (`./mvnw`).
 | `just fmt` / `just fmt-check` | Apply / check palantir-java-format (runs in the `-Pquality` profile). |
 | `just lint` | Static analysis (the CI `lint` gate): format check + **SpotBugs/FindSecBugs** + **Error Prone**, all in the off-by-default `-Pquality` profile. |
 | `just audit` | OWASP dependency-check CVE scan of the shipped deps. Slow + needs `NVD_API_KEY`; run by the scheduled/manual **`audit`** workflow, not on every PR. |
+| `just mutation` | PITest mutation testing of the pure-unit packages (observability, **not** a gate); run by the scheduled/manual **`mutation`** workflow, in the off-by-default `-Pquality` profile. |
 | `just api-diff` | Public-API compatibility diff vs the last release on Maven Central (japicmp, the CI **`api-diff`** gate): fails on binary/source-incompatible changes to the public/protected API (`com.falkordb.impl` excluded), in the off-by-default `-Pquality` profile. Approve a reviewed break with the `breaking-change` PR label. |
+| `just javadoc` | Javadoc gate (the CI **`javadoc`** gate): strict `doclint=all` + `failOnWarnings` on the public/protected API (`com.falkordb.impl` excluded), in the off-by-default `-Pquality` profile. |
 | `just spellcheck` | Spellcheck the Markdown docs (the CI `spellcheck` gate). |
 | `just db-up` / `just db-down` | Manage a local FalkorDB container. |
 | `just bench` / `just bench-one <loads>` | Client load-sweep benchmark — client latency (total − server) vs throughput across concurrency levels; feeds the per-PR-vs-`master` radar + Pages curve. |

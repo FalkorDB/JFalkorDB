@@ -36,6 +36,8 @@ public abstract class GraphEntity {
     // setters & getters
 
     /**
+     * Returns the entity id.
+     *
      * @return entity id
      */
     public long getId() {
@@ -43,6 +45,8 @@ public abstract class GraphEntity {
     }
 
     /**
+     * Sets the entity id.
+     *
      * @param id - entity id to be set
      */
     public void setId(long id) {
@@ -60,6 +64,8 @@ public abstract class GraphEntity {
     }
 
     /**
+     * Returns the entity's property names, as a Set.
+     *
      * @return Entity's property names, as a Set
      */
     public Set<String> getEntityPropertyNames() {
@@ -76,6 +82,8 @@ public abstract class GraphEntity {
     }
 
     /**
+     * Returns the number of properties.
+     *
      * @return number of properties
      */
     public int getNumberOfProperties() {
@@ -83,6 +91,8 @@ public abstract class GraphEntity {
     }
 
     /**
+     * Returns the property with the given name, or {@code null} if not found.
+     *
      * @param propertyName - property name as lookup key (String)
      * @return property object, or null if key is not found
      */
@@ -91,6 +101,8 @@ public abstract class GraphEntity {
     }
 
     /**
+     * Removes the property with the given name.
+     *
      * @param name - the name of the property to be removed
      */
     public void removeProperty(String name) {

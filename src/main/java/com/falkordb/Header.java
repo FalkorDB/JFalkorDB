@@ -30,11 +30,15 @@ public interface Header {
     }
 
     /**
+     * Returns the schema names.
+     *
      * @return the schema names
      */
     List<String> getSchemaNames();
 
     /**
+     * Returns the schema types.
+     *
      * @return the schema types
      */
     List<ResultSetColumnTypes> getSchemaTypes();
