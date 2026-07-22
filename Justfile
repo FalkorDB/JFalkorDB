@@ -88,6 +88,17 @@ verify-jdk jdk_home:
 verify-jdk8 jdk8_home:
     just verify-jdk "{{jdk8_home}}"
 
+# Compile the runnable examples (examples/, standalone, release 8) against the freshly-built jfalkordb
+# jar — the CI `examples` gate; keeps the documented examples valid as the API evolves. Run one with
+# the Exec plugin (needs `just db-up`), e.g.
+# `cd examples && ../mvnw exec:java -Dexec.mainClass=com.falkordb.examples.QuickStart`.
+examples:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ./mvnw -B -q -DskipTests -Dgpg.skip=true install
+    version="$(./mvnw -q -DforceStdout help:evaluate -Dexpression=project.version)"
+    ./mvnw -B -f examples/pom.xml -Djfalkordb.version="$version" clean compile
+
 # --- Benchmarks (client load-sweep; standalone module in benchmarks/, never shipped) ---
 
 # Build + run the client load-sweep benchmark, writing the latency/throughput/curve JSON for the
