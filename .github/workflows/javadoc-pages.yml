@@ -45,10 +45,13 @@ jobs:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         set -euo pipefail
+        # javadoc:javadoc writes to <reportOutputDirectory>/apidocs — target/reports on Maven 3.9+ or
+        # the older target/site; accept whichever exists.
         src="target/reports/apidocs"
+        [ -f "$src/index.html" ] || src="target/site/apidocs"
         test -f "$src/index.html"
         work="$(mktemp -d)"
-        git clone --quiet --branch gh-pages \
+        git clone --quiet --depth 1 --single-branch --branch gh-pages \
           "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$work"
         # Replace only /dev/api; /dev/bench and the landing page are left untouched.
         rm -rf "$work/dev/api"

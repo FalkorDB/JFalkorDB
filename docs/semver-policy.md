@@ -1,7 +1,9 @@
 # Versioning &amp; API-compatibility policy
 
-JFalkorDB follows [Semantic Versioning](https://semver.org). The project has **not yet reached 1.0**,
-so a breaking change bumps the **minor** version (`0.x` &rarr; `0.(x+1)`), per semver clause 6.
+JFalkorDB follows [Semantic Versioning](https://semver.org). The project has **not yet reached 1.0**;
+while it is in `0.x`, a **breaking change bumps the minor version** (`0.x` &rarr; `0.(x+1)`) &mdash; the
+`bump-minor-pre-major` convention configured in release-please. (Semver itself leaves `0.y.z`
+unconstrained: during initial development anything may change.)
 
 ## The public API
 
