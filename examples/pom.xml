@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+      Standalone (non-reactor, non-deployable) runnable examples of the jfalkordb public API.
+
+      Compiled in CI with release 8 against the built jfalkordb jar (the `examples` gate) so the
+      examples stay valid as the API evolves. It is never part of the main reactor or the published
+      artifact. Build via `just examples`; run an example as described in README.md.
+    -->
+    <groupId>com.falkordb.examples</groupId>
+    <artifactId>jfalkordb-examples</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>8</maven.compiler.release>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <gpg.skip>true</gpg.skip>
+        <!-- Overridden by `just examples` with the root project's actual version; the default keeps
+             this module buildable stand-alone against the current -SNAPSHOT. -->
+        <jfalkordb.version>0.10.0-SNAPSHOT</jfalkordb.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.falkordb</groupId>
+            <artifactId>jfalkordb</artifactId>
+            <version>${jfalkordb.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.15.0</version>
+            </plugin>
+            <!-- Lets you run an example with `../mvnw exec:java -Dexec.mainClass=...` (see README). -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>
