@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784727616896,
+  "lastUpdate": 1784733217883,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -1533,6 +1533,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11176.333,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d9bca2f708ac80adc7c0a8a90196d0fd1ce241d4",
+          "message": "perf: de-pin GraphCacheList cache refresh for virtual threads (#354)\n\n* perf: de-pin GraphCacheList cache refresh for virtual threads\n\nReplace the `synchronized (refreshLock)` in GraphCacheList.getCachedData —\nheld across a blocking `graph.callProcedure(...)` — with a ReentrantLock\n(lock/finally-unlock, same double-checked refresh). On JDK 21-23 a\n`synchronized` monitor held across a blocking call pins the carrier thread,\nso many concurrent queries on virtual threads would not scale; a\nReentrantLock across the same call does not pin (and stays reentrant).\nclear() now takes the same lock so it can't interleave with an in-flight\nrefresh.\n\nThis is our only pinning site. Cold connection creation inside\ncommons-pool2's GenericObjectPool.create() is itself synchronized and\nremains an upstream pinning path (documented; mitigate by warming the pool).\n\nWave 5 (#333), Track 1 · PR A.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test: fail fast on worker hang in GraphCacheList concurrency test\n\nBound the latch await and worker Thread.join() with a 10s timeout and\nassert each worker terminated, so a regression that deadlocks the refresh\npath fails the test fast instead of hanging the whole suite.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-22T18:11:37+03:00",
+          "tree_id": "86aab86814146fec1da41313d539e151db2ccd96",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/d9bca2f708ac80adc7c0a8a90196d0fd1ce241d4"
+        },
+        "date": 1784733217854,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3692.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6307.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9374.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11874.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11328.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11234.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11312,
             "unit": "ops/s"
           }
         ]
