@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784707158424,
+  "lastUpdate": 1784712914171,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -1238,6 +1238,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 16821.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "951295ce6b623b1ccae20042f24b21ad3820ed0a",
+          "message": "docs: PR 15 plan (FalkorDB.builder() + JSpecify nullability) — for review (#348)\n\n* docs: PR 15 plan (FalkorDB.builder() + JSpecify nullability) — for review\n\nDetailed, rubber-duck-reviewed implementation plan for Wave 4 · PR 15:\na fluent `FalkorDB.builder()` covering the common connection options\n(host/port, auth, TLS, pool sizing incl. maxWait, connection/socket\ntimeouts) plus JSpecify per-member nullability on the public API.\n\nVerified against the pinned Jedis 7.5.3 / commons-pool2 2.12.1 surface.\nAdditive-only (api-diff stays green), Java-8-safe, split into 15a\n(builder) + 15b (JSpecify). Temporary artifact — reviewed but NOT\nmerged; deleted once PR 15 lands. Wordlist additions are scoped to this\ntemp branch (never merged), matching prior wave-plan PRs (#316, #329).\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs: address Copilot review on PR 15 plan (#282 clarity, no new public type)\n\n- §A(2): clarify Duration.ZERO — socketTimeout ZERO=0 is the #282 \"no read\n  deadline\" default; connectionTimeout defaults to 2000ms and ZERO (infinite\n  connect) is allowed but NOT the encouraged path.\n- §A(3)/§B/§D/§H: drop the public config-spec type. build() now passes the\n  Builder's resolved values directly to a public DriverImpl.create(...) factory\n  (a method on the already-public DriverImpl), so no brand-new public class\n  ships in the jar. Testable seam = package-private Builder getters + same-package\n  unit test.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-22T12:33:11+03:00",
+          "tree_id": "0b9fff5c9080c8786b2772e9c10a90bcb62fb1ad",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/951295ce6b623b1ccae20042f24b21ad3820ed0a"
+        },
+        "date": 1784712914156,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 7373.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 11798.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 19028.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 26435.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 25996.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 24892.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 24858,
             "unit": "ops/s"
           }
         ]
