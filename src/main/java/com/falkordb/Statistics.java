@@ -84,46 +84,64 @@ public interface Statistics {
     String getStringValue(Statistics.Label label);
 
     /**
+     * Returns the number of nodes created.
+     *
      * @return the number of nodes created
      */
     int nodesCreated();
 
     /**
+     * Returns the number of nodes deleted.
+     *
      * @return the number of nodes deleted
      */
     int nodesDeleted();
 
     /**
+     * Returns the number of indices added.
+     *
      * @return the number of indices added
      */
     int indicesAdded();
 
     /**
+     * Returns the number of indices deleted.
+     *
      * @return the number of indices deleted
      */
     int indicesDeleted();
 
     /**
+     * Returns the number of labels added.
+     *
      * @return the number of labels added
      */
     int labelsAdded();
 
     /**
+     * Returns the number of relationships deleted.
+     *
      * @return the number of relationships deleted
      */
     int relationshipsDeleted();
 
     /**
+     * Returns the number of relationships created.
+     *
      * @return the number of relationships created
      */
     int relationshipsCreated();
 
     /**
+     * Returns the number of properties set.
+     *
      * @return the number of properties set
      */
     int propertiesSet();
 
     /**
+     * Returns whether the execution was cached.
+     *
      * @return whether the execution was cached
      */
     boolean cachedExecution();

@@ -3,7 +3,9 @@ package com.falkordb.graph_entities;
 import java.util.Objects;
 
 /**
- * A Graph entity property. Has a name, type, and value
+ * A Graph entity property. Has a name, type, and value.
+ *
+ * @param <T> the type of the property value
  */
 public class Property<T> {
 
@@ -28,6 +30,8 @@ public class Property<T> {
     }
 
     /**
+     * Returns the property name.
+     *
      * @return property name
      */
     public String getName() {
@@ -35,6 +39,8 @@ public class Property<T> {
     }
 
     /**
+     * Sets the property name.
+     *
      * @param name property name to be set
      */
     public void setName(String name) {
@@ -42,6 +48,8 @@ public class Property<T> {
     }
 
     /**
+     * Returns the property value.
+     *
      * @return property value
      */
     public T getValue() {
@@ -49,6 +57,8 @@ public class Property<T> {
     }
 
     /**
+     * Sets the property value.
+     *
      * @param value property value to be set
      */
     public void setValue(T value) {

@@ -31,6 +31,8 @@ public class Edge extends GraphEntity {
     // getters & setters
 
     /**
+     * Returns the edge relationship type.
+     *
      * @return the edge relationship type
      */
     public String getRelationshipType() {
@@ -38,6 +40,8 @@ public class Edge extends GraphEntity {
     }
 
     /**
+     * Sets the edge relationship type.
+     *
      * @param relationshipType - the relationship type to be set.
      */
     public void setRelationshipType(String relationshipType) {
@@ -45,6 +49,8 @@ public class Edge extends GraphEntity {
     }
 
     /**
+     * Returns the id of the source node.
+     *
      * @return The id of the source node
      */
     public long getSource() {
@@ -52,6 +58,8 @@ public class Edge extends GraphEntity {
     }
 
     /**
+     * Sets the id of the source node.
+     *
      * @param source - The id of the source node to be set
      */
     public void setSource(long source) {
@@ -59,6 +67,7 @@ public class Edge extends GraphEntity {
     }
 
     /**
+     * Returns the id of the destination node.
      *
      * @return the id of the destination node
      */
@@ -67,6 +76,7 @@ public class Edge extends GraphEntity {
     }
 
     /**
+     * Sets the id of the destination node.
      *
      * @param destination - The id of the destination node to be set
      */

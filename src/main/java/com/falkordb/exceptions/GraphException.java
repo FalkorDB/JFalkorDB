@@ -10,6 +10,8 @@ public class GraphException extends JedisDataException {
     private static final long serialVersionUID = -476099681322055468L;
 
     /**
+     * Creates a GraphException with the given error message.
+     *
      * @param message the error message
      */
     public GraphException(String message) {
@@ -17,6 +19,8 @@ public class GraphException extends JedisDataException {
     }
 
     /**
+     * Creates a GraphException with the given cause.
+     *
      * @param cause the cause of the exception
      */
     public GraphException(Throwable cause) {
@@ -24,6 +28,8 @@ public class GraphException extends JedisDataException {
     }
 
     /**
+     * Creates a GraphException with the given error message and cause.
+     *
      * @param message the error message
      * @param cause the cause of the exception
      */
