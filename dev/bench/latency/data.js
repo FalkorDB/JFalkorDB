@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784717651681,
+  "lastUpdate": 1784721046193,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -2966,6 +2966,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 65487.503,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "41ae17794b75d3f763f516d7338fd732dcd406c7",
+          "message": "ci: make the PR benchmark a same-machine head-vs-base A/B (#350)\n\n* build: add same-machine bench-compare (script + just recipe)\n\n* ci: make the PR benchmark a same-machine head-vs-base A/B\n\nThe benchmark-pr job compared the PR against a stored gh-pages baseline that\nwas captured on a different hosted runner, so runner-speed variance produced\nfalse ~2x regression alerts (observed on #349). Replace that with a\nsame-machine A/B: benchmark the PR head and its base back-to-back on one\nrunner via 'just bench-compare' and compare the two directly, posting a\nsticky comparison comment. Regressions are reported but non-blocking; the\nmaster job keeps publishing the gh-pages trend/curve.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* fix: harden bench-compare (self-review)\n\n- compare_bench.py: None-safe throughput/p50 value cells so a base/head\n  metric-name mismatch (e.g. a renamed metric) reports 'n/a' instead of\n  crashing with a TypeError.\n- benchmark.yml: make the sticky-comment write best-effort so a fork PR's\n  read-only GITHUB_TOKEN (403) does not fail the otherwise-green job (the\n  report is still in the job summary); guard on a non-empty file (-s).\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* fix: bench-compare temp-dir cleanup, clean-tree guard, docstring (Copilot review)\n\n- Justfile: trap a cleanup that restores the ref AND removes the mktemp dir\n  for the whole script (no more leaked temp dirs); require a fully clean tree\n  (drop --untracked-files=no) so a cross-ref checkout can't be blocked/clobbered.\n- compare_bench.py: docstring now matches behavior (report-only exit 0 by\n  default; exit 1 only with --fail-on-regression; exit 2 on no comparable data).\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* fix: bench-compare non-positive ratio guard + rename ratio column (Copilot)\n\n- compare_bench.py slowdown(): treat any missing OR non-positive base/head\n  value as non-comparable (return None -> 'n/a') for both throughput and\n  latency, so a 0 throughput / 0 percentile no longer yields a misleading 0x.\n- Rename the misnamed 'Δ' columns to 'ratio' (they show head/base ratios).\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-22T14:48:51+03:00",
+          "tree_id": "188643fdb414fc94699578140bf5f097f86eb7fb",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/41ae17794b75d3f763f516d7338fd732dcd406c7"
+        },
+        "date": 1784721045821,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 159.745,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 204.281,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 243.939,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 205.542,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 247.094,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 270.538,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 262.275,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 402.24,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 484.573,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 423.634,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 725.032,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 902.54,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 505.85,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 4828.166,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 9885.66,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 524.668,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 13147.233,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 27574.711,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 528.478,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 29659.035,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 61539.822,
             "unit": "us"
           }
         ]
