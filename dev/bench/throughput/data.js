@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784733217883,
+  "lastUpdate": 1784743669206,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -1592,6 +1592,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11312,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f6410c3c18e82368630617bc9dbdfc409f90ee01",
+          "message": "feat: add CompletableFuture async facade (AsyncGraph / AsyncFalkorDB) (#355)\n\n* feat: add CompletableFuture async facade (AsyncGraph / AsyncFalkorDB)\n\nAdd an optional asynchronous view over the synchronous blocking Graph API so\ncallers on JDK 21+ can fan the blocking client out over a virtual-thread (or any)\nexecutor while the client itself stays pure Java 8.\n\n- com.falkordb.AsyncGraph: public interface mirroring Graph's 17 query ops, each\n  returning CompletableFuture<T>, plus a graph() escape hatch that returns the\n  wrapped concurrency-safe GraphContextGenerator (never a connection-bound Graph).\n- com.falkordb.AsyncFalkorDB.wrap(GraphContextGenerator, Executor): factory. The\n  facade owns nothing (not Closeable); the caller owns the graph and the executor.\n- com.falkordb.impl.api.AsyncGraphImpl: internal impl via CompletableFuture.supplyAsync.\n\nPure Java 8 and additive (api-diff green); the caller supplies the JDK-21 executor,\nso no library type references Loom. Cancellation is best-effort but honors\ncancel-before-start; failures surface as the future completing exceptionally.\n\nTests: AsyncFalkorDBTest (unit) covers delegation of all 17 ops, exception\nunwrapping, cancel-before-start, null-arg rejection, and the graph() escape hatch\nwith hand-rolled fakes (no Mockito). AsyncFalkorDBIT (server) fans out over a fixed\nplatform-thread pool with a finite poolMaxWait — deliberately not virtual threads,\nsince cold commons-pool2 connection creation pins carriers on JDK 21-23 (that\npinning is characterized separately by the Wave-5 pinning check).\n\nWave 5 (#333) item: CompletableFuture async facade.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test: honor ResultSet non-null contract and close the graph in async IT\n\n- FakeResultSet.getStatistics()/getHeader() now throw UnsupportedOperationException\n  instead of returning null, honoring the @NullMarked ResultSet contract (the fake\n  is an identity sentinel and these are never called).\n- AsyncFalkorDBIT.cleanup() now closes the GraphContextGenerator (clears its cache)\n  in addition to the Driver, matching the facade's caller-owns-the-graph contract;\n  ordered deleteGraph -> client.close -> executor.shutdownNow -> driver.close.\n\nAddresses Copilot review on #355.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* fix: async facade returns a failed future on executor rejection; bound IT shutdown\n\n- AsyncGraphImpl now submits via a submit(Supplier<T>) helper that catches\n  RejectedExecutionException from CompletableFuture.supplyAsync and returns a\n  future completed exceptionally, so AsyncGraph methods always return a future\n  (honoring the exceptional-completion contract) even if the executor is\n  saturated or shut down. New unit test covers this (never reaches the graph).\n- AsyncFalkorDBIT.cleanup() now bounds executor.shutdownNow() with a\n  awaitTermination(10s) and restores the interrupt flag, so non-daemon pool\n  threads can't linger and hang the JVM.\n\nAddresses Copilot re-review on #355.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-22T21:06:11+03:00",
+          "tree_id": "6b1abb19e6e922b5c0b88aa3bd708e34fbcc144f",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/f6410c3c18e82368630617bc9dbdfc409f90ee01"
+        },
+        "date": 1784743669177,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3529,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 5984,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 8848,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11828.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11208.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11304.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11165.667,
             "unit": "ops/s"
           }
         ]
