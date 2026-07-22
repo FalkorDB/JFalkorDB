@@ -50,7 +50,7 @@ loadScripts(document, 'script');</script>
 <div class="header">
 <h1>Index</h1>
 </div>
-<a href="#I:A">A</a>&nbsp;<a href="#I:C">C</a>&nbsp;<a href="#I:D">D</a>&nbsp;<a href="#I:E">E</a>&nbsp;<a href="#I:F">F</a>&nbsp;<a href="#I:G">G</a>&nbsp;<a href="#I:H">H</a>&nbsp;<a href="#I:I">I</a>&nbsp;<a href="#I:K">K</a>&nbsp;<a href="#I:L">L</a>&nbsp;<a href="#I:M">M</a>&nbsp;<a href="#I:N">N</a>&nbsp;<a href="#I:P">P</a>&nbsp;<a href="#I:Q">Q</a>&nbsp;<a href="#I:R">R</a>&nbsp;<a href="#I:S">S</a>&nbsp;<a href="#I:T">T</a>&nbsp;<a href="#I:U">U</a>&nbsp;<a href="#I:V">V</a>&nbsp;<a href="#I:W">W</a>&nbsp;<br><a href="allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interfaces</a><span class="vertical-separator">|</span><a href="allpackages-index.html">All&nbsp;Packages</a><span class="vertical-separator">|</span><a href="serialized-form.html">Serialized&nbsp;Form</a>
+<a href="#I:A">A</a>&nbsp;<a href="#I:B">B</a>&nbsp;<a href="#I:C">C</a>&nbsp;<a href="#I:D">D</a>&nbsp;<a href="#I:E">E</a>&nbsp;<a href="#I:F">F</a>&nbsp;<a href="#I:G">G</a>&nbsp;<a href="#I:H">H</a>&nbsp;<a href="#I:I">I</a>&nbsp;<a href="#I:K">K</a>&nbsp;<a href="#I:L">L</a>&nbsp;<a href="#I:M">M</a>&nbsp;<a href="#I:N">N</a>&nbsp;<a href="#I:P">P</a>&nbsp;<a href="#I:Q">Q</a>&nbsp;<a href="#I:R">R</a>&nbsp;<a href="#I:S">S</a>&nbsp;<a href="#I:T">T</a>&nbsp;<a href="#I:U">U</a>&nbsp;<a href="#I:V">V</a>&nbsp;<a href="#I:W">W</a>&nbsp;<br><a href="allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interfaces</a><span class="vertical-separator">|</span><a href="allpackages-index.html">All&nbsp;Packages</a><span class="vertical-separator">|</span><a href="serialized-form.html">Serialized&nbsp;Form</a>
 <h2 class="title" id="I:A">A</h2>
 <dl class="index">
 <dt><a href="com/falkordb/graph_entities/Node.html#addLabel(java.lang.String)" class="member-name-link">addLabel(String)</a> - Method in class com.falkordb.graph_entities.<a href="com/falkordb/graph_entities/Node.html" title="class in com.falkordb.graph_entities">Node</a></dt>
@@ -64,6 +64,18 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/falkordb/graph_entities/GraphEntity.html#addProperty(java.lang.String,java.lang.Object)" class="member-name-link">addProperty(String, Object)</a> - Method in class com.falkordb.graph_entities.<a href="com/falkordb/graph_entities/GraphEntity.html" title="class in com.falkordb.graph_entities">GraphEntity</a></dt>
 <dd>
 <div class="block">Adds a property to the entity, by composing name, type and value to a property object</div>
+</dd>
+</dl>
+<h2 class="title" id="I:B">B</h2>
+<dl class="index">
+<dt><a href="com/falkordb/FalkorDB.Builder.html#build()" class="member-name-link">build()</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Validates the configuration and builds a driver.</div>
+</dd>
+<dt><a href="com/falkordb/FalkorDB.html#builder()" class="member-name-link">builder()</a> - Static method in class com.falkordb.<a href="com/falkordb/FalkorDB.html" title="class in com.falkordb">FalkorDB</a></dt>
+<dd>
+<div class="block">Starts building a driver with a fluent, discoverable configuration API — a superset of the
+ <code>driver(...)</code> factories that also exposes TLS, connection-pool sizing, and timeouts.</div>
 </dd>
 </dl>
 <h2 class="title" id="I:C">C</h2>
@@ -149,6 +161,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Sets the value of a FalkorDB configuration parameter.</div>
 </dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#connectionTimeout(java.time.Duration)" class="member-name-link">connectionTimeout(Duration)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Sets the connection (connect) timeout (default 2000&nbsp;ms).</div>
+</dd>
 <dt><a href="com/falkordb/Record.html#containsKey(java.lang.String)" class="member-name-link">containsKey(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/Record.html" title="interface in com.falkordb">Record</a></dt>
 <dd>
 <div class="block">Check if the record header contains the given key</div>
@@ -160,6 +176,15 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/falkordb/GraphPipeline.html#copyGraph(java.lang.String)" class="member-name-link">copyGraph(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/GraphPipeline.html" title="interface in com.falkordb">GraphPipeline</a></dt>
 <dd>
 <div class="block">Copies the graph</div>
+</dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#credentials(java.lang.String)" class="member-name-link">credentials(String)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Sets a password for password-only (<code>default</code> user) authentication, clearing any
+ previously set username.</div>
+</dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#credentials(java.lang.String,java.lang.String)" class="member-name-link">credentials(String, String)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Sets the username and password used to authenticate.</div>
 </dd>
 </dl>
 <h2 class="title" id="I:D">D</h2>
@@ -262,6 +287,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/falkordb/FalkorDB.html" class="type-name-link" title="class in com.falkordb">FalkorDB</a> - Class in <a href="com/falkordb/package-summary.html">com.falkordb</a></dt>
 <dd>
 <div class="block">FalkorDB driver factory</div>
+</dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html" class="type-name-link" title="class in com.falkordb">FalkorDB.Builder</a> - Class in <a href="com/falkordb/package-summary.html">com.falkordb</a></dt>
+<dd>
+<div class="block">A fluent builder for a <a href="com/falkordb/Driver.html" title="interface in com.falkordb"><code>Driver</code></a>, created via <a href="com/falkordb/FalkorDB.html#builder()"><code>FalkorDB.builder()</code></a>.</div>
 </dd>
 <dt><a href="com/falkordb/graph_entities/Path.html#firstNode()" class="member-name-link">firstNode()</a> - Method in class com.falkordb.graph_entities.<a href="com/falkordb/graph_entities/Path.html" title="class in com.falkordb.graph_entities">Path</a></dt>
 <dd>
@@ -462,6 +491,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">The type of a column in a result set.</div>
 </dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#host(java.lang.String)" class="member-name-link">host(String)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Sets the server host (default <code>"localhost"</code>).</div>
+</dd>
 </dl>
 <h2 class="title" id="I:I">I</h2>
 <dl class="index">
@@ -584,6 +617,23 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/falkordb/graph_entities/Point.html#%3Cinit%3E(java.util.List)" class="member-name-link">Point(List&lt;Double&gt;)</a> - Constructor for class com.falkordb.graph_entities.<a href="com/falkordb/graph_entities/Point.html" title="class in com.falkordb.graph_entities">Point</a></dt>
 <dd>
 <div class="block">Creates a point from a two-element <code>[latitude, longitude]</code> list.</div>
+</dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#poolMaxIdle(int)" class="member-name-link">poolMaxIdle(int)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Sets the maximum number of idle connections kept in the pool (default <code>8</code>).</div>
+</dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#poolMaxTotal(int)" class="member-name-link">poolMaxTotal(int)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Sets the maximum connection-pool size (default <code>8</code>).</div>
+</dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#poolMaxWait(java.time.Duration)" class="member-name-link">poolMaxWait(Duration)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Sets the maximum time to wait for a connection when the pool is exhausted (default: wait
+ indefinitely).</div>
+</dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#port(int)" class="member-name-link">port(int)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Sets the server port (default <code>6379</code>).</div>
 </dd>
 <dt><a href="com/falkordb/Graph.html#profile(java.lang.String)" class="member-name-link">profile(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>
@@ -812,6 +862,15 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns the number of records in the result set.</div>
 </dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#socketTimeout(java.time.Duration)" class="member-name-link">socketTimeout(Duration)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Sets the socket (read) timeout (default <a href="https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#ZERO" title="class or interface in java.time" class="external-link"><code>Duration.ZERO</code></a> = no read deadline, so a
+ long-running server query is never cut off client-side).</div>
+</dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#ssl(boolean)" class="member-name-link">ssl(boolean)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Enables or disables TLS (default <code>false</code>).</div>
+</dd>
 <dt><a href="com/falkordb/Statistics.html" class="type-name-link" title="interface in com.falkordb">Statistics</a> - Interface in <a href="com/falkordb/package-summary.html">com.falkordb</a></dt>
 <dd>
 <div class="block">An interface for the statistics of a result set.</div>
@@ -912,7 +971,7 @@ the order they are declared.</div>
 <div class="block">Perform watch over given Redis keys (Graphs names)</div>
 </dd>
 </dl>
-<a href="#I:A">A</a>&nbsp;<a href="#I:C">C</a>&nbsp;<a href="#I:D">D</a>&nbsp;<a href="#I:E">E</a>&nbsp;<a href="#I:F">F</a>&nbsp;<a href="#I:G">G</a>&nbsp;<a href="#I:H">H</a>&nbsp;<a href="#I:I">I</a>&nbsp;<a href="#I:K">K</a>&nbsp;<a href="#I:L">L</a>&nbsp;<a href="#I:M">M</a>&nbsp;<a href="#I:N">N</a>&nbsp;<a href="#I:P">P</a>&nbsp;<a href="#I:Q">Q</a>&nbsp;<a href="#I:R">R</a>&nbsp;<a href="#I:S">S</a>&nbsp;<a href="#I:T">T</a>&nbsp;<a href="#I:U">U</a>&nbsp;<a href="#I:V">V</a>&nbsp;<a href="#I:W">W</a>&nbsp;<br><a href="allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interfaces</a><span class="vertical-separator">|</span><a href="allpackages-index.html">All&nbsp;Packages</a><span class="vertical-separator">|</span><a href="serialized-form.html">Serialized&nbsp;Form</a></main>
+<a href="#I:A">A</a>&nbsp;<a href="#I:B">B</a>&nbsp;<a href="#I:C">C</a>&nbsp;<a href="#I:D">D</a>&nbsp;<a href="#I:E">E</a>&nbsp;<a href="#I:F">F</a>&nbsp;<a href="#I:G">G</a>&nbsp;<a href="#I:H">H</a>&nbsp;<a href="#I:I">I</a>&nbsp;<a href="#I:K">K</a>&nbsp;<a href="#I:L">L</a>&nbsp;<a href="#I:M">M</a>&nbsp;<a href="#I:N">N</a>&nbsp;<a href="#I:P">P</a>&nbsp;<a href="#I:Q">Q</a>&nbsp;<a href="#I:R">R</a>&nbsp;<a href="#I:S">S</a>&nbsp;<a href="#I:T">T</a>&nbsp;<a href="#I:U">U</a>&nbsp;<a href="#I:V">V</a>&nbsp;<a href="#I:W">W</a>&nbsp;<br><a href="allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interfaces</a><span class="vertical-separator">|</span><a href="allpackages-index.html">All&nbsp;Packages</a><span class="vertical-separator">|</span><a href="serialized-form.html">Serialized&nbsp;Form</a></main>
 <footer role="contentinfo">
 <hr>
 <p class="legal-copy"><small>Copyright &#169; 2026 <a href="https://www.falkordb.com">FalkorDB</a>. All rights reserved.</small></p>
