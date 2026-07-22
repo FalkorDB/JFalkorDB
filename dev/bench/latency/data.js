@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784642865790,
+  "lastUpdate": 1784696435634,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -2192,6 +2192,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 73064.969,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2aa692a1e10beb068ec01ce8b38b34500d0dd6e5",
+          "message": "ci: add a JDK runtime matrix (smoke-jdk 11/17/21) via generalized verify-jdk (#343)\n\n* ci: add a JDK runtime matrix (smoke-jdk 11/17/21) via generalized verify-jdk\n\nWave 4 - 13b (part 1). Generalize the Justfile verify-jdk8 recipe to\nverify-jdk <home> (JDK-agnostic; verify-jdk8 kept as a thin alias for the\nrequired smoke-jdk8 CI context) and add a smoke-jdk CI matrix that runs the\npackaged-artifact smoke on JDK 11/17/21 against the pinned FalkorDB. Proves\nthe Java-8 artifact loads and runs on newer JDK runtimes - the runtime\nguarantee the compile-time guards can't give.\n\nJDK 8 stays in the required smoke-jdk8 job (branch-protection context); once\nbranch protection requires smoke-jdk, 8 folds in and smoke-jdk8 retires.\n\nValidated locally: just verify-jdk on JDK 11 and verify-jdk8 (delegation) on\nJDK 8 both green against a local FalkorDB. Docs + spellcheck updated.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs: correct the JDK-matrix coverage note in CONTRIBUTING\n\nAddress Copilot review on #343: the smoke-jdk matrix runs 11/17/21; JDK 8 is\ncovered by the separate required smoke-jdk8 job. Reword so CONTRIBUTING no\nlonger implies the smoke-jdk matrix itself covers 8.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-22T07:59:06+03:00",
+          "tree_id": "70b3a52e03be0cc8de1cb25d3e21c94cb1b84149",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/2aa692a1e10beb068ec01ce8b38b34500d0dd6e5"
+        },
+        "date": 1784696434711,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 201.275,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 243.344,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 274.691,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 242.954,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 287.176,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 332.5,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 301.272,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 461.362,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 562.009,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 502.016,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 841.859,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1032.386,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 598.237,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5379.573,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 10886.679,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 595.058,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 15338.28,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 30692.6,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 594.097,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 34527.962,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 70278.616,
             "unit": "us"
           }
         ]
