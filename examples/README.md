@@ -24,8 +24,8 @@ This installs the current `jfalkordb` jar and compiles this module against it.
 ## Run
 
 `QuickStart` needs a FalkorDB reachable at `localhost:6379` (start one with `just db-up`). After
-`just examples`, run a class on the classpath of this module plus its dependencies — the simplest way
-is via the Exec plugin:
+`just examples`, run a class against this module and its dependencies — the simplest way is via the
+Exec plugin:
 
 ```sh
 cd examples
