@@ -118,4 +118,40 @@ jobs:
       uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
     - name: Build on JDK 21, run the packaged-artifact smoke on JDK 8 (via just)
       run: just verify-jdk8 "$JAVA_HOME_8_X64"
-            
+
+  # JDK runtime matrix: prove the packaged Java-8 artifact also loads and runs on newer JDKs (the
+  # runtime guarantee the compile-time guards can't give). JDK 8 stays in the required `smoke-jdk8`
+  # job above (kept for its branch-protection context); once branch protection requires this matrix,
+  # 8 can be folded in and `smoke-jdk8` retired.
+  smoke-jdk:
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        jdk: ['11', '17', '21']
+
+    # Same pinned FalkorDB (v4.20.1) as smoke-jdk8, so a runtime regression is isolated from image drift.
+    services:
+      falkordb:
+        image: falkordb/falkordb@sha256:9042fdc4e53f5390ca5a3993aa71506523970efb40ffb9a98e6a4b1a9a4f8862
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      with:
+        persist-credentials: false
+    - name: Set up JDK ${{ matrix.jdk }} (runtime) and JDK 21 (build)
+      uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+      with:
+        java-version: |
+          ${{ matrix.jdk }}
+          21
+        distribution: 'temurin'
+        cache: maven
+    - name: Install just
+      uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+    - name: Build on JDK 21, run the packaged-artifact smoke on JDK ${{ matrix.jdk }} (via just)
+      run: just verify-jdk "$JAVA_HOME_${{ matrix.jdk }}_X64"
