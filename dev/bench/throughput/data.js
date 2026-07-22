@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784721047513,
+  "lastUpdate": 1784725343684,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -1415,6 +1415,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 12578.333,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6812aa98ddf9db98995869e51fa1cc67e4e343f9",
+          "message": "feat: add JSpecify nullability to the public API (#351)\n\n* feat: add JSpecify nullability to the public API\n\nAdds org.jspecify:jspecify 1.0.0 (compile scope, Java-8 bytecode) and marks\nthe three public API packages @NullMarked (com.falkordb, .graph_entities,\n.exceptions) via package-info.java, so every public type is non-null by\ndefault. Genuinely-nullable members are annotated @Nullable:\n\n- GraphEntity.getProperty (return), addProperty value param\n- Property name/value (fields, ctor, getters, setters)\n- Edge.relationshipType (field, getter, setter)\n- Record.getValue(int|String) (return)\n- Statistics.getStringValue + Statistics.Label.getEnum (returns)\n- GraphTransaction.exec (return — null on a WATCH-aborted MULTI/EXEC)\n- Driver.udfList libraryName (optional filter param)\n- GraphException message/cause ctor params\n\ncom.falkordb.impl stays unmarked (internal, api-diff-excluded). The shipped\nartifact remains Java-8: the javadoc gate pins release 11 so @NullMarked's\nJava-9 ElementType.MODULE @Target resolves (doc-only; compiler stays\nrelease 8, Enforcer + Animal Sniffer + the JDK-8 smoke unchanged), and the\ndefault compiler silences the spurious classfile warning. The smoke-test\nadds a JDK-8 reflection check that GraphEntity.getProperty carries a\nruntime-visible @Nullable.\n\nPart of Wave 4 (#332), PR 15b (completes item 15 with 15a #349).\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* fix: address Copilot + CodeRabbit review on 15b\n\n- GraphEntity.addProperty(Property): reject a null property name so it can\n  never leak a null key into the @NullMarked getEntityPropertyNames() (raised\n  by both reviewers). ResultSetImpl already setName(...)s before adding, so\n  deserialization is unaffected.\n- Document the newly-@Nullable contracts in Javadoc @return tags:\n  Property.getName/getValue, Edge.getRelationshipType, Record.getValue(int|\n  String), Statistics.Label.getEnum.\n- package-info.java (x3): reword to the JSpecify-accurate \"an unannotated type\n  usage is non-null\" (annotated @Nullable are the exceptions).\n\ngetProperty keeps its raw Property return: widening it to Property<?> trips the\napi-diff gate (METHOD_RETURN_TYPE_GENERICS_CHANGED), so that (source/binary-safe\nbut gate-flagged) generics polish is deferred to a breaking-change-labelled PR.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-22T16:00:41+03:00",
+          "tree_id": "45cc4071543d0b9a33dd211d28ac9d512f1a28bb",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/6812aa98ddf9db98995869e51fa1cc67e4e343f9"
+        },
+        "date": 1784725343657,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3371.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6098,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9468.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11979,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11264.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11209.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11198.667,
             "unit": "ops/s"
           }
         ]
