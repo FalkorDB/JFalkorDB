@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784700306141,
+  "lastUpdate": 1784702806537,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -1120,6 +1120,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11314,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4dbc400bc3c76d3aa6ab55a10009f143f19c04bc",
+          "message": "build: add a strict Javadoc gate (doclint=all) + fix public-API Javadoc (#346)\n\n* build: add a strict Javadoc gate (doclint=all) + fix public-API Javadoc\n\nWave 4 - PR 17 (part 1). Add a Javadoc gate in the off-by-default quality\nprofile: maven-javadoc-plugin with source 8, show=protected, doclint=all and\nfailOnWarnings=true, scoped to the public/protected API (com.falkordb.impl\nexcluded, matching the api-diff boundary). Invoked via a new 'just javadoc'\nrecipe and a new CI 'javadoc' job.\n\nTurning on the gate surfaced 40 doclint gaps on the public API (mostly\n'no main description' - block tags with no summary sentence - plus a missing\n@param <T> on Property). Fixed them all with concise summaries across\nProperty, Point, Node, Edge, GraphEntity, GraphException, ResultSet, Header,\nStatistics.\n\nValidated: 'just javadoc' green (0 warnings; the 41->0 progression proves the\ngate is active), 'just fmt-check' + 'just spellcheck' green. Documented\n'just javadoc' (and 'just mutation') in the recipe table.\n\nPages publishing (gh-pages Javadoc subdir, coordinated with the benchmark\npublisher) and the semver-policy doc are deliberate follow-ups (17b).\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* build: drop javadoc <quiet> and fix 'to be add' typo\n\nAddress Copilot review on #346:\n- Remove <quiet>true</quiet> from the Javadoc gate so a doclint failure\n  prints full diagnostics in CI (its only benefit was less progress noise on\n  success, which doesn't matter).\n- Fix a pre-existing typo carried into the new summary: 'a label to be add'\n  -> 'a label to be added' (Node.addLabel).\n\njust javadoc still green (0 warnings); fmt-check green.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs: correct getLabel @return (node label, not 'property label')\n\nAddress Copilot review on #346: Node.getLabel(int) returns a node label from\nthe labels list, but its @return said 'the property label'. Correct it to\n'the label at the given index'.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-22T09:45:07+03:00",
+          "tree_id": "1f5e61139e4d36291f4717b0a2b4a26cef5bd042",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/4dbc400bc3c76d3aa6ab55a10009f143f19c04bc"
+        },
+        "date": 1784702806516,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3486,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 5914,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 8862,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11571.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 10926.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 10930.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 10877.333,
             "unit": "ops/s"
           }
         ]
