@@ -54,14 +54,11 @@ def fmt_pair(base, head, fmt):
 
 
 def slowdown(base, head, bigger_is_better):
-    """Ratio >1 == head is worse than base. None when it cannot be computed."""
-    if base is None or head is None:
+    """Ratio >1 == head is worse than base. None when it cannot be computed (a value is missing or
+    non-positive, e.g. a 0 throughput or 0 percentile from an empty sample set — not comparable)."""
+    if base is None or head is None or base <= 0 or head <= 0:
         return None
-    if bigger_is_better:
-        # throughput: worse means head < base
-        return None if head <= 0 else base / head
-    # latency: worse means head > base
-    return None if base <= 0 else head / base
+    return base / head if bigger_is_better else head / base
 
 
 def main():
@@ -101,7 +98,7 @@ def main():
         f"that much slower. Throughput & p50 are gated; p95/p99 are shown for context only "
         "(high-load tails are noisy).")
     lines.append("")
-    lines.append("| load | throughput (ops/s) base→head | Δ | p50 (µs) base→head | Δ | p95 Δ | p99 Δ |")
+    lines.append("| load | throughput (ops/s) base→head | ratio | p50 (µs) base→head | ratio | p95 ratio | p99 ratio |")
     lines.append("|--:|--|--:|--|--:|--:|--:|")
 
     regressions = []
