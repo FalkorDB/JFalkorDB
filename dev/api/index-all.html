@@ -65,6 +65,16 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Adds a property to the entity, by composing name, type and value to a property object</div>
 </dd>
+<dt><a href="com/falkordb/AsyncFalkorDB.html" class="type-name-link" title="class in com.falkordb">AsyncFalkorDB</a> - Class in <a href="com/falkordb/package-summary.html">com.falkordb</a></dt>
+<dd>
+<div class="block">Factory for <a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb"><code>AsyncGraph</code></a>, an asynchronous view over a synchronous <a href="com/falkordb/Graph.html" title="interface in com.falkordb"><code>Graph</code></a>.</div>
+</dd>
+<dt><a href="com/falkordb/AsyncGraph.html" class="type-name-link" title="interface in com.falkordb">AsyncGraph</a> - Interface in <a href="com/falkordb/package-summary.html">com.falkordb</a></dt>
+<dd>
+<div class="block">An asynchronous view over a <a href="com/falkordb/Graph.html" title="interface in com.falkordb"><code>Graph</code></a>: every method mirrors the synchronous <code>Graph</code>
+ operation of the same name but runs it on a caller-supplied <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Executor.html" title="class or interface in java.util.concurrent" class="external-link"><code>Executor</code></a>
+ and returns a <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/CompletableFuture.html" title="class or interface in java.util.concurrent" class="external-link"><code>CompletableFuture</code></a>.</div>
+</dd>
 </dl>
 <h2 class="title" id="I:B">B</h2>
 <dl class="index">
@@ -88,6 +98,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Returns whether the execution was cached.</div>
 </dd>
+<dt><a href="com/falkordb/AsyncGraph.html#callProcedure(java.lang.String)" class="member-name-link">callProcedure(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
+<dd>
+<div class="block">Asynchronously runs <a href="com/falkordb/Graph.html#callProcedure(java.lang.String)"><code>Graph.callProcedure(String)</code></a>.</div>
+</dd>
 <dt><a href="com/falkordb/Graph.html#callProcedure(java.lang.String)" class="member-name-link">callProcedure(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>
 <div class="block">Invokes stored procedures without arguments</div>
@@ -100,6 +114,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Invokes stored procedures without arguments</div>
 </dd>
+<dt><a href="com/falkordb/AsyncGraph.html#callProcedure(java.lang.String,java.util.List)" class="member-name-link">callProcedure(String, List&lt;String&gt;)</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
+<dd>
+<div class="block">Asynchronously runs <a href="com/falkordb/Graph.html#callProcedure(java.lang.String,java.util.List)"><code>Graph.callProcedure(String, List)</code></a>.</div>
+</dd>
 <dt><a href="com/falkordb/Graph.html#callProcedure(java.lang.String,java.util.List)" class="member-name-link">callProcedure(String, List&lt;String&gt;)</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>
 <div class="block">Invokes stored procedure with arguments</div>
@@ -111,6 +129,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/falkordb/GraphTransaction.html#callProcedure(java.lang.String,java.util.List)" class="member-name-link">callProcedure(String, List&lt;String&gt;)</a> - Method in interface com.falkordb.<a href="com/falkordb/GraphTransaction.html" title="interface in com.falkordb">GraphTransaction</a></dt>
 <dd>
 <div class="block">Invokes stored procedure with arguments</div>
+</dd>
+<dt><a href="com/falkordb/AsyncGraph.html#callProcedure(java.lang.String,java.util.List,java.util.Map)" class="member-name-link">callProcedure(String, List&lt;String&gt;, Map&lt;String, List&lt;String&gt;&gt;)</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
+<dd>
+<div class="block">Asynchronously runs <a href="com/falkordb/Graph.html#callProcedure(java.lang.String,java.util.List,java.util.Map)"><code>Graph.callProcedure(String, List, Map)</code></a>.</div>
 </dd>
 <dt><a href="com/falkordb/Graph.html#callProcedure(java.lang.String,java.util.List,java.util.Map)" class="member-name-link">callProcedure(String, List&lt;String&gt;, Map&lt;String, List&lt;String&gt;&gt;)</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>
@@ -176,6 +198,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Check if the record header contains the given key</div>
 </dd>
+<dt><a href="com/falkordb/AsyncGraph.html#copyGraph(java.lang.String)" class="member-name-link">copyGraph(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
+<dd>
+<div class="block">Asynchronously runs <a href="com/falkordb/Graph.html#copyGraph(java.lang.String)"><code>Graph.copyGraph(String)</code></a>.</div>
+</dd>
 <dt><a href="com/falkordb/Graph.html#copyGraph(java.lang.String)" class="member-name-link">copyGraph(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>
 <div class="block">Copies the graph</div>
@@ -196,6 +222,10 @@ loadScripts(document, 'script');</script>
 </dl>
 <h2 class="title" id="I:D">D</h2>
 <dl class="index">
+<dt><a href="com/falkordb/AsyncGraph.html#deleteGraph()" class="member-name-link">deleteGraph()</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
+<dd>
+<div class="block">Asynchronously runs <a href="com/falkordb/Graph.html#deleteGraph()"><code>Graph.deleteGraph()</code></a>.</div>
+</dd>
 <dt><a href="com/falkordb/Graph.html#deleteGraph()" class="member-name-link">deleteGraph()</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>
 <div class="block">Deletes the entire graph</div>
@@ -264,6 +294,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">executes the transaction</div>
 </dd>
+<dt><a href="com/falkordb/AsyncGraph.html#explain(java.lang.String)" class="member-name-link">explain(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
+<dd>
+<div class="block">Asynchronously runs <a href="com/falkordb/Graph.html#explain(java.lang.String)"><code>Graph.explain(String)</code></a>.</div>
+</dd>
 <dt><a href="com/falkordb/Graph.html#explain(java.lang.String)" class="member-name-link">explain(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>
 <div class="block">Get the execution plan for a given query.</div>
@@ -275,6 +309,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/falkordb/GraphTransaction.html#explain(java.lang.String)" class="member-name-link">explain(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/GraphTransaction.html" title="interface in com.falkordb">GraphTransaction</a></dt>
 <dd>
 <div class="block">Get the execution plan for a given query.</div>
+</dd>
+<dt><a href="com/falkordb/AsyncGraph.html#explain(java.lang.String,java.util.Map)" class="member-name-link">explain(String, Map&lt;String, Object&gt;)</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
+<dd>
+<div class="block">Asynchronously runs <a href="com/falkordb/Graph.html#explain(java.lang.String,java.util.Map)"><code>Graph.explain(String, Map)</code></a>.</div>
 </dd>
 <dt><a href="com/falkordb/Graph.html#explain(java.lang.String,java.util.Map)" class="member-name-link">explain(String, Map&lt;String, Object&gt;)</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>
@@ -421,6 +459,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/falkordb/Record.html#getValue(java.lang.String)" class="member-name-link">getValue(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/Record.html" title="interface in com.falkordb">Record</a></dt>
 <dd>
 <div class="block">The value at the given field</div>
+</dd>
+<dt><a href="com/falkordb/AsyncGraph.html#graph()" class="member-name-link">graph()</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
+<dd>
+<div class="block">The wrapped synchronous graph.</div>
 </dd>
 <dt><a href="com/falkordb/Driver.html#graph(java.lang.String)" class="member-name-link">graph(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/Driver.html" title="interface in com.falkordb">Driver</a></dt>
 <dd>
@@ -642,6 +684,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Sets the server port (default <code>6379</code>).</div>
 </dd>
+<dt><a href="com/falkordb/AsyncGraph.html#profile(java.lang.String)" class="member-name-link">profile(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
+<dd>
+<div class="block">Asynchronously runs <a href="com/falkordb/Graph.html#profile(java.lang.String)"><code>Graph.profile(String)</code></a>.</div>
+</dd>
 <dt><a href="com/falkordb/Graph.html#profile(java.lang.String)" class="member-name-link">profile(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>
 <div class="block">Execute a Cypher query and produce an execution plan augmented with metrics
@@ -656,6 +702,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Execute a Cypher query and produce an execution plan augmented with metrics
  for each operation's execution.</div>
+</dd>
+<dt><a href="com/falkordb/AsyncGraph.html#profile(java.lang.String,java.util.Map)" class="member-name-link">profile(String, Map&lt;String, Object&gt;)</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
+<dd>
+<div class="block">Asynchronously runs <a href="com/falkordb/Graph.html#profile(java.lang.String,java.util.Map)"><code>Graph.profile(String, Map)</code></a>.</div>
 </dd>
 <dt><a href="com/falkordb/Graph.html#profile(java.lang.String,java.util.Map)" class="member-name-link">profile(String, Map&lt;String, Object&gt;)</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>
@@ -699,6 +749,10 @@ loadScripts(document, 'script');</script>
 </dl>
 <h2 class="title" id="I:Q">Q</h2>
 <dl class="index">
+<dt><a href="com/falkordb/AsyncGraph.html#query(java.lang.String)" class="member-name-link">query(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
+<dd>
+<div class="block">Asynchronously runs <a href="com/falkordb/Graph.html#query(java.lang.String)"><code>Graph.query(String)</code></a>.</div>
+</dd>
 <dt><a href="com/falkordb/Graph.html#query(java.lang.String)" class="member-name-link">query(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>
 <div class="block">Execute a Cypher query.</div>
@@ -710,6 +764,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/falkordb/GraphTransaction.html#query(java.lang.String)" class="member-name-link">query(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/GraphTransaction.html" title="interface in com.falkordb">GraphTransaction</a></dt>
 <dd>
 <div class="block">Execute a Cypher query.</div>
+</dd>
+<dt><a href="com/falkordb/AsyncGraph.html#query(java.lang.String,long)" class="member-name-link">query(String, long)</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
+<dd>
+<div class="block">Asynchronously runs <a href="com/falkordb/Graph.html#query(java.lang.String,long)"><code>Graph.query(String, long)</code></a>.</div>
 </dd>
 <dt><a href="com/falkordb/Graph.html#query(java.lang.String,long)" class="member-name-link">query(String, long)</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>
@@ -723,6 +781,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Execute a Cypher query with timeout.</div>
 </dd>
+<dt><a href="com/falkordb/AsyncGraph.html#query(java.lang.String,java.util.Map)" class="member-name-link">query(String, Map&lt;String, Object&gt;)</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
+<dd>
+<div class="block">Asynchronously runs <a href="com/falkordb/Graph.html#query(java.lang.String,java.util.Map)"><code>Graph.query(String, Map)</code></a>.</div>
+</dd>
 <dt><a href="com/falkordb/Graph.html#query(java.lang.String,java.util.Map)" class="member-name-link">query(String, Map&lt;String, Object&gt;)</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>
 <div class="block">Executes a cypher query with parameters.</div>
@@ -734,6 +796,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/falkordb/GraphTransaction.html#query(java.lang.String,java.util.Map)" class="member-name-link">query(String, Map&lt;String, Object&gt;)</a> - Method in interface com.falkordb.<a href="com/falkordb/GraphTransaction.html" title="interface in com.falkordb">GraphTransaction</a></dt>
 <dd>
 <div class="block">Executes a cypher query with parameters.</div>
+</dd>
+<dt><a href="com/falkordb/AsyncGraph.html#query(java.lang.String,java.util.Map,long)" class="member-name-link">query(String, Map&lt;String, Object&gt;, long)</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
+<dd>
+<div class="block">Asynchronously runs <a href="com/falkordb/Graph.html#query(java.lang.String,java.util.Map,long)"><code>Graph.query(String, Map, long)</code></a>.</div>
 </dd>
 <dt><a href="com/falkordb/Graph.html#query(java.lang.String,java.util.Map,long)" class="member-name-link">query(String, Map&lt;String, Object&gt;, long)</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>
@@ -754,6 +820,10 @@ loadScripts(document, 'script');</script>
 </dl>
 <h2 class="title" id="I:R">R</h2>
 <dl class="index">
+<dt><a href="com/falkordb/AsyncGraph.html#readOnlyQuery(java.lang.String)" class="member-name-link">readOnlyQuery(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
+<dd>
+<div class="block">Asynchronously runs <a href="com/falkordb/Graph.html#readOnlyQuery(java.lang.String)"><code>Graph.readOnlyQuery(String)</code></a>.</div>
+</dd>
 <dt><a href="com/falkordb/Graph.html#readOnlyQuery(java.lang.String)" class="member-name-link">readOnlyQuery(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>
 <div class="block">Execute a Cypher read-only query.</div>
@@ -765,6 +835,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/falkordb/GraphTransaction.html#readOnlyQuery(java.lang.String)" class="member-name-link">readOnlyQuery(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/GraphTransaction.html" title="interface in com.falkordb">GraphTransaction</a></dt>
 <dd>
 <div class="block">Execute a Cypher read-only query.</div>
+</dd>
+<dt><a href="com/falkordb/AsyncGraph.html#readOnlyQuery(java.lang.String,long)" class="member-name-link">readOnlyQuery(String, long)</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
+<dd>
+<div class="block">Asynchronously runs <a href="com/falkordb/Graph.html#readOnlyQuery(java.lang.String,long)"><code>Graph.readOnlyQuery(String, long)</code></a>.</div>
 </dd>
 <dt><a href="com/falkordb/Graph.html#readOnlyQuery(java.lang.String,long)" class="member-name-link">readOnlyQuery(String, long)</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>
@@ -778,6 +852,10 @@ loadScripts(document, 'script');</script>
 <dd>
 <div class="block">Execute a Cypher read-only query with timeout.</div>
 </dd>
+<dt><a href="com/falkordb/AsyncGraph.html#readOnlyQuery(java.lang.String,java.util.Map)" class="member-name-link">readOnlyQuery(String, Map&lt;String, Object&gt;)</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
+<dd>
+<div class="block">Asynchronously runs <a href="com/falkordb/Graph.html#readOnlyQuery(java.lang.String,java.util.Map)"><code>Graph.readOnlyQuery(String, Map)</code></a>.</div>
+</dd>
 <dt><a href="com/falkordb/Graph.html#readOnlyQuery(java.lang.String,java.util.Map)" class="member-name-link">readOnlyQuery(String, Map&lt;String, Object&gt;)</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>
 <div class="block">Executes a cypher read-only query with parameters.</div>
@@ -789,6 +867,10 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/falkordb/GraphTransaction.html#readOnlyQuery(java.lang.String,java.util.Map)" class="member-name-link">readOnlyQuery(String, Map&lt;String, Object&gt;)</a> - Method in interface com.falkordb.<a href="com/falkordb/GraphTransaction.html" title="interface in com.falkordb">GraphTransaction</a></dt>
 <dd>
 <div class="block">Executes a cypher read-only query with parameters.</div>
+</dd>
+<dt><a href="com/falkordb/AsyncGraph.html#readOnlyQuery(java.lang.String,java.util.Map,long)" class="member-name-link">readOnlyQuery(String, Map&lt;String, Object&gt;, long)</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
+<dd>
+<div class="block">Asynchronously runs <a href="com/falkordb/Graph.html#readOnlyQuery(java.lang.String,java.util.Map,long)"><code>Graph.readOnlyQuery(String, Map, long)</code></a>.</div>
 </dd>
 <dt><a href="com/falkordb/Graph.html#readOnlyQuery(java.lang.String,java.util.Map,long)" class="member-name-link">readOnlyQuery(String, Map&lt;String, Object&gt;, long)</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>
@@ -976,6 +1058,10 @@ the order they are declared.</div>
 <dt><a href="com/falkordb/GraphContext.html#watch(java.lang.String...)" class="member-name-link">watch(String...)</a> - Method in interface com.falkordb.<a href="com/falkordb/GraphContext.html" title="interface in com.falkordb">GraphContext</a></dt>
 <dd>
 <div class="block">Perform watch over given Redis keys (Graphs names)</div>
+</dd>
+<dt><a href="com/falkordb/AsyncFalkorDB.html#wrap(com.falkordb.GraphContextGenerator,java.util.concurrent.Executor)" class="member-name-link">wrap(GraphContextGenerator, Executor)</a> - Static method in class com.falkordb.<a href="com/falkordb/AsyncFalkorDB.html" title="class in com.falkordb">AsyncFalkorDB</a></dt>
+<dd>
+<div class="block">Wraps a synchronous graph as an <a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb"><code>AsyncGraph</code></a> whose operations run on <code>executor</code>.</div>
 </dd>
 </dl>
 <a href="#I:A">A</a>&nbsp;<a href="#I:B">B</a>&nbsp;<a href="#I:C">C</a>&nbsp;<a href="#I:D">D</a>&nbsp;<a href="#I:E">E</a>&nbsp;<a href="#I:F">F</a>&nbsp;<a href="#I:G">G</a>&nbsp;<a href="#I:H">H</a>&nbsp;<a href="#I:I">I</a>&nbsp;<a href="#I:K">K</a>&nbsp;<a href="#I:L">L</a>&nbsp;<a href="#I:M">M</a>&nbsp;<a href="#I:N">N</a>&nbsp;<a href="#I:P">P</a>&nbsp;<a href="#I:Q">Q</a>&nbsp;<a href="#I:R">R</a>&nbsp;<a href="#I:S">S</a>&nbsp;<a href="#I:T">T</a>&nbsp;<a href="#I:U">U</a>&nbsp;<a href="#I:V">V</a>&nbsp;<a href="#I:W">W</a>&nbsp;<br><a href="allclasses-index.html">All&nbsp;Classes&nbsp;and&nbsp;Interfaces</a><span class="vertical-separator">|</span><a href="allpackages-index.html">All&nbsp;Packages</a><span class="vertical-separator">|</span><a href="serialized-form.html">Serialized&nbsp;Form</a></main>
