@@ -16,6 +16,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedFrame;
@@ -135,6 +136,7 @@ class VirtualThreadPinningTest {
         ExecutorService platform = Executors.newFixedThreadPool(n);
         CountDownLatch borrowed = new CountDownLatch(n);
         CountDownLatch release = new CountDownLatch(1);
+        AtomicReference<Throwable> failure = new AtomicReference<>();
         try {
             for (int i = 0; i < n; i++) {
                 platform.execute(() -> {
@@ -144,11 +146,22 @@ class VirtualThreadPinningTest {
                         release.await(); // hold it so all N are open at once => N distinct connections created
                     } catch (InterruptedException interrupted) {
                         Thread.currentThread().interrupt();
+                    } catch (RuntimeException workerFailure) {
+                        // execute() would otherwise only route this to the thread's uncaught handler,
+                        // turning a real warm-up failure into an opaque 60s timeout — capture it and
+                        // release the latch so we fail fast with the actual cause.
+                        failure.compareAndSet(null, workerFailure);
+                        borrowed.countDown();
                     }
                 });
             }
             if (!borrowed.await(60, TimeUnit.SECONDS)) {
-                throw new IllegalStateException("pool warm-up did not borrow " + n + " connections in time");
+                throw new IllegalStateException(
+                        "pool warm-up did not borrow " + n + " connections in time", failure.get());
+            }
+            Throwable warmUpFailure = failure.get();
+            if (warmUpFailure != null) {
+                throw new IllegalStateException("pool warm-up failed to borrow " + n + " connections", warmUpFailure);
             }
         } finally {
             release.countDown();
