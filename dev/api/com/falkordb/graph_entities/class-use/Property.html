@@ -55,7 +55,10 @@ loadScripts(document, 'script');</script>
 <div class="table-header col-first">Package</div>
 <div class="table-header col-last">Description</div>
 <div class="col-first even-row-color"><a href="#com.falkordb.graph_entities">com.falkordb.graph_entities</a></div>
-<div class="col-last even-row-color">&nbsp;</div>
+<div class="col-last even-row-color">
+<div class="block">Graph entity value types returned by query results: <a href="../Node.html" title="class in com.falkordb.graph_entities"><code>Node</code></a>,
+ <a href="../Edge.html" title="class in com.falkordb.graph_entities"><code>Edge</code></a>, <a href="../Path.html" title="class in com.falkordb.graph_entities"><code>Path</code></a>, <a href="../Point.html" title="class in com.falkordb.graph_entities"><code>Point</code></a>, and their <a href="../Property.html" title="class in com.falkordb.graph_entities"><code>Properties</code></a>.</div>
+</div>
 </div>
 <section class="class-uses">
 <ul class="block-list">
@@ -67,7 +70,7 @@ loadScripts(document, 'script');</script>
 <div class="table-header col-first">Modifier and Type</div>
 <div class="table-header col-second">Field</div>
 <div class="table-header col-last">Description</div>
-<div class="col-first even-row-color"><code>protected final <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a><wbr>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="../Property.html" title="class in com.falkordb.graph_entities">Property</a>&lt;?&gt;&gt;</code></div>
+<div class="col-first even-row-color"><code>protected final <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="../Property.html" title="class in com.falkordb.graph_entities">Property</a>&lt;?&gt;&gt;</code></div>
 <div class="col-second even-row-color"><span class="type-name-label">GraphEntity.</span><code><a href="../GraphEntity.html#propertyMap" class="member-name-link">propertyMap</a></code></div>
 <div class="col-last even-row-color">
 <div class="block">The entity's properties.</div>
@@ -78,8 +81,8 @@ loadScripts(document, 'script');</script>
 <div class="table-header col-first">Modifier and Type</div>
 <div class="table-header col-second">Method</div>
 <div class="table-header col-last">Description</div>
-<div class="col-first even-row-color"><code><a href="../Property.html" title="class in com.falkordb.graph_entities">Property</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">GraphEntity.</span><code><a href="../GraphEntity.html#getProperty(java.lang.String)" class="member-name-link">getProperty</a><wbr>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;propertyName)</code></div>
+<div class="col-first even-row-color"><code>@Nullable <a href="../Property.html" title="class in com.falkordb.graph_entities">Property</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">GraphEntity.</span><code><a href="../GraphEntity.html#getProperty(java.lang.String)" class="member-name-link">getProperty</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;propertyName)</code></div>
 <div class="col-last even-row-color">
 <div class="block">Returns the property with the given name, or <code>null</code> if not found.</div>
 </div>
@@ -92,7 +95,7 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color"><code>void</code></div>
 <div class="col-second even-row-color"><span class="type-name-label">GraphEntity.</span><code><a href="../GraphEntity.html#addProperty(com.falkordb.graph_entities.Property)" class="member-name-link">addProperty</a><wbr>(<a href="../Property.html" title="class in com.falkordb.graph_entities">Property</a>&nbsp;property)</code></div>
 <div class="col-last even-row-color">
-<div class="block">Add a property to the entity</div>
+<div class="block">Add a property to the entity.</div>
 </div>
 </div>
 </section>

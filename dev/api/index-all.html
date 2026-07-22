@@ -59,7 +59,7 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/falkordb/graph_entities/GraphEntity.html#addProperty(com.falkordb.graph_entities.Property)" class="member-name-link">addProperty(Property)</a> - Method in class com.falkordb.graph_entities.<a href="com/falkordb/graph_entities/GraphEntity.html" title="class in com.falkordb.graph_entities">GraphEntity</a></dt>
 <dd>
-<div class="block">Add a property to the entity</div>
+<div class="block">Add a property to the entity.</div>
 </dd>
 <dt><a href="com/falkordb/graph_entities/GraphEntity.html#addProperty(java.lang.String,java.lang.Object)" class="member-name-link">addProperty(String, Object)</a> - Method in class com.falkordb.graph_entities.<a href="com/falkordb/graph_entities/GraphEntity.html" title="class in com.falkordb.graph_entities">GraphEntity</a></dt>
 <dd>
@@ -148,11 +148,18 @@ loadScripts(document, 'script');</script>
 <div class="block">An unknown column type.</div>
 </dd>
 <dt><a href="com/falkordb/package-summary.html">com.falkordb</a> - package com.falkordb</dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Core FalkorDB client API: the <a href="com/falkordb/FalkorDB.html" title="class in com.falkordb"><code>FalkorDB</code></a> driver factory plus the <a href="com/falkordb/Driver.html" title="interface in com.falkordb"><code>Driver</code></a>, <a href="com/falkordb/Graph.html" title="interface in com.falkordb"><code>Graph</code></a>, and result-reading interfaces (<a href="com/falkordb/ResultSet.html" title="interface in com.falkordb"><code>ResultSet</code></a>, <a href="com/falkordb/Record.html" title="interface in com.falkordb"><code>Record</code></a>, <a href="com/falkordb/Header.html" title="interface in com.falkordb"><code>Header</code></a>, <a href="com/falkordb/Statistics.html" title="interface in com.falkordb"><code>Statistics</code></a>) used to run queries and read their results.</div>
+</dd>
 <dt><a href="com/falkordb/exceptions/package-summary.html">com.falkordb.exceptions</a> - package com.falkordb.exceptions</dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Exceptions thrown by the FalkorDB client, principally <a href="com/falkordb/exceptions/GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a>.</div>
+</dd>
 <dt><a href="com/falkordb/graph_entities/package-summary.html">com.falkordb.graph_entities</a> - package com.falkordb.graph_entities</dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Graph entity value types returned by query results: <a href="com/falkordb/graph_entities/Node.html" title="class in com.falkordb.graph_entities"><code>Node</code></a>,
+ <a href="com/falkordb/graph_entities/Edge.html" title="class in com.falkordb.graph_entities"><code>Edge</code></a>, <a href="com/falkordb/graph_entities/Path.html" title="class in com.falkordb.graph_entities"><code>Path</code></a>, <a href="com/falkordb/graph_entities/Point.html" title="class in com.falkordb.graph_entities"><code>Point</code></a>, and their <a href="com/falkordb/graph_entities/Property.html" title="class in com.falkordb.graph_entities"><code>Properties</code></a>.</div>
+</dd>
 <dt><a href="com/falkordb/Driver.html#configGet(java.lang.String)" class="member-name-link">configGet(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/Driver.html" title="interface in com.falkordb">Driver</a></dt>
 <dd>
 <div class="block">Gets the value of a FalkorDB configuration parameter.</div>
@@ -864,7 +871,7 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/falkordb/FalkorDB.Builder.html#socketTimeout(java.time.Duration)" class="member-name-link">socketTimeout(Duration)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
 <dd>
-<div class="block">Sets the socket (read) timeout (default <a href="https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#ZERO" title="class or interface in java.time" class="external-link"><code>Duration.ZERO</code></a> = no read deadline, so a
+<div class="block">Sets the socket (read) timeout (default <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html#ZERO" title="class or interface in java.time" class="external-link"><code>Duration.ZERO</code></a> = no read deadline, so a
  long-running server query is never cut off client-side).</div>
 </dd>
 <dt><a href="com/falkordb/FalkorDB.Builder.html#ssl(boolean)" class="member-name-link">ssl(boolean)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>

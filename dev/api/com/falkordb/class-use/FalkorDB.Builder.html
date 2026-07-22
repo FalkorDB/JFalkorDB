@@ -55,7 +55,9 @@ loadScripts(document, 'script');</script>
 <div class="table-header col-first">Package</div>
 <div class="table-header col-last">Description</div>
 <div class="col-first even-row-color"><a href="#com.falkordb">com.falkordb</a></div>
-<div class="col-last even-row-color">&nbsp;</div>
+<div class="col-last even-row-color">
+<div class="block">Core FalkorDB client API: the <a href="../FalkorDB.html" title="class in com.falkordb"><code>FalkorDB</code></a> driver factory plus the <a href="../Driver.html" title="interface in com.falkordb"><code>Driver</code></a>, <a href="../Graph.html" title="interface in com.falkordb"><code>Graph</code></a>, and result-reading interfaces (<a href="../ResultSet.html" title="interface in com.falkordb"><code>ResultSet</code></a>, <a href="../Record.html" title="interface in com.falkordb"><code>Record</code></a>, <a href="../Header.html" title="interface in com.falkordb"><code>Header</code></a>, <a href="../Statistics.html" title="interface in com.falkordb"><code>Statistics</code></a>) used to run queries and read their results.</div>
+</div>
 </div>
 <section class="class-uses">
 <ul class="block-list">
@@ -74,24 +76,24 @@ loadScripts(document, 'script');</script>
  <code>driver(...)</code> factories that also exposes TLS, connection-pool sizing, and timeouts.</div>
 </div>
 <div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#connectionTimeout(java.time.Duration)" class="member-name-link">connectionTimeout</a><wbr>(<a href="https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;connectionTimeout)</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#connectionTimeout(java.time.Duration)" class="member-name-link">connectionTimeout</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;connectionTimeout)</code></div>
 <div class="col-last odd-row-color">
 <div class="block">Sets the connection (connect) timeout (default 2000&nbsp;ms).</div>
 </div>
 <div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#credentials(java.lang.String)" class="member-name-link">credentials</a><wbr>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#credentials(java.lang.String)" class="member-name-link">credentials</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</code></div>
 <div class="col-last even-row-color">
 <div class="block">Sets a password for password-only (<code>default</code> user) authentication, clearing any
  previously set username.</div>
 </div>
 <div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#credentials(java.lang.String,java.lang.String)" class="member-name-link">credentials</a><wbr>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;user,
- <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#credentials(java.lang.String,java.lang.String)" class="member-name-link">credentials</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;user,
+ <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</code></div>
 <div class="col-last odd-row-color">
 <div class="block">Sets the username and password used to authenticate.</div>
 </div>
 <div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#host(java.lang.String)" class="member-name-link">host</a><wbr>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;host)</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#host(java.lang.String)" class="member-name-link">host</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;host)</code></div>
 <div class="col-last even-row-color">
 <div class="block">Sets the server host (default <code>"localhost"</code>).</div>
 </div>
@@ -106,7 +108,7 @@ loadScripts(document, 'script');</script>
 <div class="block">Sets the maximum connection-pool size (default <code>8</code>).</div>
 </div>
 <div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#poolMaxWait(java.time.Duration)" class="member-name-link">poolMaxWait</a><wbr>(<a href="https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;poolMaxWait)</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#poolMaxWait(java.time.Duration)" class="member-name-link">poolMaxWait</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;poolMaxWait)</code></div>
 <div class="col-last odd-row-color">
 <div class="block">Sets the maximum time to wait for a connection when the pool is exhausted (default: wait
  indefinitely).</div>
@@ -117,9 +119,9 @@ loadScripts(document, 'script');</script>
 <div class="block">Sets the server port (default <code>6379</code>).</div>
 </div>
 <div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#socketTimeout(java.time.Duration)" class="member-name-link">socketTimeout</a><wbr>(<a href="https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;socketTimeout)</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#socketTimeout(java.time.Duration)" class="member-name-link">socketTimeout</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;socketTimeout)</code></div>
 <div class="col-last odd-row-color">
-<div class="block">Sets the socket (read) timeout (default <a href="https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#ZERO" title="class or interface in java.time" class="external-link"><code>Duration.ZERO</code></a> = no read deadline, so a
+<div class="block">Sets the socket (read) timeout (default <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html#ZERO" title="class or interface in java.time" class="external-link"><code>Duration.ZERO</code></a> = no read deadline, so a
  long-running server query is never cut off client-side).</div>
 </div>
 <div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
