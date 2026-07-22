@@ -1,6 +1,7 @@
 package com.falkordb.graph_entities;
 
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A class represent an edge (graph entity). In addition to the base class id and properties, an edge shows its source,
@@ -9,7 +10,7 @@ import java.util.Objects;
 public class Edge extends GraphEntity {
 
     // members
-    private String relationshipType;
+    private @Nullable String relationshipType;
     private long source;
     private long destination;
 
@@ -33,9 +34,9 @@ public class Edge extends GraphEntity {
     /**
      * Returns the edge relationship type.
      *
-     * @return the edge relationship type
+     * @return the edge relationship type, or {@code null} if it has not been set
      */
-    public String getRelationshipType() {
+    public @Nullable String getRelationshipType() {
         return relationshipType;
     }
 
@@ -44,7 +45,7 @@ public class Edge extends GraphEntity {
      *
      * @param relationshipType - the relationship type to be set.
      */
-    public void setRelationshipType(String relationshipType) {
+    public void setRelationshipType(@Nullable String relationshipType) {
         this.relationshipType = relationshipType;
     }
 

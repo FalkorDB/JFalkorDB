@@ -1,5 +1,6 @@
 package com.falkordb.exceptions;
 
+import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.exceptions.JedisDataException;
 
 /**
@@ -14,7 +15,7 @@ public class GraphException extends JedisDataException {
      *
      * @param message the error message
      */
-    public GraphException(String message) {
+    public GraphException(@Nullable String message) {
         super(message);
     }
 
@@ -23,7 +24,7 @@ public class GraphException extends JedisDataException {
      *
      * @param cause the cause of the exception
      */
-    public GraphException(Throwable cause) {
+    public GraphException(@Nullable Throwable cause) {
         super(cause);
     }
 
@@ -33,7 +34,7 @@ public class GraphException extends JedisDataException {
      * @param message the error message
      * @param cause the cause of the exception
      */
-    public GraphException(String message, Throwable cause) {
+    public GraphException(@Nullable String message, @Nullable Throwable cause) {
         super(message, cause);
     }
 }

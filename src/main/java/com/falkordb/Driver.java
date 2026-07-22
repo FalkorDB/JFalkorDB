@@ -2,6 +2,7 @@ package com.falkordb;
 
 import java.io.Closeable;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.Jedis;
 
 /**
@@ -55,7 +56,7 @@ public interface Driver extends Closeable {
      * @param withCode Whether to include the code in the response
      * @return a list of UDF library information
      */
-    List<Object> udfList(String libraryName, boolean withCode);
+    List<Object> udfList(@Nullable String libraryName, boolean withCode);
 
     /**
      * Flushes all loaded UDF libraries.

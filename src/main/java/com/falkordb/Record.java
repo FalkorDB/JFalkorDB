@@ -1,6 +1,7 @@
 package com.falkordb;
 
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Container for Graph result values.
@@ -15,9 +16,9 @@ public interface Record {
      * @param index field index
      * @param <T> return value type
      *
-     * @return the value
+     * @return the value at the field, or {@code null} if the stored value is null
      */
-    <T> T getValue(int index);
+    <T> @Nullable T getValue(int index);
 
     /**
      * The value at the given field
@@ -25,9 +26,9 @@ public interface Record {
      * @param key header key
      * @param <T> return value type
      *
-     * @return the value
+     * @return the value at the field, or {@code null} if the stored value is null
      */
-    <T> T getValue(String key);
+    <T> @Nullable T getValue(String key);
 
     /**
      * The value at the given field index (represented as String)
