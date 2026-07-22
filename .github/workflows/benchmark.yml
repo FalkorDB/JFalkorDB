@@ -51,7 +51,7 @@ jobs:
     - name: Publish comparison to the job summary
       if: always()
       run: |
-        if [ -f benchmarks/target/bench-compare.md ]; then
+        if [ -s benchmarks/target/bench-compare.md ]; then
           cat benchmarks/target/bench-compare.md >> "$GITHUB_STEP_SUMMARY"
         fi
     - name: Upsert the comparison as a sticky PR comment
@@ -62,19 +62,22 @@ jobs:
       run: |
         set -euo pipefail
         file=benchmarks/target/bench-compare.md
-        if [ ! -f "$file" ]; then
+        if [ ! -s "$file" ]; then
           echo "no comparison output (benchmark step failed earlier); skipping comment"
           exit 0
         fi
+        # Posting is best-effort: fork PRs get a read-only GITHUB_TOKEN, so a 403 here must not fail
+        # the job (the report is still in the job summary above).
+        warn() { echo "::warning::could not post the benchmark comment (read-only token on a fork PR?); see the job summary"; exit 0; }
         marker='<!-- bench-compare -->'
         id="$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --paginate \
-          --jq "map(select(.body | contains(\"${marker}\"))) | .[0].id // empty")"
+          --jq "map(select(.body | contains(\"${marker}\"))) | .[0].id // empty")" || warn
         body="$(cat "$file")"
         if [ -n "$id" ]; then
-          gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${id}" -f body="$body" >/dev/null
+          gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${id}" -f body="$body" >/dev/null || warn
           echo "updated sticky comment ${id}"
         else
-          gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" -f body="$body" >/dev/null
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" -f body="$body" >/dev/null || warn
           echo "created sticky comment"
         fi
 

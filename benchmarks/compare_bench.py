@@ -43,6 +43,14 @@ def fmt_ratio(ratio):
     return "n/a" if ratio is None else f"{ratio:.2f}x"
 
 
+def fmt_num(value, fmt):
+    return "n/a" if value is None else format(value, fmt)
+
+
+def fmt_pair(base, head, fmt):
+    return f"{fmt_num(base, fmt)} → {fmt_num(head, fmt)}"
+
+
 def slowdown(base, head, bigger_is_better):
     """Ratio >1 == head is worse than base. None when it cannot be computed."""
     if base is None or head is None:
@@ -120,8 +128,8 @@ def main():
 
         mark = " ⚠️" if flagged else ""
         lines.append(
-            f"| {load} | {b_tp:.0f} → {h_tp:.0f} | {fmt_ratio(tp_slow)}{mark} "
-            f"| {b_p50:.1f} → {h_p50:.1f} | {fmt_ratio(p50_slow)}{mark} "
+            f"| {load} | {fmt_pair(b_tp, h_tp, '.0f')} | {fmt_ratio(tp_slow)}{mark} "
+            f"| {fmt_pair(b_p50, h_p50, '.1f')} | {fmt_ratio(p50_slow)}{mark} "
             f"| {fmt_ratio(p95_slow)} | {fmt_ratio(p99_slow)} |")
 
     lines.append("")
