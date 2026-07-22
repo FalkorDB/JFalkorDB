@@ -6,6 +6,7 @@ import com.falkordb.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Represents a local cache of list of strings. Holds data from a specific procedure, for a specific graph.
@@ -15,7 +16,15 @@ class GraphCacheList {
     private final String procedure;
     private final List<String> data = new CopyOnWriteArrayList<>();
     // Serializes cache refresh; don't synchronize on `data` itself (it's a concurrent collection).
-    private final Object refreshLock = new Object();
+    // This is a ReentrantLock rather than a `synchronized` block on purpose: refreshing the cache
+    // issues a blocking query (getProcedureInfo -> graph.callProcedure), and on JDK 21-23 a
+    // `synchronized` monitor held across a blocking call PINS the carrier thread, so many concurrent
+    // queries on virtual threads would not scale. A ReentrantLock held across the same blocking call
+    // does not pin. (It is still reentrant, matching `synchronized`, so a refresh that recursively
+    // touches this cache on the same thread is safe.) Note: cold connection creation inside
+    // commons-pool2's GenericObjectPool.create() is itself `synchronized` and can still capture a
+    // carrier under load — that is upstream; mitigate by warming the pool (see the Wave-5 docs).
+    private final ReentrantLock refreshLock = new ReentrantLock();
 
     /**
      * @param procedure - exact procedure command
@@ -31,10 +40,13 @@ class GraphCacheList {
      */
     public String getCachedData(int index, Graph graph) {
         if (index >= data.size()) {
-            synchronized (refreshLock) {
+            refreshLock.lock();
+            try {
                 if (index >= data.size()) {
                     getProcedureInfo(graph);
                 }
+            } finally {
+                refreshLock.unlock();
             }
         }
         return data.get(index);
@@ -57,6 +69,13 @@ class GraphCacheList {
     }
 
     public void clear() {
-        data.clear();
+        // Serialize with an in-flight refresh (both guard `data` via refreshLock) so a clear can't
+        // interleave with getProcedureInfo()'s append and leave a half-refreshed cache.
+        refreshLock.lock();
+        try {
+            data.clear();
+        } finally {
+            refreshLock.unlock();
+        }
     }
 }
