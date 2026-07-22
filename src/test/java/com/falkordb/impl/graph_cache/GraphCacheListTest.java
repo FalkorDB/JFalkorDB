@@ -1,6 +1,8 @@
 package com.falkordb.impl.graph_cache;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.falkordb.Graph;
 import com.falkordb.Header;
@@ -14,6 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
@@ -59,10 +62,11 @@ class GraphCacheListTest {
             workers.add(t);
             t.start();
         }
-        ready.await();
+        assertTrue(ready.await(10, TimeUnit.SECONDS), "workers did not reach the start line in time");
         go.countDown(); // release all workers at once to race the refresh
         for (Thread t : workers) {
-            t.join();
+            t.join(TimeUnit.SECONDS.toMillis(10));
+            assertFalse(t.isAlive(), "a worker did not finish in time — possible deadlock in the refresh path");
         }
 
         assertEquals(1, graph.calls.get(), "the double-checked refresh must run the procedure once");
