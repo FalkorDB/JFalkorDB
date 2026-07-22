@@ -93,6 +93,11 @@ public class AsyncFalkorDBIT {
             } finally {
                 if (executor != null) {
                     executor.shutdownNow();
+                    try {
+                        executor.awaitTermination(10, TimeUnit.SECONDS);
+                    } catch (InterruptedException interrupted) {
+                        Thread.currentThread().interrupt();
+                    }
                 }
                 if (driver != null) {
                     driver.close();

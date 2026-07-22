@@ -16,6 +16,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
@@ -93,6 +94,20 @@ class AsyncFalkorDBTest {
 
         assertTrue(future.isCancelled());
         assertEquals(0, graph.calls.get(), "a cancelled-before-start query must never reach the graph");
+    }
+
+    @Test
+    void rejectedSubmissionCompletesExceptionallyRatherThanThrowing() {
+        Executor rejecting = command -> {
+            throw new RejectedExecutionException("saturated");
+        };
+        CompletableFuture<ResultSet> future =
+                AsyncFalkorDB.wrap(graph, rejecting).query("q");
+
+        assertTrue(future.isCompletedExceptionally(), "a rejected submission must yield a failed future");
+        CompletionException failure = assertThrows(CompletionException.class, future::join);
+        assertTrue(failure.getCause() instanceof RejectedExecutionException);
+        assertEquals(0, graph.calls.get(), "a rejected submission must never reach the graph");
     }
 
     /** Executor that queues tasks and only runs them on demand, to observe cancel-before-start. */

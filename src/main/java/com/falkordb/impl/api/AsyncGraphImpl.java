@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Supplier;
 
 /**
  * Default {@link AsyncGraph} implementation: submits each synchronous {@link com.falkordb.Graph}
@@ -30,90 +32,106 @@ public final class AsyncGraphImpl implements AsyncGraph {
         this.executor = Objects.requireNonNull(executor, "executor must not be null");
     }
 
+    /**
+     * Submits {@code op} on the executor, always returning a future. If the executor rejects the task
+     * (it is saturated or already shut down), the returned future completes exceptionally with the
+     * {@link RejectedExecutionException} instead of throwing synchronously, so every {@link AsyncGraph}
+     * method honors the "failures surface as exceptional completion" contract.
+     */
+    private <T> CompletableFuture<T> submit(Supplier<T> op) {
+        try {
+            return CompletableFuture.supplyAsync(op, executor);
+        } catch (RejectedExecutionException rejected) {
+            CompletableFuture<T> failed = new CompletableFuture<>();
+            failed.completeExceptionally(rejected);
+            return failed;
+        }
+    }
+
     @Override
     public CompletableFuture<ResultSet> query(String query) {
-        return CompletableFuture.supplyAsync(() -> graph.query(query), executor);
+        return submit(() -> graph.query(query));
     }
 
     @Override
     public CompletableFuture<ResultSet> readOnlyQuery(String query) {
-        return CompletableFuture.supplyAsync(() -> graph.readOnlyQuery(query), executor);
+        return submit(() -> graph.readOnlyQuery(query));
     }
 
     @Override
     public CompletableFuture<ResultSet> query(String query, long timeout) {
-        return CompletableFuture.supplyAsync(() -> graph.query(query, timeout), executor);
+        return submit(() -> graph.query(query, timeout));
     }
 
     @Override
     public CompletableFuture<ResultSet> readOnlyQuery(String query, long timeout) {
-        return CompletableFuture.supplyAsync(() -> graph.readOnlyQuery(query, timeout), executor);
+        return submit(() -> graph.readOnlyQuery(query, timeout));
     }
 
     @Override
     public CompletableFuture<ResultSet> query(String query, Map<String, Object> params) {
-        return CompletableFuture.supplyAsync(() -> graph.query(query, params), executor);
+        return submit(() -> graph.query(query, params));
     }
 
     @Override
     public CompletableFuture<ResultSet> readOnlyQuery(String query, Map<String, Object> params) {
-        return CompletableFuture.supplyAsync(() -> graph.readOnlyQuery(query, params), executor);
+        return submit(() -> graph.readOnlyQuery(query, params));
     }
 
     @Override
     public CompletableFuture<ResultSet> query(String query, Map<String, Object> params, long timeout) {
-        return CompletableFuture.supplyAsync(() -> graph.query(query, params, timeout), executor);
+        return submit(() -> graph.query(query, params, timeout));
     }
 
     @Override
     public CompletableFuture<ResultSet> readOnlyQuery(String query, Map<String, Object> params, long timeout) {
-        return CompletableFuture.supplyAsync(() -> graph.readOnlyQuery(query, params, timeout), executor);
+        return submit(() -> graph.readOnlyQuery(query, params, timeout));
     }
 
     @Override
     public CompletableFuture<ResultSet> callProcedure(String procedure) {
-        return CompletableFuture.supplyAsync(() -> graph.callProcedure(procedure), executor);
+        return submit(() -> graph.callProcedure(procedure));
     }
 
     @Override
     public CompletableFuture<ResultSet> profile(String query) {
-        return CompletableFuture.supplyAsync(() -> graph.profile(query), executor);
+        return submit(() -> graph.profile(query));
     }
 
     @Override
     public CompletableFuture<ResultSet> profile(String query, Map<String, Object> params) {
-        return CompletableFuture.supplyAsync(() -> graph.profile(query, params), executor);
+        return submit(() -> graph.profile(query, params));
     }
 
     @Override
     public CompletableFuture<ResultSet> callProcedure(String procedure, List<String> args) {
-        return CompletableFuture.supplyAsync(() -> graph.callProcedure(procedure, args), executor);
+        return submit(() -> graph.callProcedure(procedure, args));
     }
 
     @Override
     public CompletableFuture<ResultSet> callProcedure(
             String procedure, List<String> args, Map<String, List<String>> kwargs) {
-        return CompletableFuture.supplyAsync(() -> graph.callProcedure(procedure, args, kwargs), executor);
+        return submit(() -> graph.callProcedure(procedure, args, kwargs));
     }
 
     @Override
     public CompletableFuture<String> copyGraph(String destinationGraphId) {
-        return CompletableFuture.supplyAsync(() -> graph.copyGraph(destinationGraphId), executor);
+        return submit(() -> graph.copyGraph(destinationGraphId));
     }
 
     @Override
     public CompletableFuture<String> deleteGraph() {
-        return CompletableFuture.supplyAsync(graph::deleteGraph, executor);
+        return submit(graph::deleteGraph);
     }
 
     @Override
     public CompletableFuture<List<String>> explain(String query) {
-        return CompletableFuture.supplyAsync(() -> graph.explain(query), executor);
+        return submit(() -> graph.explain(query));
     }
 
     @Override
     public CompletableFuture<List<String>> explain(String query, Map<String, Object> params) {
-        return CompletableFuture.supplyAsync(() -> graph.explain(query, params), executor);
+        return submit(() -> graph.explain(query, params));
     }
 
     @Override
