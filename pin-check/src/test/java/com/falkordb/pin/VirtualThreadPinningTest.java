@@ -36,10 +36,12 @@ import org.testcontainers.utility.DockerImageName;
  * first warm the pool on <em>platform</em> threads (borrow-and-hold N, then release, leaving N idle),
  * then run a virtual-thread query workload over the now-warm pool under a JFR recording. On a warm
  * pool there is no cold {@code create()}, and our query path plus Jedis I/O are monitor-free, so a
- * {@code jdk.VirtualThreadPinned} event whose stack runs through {@code com.falkordb} means our code
- * regressed (e.g. a {@code synchronized} reintroduced across a blocking call). The upstream
- * cold-creation pin is documented and mitigated (pool warm-up) rather than asserted here; pins that do
- * not involve our code (pure JDK/driver frames) are reported but not failed.
+ * {@code jdk.VirtualThreadPinned} event whose stack runs through our client internals
+ * ({@code com.falkordb.impl}) — and is not the upstream pool {@code create()}/{@code makeObject} pin —
+ * means our code regressed (e.g. a {@code synchronized} reintroduced across a blocking call). The
+ * upstream cold-creation pin is documented and mitigated (pool warm-up) rather than asserted here; pins
+ * that do not involve our code (pure JDK/driver frames, or a pool {@code create()}) are reported but
+ * not failed.
  *
  * <p>The check is future-proof across the JEP 491 (JDK 24) monitor change: after JDK 24
  * {@code synchronized} no longer pins, so {@code jdk.VirtualThreadPinned} only fires for native/VM
@@ -54,9 +56,14 @@ class VirtualThreadPinningTest {
     private static final DockerImageName IMAGE = DockerImageName.parse(
             "falkordb/falkordb@sha256:9042fdc4e53f5390ca5a3993aa71506523970efb40ffb9a98e6a4b1a9a4f8862");
 
-    private static final String OUR_PACKAGE = "com.falkordb.";
+    private static final String CLIENT_PACKAGE = "com.falkordb.impl."; // the client internals that do blocking I/O
+    private static final String POOL_PACKAGE = "org.apache.commons.pool2.";
     private static final String GRAPH = "pin-check";
-    private static final int POOL = 32; // warmed connections == measured virtual-thread concurrency
+    // Warmed connections == measured virtual-thread concurrency. Kept modest and well under FalkorDB's
+    // MAX_QUEUED_QUERIES (default 25) so a burst never exceeds the server's pending-query limit — the
+    // blocking pool caps in-flight server queries at POOL, and pin detection (a JFR event per pinned
+    // carrier) does not need high concurrency to fire.
+    private static final int POOL = 16;
     private static final int WARMUP_QUERIES = 64; // load/init classes so one-time class-init pins aren't measured
     private static final int MEASURED_QUERIES = 1024; // virtual-thread queries over the warm pool
     private static final Duration WORKLOAD_TIMEOUT = Duration.ofSeconds(120);
@@ -98,7 +105,7 @@ class VirtualThreadPinningTest {
 
                 List<RecordedEvent> ours = new ArrayList<>();
                 for (RecordedEvent pin : pins) {
-                    if (involvesOurCode(pin)) {
+                    if (isClientRegression(pin)) {
                         ours.add(pin);
                     }
                 }
@@ -106,8 +113,8 @@ class VirtualThreadPinningTest {
                     fail(describe(ours, pins));
                 }
                 System.out.printf(
-                        "pin-check OK: %d jdk.VirtualThreadPinned event(s) total, 0 involving %s over %d virtual-thread queries%n",
-                        pins.size(), OUR_PACKAGE, MEASURED_QUERIES);
+                        "pin-check OK: %d jdk.VirtualThreadPinned event(s) total, 0 attributable to %s over %d virtual-thread queries%n",
+                        pins.size(), CLIENT_PACKAGE, MEASURED_QUERIES);
             } finally {
                 graph.deleteGraph();
             }
@@ -154,7 +161,13 @@ class VirtualThreadPinningTest {
 
     /** Runs {@code count} {@code RETURN 1} queries, one per virtual thread, over the shared warm pool. */
     private static void runVirtualThreadQueries(GraphContextGenerator graph, int count) {
-        try (ExecutorService vthreads = Executors.newVirtualThreadPerTaskExecutor()) {
+        // NOTE: do not use try-with-resources here — ExecutorService.close() calls shutdown() (which does
+        // NOT interrupt running tasks) then awaits termination for ~1 day, so a straggler stuck in a
+        // blocking read would outlive the get(...) timeout and hang the run. shutdownNow() in the finally
+        // interrupts stragglers instead (a virtual thread's socket read unblocks on interrupt), so the
+        // timeout is a real bound.
+        ExecutorService vthreads = Executors.newVirtualThreadPerTaskExecutor();
+        try {
             List<CompletableFuture<?>> futures = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
                 futures.add(CompletableFuture.runAsync(() -> graph.query("RETURN 1"), vthreads));
@@ -163,6 +176,13 @@ class VirtualThreadPinningTest {
                     .get(WORKLOAD_TIMEOUT.toSeconds(), TimeUnit.SECONDS);
         } catch (Exception e) {
             throw new IllegalStateException("virtual-thread query workload failed", e);
+        } finally {
+            vthreads.shutdownNow();
+            try {
+                vthreads.awaitTermination(10, TimeUnit.SECONDS);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
@@ -190,18 +210,37 @@ class VirtualThreadPinningTest {
         return pins;
     }
 
-    private static boolean involvesOurCode(RecordedEvent pin) {
+    /**
+     * A pin is a JFalkorDB regression iff its stack runs through our client internals
+     * ({@link #CLIENT_PACKAGE}) but is <em>not</em> the known upstream commons-pool2 cold-creation pin
+     * ({@code GenericObjectPool.create}/{@code makeObject}). Warming the pool normally prevents cold
+     * creation during measurement, but a mid-workload connection drop could still trigger one whose
+     * stack passes through our {@code getConnection}; excluding the pool {@code create}/{@code makeObject}
+     * frame keeps that upstream pin from being misattributed to us while still failing on a genuine
+     * {@code synchronized}-across-blocking regression in our code.
+     */
+    private static boolean isClientRegression(RecordedEvent pin) {
         RecordedStackTrace stack = pin.getStackTrace();
         if (stack == null) {
             return false;
         }
+        boolean throughClient = false;
+        boolean upstreamPoolCreate = false;
         for (RecordedFrame frame : stack.getFrames()) {
             RecordedMethod method = frame.getMethod();
-            if (method != null && method.getType() != null && method.getType().getName().startsWith(OUR_PACKAGE)) {
-                return true;
+            if (method == null || method.getType() == null) {
+                continue;
+            }
+            String className = method.getType().getName();
+            if (className.startsWith(CLIENT_PACKAGE)) {
+                throughClient = true;
+            }
+            if (className.startsWith(POOL_PACKAGE)
+                    && ("create".equals(method.getName()) || "makeObject".equals(method.getName()))) {
+                upstreamPoolCreate = true;
             }
         }
-        return false;
+        return throughClient && !upstreamPoolCreate;
     }
 
     private static String describe(List<RecordedEvent> ours, List<RecordedEvent> all) {
@@ -211,7 +250,7 @@ class VirtualThreadPinningTest {
                 .append(" of ")
                 .append(all.size())
                 .append(" jdk.VirtualThreadPinned event(s) run through ")
-                .append(OUR_PACKAGE)
+                .append(CLIENT_PACKAGE)
                 .append(" (the pool was warmed, so this indicates our code held a monitor across a blocking call):\n");
         for (RecordedEvent pin : ours) {
             message.append("  pinned for ").append(pin.getDuration().toMillis()).append(" ms:\n");
