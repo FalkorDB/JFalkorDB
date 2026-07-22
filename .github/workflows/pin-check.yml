@@ -3,7 +3,8 @@ name: Virtual-thread pinning check
 # Wave 5 (Project Loom): verifies the blocking client does not pin carrier threads when driven from
 # virtual threads on JDK 21+. It warms the connection pool (so the KNOWN upstream commons-pool2
 # cold-creation pin is excluded), then runs a virtual-thread query workload over the warm pool under a
-# JFR recording and fails if any jdk.VirtualThreadPinned event runs through our com.falkordb code.
+# JFR recording and fails if any jdk.VirtualThreadPinned event runs through our com.falkordb.impl client
+# internals (the known upstream commons-pool2 cold-creation pin is excluded).
 # Virtual-thread load timing is runner-sensitive, so this runs on a schedule (and on demand) rather
 # than as a per-PR gate. See `just pin-check`.
 

@@ -101,7 +101,8 @@ examples:
 
 # Virtual-thread pinning check (Wave 5 / Project Loom; standalone module in pin-check/, never shipped).
 # Warms the connection pool, then runs a virtual-thread query workload over it under a JFR recording and
-# FAILS if any jdk.VirtualThreadPinned event runs through our com.falkordb code (i.e. we pin carriers).
+# FAILS if any jdk.VirtualThreadPinned event runs through our com.falkordb.impl client internals (i.e.
+# we pin carriers; the known upstream commons-pool2 cold-creation pin is excluded).
 # Needs JDK 21+. Starts a Testcontainers FalkorDB by default, or set FALKORDB_HOST/FALKORDB_PORT to reuse
 # one — e.g. `just db-up && FALKORDB_HOST=localhost FALKORDB_PORT=6379 just pin-check`. The scheduled
 # `pin-check` CI job runs this.

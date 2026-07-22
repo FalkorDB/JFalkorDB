@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -59,7 +60,8 @@ class VirtualThreadPinningTest {
 
     private static final String CLIENT_PACKAGE = "com.falkordb.impl."; // the client internals that do blocking I/O
     private static final String POOL_PACKAGE = "org.apache.commons.pool2.";
-    private static final String GRAPH = "pin-check";
+    // Unique per run so pointing at an external/shared server never deletes a pre-existing graph.
+    private static final String GRAPH = "pin-check-" + UUID.randomUUID();
     // Warmed connections == measured virtual-thread concurrency. Kept modest and well under FalkorDB's
     // MAX_QUEUED_QUERIES (default 25) so a burst never exceeds the server's pending-query limit — the
     // blocking pool caps in-flight server queries at POOL, and pin detection (a JFR event per pinned
