@@ -34,7 +34,12 @@ public final class QuickStart {
                     System.out.println(record.getString("p.name") + " is " + record.getValue("p.age"));
                 }
             } finally {
-                graph.deleteGraph(); // clean up this example's throwaway graph
+                // Best-effort cleanup: don't let a failure here mask a real error from the queries above.
+                try {
+                    graph.deleteGraph(); // remove this example's throwaway graph
+                } catch (RuntimeException cleanupError) {
+                    System.err.println("Failed to delete example graph: " + cleanupError.getMessage());
+                }
             }
         }
     }
