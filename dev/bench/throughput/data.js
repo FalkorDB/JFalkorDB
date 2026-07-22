@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784712914171,
+  "lastUpdate": 1784717653545,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -1297,6 +1297,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 24858,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "59b0cced3faab043c43239ff426280ba4a0715fe",
+          "message": "feat: add FalkorDB.builder() fluent configuration API (#349)\n\n* feat: add FalkorDB.builder() fluent configuration API\n\nAdds a discoverable, fluent FalkorDB.builder() covering the common\nconnection options — host/port, credentials (incl. password-only), TLS,\nconnection-pool sizing (maxTotal/maxIdle/maxWait), and connect/socket\ntimeouts as java.time.Duration. build() assembles them into the existing\nDriver via a new public DriverImpl.create(...) factory.\n\nAdditive only: the Driver interface and existing driver(...) factories are\nunchanged, so api-diff stays green. builder().build() with no options set\nproduces a driver identical to driver() (localhost:6379, no creds, no TLS,\n2000ms connect timeout, socket timeout 0 per #282, default 8-connection\npool) — locked by a defaults regression test.\n\nTLS maps through the non-deprecated SslOptions.defaults(); poolMaxWait uses\ncommons-pool2's native Duration semantics (negative = wait forever, ZERO =\nfail fast); connect/socket timeouts convert to int millis with overflow and\nsub-millisecond-rounding guards. Includes unit tests (config/pool mapping,\ndefaults, validation) and a Testcontainers IT.\n\nPart of Wave 4 (#332), PR 15a; JSpecify nullability follows as 15b.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* fix: address Copilot review on PR 15a\n\n- DriverImpl.create(...) now validates its own arguments (host, port, pool\n  sizing, non-negative timeouts, non-null poolMaxWait) and throws\n  IllegalArgumentException, so the public factory is robust when called\n  directly instead of relying on downstream NPEs. Validation is centralized\n  there; Builder.build() only resolves defaults + converts Durations.\n- Fix toTimeoutMillis Javadoc: it never receives null (build() maps null to\n  the default), so it does not claim to reject null.\n- ConfigBuilderIT @AfterEach wraps cleanup in try/finally so driver.close()\n  always runs even if deleteGraph() throws (no pool leak / IT flakiness).\n- Add DriverConfigTest coverage for create() argument validation.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* fix: trim host before use in DriverImpl.create (Copilot review)\n\ncreate() validated host with trim() but passed the original padded string\nto HostAndPort, so \" localhost \" passed validation yet could fail DNS\nresolution. Normalize the host once (trim) and use the trimmed value, and\ncover it with a builder test.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-22T13:52:24+03:00",
+          "tree_id": "5476d0edda668e315f5c4c6a2b1e9cfdb7b9b43d",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/59b0cced3faab043c43239ff426280ba4a0715fe"
+        },
+        "date": 1784717653516,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 4245.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6965.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 10862,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 13511,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 12913,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 12883.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 12793.667,
             "unit": "ops/s"
           }
         ]
