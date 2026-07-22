@@ -74,12 +74,18 @@ public abstract class GraphEntity {
     }
 
     /**
-     * Add a property to the entity
+     * Add a property to the entity. The property's {@link Property#getName() name} is the lookup key
+     * and must not be null (so {@link #getEntityPropertyNames()} never contains null).
      *
-     * @param property property object
+     * @param property property object; its name must not be null
+     * @throws IllegalArgumentException if the property's name is null
      */
     public void addProperty(Property property) {
-        propertyMap.put(property.getName(), property);
+        String name = property.getName();
+        if (name == null) {
+            throw new IllegalArgumentException("property name must not be null");
+        }
+        propertyMap.put(name, property);
     }
 
     /**

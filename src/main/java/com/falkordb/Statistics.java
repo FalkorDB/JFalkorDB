@@ -67,7 +67,7 @@ public interface Statistics {
          * Get a Label by label text
          *
          * @param value label text
-         * @return the matching Label
+         * @return the matching Label, or {@code null} if no label matches the given text
          */
         public static @Nullable Label getEnum(String value) {
             for (Label v : values()) {

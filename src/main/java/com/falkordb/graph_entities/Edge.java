@@ -34,7 +34,7 @@ public class Edge extends GraphEntity {
     /**
      * Returns the edge relationship type.
      *
-     * @return the edge relationship type
+     * @return the edge relationship type, or {@code null} if it has not been set
      */
     public @Nullable String getRelationshipType() {
         return relationshipType;

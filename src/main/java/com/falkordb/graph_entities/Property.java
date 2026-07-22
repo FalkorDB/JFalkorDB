@@ -33,7 +33,7 @@ public class Property<T> {
     /**
      * Returns the property name.
      *
-     * @return property name
+     * @return the property name, or {@code null} if it has not been set
      */
     public @Nullable String getName() {
         return name;
@@ -51,7 +51,7 @@ public class Property<T> {
     /**
      * Returns the property value.
      *
-     * @return property value
+     * @return the property value, or {@code null} if it has not been set
      */
     public @Nullable T getValue() {
         return value;

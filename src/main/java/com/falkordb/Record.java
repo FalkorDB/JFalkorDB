@@ -16,7 +16,7 @@ public interface Record {
      * @param index field index
      * @param <T> return value type
      *
-     * @return the value
+     * @return the value at the field, or {@code null} if the stored value is null
      */
     <T> @Nullable T getValue(int index);
 
@@ -26,7 +26,7 @@ public interface Record {
      * @param key header key
      * @param <T> return value type
      *
-     * @return the value
+     * @return the value at the field, or {@code null} if the stored value is null
      */
     <T> @Nullable T getValue(String key);
 

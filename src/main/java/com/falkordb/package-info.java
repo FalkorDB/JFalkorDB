@@ -4,8 +4,8 @@
  * com.falkordb.ResultSet}, {@link com.falkordb.Record}, {@link com.falkordb.Header}, {@link
  * com.falkordb.Statistics}) used to run queries and read their results.
  *
- * <p>This package is {@link org.jspecify.annotations.NullMarked}: every type usage is non-null unless
- * it is explicitly annotated {@link org.jspecify.annotations.Nullable}.
+ * <p>This package is {@link org.jspecify.annotations.NullMarked}: an unannotated type usage is
+ * non-null, and the nullable ones are explicitly annotated {@link org.jspecify.annotations.Nullable}.
  */
 @NullMarked
 package com.falkordb;
