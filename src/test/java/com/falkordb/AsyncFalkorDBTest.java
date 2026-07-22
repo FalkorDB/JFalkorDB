@@ -246,12 +246,12 @@ class AsyncFalkorDBTest {
 
         @Override
         public Statistics getStatistics() {
-            return null;
+            throw new UnsupportedOperationException("not used by the async facade tests");
         }
 
         @Override
         public Header getHeader() {
-            return null;
+            throw new UnsupportedOperationException("not used by the async facade tests");
         }
     }
 }

@@ -86,11 +86,17 @@ public class AsyncFalkorDBIT {
                 client.deleteGraph();
             }
         } finally {
-            if (executor != null) {
-                executor.shutdownNow();
-            }
-            if (driver != null) {
-                driver.close();
+            try {
+                if (client != null) {
+                    client.close();
+                }
+            } finally {
+                if (executor != null) {
+                    executor.shutdownNow();
+                }
+                if (driver != null) {
+                    driver.close();
+                }
             }
         }
     }
