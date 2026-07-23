@@ -84,8 +84,9 @@ compute the real release directly: `0.9.1-SNAPSHOT` + the breaking `fix!` (with
 release the manifest tracks real versions normally (`0.10.0` → `0.10.1-SNAPSHOT` → …).
 
 Because there is no `v0.9.1-SNAPSHOT` tag for release-please to anchor the first run's history to, the
-package is also pinned with **`last-release-sha`** set to the `v0.9.0` commit
-(`23723b12ff353b57166aa2b0a3f01349d0eaacf9`). Without it, the first changelog walks the entire history
+run is also anchored with a **top-level `last-release-sha`** set to the `v0.9.0` commit
+(`23723b12ff353b57166aa2b0a3f01349d0eaacf9`) — it must be top-level (a package-level entry is ignored).
+Without it, the first changelog walks the entire history
 back to `v0.1.0` and lists every historical `fix:`/`feat:` (old dependency bumps and low-quality early
 commit messages) under `0.10.0`; with it, the first changelog spans only `v0.9.0..HEAD` (the real
 0.10.0 changes). It becomes a no-op once a real release tag exists (release-please then compares from
