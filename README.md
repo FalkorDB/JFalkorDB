@@ -411,10 +411,12 @@ for (int i = 0; i < n; i++) {
         return null;
     });
 }
-ready.await();
+ready.await(30, java.util.concurrent.TimeUnit.SECONDS); // (bound the waits and check results in production)
 release.countDown();
 pool.shutdown();
-pool.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS); // wait for every connection to return to the pool
+if (!pool.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS)) { // wait for connections to return
+    pool.shutdownNow();
+}
 ```
 
 The client's own code holds no lock across a blocking call — a scheduled CI **pinning check** verifies no
