@@ -367,11 +367,11 @@ ResultSet result = future.join(); // or compose with thenApply/thenCompose
 // on shutdown: drain outstanding futures, then vthreads.shutdown() and driver.close()
 ```
 
-The facade **owns nothing** — the caller owns and closes both the graph and the executor (it is not
-`Closeable`). Failures surface as the future completing exceptionally (`join()` throws
-`CompletionException`, `get()` throws `ExecutionException`). Cancellation is best-effort: cancelling
-before a task starts skips the query, but an in-flight blocking read cannot be interrupted — bound it
-with `socketTimeout` instead (see below).
+The facade **owns nothing** — it is not `Closeable`; the caller shuts the executor down and closes the
+underlying `Driver` (which releases the pooled connections) when done. Failures surface as the future
+completing exceptionally (`join()` throws `CompletionException`, `get()` throws `ExecutionException`).
+Cancellation is best-effort: cancelling before a task starts skips the query, but an in-flight blocking
+read cannot be interrupted — bound it with `socketTimeout` instead (see below).
 
 ### Size the pool for fan-out
 
@@ -414,6 +414,7 @@ for (int i = 0; i < n; i++) {
 ready.await();
 release.countDown();
 pool.shutdown();
+pool.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS); // wait for every connection to return to the pool
 ```
 
 The client's own code holds no lock across a blocking call — a scheduled CI **pinning check** verifies no
