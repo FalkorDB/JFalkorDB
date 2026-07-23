@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784788100975,
+  "lastUpdate": 1784789738406,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -1769,6 +1769,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11595,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f42a18017d5834165316cb080c55244178957218",
+          "message": "ci: anchor release-please's first changelog to the v0.9.0 commit (#359)\n\nPin the package with last-release-sha = the v0.9.0 commit\n(23723b12ff353b57166aa2b0a3f01349d0eaacf9). Because the bootstrap manifest is\nseeded at 0.9.1-SNAPSHOT (there is no such tag), release-please's first run had\nno anchor and walked the entire history back to v0.1.0, listing ~24 already-shipped\nfixes/dependency bumps (2020-2024) under 0.10.0. With the anchor, the first\nchangelog spans only v0.9.0..HEAD (the real 0.10.0 changes). It is a no-op once a\nreal release tag exists. Document the anchor in the setup guide's bootstrap note.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-23T09:53:42+03:00",
+          "tree_id": "1178f8de748e5af50d775a9b12024901b7cd9fb9",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/f42a18017d5834165316cb080c55244178957218"
+        },
+        "date": 1784789738382,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 5099.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 9259.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 13632.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 18160,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 17353.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 16774.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 16645.667,
             "unit": "ops/s"
           }
         ]
