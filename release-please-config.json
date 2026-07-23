@@ -1,11 +1,11 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/v17.6.0/schemas/config.json",
   "always-update": true,
+  "last-release-sha": "23723b12ff353b57166aa2b0a3f01349d0eaacf9",
   "packages": {
     ".": {
       "release-type": "java",
       "bump-minor-pre-major": true,
-      "last-release-sha": "23723b12ff353b57166aa2b0a3f01349d0eaacf9",
       "extra-files": [
         { "type": "pom", "path": "pom.xml" }
       ]
