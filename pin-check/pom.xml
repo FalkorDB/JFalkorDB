@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+      Standalone (non-reactor, non-deployable) virtual-thread PINNING check for the JFalkorDB client.
+
+      Wave 5 (Project Loom, #333) verifies that the blocking client does not pin carrier threads when
+      driven from virtual threads on JDK 21+. This module warms the connection pool (so there is no
+      cold commons-pool2 connection creation — the one KNOWN upstream pin), then runs a virtual-thread
+      query workload over the warm pool under a JFR recording and fails if any `jdk.VirtualThreadPinned`
+      event's stack involves our `com.falkordb.impl` client internals (the known upstream commons-pool2
+      cold-creation pin is excluded). It compiles at release 21 (it uses virtual
+      threads + the JFR API directly) and is never part of the main reactor or the published artifact.
+      Run via `just pin-check`; wired as the scheduled `pin-check` CI job.
+    -->
+    <groupId>com.falkordb.pin</groupId>
+    <artifactId>jfalkordb-pin-check</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>21</maven.compiler.release>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <gpg.skip>true</gpg.skip>
+        <!-- Overridden by `just pin-check` with the root project's actual version; the default keeps
+             the module runnable stand-alone against the current -SNAPSHOT. -->
+        <jfalkordb.version>0.10.0-SNAPSHOT</jfalkordb.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.falkordb</groupId>
+            <artifactId>jfalkordb</artifactId>
+            <version>${jfalkordb.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>2.0.5</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.14.4</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.15.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.6</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>
