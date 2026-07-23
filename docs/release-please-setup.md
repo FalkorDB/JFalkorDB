@@ -81,7 +81,14 @@ a "snapshot bump" PR (downgrading `pom.xml` from `0.10.0-SNAPSHOT` to `0.9.1-SNA
 release. Seeding the manifest at the post-`0.9.0` snapshot it *would* have created lets the first run
 compute the real release directly: `0.9.1-SNAPSHOT` + the breaking `fix!` (with
 `bump-minor-pre-major`) → **`0.10.0`** — verified by `release-please --dry-run`. After the first
-release the manifest tracks real versions normally (`0.10.0` → `0.10.1-SNAPSHOT` → …). The only
-cosmetic effect is that the **first** changelog compare link reads `v0.9.1-SNAPSHOT...v0.10.0`;
-subsequent releases compare real tags.
+release the manifest tracks real versions normally (`0.10.0` → `0.10.1-SNAPSHOT` → …).
+
+Because there is no `v0.9.1-SNAPSHOT` tag for release-please to anchor the first run's history to, the
+package is also pinned with **`last-release-sha`** set to the `v0.9.0` commit
+(`23723b12ff353b57166aa2b0a3f01349d0eaacf9`). Without it, the first changelog walks the entire history
+back to `v0.1.0` and lists every historical `fix:`/`feat:` (old dependency bumps and low-quality early
+commit messages) under `0.10.0`; with it, the first changelog spans only `v0.9.0..HEAD` (the real
+0.10.0 changes). It becomes a no-op once a real release tag exists (release-please then compares from
+the newer tag). The one remaining cosmetic effect is that the **first** changelog compare link reads
+`v0.9.1-SNAPSHOT...v0.10.0`; subsequent releases compare real tags.
 
