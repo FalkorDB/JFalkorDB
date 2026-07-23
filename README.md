@@ -304,6 +304,116 @@ Driver driver = new DriverImpl(jedisPool);
 
 For more information about Jedis pool configuration options, see the [Jedis documentation](https://github.com/redis/jedis).
 
+## Concurrency with Virtual Threads (JDK 21+)
+
+JFalkorDB is a **blocking** client, which makes it an excellent fit for **Java 21+ virtual threads**:
+run each query on its own virtual thread and let many of them block concurrently at near-async
+throughput — with **no API change**. The library itself stays Java 8; you supply the executor, so this
+is purely a consumer-side choice.
+
+### Fan the blocking client out over virtual threads
+
+`driver.graph(id)` returns a pool-per-call `GraphContextGenerator` that is safe to call concurrently, so
+you can share one instance across many virtual threads:
+
+```java
+import com.falkordb.Driver;
+import com.falkordb.FalkorDB;
+import com.falkordb.GraphContextGenerator;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+int concurrency = 64;
+try (Driver driver = FalkorDB.builder().host("localhost").port(6379)
+        .poolMaxTotal(concurrency)   // real concurrency is bounded by the pool, not the thread count
+        .poolMaxIdle(concurrency)
+        .build()) {
+    GraphContextGenerator graph = driver.graph("social");
+    ExecutorService vthreads = Executors.newVirtualThreadPerTaskExecutor(); // JDK 21+
+    try {
+        for (int i = 0; i < 1000; i++) {
+            int id = i;
+            vthreads.submit(() -> graph.query("MATCH (n) WHERE n.id = $id RETURN n",
+                    java.util.Collections.singletonMap("id", id)));
+        }
+    } finally {
+        vthreads.shutdown(); // then awaitTermination(...) to drain in-flight queries
+    }
+}
+```
+
+### `AsyncGraph` — an optional `CompletableFuture` facade
+
+If you prefer `CompletableFuture`s, wrap the graph with `AsyncFalkorDB.wrap(graph, executor)`. Every
+method mirrors the synchronous `Graph` operation but runs on your executor and returns a future:
+
+```java
+import com.falkordb.AsyncFalkorDB;
+import com.falkordb.AsyncGraph;
+import com.falkordb.ResultSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+ExecutorService vthreads = Executors.newVirtualThreadPerTaskExecutor(); // JDK 21+
+AsyncGraph async = AsyncFalkorDB.wrap(driver.graph("social"), vthreads);
+
+CompletableFuture<ResultSet> future = async.query("MATCH (n) RETURN count(n)");
+ResultSet result = future.join(); // or compose with thenApply/thenCompose
+```
+
+The facade **owns nothing** — the caller owns and closes both the graph and the executor (it is not
+`Closeable`). Failures surface as the future completing exceptionally (`join()` throws
+`CompletionException`, `get()` throws `ExecutionException`). Cancellation is best-effort: cancelling
+before a task starts skips the query, but an in-flight blocking read cannot be interrupted — bound it
+with `socketTimeout` instead (see below).
+
+### Size the pool for fan-out
+
+Real database concurrency is bounded by the **connection pool**, not by how many virtual threads you
+create: at most `poolMaxTotal` queries run against the server at once, and the default is small
+(commons-pool2's default `maxTotal` is **8**). Size `poolMaxTotal` to your target concurrency `N`:
+
+- There is **no built-in admission bound** — a virtual-thread executor accepts unbounded tasks while DB
+  concurrency stays pool-limited. Add your own `Semaphore` if you need to cap in-flight work.
+- Set a **finite `poolMaxWait`** so a saturated pool fails fast (throws) instead of blocking forever;
+  set a finite **`socketTimeout`** so a stuck read cannot hang a worker.
+
+### Warm the pool to avoid cold-start pinning
+
+On **JDK 21–23**, creating a brand-new pooled connection briefly **pins** the carrier thread (the
+underlying commons-pool2 `create()` is `synchronized`), so a burst of first-time connections under a
+virtual-thread fan-out can momentarily starve carriers. Avoid it by **warming the pool up front** —
+borrow and hold `N` connections once (on platform threads) so the pool creates them before the workload,
+sizing **both** `poolMaxTotal >= N` **and** `poolMaxIdle >= N` so they are retained as idle:
+
+```java
+// Warm N connections before the virtual-thread workload (poolMaxTotal == poolMaxIdle == N).
+GraphContextGenerator graph = driver.graph("social");
+int n = 64;
+var pool = Executors.newFixedThreadPool(n); // platform threads: cold creation must not pin virtual threads
+var release = new java.util.concurrent.CountDownLatch(1);
+var ready = new java.util.concurrent.CountDownLatch(n);
+for (int i = 0; i < n; i++) {
+    pool.submit(() -> {
+        try (var ctx = graph.getContext()) { // borrows a connection
+            ctx.query("RETURN 1");
+            ready.countDown();
+            release.await();                 // hold so all N are open at once => N distinct connections
+        }
+        return null;
+    });
+}
+ready.await();
+release.countDown();
+pool.shutdown();
+```
+
+The client's own code holds no lock across a blocking call — a scheduled CI **pinning check** verifies no
+carrier pin originates in `com.falkordb.impl` under a virtual-thread load — and **JDK 24+ removes carrier
+pinning for `synchronized` entirely** ([JEP 491](https://openjdk.org/jeps/491)), so this warm-up matters
+only on JDK 21–23.
+
 ## Benchmarks
 
 Continuous **client load-sweep** benchmarks run on every push to `master` and on pull requests
