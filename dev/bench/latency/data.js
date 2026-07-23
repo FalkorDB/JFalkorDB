@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784788099482,
+  "lastUpdate": 1784789736807,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -3869,6 +3869,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 68777.541,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f42a18017d5834165316cb080c55244178957218",
+          "message": "ci: anchor release-please's first changelog to the v0.9.0 commit (#359)\n\nPin the package with last-release-sha = the v0.9.0 commit\n(23723b12ff353b57166aa2b0a3f01349d0eaacf9). Because the bootstrap manifest is\nseeded at 0.9.1-SNAPSHOT (there is no such tag), release-please's first run had\nno anchor and walked the entire history back to v0.1.0, listing ~24 already-shipped\nfixes/dependency bumps (2020-2024) under 0.10.0. With the anchor, the first\nchangelog spans only v0.9.0..HEAD (the real 0.10.0 changes). It is a no-op once a\nreal release tag exists. Document the anchor in the setup guide's bootstrap note.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-23T09:53:42+03:00",
+          "tree_id": "1178f8de748e5af50d775a9b12024901b7cd9fb9",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/f42a18017d5834165316cb080c55244178957218"
+        },
+        "date": 1784789735733,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 128.333,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 148.223,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 189.865,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 152.148,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 185.403,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 209.014,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 203.416,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 328.625,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 412.311,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 321.164,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 554.976,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 691.731,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 377.018,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 3467.559,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 7415.751,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 394.913,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 9513.173,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 20889.781,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 415.384,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 18877.617,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 40187.499,
             "unit": "us"
           }
         ]
