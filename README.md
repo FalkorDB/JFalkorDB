@@ -337,7 +337,8 @@ try (Driver driver = FalkorDB.builder().host("localhost").port(6379)
                     java.util.Collections.singletonMap("id", id)));
         }
     } finally {
-        vthreads.shutdown(); // then awaitTermination(...) to drain in-flight queries
+        vthreads.shutdown();
+        vthreads.awaitTermination(1, java.util.concurrent.TimeUnit.MINUTES); // drain in-flight queries before the pool closes
     }
 }
 ```
