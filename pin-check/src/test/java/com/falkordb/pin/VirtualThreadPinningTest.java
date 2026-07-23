@@ -136,7 +136,11 @@ class VirtualThreadPinningTest {
 
     private static int parsePort(String value) {
         try {
-            return Integer.parseInt(value.trim());
+            int port = Integer.parseInt(value.trim());
+            if (port < 1 || port > 65535) {
+                throw new IllegalStateException("FALKORDB_PORT must be between 1 and 65535, but was: " + value);
+            }
+            return port;
         } catch (NumberFormatException notANumber) {
             throw new IllegalStateException("FALKORDB_PORT must be a number, but was: " + value, notANumber);
         }
