@@ -11,7 +11,8 @@
       driven from virtual threads on JDK 21+. This module warms the connection pool (so there is no
       cold commons-pool2 connection creation — the one KNOWN upstream pin), then runs a virtual-thread
       query workload over the warm pool under a JFR recording and fails if any `jdk.VirtualThreadPinned`
-      event's stack involves our `com.falkordb` code. It compiles at release 21 (it uses virtual
+      event's stack involves our `com.falkordb.impl` client internals (the known upstream commons-pool2
+      cold-creation pin is excluded). It compiles at release 21 (it uses virtual
       threads + the JFR API directly) and is never part of the main reactor or the published artifact.
       Run via `just pin-check`; wired as the scheduled `pin-check` CI job.
     -->

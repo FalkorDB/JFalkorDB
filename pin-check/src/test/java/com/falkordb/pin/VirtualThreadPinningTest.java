@@ -165,6 +165,11 @@ class VirtualThreadPinningTest {
                         borrowed.countDown();
                         release.await(); // hold it so all N are open at once => N distinct connections created
                     } catch (InterruptedException interrupted) {
+                        // Only reachable at release.await() — i.e. after this worker already created its
+                        // connection and counted the latch down (borrowed.await guarantees N distinct
+                        // connections were held simultaneously before we proceed). The connection is
+                        // returned to the pool, which retains it (poolMaxIdle == N, evictor disabled), so
+                        // the pool stays warm; hence the interrupt is not a warm-up failure.
                         Thread.currentThread().interrupt();
                     } catch (RuntimeException workerFailure) {
                         // execute() would otherwise only route this to the thread's uncaught handler,
