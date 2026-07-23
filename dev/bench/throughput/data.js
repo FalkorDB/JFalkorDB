@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784785284223,
+  "lastUpdate": 1784788100975,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -1710,6 +1710,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 12934.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "08251f69b4f9286d50808edf8173445910ca1673",
+          "message": "docs: document virtual-thread concurrency and pool tuning (Wave 5) (#358)\n\n* docs: document virtual-thread concurrency, pool sizing, and warm-up (Wave 5)\n\nAdd a 'Concurrency with Virtual Threads (JDK 21+)' README section covering the\nrecommended model (virtual-thread-per-task executor + the blocking client):\n- fanning driver.graph(id) out over virtual threads;\n- the optional AsyncGraph / AsyncFalkorDB.wrap CompletableFuture facade;\n- sizing the pool for fan-out (poolMaxTotal caps real concurrency; no built-in\n  admission bound; finite poolMaxWait/socketTimeout);\n- warming the pool to avoid JDK 21-23 cold-creation carrier pinning, requiring\n  both poolMaxTotal >= N and poolMaxIdle >= N, with the JEP 491 (JDK 24) note and\n  a pointer to the scheduled pinning check.\n\nCompletes the Wave 5 (Project Loom) documentation and pool-sizing items.\n\nCloses #333\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs: make the virtual-thread snippets self-contained\n\nDeclare the Driver (and note shutdown/close) in the AsyncGraph and pool-warm-up\nsnippets so each compiles when copied on its own.\n\nAddresses Copilot review on #358.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs: correct AsyncGraph close guidance and warm-up shutdown\n\n- The facade caller closes the underlying Driver (which releases pooled\n  connections), not the GraphContextGenerator (whose close() only clears its\n  cache); reword accordingly.\n- Await pool termination in the warm-up example so all N connections are back in\n  the pool before the workload starts.\n\nAddresses Copilot review on #358.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs: bound the warm-up snippet's waits and check awaitTermination\n\nGive ready.await() a timeout and act on awaitTermination's result (shutdownNow on\ntimeout) so the illustrative warm-up can't block indefinitely.\n\nAddresses Copilot review on #358.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs: drain the virtual-thread executor before the pool closes in the fan-out example\n\nAwait executor termination after shutdown() so in-flight queries finish before the\ntry-with-resources closes the Driver/pool.\n\nAddresses Copilot review on #358.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-23T09:26:19+03:00",
+          "tree_id": "f2a26685cf066aa2b4d7869692ca514f5ecf8b62",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/08251f69b4f9286d50808edf8173445910ca1673"
+        },
+        "date": 1784788100946,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3513.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6188.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9329,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 12198.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11537.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11588,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11595,
             "unit": "ops/s"
           }
         ]
