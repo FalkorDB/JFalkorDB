@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784791728952,
+  "lastUpdate": 1784796897313,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -4256,6 +4256,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 58182.031,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "584ea7a4ce317ccfcd914c503078e8d8be767577",
+          "message": "build: bump api.diff.baseline to 0.10.0 (#362)\n\nNow that 0.10.0 is released to Maven Central, compare the public API against it\n(the documented post-release step) so the api-diff gate reflects the new baseline.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-23T11:53:08+03:00",
+          "tree_id": "8192927ba44254839669c20b7465ef4fd8a04010",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/584ea7a4ce317ccfcd914c503078e8d8be767577"
+        },
+        "date": 1784796896887,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 209.833,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 245.46,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 269.084,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 237.926,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 280.005,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 317.677,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 305.533,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 464.993,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 566.602,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 511.699,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 859.381,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1059.575,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 596.018,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5495.65,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 10924.586,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 604.518,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 15081.538,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 29868.154,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 599.003,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 34894.654,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 71302.683,
             "unit": "us"
           }
         ]
