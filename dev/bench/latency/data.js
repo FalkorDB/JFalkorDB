@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784785283014,
+  "lastUpdate": 1784788099482,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -3740,6 +3740,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 61984.255,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "08251f69b4f9286d50808edf8173445910ca1673",
+          "message": "docs: document virtual-thread concurrency and pool tuning (Wave 5) (#358)\n\n* docs: document virtual-thread concurrency, pool sizing, and warm-up (Wave 5)\n\nAdd a 'Concurrency with Virtual Threads (JDK 21+)' README section covering the\nrecommended model (virtual-thread-per-task executor + the blocking client):\n- fanning driver.graph(id) out over virtual threads;\n- the optional AsyncGraph / AsyncFalkorDB.wrap CompletableFuture facade;\n- sizing the pool for fan-out (poolMaxTotal caps real concurrency; no built-in\n  admission bound; finite poolMaxWait/socketTimeout);\n- warming the pool to avoid JDK 21-23 cold-creation carrier pinning, requiring\n  both poolMaxTotal >= N and poolMaxIdle >= N, with the JEP 491 (JDK 24) note and\n  a pointer to the scheduled pinning check.\n\nCompletes the Wave 5 (Project Loom) documentation and pool-sizing items.\n\nCloses #333\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs: make the virtual-thread snippets self-contained\n\nDeclare the Driver (and note shutdown/close) in the AsyncGraph and pool-warm-up\nsnippets so each compiles when copied on its own.\n\nAddresses Copilot review on #358.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs: correct AsyncGraph close guidance and warm-up shutdown\n\n- The facade caller closes the underlying Driver (which releases pooled\n  connections), not the GraphContextGenerator (whose close() only clears its\n  cache); reword accordingly.\n- Await pool termination in the warm-up example so all N connections are back in\n  the pool before the workload starts.\n\nAddresses Copilot review on #358.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs: bound the warm-up snippet's waits and check awaitTermination\n\nGive ready.await() a timeout and act on awaitTermination's result (shutdownNow on\ntimeout) so the illustrative warm-up can't block indefinitely.\n\nAddresses Copilot review on #358.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs: drain the virtual-thread executor before the pool closes in the fan-out example\n\nAwait executor termination after shutdown() so in-flight queries finish before the\ntry-with-resources closes the Driver/pool.\n\nAddresses Copilot review on #358.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-23T09:26:19+03:00",
+          "tree_id": "f2a26685cf066aa2b4d7869692ca514f5ecf8b62",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/08251f69b4f9286d50808edf8173445910ca1673"
+        },
+        "date": 1784788098897,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 195.387,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 239.961,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 276.821,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 230.963,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 274.562,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 303.52,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 299.47,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 465.886,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 569.362,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 481.615,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 810.944,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1003.966,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 569.39,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5320.626,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 10947.717,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 566.111,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 14681.163,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 30667.857,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 568.238,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 34117.066,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 68777.541,
             "unit": "us"
           }
         ]
