@@ -72,7 +72,7 @@
 		     breaks by default; a reviewed, intentional break is approved by overriding it to false (the
 		     CI `api-diff` job sets -Dapi.diff.fail=false when the PR carries the `breaking-change`
 		     label). -->
-		<api.diff.baseline>0.9.0</api.diff.baseline>
+		<api.diff.baseline>0.10.0</api.diff.baseline>
 		<api.diff.fail>true</api.diff.fail>
 	</properties>
 
