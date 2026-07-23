@@ -350,16 +350,21 @@ method mirrors the synchronous `Graph` operation but runs on your executor and r
 ```java
 import com.falkordb.AsyncFalkorDB;
 import com.falkordb.AsyncGraph;
+import com.falkordb.Driver;
+import com.falkordb.FalkorDB;
 import com.falkordb.ResultSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+Driver driver = FalkorDB.builder().host("localhost").port(6379).build();
 ExecutorService vthreads = Executors.newVirtualThreadPerTaskExecutor(); // JDK 21+
 AsyncGraph async = AsyncFalkorDB.wrap(driver.graph("social"), vthreads);
 
 CompletableFuture<ResultSet> future = async.query("MATCH (n) RETURN count(n)");
 ResultSet result = future.join(); // or compose with thenApply/thenCompose
+
+// on shutdown: drain outstanding futures, then vthreads.shutdown() and driver.close()
 ```
 
 The facade **owns nothing** — the caller owns and closes both the graph and the executor (it is not
@@ -389,6 +394,8 @@ sizing **both** `poolMaxTotal >= N` **and** `poolMaxIdle >= N` so they are retai
 
 ```java
 // Warm N connections before the virtual-thread workload (poolMaxTotal == poolMaxIdle == N).
+Driver driver = FalkorDB.builder().host("localhost").port(6379)
+        .poolMaxTotal(64).poolMaxIdle(64).build();
 GraphContextGenerator graph = driver.graph("social");
 int n = 64;
 var pool = Executors.newFixedThreadPool(n); // platform threads: cold creation must not pin virtual threads
