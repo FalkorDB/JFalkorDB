@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1784789736807,
+  "lastUpdate": 1784791376802,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -3998,6 +3998,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 40187.499,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f6c11871a3414b226ad88f08bb2194d436150f16",
+          "message": "ci: move release-please last-release-sha to top-level so the first changelog trims (#360)\n\nThe last-release-sha added in #359 was placed inside the package config, where\nrelease-please ignores it, so the first 0.10.0 changelog still walked all history\nback to v0.1.0 (36 entries). last-release-sha is a top-level manifest-config option;\nmoving it there anchors the first run to the v0.9.0 commit. Verified via\n`release-please --dry-run --target-branch`: 36 -> 13 entries, all post-v0.9.0\n(the ancient dependency bumps and typo'd commit messages are gone).\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-07-23T10:19:45+03:00",
+          "tree_id": "cc92175955b80b0ecb581c0bc4326f32a3ba35c5",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/f6c11871a3414b226ad88f08bb2194d436150f16"
+        },
+        "date": 1784791376398,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 156.512,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 191.895,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 210.942,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 196.082,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 243.431,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 306.164,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 256.681,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 399.303,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 488.705,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 413.794,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 704.946,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 887.818,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 490.378,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 4621.508,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 9632.082,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 493.042,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 13039.927,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 27709.123,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 495.065,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 29795.19,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 62774.775,
             "unit": "us"
           }
         ]
