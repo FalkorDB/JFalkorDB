@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785299742140,
+  "lastUpdate": 1785415104887,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -2300,6 +2300,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11411.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0ee98516a76e863f160b52458279852364837b3f",
+          "message": "build(deps): bump org.jspecify:jspecify from 1.0.0 to 1.0.1 (#369)\n\nBumps [org.jspecify:jspecify](https://github.com/jspecify/jspecify) from 1.0.0 to 1.0.1.\n- [Release notes](https://github.com/jspecify/jspecify/releases)\n- [Commits](https://github.com/jspecify/jspecify/compare/v1.0.0...v1.0.1)\n\n---\nupdated-dependencies:\n- dependency-name: org.jspecify:jspecify\n  dependency-version: 1.0.1\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-07-30T15:36:10+03:00",
+          "tree_id": "f3896d7640350b69e5276db41ae2d9b286814494",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/0ee98516a76e863f160b52458279852364837b3f"
+        },
+        "date": 1785415104864,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 5499.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 10455.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 16945.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 21338.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 20337.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 20508,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 20574.667,
             "unit": "ops/s"
           }
         ]
