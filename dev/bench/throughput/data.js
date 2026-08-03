@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785415104887,
+  "lastUpdate": 1785744049709,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -2359,6 +2359,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 20574.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "144c5929b5c8ffd79b058f81b15c38ecf9052f95",
+          "message": "build: combine Dependabot updates (setup-java, codeql action) (#373)\n\nCombines the Dependabot updates from #370, #371 and #372 into a\nsingle PR:\n- Bump actions/setup-java from 5.6.0 to 5.7.0 (all workflows)\n- Bump github/codeql-action init from 4.37.3 to 4.37.4\n- Bump github/codeql-action analyze from 4.37.3 to 4.37.4\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-08-03T10:57:53+03:00",
+          "tree_id": "ef99f352686701b3f647591178aef21e3e718121",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/144c5929b5c8ffd79b058f81b15c38ecf9052f95"
+        },
+        "date": 1785744049679,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3497.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6274.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9149,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11964,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11380.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11227.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11217,
             "unit": "ops/s"
           }
         ]
