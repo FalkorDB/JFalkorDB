@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785744031436,
+  "lastUpdate": 1786002985017,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -5288,6 +5288,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 70440.476,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gkorland@gmail.com",
+            "name": "Guy Korland",
+            "username": "gkorland"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "42d2958234b1be5e0809e9abe171da940c61e29a",
+          "message": "Remove redundant CODE_OF_CONDUCT.md in favour of the org-wide default (#374)",
+          "timestamp": "2026-08-06T10:54:29+03:00",
+          "tree_id": "f12ccad1d0d5d07576227963408d2e08a81cf775",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/42d2958234b1be5e0809e9abe171da940c61e29a"
+        },
+        "date": 1786002984361,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 156.777,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 188.273,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 209.145,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 193.04,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 235.029,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 255.87,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 267.573,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 452.171,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 580.734,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 429.716,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 736.458,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 900.644,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 514.554,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 4774.333,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 10430.456,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 541.715,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 12897.764,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 27527.528,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 507.524,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 27020.179,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 57282.505,
             "unit": "us"
           }
         ]
