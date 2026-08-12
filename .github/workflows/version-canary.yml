@@ -27,9 +27,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image:
-          - falkordb/falkordb:edge
-          - falkordb/falkordb:latest
+        falkordb_version:
+          - edge
+          - latest
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -45,7 +45,7 @@ jobs:
       uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
     # FALKORDB_IMAGE is read by the TestServer harness (FalkorDbImage.resolve) so the whole suite runs
     # against this tag instead of the pinned default digest.
-    - name: Build & test against ${{ matrix.image }} (via just)
+    - name: Build & test against falkordb/falkordb:${{ matrix.falkordb_version }} (via just)
       env:
-        FALKORDB_IMAGE: ${{ matrix.image }}
+        FALKORDB_IMAGE: falkordb/falkordb:${{ matrix.falkordb_version }}
       run: just verify

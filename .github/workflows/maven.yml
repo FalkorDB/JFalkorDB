@@ -25,6 +25,11 @@ concurrency:
 permissions:
   contents: write
 
+env:
+  # FalkorDB image tag the released-image gate (`verify-latest`) runs against.
+  # The pinned-digest jobs deliberately ignore this: they guard the minimum
+  # supported version. `edge` is covered daily by the `version-canary` workflow.
+  FALKORDB_VERSION: latest
 
 jobs:
   build:
@@ -78,9 +83,9 @@ jobs:
       uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
     # FALKORDB_IMAGE is read by the TestServer harness (FalkorDbImage.resolve) so the whole suite runs
     # against this tag instead of the pinned default digest.
-    - name: Build & test against falkordb/falkordb:latest (via just)
+    - name: Build & test against falkordb/falkordb:${{ env.FALKORDB_VERSION }} (via just)
       env:
-        FALKORDB_IMAGE: falkordb/falkordb:latest
+        FALKORDB_IMAGE: falkordb/falkordb:${{ env.FALKORDB_VERSION }}
       run: just verify
 
   format:
