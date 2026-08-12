@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786566014770,
+  "lastUpdate": 1786566377409,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -2536,6 +2536,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 12834,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gkorland@gmail.com",
+            "name": "Guy Korland",
+            "username": "gkorland"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f1605be28d1c3f1445b520e74cdb6bec8ef07e2b",
+          "message": "ci(maven): verify against latest on PRs, run the edge canary daily (#379)\n\n* ci(maven): verify against latest on PRs, run the edge canary daily\n\nThe required `build`/`smoke-*` jobs pin a FalkorDB digest (v4.20.1, the\nminimum supported version), so nothing in PR CI exercised the image most\nusers actually run. A new `verify-latest` job runs the full `just verify`\nsuite against `falkordb/falkordb:latest` on pull requests, pushes, tags\nand published releases, using the existing `FALKORDB_IMAGE` Testcontainers\noverride.\n\nThe version canary (edge + latest) moves from weekly to daily so\nregressions in unreleased FalkorDB builds surface within a day. Both\nremain non-blocking for the pinned-digest gates.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* refactor(ci): select the FalkorDB image via a FALKORDB_VERSION variable\n\nAligns with the other clients: the released-image gate reads a workflow-level\n`FALKORDB_VERSION` and derives `FALKORDB_IMAGE` from it, and the canary\nmatrixes over bare version tags instead of full image references.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* ci: address review feedback on the FalkorDB image tag workflow\n\n- The `falkordb_image_tag` dispatch input defaulted to an empty string while its\n  description promised `latest`; it now defaults to `latest` so the form matches\n  the documented behaviour. Scheduled runs still resolve to `edge`, because\n  `schedule` events carry no inputs.\n- falkordb-ts and falkordb-php publish bare semver tags (`6.7.0`), which `v*`\n  never matched, so tagged releases skipped CI. Both patterns are now accepted.\n- falkordb-rs coverage had no tag trigger at all.\n- JFalkorDB documented a manual tag override that did not exist: `maven.yml` now\n  defines the dispatch input it reads.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* ci: report scheduled edge failures as a tracking issue\n\nA daily cron has nobody watching it: GitHub only emails the user who last\ntouched the cron line, and only if that person has Actions notifications on. An\n`edge` regression would therefore have failed silently.\n\nScheduled runs that fail now open an issue titled \"CI is failing against\nfalkordb/falkordb:edge\", or comment on it if it is already open, so repository\nwatchers are notified through the normal issue flow.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* ci: post scheduled edge failures to Google Chat\n\nReplaces the tracking-issue notification with a Google Chat webhook post, read\nfrom the `GOOGLE_CHAT_WEBHOOK_URL` secret. The issue is kept only as a fallback\nfor when that secret is not configured, so the daily run can never fail\nsilently.\n\nThe message text is assembled with jq rather than string-interpolated, and no\n`${{ }}` expression is expanded into the shell.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-08-12T23:23:56+03:00",
+          "tree_id": "ee44e6368325ffc02f4bc1067713e18152e106ca",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/f1605be28d1c3f1445b520e74cdb6bec8ef07e2b"
+        },
+        "date": 1786566377380,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3764.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6606.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9315.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 12486.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11542,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11787,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11751,
             "unit": "ops/s"
           }
         ]
