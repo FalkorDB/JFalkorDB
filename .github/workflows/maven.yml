@@ -17,6 +17,11 @@ on:
   release:
     types: [ published ]
   workflow_dispatch:
+    inputs:
+      falkordb_image_tag:
+        description: "FalkorDB Docker image tag the released-image gate runs against (defaults to latest)"
+        required: false
+        default: "latest"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -29,7 +34,7 @@ env:
   # FalkorDB image tag the released-image gate (`verify-latest`) runs against.
   # The pinned-digest jobs deliberately ignore this: they guard the minimum
   # supported version. `edge` is covered daily by the `version-canary` workflow.
-  FALKORDB_VERSION: latest
+  FALKORDB_VERSION: ${{ github.event.inputs.falkordb_image_tag || 'latest' }}
 
 jobs:
   build:
