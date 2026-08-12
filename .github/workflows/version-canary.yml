@@ -1,14 +1,15 @@
 name: FalkorDB version canary
 
 # Non-blocking early warning that the client still works against the moving FalkorDB `edge` and
-# `latest` images. Runs on a schedule (and on demand) — NOT on pushes/PRs — so upstream breakage never
+# `latest` images. Runs daily (and on demand) — NOT on pushes/PRs — so upstream breakage never
 # gates a merge: the required `build`/`smoke-jdk8`/`smoke-jdk` jobs pin the digest (v4.20.1), which is
-# also the current minimum supported version. Uses the `FALKORDB_IMAGE` override so Testcontainers runs
-# the full `just verify` suite against each tag.
+# also the current minimum supported version, while `verify-latest` in `maven.yml` covers `latest` on
+# every PR. The daily `edge` run is what catches bugs in unreleased FalkorDB builds early. Uses the
+# `FALKORDB_IMAGE` override so Testcontainers runs the full `just verify` suite against each tag.
 
 on:
   schedule:
-    - cron: '0 5 * * 1' # weekly, Mondays 05:00 UTC
+    - cron: '0 2 * * *' # daily, 02:00 UTC
   workflow_dispatch:
 
 permissions:
