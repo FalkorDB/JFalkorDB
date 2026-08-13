@@ -11,7 +11,10 @@ import redis.clients.jedis.util.SafeEncoder;
 /**
  * Query result header interface implementation
  */
-public class HeaderImpl implements Header {
+// Final because the constructor can throw on a malformed reply: a partially-constructed non-final
+// class is reachable via a subclass finalizer (SpotBugs CT_CONSTRUCTOR_THROW). ResultSetImpl is final
+// for the same reason. Nothing extends this internal type.
+public final class HeaderImpl implements Header {
 
     // members
     private static final ResultSetColumnTypes[] COLUMN_TYPES = ResultSetColumnTypes.values();
