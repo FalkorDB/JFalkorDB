@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786623952537,
+  "lastUpdate": 1786624070308,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -6191,6 +6191,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 60394.688,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "307409954+falkordb-release-please[bot]@users.noreply.github.com",
+            "name": "falkordb-release-please[bot]",
+            "username": "falkordb-release-please[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d921a1d4de3aa8659802b7374e33551202cc2bf6",
+          "message": "chore(master): release 0.10.1-SNAPSHOT (#363)\n\nCo-authored-by: falkordb-release-please[bot] <307409954+falkordb-release-please[bot]@users.noreply.github.com>",
+          "timestamp": "2026-08-13T15:25:59+03:00",
+          "tree_id": "5bc93b7a2d1cd57923da5b7cf7872e6f0351a8ff",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/d921a1d4de3aa8659802b7374e33551202cc2bf6"
+        },
+        "date": 1786624069771,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 197.211,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 240.881,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 266.74,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 232.82,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 275.597,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 309.349,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 309.761,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 497.907,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 621.475,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 506.421,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 859.383,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1072.653,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 578.074,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5568.599,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 12196.894,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 582.514,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 15649.159,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 34705.204,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 583.845,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 35415.816,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 79543.986,
             "unit": "us"
           }
         ]
