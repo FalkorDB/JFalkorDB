@@ -24,6 +24,20 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
     private final String graphId;
 
     /**
+     * Builds a {@link ResultSet} from a raw graph reply. One shared instance replaces the eight
+     * byte-identical anonymous builders this class used to declare, so a fix to the response shape
+     * lands in one place. Jedis {@code Builder} is an abstract class, not a functional interface, so
+     * this cannot be a lambda. {@code graph}/{@code cache} are read at build time, not captured.
+     */
+    private final Builder<ResultSet> resultSetBuilder = new Builder<ResultSet>() {
+        @SuppressWarnings("unchecked")
+        @Override
+        public ResultSet build(Object o) {
+            return new ResultSetImpl((List<Object>) o, graph, cache);
+        }
+    };
+
+    /**
      * Creates a new pipeline for a given graph.
      * @param connection the connection to use
      * @param graph the graph to use
@@ -60,13 +74,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
     @Override
     public Response<ResultSet> query(String query) {
         return appendWithResponse(
-                GraphCommand.QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), new Builder<ResultSet>() {
-                    @SuppressWarnings("unchecked")
-                    @Override
-                    public ResultSet build(Object o) {
-                        return new ResultSetImpl((List<Object>) o, graph, cache);
-                    }
-                });
+                GraphCommand.QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), resultSetBuilder);
     }
 
     /**
@@ -77,13 +85,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
     @Override
     public Response<ResultSet> readOnlyQuery(String query) {
         return appendWithResponse(
-                GraphCommand.RO_QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), new Builder<ResultSet>() {
-                    @SuppressWarnings("unchecked")
-                    @Override
-                    public ResultSet build(Object o) {
-                        return new ResultSetImpl((List<Object>) o, graph, cache);
-                    }
-                });
+                GraphCommand.RO_QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), resultSetBuilder);
     }
 
     /**
@@ -99,13 +101,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
         return appendWithResponse(
                 GraphCommand.QUERY,
                 Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout)),
-                new Builder<ResultSet>() {
-                    @SuppressWarnings("unchecked")
-                    @Override
-                    public ResultSet build(Object o) {
-                        return new ResultSetImpl((List<Object>) o, graph, cache);
-                    }
-                });
+                resultSetBuilder);
     }
 
     /**
@@ -121,13 +117,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
         return appendWithResponse(
                 GraphCommand.RO_QUERY,
                 Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout)),
-                new Builder<ResultSet>() {
-                    @SuppressWarnings("unchecked")
-                    @Override
-                    public ResultSet build(Object o) {
-                        return new ResultSetImpl((List<Object>) o, graph, cache);
-                    }
-                });
+                resultSetBuilder);
     }
 
     /**
@@ -141,13 +131,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
         return appendWithResponse(
                 GraphCommand.QUERY,
                 Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING),
-                new Builder<ResultSet>() {
-                    @SuppressWarnings("unchecked")
-                    @Override
-                    public ResultSet build(Object o) {
-                        return new ResultSetImpl((List<Object>) o, graph, cache);
-                    }
-                });
+                resultSetBuilder);
     }
 
     /**
@@ -161,13 +145,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
         return appendWithResponse(
                 GraphCommand.RO_QUERY,
                 Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING),
-                new Builder<ResultSet>() {
-                    @SuppressWarnings("unchecked")
-                    @Override
-                    public ResultSet build(Object o) {
-                        return new ResultSetImpl((List<Object>) o, graph, cache);
-                    }
-                });
+                resultSetBuilder);
     }
 
     /**
@@ -190,13 +168,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
                         Utils.COMPACT_STRING,
                         Utils.TIMEOUT_STRING,
                         Long.toString(timeout)),
-                new Builder<ResultSet>() {
-                    @SuppressWarnings("unchecked")
-                    @Override
-                    public ResultSet build(Object o) {
-                        return new ResultSetImpl((List<Object>) o, graph, cache);
-                    }
-                });
+                resultSetBuilder);
     }
 
     /**
@@ -219,13 +191,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
                         Utils.COMPACT_STRING,
                         Utils.TIMEOUT_STRING,
                         Long.toString(timeout)),
-                new Builder<ResultSet>() {
-                    @SuppressWarnings("unchecked")
-                    @Override
-                    public ResultSet build(Object o) {
-                        return new ResultSetImpl((List<Object>) o, graph, cache);
-                    }
-                });
+                resultSetBuilder);
     }
 
     /**
