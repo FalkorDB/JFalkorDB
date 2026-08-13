@@ -261,6 +261,17 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>3.12.0</version>
+				<configuration>
+					<!-- Doc-generation only: pin javadoc to release 11 so JSpecify's @NullMarked
+					     @Target (which lists the Java-9 ElementType.MODULE) resolves — under release 8
+					     javadoc emits a spurious "unknown enum constant ElementType.MODULE" warning.
+					     This does NOT affect the shipped artifact: the compiler still targets release 8
+					     (Enforcer + Animal Sniffer + the JDK-8 smoke guarantee Java-8 compatibility). -->
+					<release>11</release>
+					<!-- Regression guard: any new Javadoc warning (missing main description, undocumented
+					     default constructor, …) fails the build instead of scrolling past in the log. -->
+					<failOnWarnings>true</failOnWarnings>
+				</configuration>
 				<executions>
 					<execution>
 						<id>attach-javadocs</id>

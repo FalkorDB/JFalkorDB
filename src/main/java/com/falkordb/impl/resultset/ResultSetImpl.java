@@ -27,6 +27,8 @@ public final class ResultSetImpl implements ResultSet {
     private final GraphCache cache;
 
     /**
+     * Creates a result set from a raw query response.
+     *
      * @param rawResponse the raw representation of response is at most 3 lists of
      *                    objects. The last list is the statistics list.
      * @param graph       the graph connection

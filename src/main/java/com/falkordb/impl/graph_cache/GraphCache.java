@@ -22,6 +22,8 @@ public class GraphCache {
     }
 
     /**
+     * Returns the label for the given index, fetching it from the graph if it is not cached yet.
+     *
      * @param index index of label
      * @param graph source graph
      * @return requested label
@@ -31,6 +33,9 @@ public class GraphCache {
     }
 
     /**
+     * Returns the relationship type for the given index, fetching it from the graph if it is not
+     * cached yet.
+     *
      * @param index index of the relationship type
      * @param graph source graph
      * @return requested relationship type
@@ -40,6 +45,9 @@ public class GraphCache {
     }
 
     /**
+     * Returns the property name for the given index, fetching it from the graph if it is not cached
+     * yet.
+     *
      * @param index index of property name
      * @param graph source graph
      * @return requested property
