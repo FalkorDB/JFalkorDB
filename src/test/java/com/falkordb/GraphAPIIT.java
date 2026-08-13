@@ -1246,6 +1246,23 @@ public class GraphAPIIT {
     }
 
     @Test
+    public void testNonFiniteVectorElements() {
+        // Vector elements arrive with the same C spellings as scalar doubles — verified on the wire:
+        //   RETURN vecf32([1.0, 1.0/0.0, 0.0/0.0])  ->  type 12, elements "1", "inf", "nan"
+        // so Float.parseFloat rejected them exactly as Double.parseDouble rejected the scalar form.
+        List<Float> vector = client.query("RETURN vecf32([1.0, 1.0/0.0, -1.0/0.0, 0.0/0.0]) AS v")
+                .iterator()
+                .next()
+                .getValue("v");
+
+        Assertions.assertEquals(4, vector.size());
+        Assertions.assertEquals(1.0f, vector.get(0));
+        Assertions.assertEquals(Float.POSITIVE_INFINITY, vector.get(1));
+        Assertions.assertEquals(Float.NEGATIVE_INFINITY, vector.get(2));
+        Assertions.assertTrue(Float.isNaN(vector.get(3)));
+    }
+
+    @Test
     public void testGetStringOnNullValue() {
         // A missing property deserializes to null; getString must report that, not NPE.
         client.query("CREATE (:person{name:'roi'})");

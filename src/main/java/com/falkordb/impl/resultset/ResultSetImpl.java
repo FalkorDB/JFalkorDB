@@ -335,17 +335,47 @@ public final class ResultSetImpl implements ResultSet {
         try {
             return Double.parseDouble(text);
         } catch (NumberFormatException e) {
-            String value = text.trim().toLowerCase(Locale.ROOT);
-            boolean negative = value.startsWith("-");
-            String magnitude = negative || value.startsWith("+") ? value.substring(1) : value;
-            if ("inf".equals(magnitude) || "infinity".equals(magnitude)) {
-                return negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-            }
-            if ("nan".equals(magnitude)) {
-                return Double.NaN;
-            }
-            throw e;
+            return nonFinite(text, e);
         }
+    }
+
+    /**
+     * The {@code vecf32} counterpart of {@link #parseDouble}. Vector elements arrive with the same
+     * spellings — {@code RETURN vecf32([1.0/0.0, 0.0/0.0])} sends {@code inf} and {@code nan} — which
+     * {@link Float#parseFloat} rejects just as {@link Double#parseDouble} does.
+     *
+     * @param text the raw textual float
+     * @return the parsed value
+     */
+    private static float parseFloat(String text) {
+        try {
+            return Float.parseFloat(text);
+        } catch (NumberFormatException e) {
+            // Narrowing is exact for the non-finite values: (float) Double.POSITIVE_INFINITY is
+            // Float.POSITIVE_INFINITY, and (float) Double.NaN is Float.NaN.
+            return (float) nonFinite(text, e);
+        }
+    }
+
+    /**
+     * Maps FalkorDB's C-style spellings of the non-finite values, rethrowing the original failure for
+     * input that is genuinely malformed rather than merely spelled the C way.
+     *
+     * @param text     the raw text that failed to parse
+     * @param original the failure to rethrow if the text is not a recognised non-finite spelling
+     * @return the non-finite value the text denotes
+     */
+    private static double nonFinite(String text, NumberFormatException original) {
+        String value = text.trim().toLowerCase(Locale.ROOT);
+        boolean negative = value.startsWith("-");
+        String magnitude = negative || value.startsWith("+") ? value.substring(1) : value;
+        if ("inf".equals(magnitude) || "infinity".equals(magnitude)) {
+            return negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+        }
+        if ("nan".equals(magnitude)) {
+            return Double.NaN;
+        }
+        throw original;
     }
 
     private Object deserializePoint(Object rawScalarData) {
@@ -357,7 +387,7 @@ public final class ResultSetImpl implements ResultSet {
         return array.stream()
                 .map(val -> {
                     try {
-                        return Float.parseFloat(SafeEncoder.encode(val));
+                        return parseFloat(SafeEncoder.encode(val));
                     } catch (NumberFormatException e) {
                         // Handle the exception appropriately
                         throw new GraphException("Invalid float value in vector data", e);
