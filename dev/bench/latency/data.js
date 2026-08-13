@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786623601451,
+  "lastUpdate": 1786623952537,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -6062,6 +6062,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 41137.487,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gkorland@gmail.com",
+            "name": "Guy Korland",
+            "username": "gkorland"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "377a2aa90d591b5eafa4249c03e4e766b387afbf",
+          "message": "ci: use the shared report-scheduled-failure workflow (#382)\n\n* ci: use the shared report-scheduled-failure workflow\n\nEvery official FalkorDB client carries a byte-identical copy of this job, so\nany change to the alert has to be made in eight places. Call the reusable\nworkflow in FalkorDB/.github instead and keep only the gating that is specific\nto this repo.\n\nBehaviour is unchanged: the `github` context inside a called workflow belongs\nto the caller, so the repository, workflow name and run URL in the alert stay\nthe same.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* fix(ci): pin the shared reporter and pass only its declared secret\n\nReview feedback: `secrets: inherit` combined with a mutable `@main` ref would\nlet any later change to the shared workflow run with this repo's secrets. Pin\nto a reviewed commit SHA and map only DRIVERS_GOOGLE_CHAT_WEBHOOK_URL, which is\nthe single secret the workflow declares.\n\nPinning does not reintroduce the duplication this removed: Dependabot's\ngithub-actions ecosystem updates `jobs.<id>.uses` pins, and it is already\nenabled here.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* fix(ci): bump shared reporter pin to include the label fix\n\nPicks up FalkorDB/.github#13, which creates the tracking label only when it is\nmissing rather than overwriting a pre-existing label of the same name.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-08-13T15:24:23+03:00",
+          "tree_id": "e2f06be873d8ae24057e743738021979d0d90be3",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/377a2aa90d591b5eafa4249c03e4e766b387afbf"
+        },
+        "date": 1786623951673,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 157.605,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 187.91,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 222.722,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 199.687,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 247.689,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 296.882,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 262.671,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 411.423,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 510.41,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 423.719,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 726.842,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 914.111,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 500.767,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 4899.386,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 11313.744,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 528.026,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 12867.321,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 29362.461,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 543.99,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 27671.908,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 60394.688,
             "unit": "us"
           }
         ]
