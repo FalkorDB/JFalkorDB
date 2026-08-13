@@ -55,6 +55,7 @@ public class StatisticsImpl implements Statistics {
     }
 
     /**
+     * Returns the value of the given statistic as an int.
      *
      * @param label the requested statistic label as key
      * @return a string with the value, if key exists, 0 otherwise
