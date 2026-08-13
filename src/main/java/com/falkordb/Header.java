@@ -32,14 +32,22 @@ public interface Header {
     /**
      * Returns the schema names.
      *
-     * @return the schema names
+     * <p>The returned list is unmodifiable; mutating it throws
+     * {@link UnsupportedOperationException}. Copy it if you need a mutable list. (Before 0.11.0 this
+     * exposed the header's internal list, so callers could corrupt the schema in place.)
+     *
+     * @return the schema names, unmodifiable
      */
     List<String> getSchemaNames();
 
     /**
      * Returns the schema types.
      *
-     * @return the schema types
+     * <p>The returned list is unmodifiable; mutating it throws
+     * {@link UnsupportedOperationException}. Copy it if you need a mutable list. (Before 0.11.0 this
+     * exposed the header's internal list, so callers could corrupt the schema in place.)
+     *
+     * @return the schema types, unmodifiable
      */
     List<ResultSetColumnTypes> getSchemaTypes();
 }

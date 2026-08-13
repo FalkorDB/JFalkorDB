@@ -74,6 +74,18 @@ public class HeaderImplTest {
     }
 
     @Test
+    public void schemaListsAreUnmodifiable() {
+        // Behaviour change vs 0.10.1, which handed back the header's internal ArrayList so a caller
+        // could corrupt the schema in place. Documented on the Header interface; locked in here.
+        HeaderImpl header = new HeaderImpl(Collections.singletonList(column(2L, "n")));
+
+        assertThrows(UnsupportedOperationException.class, () -> header.getSchemaNames()
+                .add("injected"));
+        assertThrows(UnsupportedOperationException.class, () -> header.getSchemaTypes()
+                .clear());
+    }
+
+    @Test
     public void concurrentFirstAccessBuildsTheSchemaExactlyOnce() throws Exception {
         // AsyncGraph hands ResultSets to many threads. Building the schema lazily without
         // synchronization let two threads both see an empty list and both append to it, duplicating

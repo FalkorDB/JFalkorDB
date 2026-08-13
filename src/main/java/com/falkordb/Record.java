@@ -54,7 +54,12 @@ public interface Record {
     /**
      * The keys of the record
      *
-     * @return list of the record key
+     * <p>Records share the result set's schema, so the returned list is unmodifiable; mutating it
+     * throws {@link UnsupportedOperationException}. Copy it if you need a mutable list. (Before
+     * 0.11.0 this exposed the shared header list, so mutating it corrupted every record in the
+     * result set.)
+     *
+     * @return list of the record key, unmodifiable
      */
     List<String> keys();
 

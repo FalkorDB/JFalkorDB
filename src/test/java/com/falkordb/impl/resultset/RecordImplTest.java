@@ -41,6 +41,16 @@ public class RecordImplTest {
     }
 
     @Test
+    public void keysReflectsTheSchemaListItWasBuiltFrom() {
+        // Records share the result set's schema list, which is now unmodifiable, so keys() is too.
+        // Behaviour change vs 0.10.1, where mutating it corrupted every record in the result set.
+        RecordImpl record = new RecordImpl(
+                Collections.unmodifiableList(Collections.singletonList("name")), Collections.singletonList("a"));
+
+        assertThrows(UnsupportedOperationException.class, () -> record.keys().add("injected"));
+    }
+
+    @Test
     public void unknownKeyIsReportedWithTheKeyName() {
         // header.indexOf(key) returns -1 for an unknown column, which used to reach values.get(-1) and
         // surface as "Index -1 out of bounds" with no mention of the offending key.
