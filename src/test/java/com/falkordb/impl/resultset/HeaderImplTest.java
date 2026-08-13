@@ -58,6 +58,22 @@ public class HeaderImplTest {
     }
 
     @Test
+    public void outOfRangeOrdinalThatWrapsToAValidIntIsRejected() {
+        // 4294967297 == 2^32 + 1, so intValue() keeps only the low 32 bits and yields 1 — which would
+        // silently pass as COLUMN_SCALAR if the ordinal were narrowed before being range-checked.
+        List<List<Object>> raw = Collections.singletonList(column(4294967297L, "wrapped"));
+
+        assertThrows(JedisDataException.class, () -> new HeaderImpl(raw));
+    }
+
+    @Test
+    public void negativeOrdinalIsRejected() {
+        List<List<Object>> raw = Collections.singletonList(column(-1L, "negative"));
+
+        assertThrows(JedisDataException.class, () -> new HeaderImpl(raw));
+    }
+
+    @Test
     public void concurrentFirstAccessBuildsTheSchemaExactlyOnce() throws Exception {
         // AsyncGraph hands ResultSets to many threads. Building the schema lazily without
         // synchronization let two threads both see an empty list and both append to it, duplicating

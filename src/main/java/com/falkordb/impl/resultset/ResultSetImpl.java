@@ -406,7 +406,7 @@ public final class ResultSetImpl implements ResultSet {
      * @return scalar type
      */
     private ResultSetScalarTypes getValueTypeFromObject(Object rawScalarType) {
-        return ResultSetScalarTypes.getValue(((Long) rawScalarType).intValue());
+        return ResultSetScalarTypes.getValue((Long) rawScalarType);
     }
 
     @Override

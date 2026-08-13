@@ -37,7 +37,7 @@ public final class HeaderImpl implements Header {
         List<ResultSetColumnTypes> types = new ArrayList<>(raw.size());
         List<String> names = new ArrayList<>(raw.size());
         for (List<Object> tuple : raw) {
-            types.add(columnType(((Long) tuple.get(0)).intValue()));
+            types.add(columnType((Long) tuple.get(0)));
             names.add(SafeEncoder.encode((byte[]) tuple.get(1)));
         }
         this.schemaTypes = Collections.unmodifiableList(types);
@@ -48,12 +48,14 @@ public final class HeaderImpl implements Header {
      * Resolves a server-supplied column-type ordinal, matching the guarded lookup
      * {@code ResultSetScalarTypes.getValue} performs for scalar types.
      */
-    private static ResultSetColumnTypes columnType(int index) {
-        try {
-            return COLUMN_TYPES[index];
-        } catch (IndexOutOfBoundsException e) {
+    private static ResultSetColumnTypes columnType(long index) {
+        // Range-check the reply's long BEFORE narrowing: intValue() keeps only the low 32 bits, so an
+        // out-of-range ordinal such as 4294967297 would wrap to 1 and be accepted as COLUMN_SCALAR —
+        // a hole in exactly the case this guard exists for.
+        if (index < 0 || index >= COLUMN_TYPES.length) {
             throw new JedisDataException("Unrecognized response type");
         }
+        return COLUMN_TYPES[(int) index];
     }
 
     /**
