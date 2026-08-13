@@ -140,7 +140,8 @@ public interface AsyncGraph {
      *
      * @param procedure the procedure name
      * @param args      the procedure arguments
-     * @param kwargs    the procedure output arguments
+     * @param kwargs    the procedure output arguments: the {@code "y"} entry lists the output
+     *                  columns to bind with Cypher's {@code YIELD} clause
      * @return a future completing with the result set
      */
     CompletableFuture<ResultSet> callProcedure(String procedure, List<String> args, Map<String, List<String>> kwargs);

@@ -36,13 +36,15 @@ public class UtilsTest {
                 "CALL prc(\"a\",\"b\")",
                 Utils.prepareProcedure("prc", Arrays.asList(new String[] {"a", "b"}), new HashMap<>()));
 
+        // The "y" kwargs entry names the procedure's output columns, which Cypher binds with YIELD.
+        // Without the keyword (and the separating space) the emitted query is a syntax error.
         Map<String, List<String>> kwargs = new HashMap<>();
         kwargs.put("y", Arrays.asList(new String[] {"ka", "kb"}));
         assertEquals(
-                "CALL prc(\"a\",\"b\")ka,kb",
+                "CALL prc(\"a\",\"b\") YIELD ka,kb",
                 Utils.prepareProcedure("prc", Arrays.asList(new String[] {"a", "b"}), kwargs));
 
-        assertEquals("CALL prc()ka,kb", Utils.prepareProcedure("prc", Arrays.asList(new String[] {}), kwargs));
+        assertEquals("CALL prc() YIELD ka,kb", Utils.prepareProcedure("prc", Arrays.asList(new String[] {}), kwargs));
     }
 
     @Test

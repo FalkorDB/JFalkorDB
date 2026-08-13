@@ -317,12 +317,9 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     @Override
     public Response<String> deleteGraph() {
         try {
-            return appendWithResponse(GraphCommand.DELETE, Arrays.asList(graphId), new Builder<String>() {
-                @Override
-                public String build(Object o) {
-                    return (String) o;
-                }
-            });
+            // GRAPH.DELETE replies with a bulk string, which Jedis hands to the builder as a byte[] —
+            // casting it to String throws. BuilderFactory.STRING decodes it, as the pipeline does.
+            return appendWithResponse(GraphCommand.DELETE, Arrays.asList(graphId), BuilderFactory.STRING);
         } finally {
             cache.clear();
         }

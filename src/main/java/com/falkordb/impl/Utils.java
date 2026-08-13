@@ -363,6 +363,9 @@ public class Utils {
         queryStringBuilder.append(')');
         List<String> kwargsList = kwargs.getOrDefault("y", null);
         if (kwargsList != null && !kwargsList.isEmpty()) {
+            // The output columns are bound with Cypher's YIELD clause; without the keyword the
+            // emitted query is a syntax error.
+            queryStringBuilder.append(" YIELD ");
             i = 0;
             for (; i < kwargsList.size() - 1; i++) {
                 queryStringBuilder.append(kwargsList.get(i)).append(',');
