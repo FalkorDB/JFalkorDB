@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786568434407,
+  "lastUpdate": 1786614942421,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -2654,6 +2654,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11126.333,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gkorland@gmail.com",
+            "name": "Guy Korland",
+            "username": "gkorland"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f73cb61cc58b2c2793e3c3c305ffae64089a5816",
+          "message": "ci: rename Google Chat webhook secret to DRIVERS_GOOGLE_CHAT_WEBHOOK_URL (#381)\n\nThe webhook posts CI failures for the FalkorDB client drivers, so name\nthe secret accordingly and keep it distinct from other Google Chat\nwebhooks used elsewhere in the organization.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-08-13T12:54:07+03:00",
+          "tree_id": "37c1d8151134d3bbc817b38a0fbeb138cd15d52d",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/f73cb61cc58b2c2793e3c3c305ffae64089a5816"
+        },
+        "date": 1786614942397,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 5166.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 9145,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 14379,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 18913.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 17770,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 17729.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 17652.333,
             "unit": "ops/s"
           }
         ]
