@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786625478500,
+  "lastUpdate": 1786626300002,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -6578,6 +6578,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 41093.161,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gkorland@gmail.com",
+            "name": "Guy Korland",
+            "username": "gkorland"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "236e04d3e2f6734276a443fe9e7b1335563e9570",
+          "message": "build: bump api.diff.baseline to 0.10.1 (#388)\n\nv0.10.1 is published on Maven Central, so the api-diff gate should compare\nagainst it rather than 0.10.0. This is the manual post-release step the pom\ncomment calls out (#362 did the same for 0.10.0).\n\nVerified locally: japicmp resolves jfalkordb-0.10.1.jar from Central and\nreports \"No changes.\" against master.\n\nCo-authored-by: Claude Opus 5 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-08-13T16:02:25+03:00",
+          "tree_id": "f17b0cc335964aa69b8328b2b2f22edb7ae0b6d7",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/236e04d3e2f6734276a443fe9e7b1335563e9570"
+        },
+        "date": 1786626298565,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 195.294,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 224.889,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 247.322,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 230.019,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 270.303,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 300.529,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 296.713,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 453.658,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 548.072,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 506.044,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 841.43,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1036.644,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 574.411,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5472.552,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 12347.631,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 573.66,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 15523.095,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 33501.978,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 576.856,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 35216.429,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 78974.034,
             "unit": "us"
           }
         ]
