@@ -38,10 +38,13 @@ public final class ResultSetImpl implements ResultSet {
         this.cache = cache;
 
         // If a run-time error occurred, the last member of the rawResponse will be a
-        // JedisDataException.
-        if (rawResponse.get(rawResponse.size() - 1) instanceof JedisDataException) {
-
-            throw new GraphException((Throwable) rawResponse.get(rawResponse.size() - 1));
+        // JedisDataException. An empty reply has no such member, and must fall through to the
+        // empty-result-set branch below rather than index past the start of the list.
+        if (!rawResponse.isEmpty()) {
+            Object last = rawResponse.get(rawResponse.size() - 1);
+            if (last instanceof JedisDataException) {
+                throw new GraphException((Throwable) last);
+            }
         }
 
         // Check if this is a profile response (all elements are byte arrays)

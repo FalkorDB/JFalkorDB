@@ -1214,6 +1214,23 @@ public class GraphAPIIT {
     }
 
     @Test
+    public void testCallProcedureWithYieldedOutputs() {
+        client.query("CREATE (:Person {name:'a'})");
+
+        // The "y" kwargs entry names the procedure's output columns. The emitted query previously
+        // omitted the YIELD keyword entirely, so the server rejected every kwargs call as a syntax
+        // error.
+        Map<String, List<String>> kwargs = new HashMap<>();
+        kwargs.put("y", Collections.singletonList("label"));
+        ResultSet resultSet = client.callProcedure("db.labels", Collections.<String>emptyList(), kwargs);
+
+        Assertions.assertEquals(
+                Collections.singletonList("label"), resultSet.getHeader().getSchemaNames());
+        Assertions.assertEquals(1, resultSet.size());
+        Assertions.assertEquals("Person", resultSet.iterator().next().getValue("label"));
+    }
+
+    @Test
     public void testExplainContextedAPI() {
         try (GraphContext context = client.getContext()) {
             // Create some test data first

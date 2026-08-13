@@ -107,7 +107,8 @@ public interface GraphTransaction
      * Invoke a stored procedure
      * @param procedure - procedure to execute
      * @param args - procedure arguments
-     * @param kwargs - procedure output arguments
+     * @param kwargs - procedure output arguments: the {@code "y"} entry lists the output
+     *     columns to bind with Cypher's {@code YIELD} clause
      * @return a response which builds result set with the procedure data
      */
     Response<ResultSet> callProcedure(String procedure, List<String> args, Map<String, List<String>> kwargs);

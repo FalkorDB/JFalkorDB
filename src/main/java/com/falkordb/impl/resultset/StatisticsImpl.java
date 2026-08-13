@@ -1,6 +1,7 @@
 package com.falkordb.impl.resultset;
 
 import com.falkordb.Statistics;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -12,7 +13,6 @@ import redis.clients.jedis.util.SafeEncoder;
  */
 public class StatisticsImpl implements Statistics {
     // members
-    private final List<byte[]> raw;
     private final Map<Statistics.Label, String> statistics;
 
     /**
@@ -22,8 +22,26 @@ public class StatisticsImpl implements Statistics {
      * @param raw a raw representation of the query execution statistics
      */
     public StatisticsImpl(List<byte[]> raw) {
-        this.raw = raw;
-        this.statistics = new EnumMap<>(Statistics.Label.class); // lazy loaded
+        // Parsed once, up front: the raw reply is a handful of short strings, and an immutable map
+        // keeps this result type safe to hand across threads (see AsyncGraph) and gives equals and
+        // hashCode stable value semantics, which a List<byte[]> cannot provide.
+        this.statistics = Collections.unmodifiableMap(parse(raw));
+    }
+
+    private static Map<Statistics.Label, String> parse(List<byte[]> raw) {
+        Map<Statistics.Label, String> parsed = new EnumMap<>(Statistics.Label.class);
+        for (byte[] tuple : raw) {
+            String text = SafeEncoder.encode(tuple);
+            // Only the FIRST colon delimits label from value; the value itself may contain colons.
+            String[] rowTuple = text.split(":", 2);
+            if (rowTuple.length == 2) {
+                Statistics.Label label = Statistics.Label.getEnum(rowTuple[0]);
+                if (label != null) {
+                    parsed.put(label, rowTuple[1].trim());
+                }
+            }
+        }
+        return parsed;
     }
 
     /**
@@ -33,23 +51,7 @@ public class StatisticsImpl implements Statistics {
      */
     @Override
     public String getStringValue(Statistics.Label label) {
-        return getStatistics().get(label);
-    }
-
-    private Map<Statistics.Label, String> getStatistics() {
-        if (statistics.size() == 0) {
-            for (byte[] tuple : this.raw) {
-                String text = SafeEncoder.encode(tuple);
-                String[] rowTuple = text.split(":");
-                if (rowTuple.length == 2) {
-                    Statistics.Label label = Statistics.Label.getEnum(rowTuple[0]);
-                    if (label != null) {
-                        this.statistics.put(label, rowTuple[1].trim());
-                    }
-                }
-            }
-        }
-        return statistics;
+        return statistics.get(label);
     }
 
     /**
@@ -144,18 +146,18 @@ public class StatisticsImpl implements Statistics {
         if (this == o) return true;
         if (!(o instanceof StatisticsImpl)) return false;
         StatisticsImpl that = (StatisticsImpl) o;
-        return Objects.equals(raw, that.raw) && Objects.equals(getStatistics(), that.getStatistics());
+        return Objects.equals(statistics, that.statistics);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(raw, getStatistics());
+        return Objects.hash(statistics);
     }
 
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("StatisticsImpl{");
-        sb.append("statistics=").append(getStatistics());
+        sb.append("statistics=").append(statistics);
         sb.append('}');
         return sb.toString();
     }

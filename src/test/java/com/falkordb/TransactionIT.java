@@ -12,6 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import redis.clients.jedis.Response;
 
 public class TransactionIT {
 
@@ -231,6 +232,25 @@ public class TransactionIT {
             Assertions.assertEquals(Arrays.asList("label"), record.keys());
             Assertions.assertEquals("Person", record.getValue("label"));
         }
+    }
+
+    @Test
+    public void testDeleteGraphInTransaction() {
+        api.query("CREATE (:Person {name:'a'})");
+
+        try (GraphContext c = api.getContext()) {
+            GraphTransaction transaction = c.multi();
+
+            Response<String> deleted = transaction.deleteGraph();
+            transaction.exec();
+
+            // GRAPH.DELETE replies with a bulk string; the builder used to cast that byte[] straight
+            // to String, so reading the response threw ClassCastException.
+            Assertions.assertNotNull(deleted.get());
+        }
+
+        // Recreate the graph so the @AfterEach cleanup has something to delete.
+        api.query("CREATE (:Person {name:'b'})");
     }
 
     @Test
