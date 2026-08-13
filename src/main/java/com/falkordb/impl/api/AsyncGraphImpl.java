@@ -24,6 +24,8 @@ public final class AsyncGraphImpl implements AsyncGraph {
     private final Executor executor;
 
     /**
+     * Creates an asynchronous facade over a synchronous graph.
+     *
      * @param graph    the synchronous graph to delegate to (must be safe for concurrent calls)
      * @param executor the executor each operation runs on
      */

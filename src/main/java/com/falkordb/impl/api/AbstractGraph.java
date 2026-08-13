@@ -12,6 +12,11 @@ import java.util.Map;
 public abstract class AbstractGraph implements Graph {
 
     /**
+     * Creates an abstract graph. For use by subclasses only.
+     */
+    protected AbstractGraph() {}
+
+    /**
      * Sends a query to the redis graph. Implementation and context dependent
      * @param preparedQuery prepared query
      * @return Result set
