@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/FalkorDB/JFalkorDB/compare/v0.10.0...v0.10.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* four correctness bugs in reply parsing and procedure encoding ([#383](https://github.com/FalkorDB/JFalkorDB/issues/383)) ([f197a46](https://github.com/FalkorDB/JFalkorDB/commit/f197a4603aff67091da7986eede459b552b2a369))
+
 ## [0.10.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.9.1-SNAPSHOT...v0.10.0) (2026-07-23)
 
 
