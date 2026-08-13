@@ -520,7 +520,8 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <dt>Parameters:</dt>
 <dd><code>procedure</code> - - procedure to execute</dd>
 <dd><code>args</code> - - procedure arguments</dd>
-<dd><code>kwargs</code> - - procedure output arguments</dd>
+<dd><code>kwargs</code> - - procedure output arguments: the <code>"y"</code> entry lists the output
+     columns to bind with Cypher's <code>YIELD</code> clause</dd>
 <dt>Returns:</dt>
 <dd>a response which builds result set with the procedure data</dd>
 </dl>

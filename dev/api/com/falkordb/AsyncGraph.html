@@ -427,7 +427,8 @@ loadScripts(document, 'script');</script>
 <dt>Parameters:</dt>
 <dd><code>procedure</code> - the procedure name</dd>
 <dd><code>args</code> - the procedure arguments</dd>
-<dd><code>kwargs</code> - the procedure output arguments</dd>
+<dd><code>kwargs</code> - the procedure output arguments: the <code>"y"</code> entry lists the output
+                  columns to bind with Cypher's <code>YIELD</code> clause</dd>
 <dt>Returns:</dt>
 <dd>a future completing with the result set</dd>
 </dl>
