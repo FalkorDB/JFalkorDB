@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786625480561,
+  "lastUpdate": 1786626301825,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -3008,6 +3008,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 19475.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gkorland@gmail.com",
+            "name": "Guy Korland",
+            "username": "gkorland"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "236e04d3e2f6734276a443fe9e7b1335563e9570",
+          "message": "build: bump api.diff.baseline to 0.10.1 (#388)\n\nv0.10.1 is published on Maven Central, so the api-diff gate should compare\nagainst it rather than 0.10.0. This is the manual post-release step the pom\ncomment calls out (#362 did the same for 0.10.0).\n\nVerified locally: japicmp resolves jfalkordb-0.10.1.jar from Central and\nreports \"No changes.\" against master.\n\nCo-authored-by: Claude Opus 5 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-08-13T16:02:25+03:00",
+          "tree_id": "f17b0cc335964aa69b8328b2b2f22edb7ae0b6d7",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/236e04d3e2f6734276a443fe9e7b1335563e9570"
+        },
+        "date": 1786626301793,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3663,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6333.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9563,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11887,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11362.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11279.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11274,
             "unit": "ops/s"
           }
         ]
