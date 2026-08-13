@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786614940823,
+  "lastUpdate": 1786623601451,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -5933,6 +5933,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 39186.445,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gkorland@gmail.com",
+            "name": "Guy Korland",
+            "username": "gkorland"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f197a4603aff67091da7986eede459b552b2a369",
+          "message": "fix: four correctness bugs in reply parsing and procedure encoding (#383)\n\n* fix: decode the GRAPH.DELETE reply in transactional deleteGraph\n\nGraphTransactionImpl.deleteGraph() built its response with `return (String) o`,\nbut Jedis hands builders a byte[] for a bulk-string reply, so reading the\nresponse always threw `ClassCastException: [B cannot be cast to\njava.lang.String`. GraphPipelineImpl already uses BuilderFactory.STRING for the\nsame command; use it here too.\n\nNo test covered this path — TransactionIT.deleteGraph() is the @AfterEach\ncalling api.deleteGraph(), not the transactional overload — so add an IT that\nreads the response inside MULTI/EXEC.\n\nCo-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>\n\n* fix: emit YIELD when callProcedure is given output columns\n\nUtils.prepareProcedure appended the kwargs entries straight after the closing\nparen with no keyword and no separator, so every\ncallProcedure(procedure, args, kwargs) call sent invalid Cypher. The server\nrejects it outright:\n\n    errMsg: Invalid input 'a': expected LOAD CSV\n    errCtx: CALL db.labels()label\n\nUtilsTest asserted the broken output verbatim, so the suite was protecting the\nbug; its expectations are corrected here and a server-backed IT now proves a\nkwargs call actually round-trips.\n\nAlso document the \"y\" kwargs key on the four public interfaces that expose the\noverload — it selects the YIELD columns, and was previously undiscoverable.\n\nCo-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>\n\n* fix: give Statistics value equality and keep colons in values\n\nStatisticsImpl kept the raw List<byte[]> and included it in equals/hashCode.\nbyte[] inherits identity equals/hashCode, so two result sets carrying identical\nstatistics compared unequal and hashCode varied between instances — and that\nleaked into ResultSetImpl.equals/hashCode, making ResultSet unusable as a map\nkey. HeaderImpl already excludes its raw field for exactly this reason;\nEqualsVerifier missed it because it shallow-copies the same array instances.\n\nThe parse also split on every colon, so a statistic whose value contains one\n(\"Query internal execution time: 0:00.4\") produced three parts, failed the\nlength==2 guard, and was dropped silently. Only the first colon is a delimiter.\n\nParse once in the constructor into an unmodifiable map instead of lazily\nmutating a non-volatile EnumMap on first read: it removes the unsynchronized\nlazy init (ResultSets are handed across threads by AsyncGraph), removes the\nre-parse on every call when nothing matched, and makes the value semantics\nabove structural rather than something equals has to work around.\n\nCo-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>\n\n* fix: handle an empty reply in the ResultSetImpl constructor\n\nThe run-time-error probe read get(rawResponse.size() - 1) before any empty\ncheck, so an empty array reply threw IndexOutOfBoundsException instead of\nproducing a result set — and left the deliberate rawResponse.isEmpty() handling\nfurther down unreachable as dead code.\n\nCo-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-08-13T15:18:21+03:00",
+          "tree_id": "fd88ee72016d6b0cfcbf056451bf1716a43f34aa",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/f197a4603aff67091da7986eede459b552b2a369"
+        },
+        "date": 1786623600569,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 111.201,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 140.658,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 159.467,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 109.634,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 136.982,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 157.417,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 141.19,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 217.468,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 265.334,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 224.568,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 399.756,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 510.267,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 267.089,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 2626.804,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 6156.459,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 267.514,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 7393.052,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 17271.756,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 268.503,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 16914.291,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 41137.487,
             "unit": "us"
           }
         ]
