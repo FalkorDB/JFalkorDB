@@ -257,6 +257,24 @@
 				</executions>
 			</plugin>
 
+			<!-- Stable JPMS module name for modular consumers (`requires com.falkordb;`). A manifest
+			     entry only, not a module-info, so it is safe at release 8 and costs nothing at runtime.
+			     Without it a modular consumer binds to a name derived from the jar FILENAME, which
+			     shading or renaming silently breaks, and which could not be stabilised later without
+			     breaking every consumer already relying on the derived name. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.4.2</version>
+				<configuration>
+					<archive>
+						<manifestEntries>
+							<Automatic-Module-Name>com.falkordb</Automatic-Module-Name>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
