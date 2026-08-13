@@ -29,17 +29,33 @@ public class RecordImpl implements Record {
 
     @Override
     public <T> T getValue(String key) {
-        return getValue(this.header.indexOf(key));
+        return getValue(indexOf(key));
     }
 
     @Override
     public String getString(int index) {
-        return this.values.get(index).toString();
+        Object value = this.values.get(index);
+        // A NULL column deserializes to null; getValue is documented @Nullable, so report the same
+        // absence here rather than throwing NPE from null.toString().
+        return value == null ? null : value.toString();
     }
 
     @Override
     public String getString(String key) {
-        return getString(this.header.indexOf(key));
+        return getString(indexOf(key));
+    }
+
+    /**
+     * Resolves a column name to its index, failing with the offending key rather than letting the
+     * -1 from a miss reach values.get() and surface as "Index -1 out of bounds".
+     */
+    private int indexOf(String key) {
+        int index = this.header.indexOf(key);
+        if (index < 0) {
+            throw new IllegalArgumentException(
+                    "No such column in this record: " + key + "; columns are " + this.header);
+        }
+        return index;
     }
 
     @Override

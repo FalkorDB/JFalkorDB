@@ -27,6 +27,7 @@ public interface Record {
      * @param <T> return value type
      *
      * @return the value at the field, or {@code null} if the stored value is null
+     * @throws IllegalArgumentException if the record has no column with that key
      */
     <T> @Nullable T getValue(String key);
 
@@ -34,8 +35,9 @@ public interface Record {
      * The value at the given field index (represented as String)
      *
      * @param index field index
-     * @return string representation of the value
+     * @return string representation of the value, or {@code null} if the stored value is null
      */
+    @Nullable
     String getString(int index);
 
     /**
@@ -43,8 +45,10 @@ public interface Record {
      *
      * @param key header key
      *
-     * @return string representation of the value
+     * @return string representation of the value, or {@code null} if the stored value is null
+     * @throws IllegalArgumentException if the record has no column with that key
      */
+    @Nullable
     String getString(String key);
 
     /**
