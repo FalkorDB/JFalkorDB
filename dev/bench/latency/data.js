@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786568432311,
+  "lastUpdate": 1786614940823,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -5804,6 +5804,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 70157.725,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gkorland@gmail.com",
+            "name": "Guy Korland",
+            "username": "gkorland"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f73cb61cc58b2c2793e3c3c305ffae64089a5816",
+          "message": "ci: rename Google Chat webhook secret to DRIVERS_GOOGLE_CHAT_WEBHOOK_URL (#381)\n\nThe webhook posts CI failures for the FalkorDB client drivers, so name\nthe secret accordingly and keep it distinct from other Google Chat\nwebhooks used elsewhere in the organization.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-08-13T12:54:07+03:00",
+          "tree_id": "37c1d8151134d3bbc817b38a0fbeb138cd15d52d",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/f73cb61cc58b2c2793e3c3c305ffae64089a5816"
+        },
+        "date": 1786614939452,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 131.095,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 158.387,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 179.469,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 147.219,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 176.064,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 200.833,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 181.31,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 278.242,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 341.911,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 293.001,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 502.556,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 618.204,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 358.976,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 3210.303,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 6164.001,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 359.546,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 8753.182,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 17318.805,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 357.543,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 19847.758,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 39186.445,
             "unit": "us"
           }
         ]
