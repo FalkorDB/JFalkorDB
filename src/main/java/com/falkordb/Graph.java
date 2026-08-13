@@ -120,7 +120,8 @@ public interface Graph extends Closeable {
      * Invoke a stored procedure
      * @param procedure - procedure to execute
      * @param args - procedure arguments
-     * @param kwargs - procedure output arguments
+     * @param kwargs - procedure output arguments: the {@code "y"} entry lists the output
+     *     columns to bind with Cypher's {@code YIELD} clause
      * @return result set with the procedure data
      */
     ResultSet callProcedure(String procedure, List<String> args, Map<String, List<String>> kwargs);
