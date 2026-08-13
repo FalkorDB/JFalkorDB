@@ -289,7 +289,7 @@ public final class ResultSetImpl implements ResultSet {
             case VALUE_BOOLEAN:
                 return Boolean.parseBoolean(SafeEncoder.encode((byte[]) obj));
             case VALUE_DOUBLE:
-                return Double.parseDouble(SafeEncoder.encode((byte[]) obj));
+                return parseDouble(SafeEncoder.encode((byte[]) obj));
             case VALUE_INTEGER:
                 return (Long) obj;
             case VALUE_STRING:
@@ -319,6 +319,32 @@ public final class ResultSetImpl implements ResultSet {
             case VALUE_UNKNOWN:
             default:
                 return obj;
+        }
+    }
+
+    /**
+     * Parses a double from the server's textual form. FalkorDB spells non-finite values the C way —
+     * {@code inf}, {@code -inf}, {@code nan}, {@code -nan} — none of which
+     * {@link Double#parseDouble} accepts (it requires {@code Infinity} / {@code NaN}), so a query such
+     * as {@code RETURN 1.0/0.0} used to escape as an unwrapped NumberFormatException.
+     *
+     * @param text the raw textual double
+     * @return the parsed value
+     */
+    private static double parseDouble(String text) {
+        try {
+            return Double.parseDouble(text);
+        } catch (NumberFormatException e) {
+            String value = text.trim().toLowerCase(Locale.ROOT);
+            boolean negative = value.startsWith("-");
+            String magnitude = negative || value.startsWith("+") ? value.substring(1) : value;
+            if ("inf".equals(magnitude) || "infinity".equals(magnitude)) {
+                return negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+            }
+            if ("nan".equals(magnitude)) {
+                return Double.NaN;
+            }
+            throw e;
         }
     }
 

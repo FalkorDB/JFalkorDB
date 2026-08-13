@@ -1231,6 +1231,33 @@ public class GraphAPIIT {
     }
 
     @Test
+    public void testNonFiniteDoubles() {
+        // FalkorDB spells non-finite doubles the C way — "inf", "-inf", "-nan" — which
+        // Double.parseDouble rejects (Java wants "Infinity"/"NaN"), so these queries used to escape as
+        // an unwrapped NumberFormatException.
+        Assertions.assertEquals(
+                Double.POSITIVE_INFINITY,
+                client.query("RETURN 1.0/0.0 AS d").iterator().next().getValue("d"));
+        Assertions.assertEquals(
+                Double.NEGATIVE_INFINITY,
+                client.query("RETURN -1.0/0.0 AS d").iterator().next().getValue("d"));
+        Assertions.assertTrue(Double.isNaN(
+                (Double) client.query("RETURN 0.0/0.0 AS d").iterator().next().getValue("d")));
+    }
+
+    @Test
+    public void testGetStringOnNullValue() {
+        // A missing property deserializes to null; getString must report that, not NPE.
+        client.query("CREATE (:person{name:'roi'})");
+        Record record = client.query("MATCH (p:person) RETURN p.missingProp AS m")
+                .iterator()
+                .next();
+
+        Assertions.assertNull(record.getValue("m"));
+        Assertions.assertNull(record.getString("m"));
+    }
+
+    @Test
     public void testExplainContextedAPI() {
         try (GraphContext context = client.getContext()) {
             // Create some test data first
