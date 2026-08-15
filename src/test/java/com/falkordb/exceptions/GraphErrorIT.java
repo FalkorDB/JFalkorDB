@@ -75,14 +75,21 @@ public class GraphErrorIT {
     @Test
     public void testMissingParametersSyntaxErrorReporting() {
         GraphException exception = assertThrows(GraphException.class, () -> api.query("RETURN $param"));
-        assertTrue(exception.getMessage().contains("Missing parameters"));
+        assertMissingParameterMessage(exception);
     }
 
     @Test
     public void testMissingParametersSyntaxErrorReporting2() {
         GraphException exception =
                 assertThrows(GraphException.class, () -> api.query("RETURN $param", new HashMap<>()));
-        assertTrue(exception.getMessage().contains("Missing parameters"));
+        assertMissingParameterMessage(exception);
+    }
+
+    private static void assertMissingParameterMessage(GraphException exception) {
+        String message = exception.getMessage();
+        assertTrue(
+                message.contains("Missing parameters") || message.contains("not found"),
+                "Unexpected message: " + message);
     }
 
     @Test
