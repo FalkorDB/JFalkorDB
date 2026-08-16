@@ -7,8 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 public class RecordImplTest {
@@ -38,6 +40,19 @@ public class RecordImplTest {
 
         assertEquals("42", record.getString(0));
         assertEquals("x", record.getString("b"));
+    }
+
+    @Test
+    public void valuesMayContainNullElements() {
+        // A NULL column is stored as null, so values() is List<@Nullable Object>. The @NullMarked
+        // package would otherwise promise callers that every element is non-null.
+        RecordImpl record = new RecordImpl(Arrays.asList("a", "b"), Arrays.asList((Object) "x", null));
+
+        List<@Nullable Object> values = record.values();
+
+        assertEquals(2, values.size());
+        assertEquals("x", values.get(0));
+        assertNull(values.get(1));
     }
 
     @Test

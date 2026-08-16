@@ -3,6 +3,7 @@ package com.falkordb.impl.resultset;
 import com.falkordb.Record;
 import java.util.List;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An implementation of the Record interface.
@@ -10,30 +11,30 @@ import java.util.Objects;
 public class RecordImpl implements Record {
 
     private final List<String> header;
-    private final List<Object> values;
+    private final List<@Nullable Object> values;
 
     /**
      * Creates a new RecordImpl.
      * @param header the header of the record
-     * @param values the values of the record
+     * @param values the values of the record; a NULL column is stored as {@code null}
      */
-    public RecordImpl(List<String> header, List<Object> values) {
+    public RecordImpl(List<String> header, List<@Nullable Object> values) {
         this.header = header;
         this.values = values;
     }
 
     @Override
-    public <T> T getValue(int index) {
+    public <T> @Nullable T getValue(int index) {
         return (T) this.values.get(index);
     }
 
     @Override
-    public <T> T getValue(String key) {
+    public <T> @Nullable T getValue(String key) {
         return getValue(indexOf(key));
     }
 
     @Override
-    public String getString(int index) {
+    public @Nullable String getString(int index) {
         Object value = this.values.get(index);
         // A NULL column deserializes to null; getValue is documented @Nullable, so report the same
         // absence here rather than throwing NPE from null.toString().
@@ -41,7 +42,7 @@ public class RecordImpl implements Record {
     }
 
     @Override
-    public String getString(String key) {
+    public @Nullable String getString(String key) {
         return getString(indexOf(key));
     }
 
@@ -64,7 +65,7 @@ public class RecordImpl implements Record {
     }
 
     @Override
-    public List<Object> values() {
+    public List<@Nullable Object> values() {
         return this.values;
     }
 

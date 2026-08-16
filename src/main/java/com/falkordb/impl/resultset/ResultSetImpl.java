@@ -11,6 +11,7 @@ import com.falkordb.impl.graph_cache.GraphCache;
 import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.BuilderFactory;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.util.SafeEncoder;
@@ -88,7 +89,7 @@ public final class ResultSetImpl implements ResultSet {
         // go over each raw result
         for (List<Object> row : rawResultSet) {
 
-            List<Object> parsedRow = new ArrayList<>(row.size());
+            List<@Nullable Object> parsedRow = new ArrayList<>(row.size());
             // go over each object in the result
             for (int i = 0; i < row.size(); i++) {
                 // get raw representation of the object

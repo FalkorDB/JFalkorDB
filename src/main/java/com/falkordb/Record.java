@@ -66,9 +66,13 @@ public interface Record {
     /**
      * The values of the record
      *
-     * @return list of the record values
+     * <p>A NULL column deserializes to {@code null}, so the returned list may contain null elements
+     * — hence {@code List<@Nullable Object>} rather than {@code List<Object>}. Null-check an element
+     * before dereferencing it, as you would the {@link #getValue(int)} of that column.
+     *
+     * @return list of the record values, whose elements may be {@code null}
      */
-    List<Object> values();
+    List<@Nullable Object> values();
 
     /**
      * Check if the record header contains the given key
