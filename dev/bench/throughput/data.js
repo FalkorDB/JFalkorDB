@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786626301825,
+  "lastUpdate": 1786883170174,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -3067,6 +3067,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11274,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34807727+Naseem77@users.noreply.github.com",
+            "name": "Naseem Ali",
+            "username": "Naseem77"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "495b4297271e64f360d77cfb047fa9fdeb378234",
+          "message": "ci: alert on a cancelled scheduled run, not just a failed one (#394)\n\n`report-scheduled-failure` only fired on `failure`. A job stopped by a\ntimeout, or by GitHub's six hour ceiling, reports `cancelled`, so the\nalert was skipped in exactly the case it exists for: a nightly that hangs\nagainst a moving `edge` image.\n\nAlso caps the job at 30 minutes. Recent runs finish in under two, so a\nrun anywhere near the cap is stuck, and failing at 30 minutes reports a\nresult the same morning instead of holding a runner all day.\n\nThe `github.event_name == 'schedule'` guard is kept, so a force push that\ncancels an in flight PR run still does not raise an alert.",
+          "timestamp": "2026-08-16T15:24:03+03:00",
+          "tree_id": "78807b26d36c7f3e5833c11a6c131e73f9a0b523",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/495b4297271e64f360d77cfb047fa9fdeb378234"
+        },
+        "date": 1786883170143,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3613,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6166.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9503.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11959.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11404.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11334,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11243,
             "unit": "ops/s"
           }
         ]
