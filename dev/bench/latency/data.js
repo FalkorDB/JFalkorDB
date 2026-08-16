@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786626300002,
+  "lastUpdate": 1786883168658,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -6707,6 +6707,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 78974.034,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "34807727+Naseem77@users.noreply.github.com",
+            "name": "Naseem Ali",
+            "username": "Naseem77"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "495b4297271e64f360d77cfb047fa9fdeb378234",
+          "message": "ci: alert on a cancelled scheduled run, not just a failed one (#394)\n\n`report-scheduled-failure` only fired on `failure`. A job stopped by a\ntimeout, or by GitHub's six hour ceiling, reports `cancelled`, so the\nalert was skipped in exactly the case it exists for: a nightly that hangs\nagainst a moving `edge` image.\n\nAlso caps the job at 30 minutes. Recent runs finish in under two, so a\nrun anywhere near the cap is stuck, and failing at 30 minutes reports a\nresult the same morning instead of holding a runner all day.\n\nThe `github.event_name == 'schedule'` guard is kept, so a force push that\ncancels an in flight PR run still does not raise an alert.",
+          "timestamp": "2026-08-16T15:24:03+03:00",
+          "tree_id": "78807b26d36c7f3e5833c11a6c131e73f9a0b523",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/495b4297271e64f360d77cfb047fa9fdeb378234"
+        },
+        "date": 1786883167423,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 200.332,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 232.574,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 248.994,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 232.181,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 290.22,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 345.904,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 297.083,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 456.309,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 553.793,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 492.086,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 824.145,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1018.175,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 577.104,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5433.594,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 11837.053,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 574.289,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 15384.343,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 33762.213,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 578.857,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 35672.489,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 79158.118,
             "unit": "us"
           }
         ]
