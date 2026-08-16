@@ -15,7 +15,13 @@ public class RecordImpl implements Record {
 
     /**
      * Creates a new RecordImpl.
-     * @param header the header of the record
+     *
+     * <p>The header list is shared, not copied: every record in a result set holds the one schema
+     * list {@code HeaderImpl} built, so a copy here would cost an allocation per row. Callers must
+     * therefore pass an unmodifiable, unaliased list — {@code HeaderImpl.getSchemaNames()} is one —
+     * because it is handed straight back by {@link #keys()}, which is documented unmodifiable.
+     *
+     * @param header the header of the record; must be unmodifiable, as {@link #keys()} returns it
      * @param values the values of the record; a NULL column is stored as {@code null}
      */
     public RecordImpl(List<String> header, List<@Nullable Object> values) {
