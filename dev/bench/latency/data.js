@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786962702228,
+  "lastUpdate": 1786963643249,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -7610,6 +7610,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 81188.495,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "307409954+falkordb-release-please[bot]@users.noreply.github.com",
+            "name": "falkordb-release-please[bot]",
+            "username": "falkordb-release-please[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d8c47492b106039c167353a495f752544181befe",
+          "message": "chore(master): release 0.11.0 (#389)\n\n* chore(master): release 0.11.0\n\n* docs(changelog): document all 0.11.0 behavioural changes\n\nrelease-please derives the changelog from the BREAKING CHANGE footer, but it\nonly captured that footer's first paragraph - so the generated entry was a\ndangling sentence ending in a colon that listed nothing:\n\n  * three observable runtime behaviours differ from 0.10.1, none of which\n    japicmp can see because no signature changed:\n\nThe bullets that followed the blank line were dropped. The footer also said\n\"three\": it was written before review surfaced two more behavioural changes\nand one binary one.\n\nReplaces the entry with the full set, each with its 0.10.1 behaviour, its\n0.11.0 behaviour and a migration:\n\n  - unknown column        IndexOutOfBoundsException -> IllegalArgumentException\n  - NULL column           NullPointerException      -> null\n  - schema / keys lists   mutable internal list     -> unmodifiable\n  - bad type ordinal      lazy AIOOBE               -> eager JedisDataException\n  - non-finite doubles    NumberFormatException     -> Infinity / NaN\n\nAlso records what an API-diff tool cannot: HeaderImpl is now final, which\nbreaks `extends HeaderImpl`, but lives in the internal com.falkordb.impl\npackage that japicmp excludes.\n\nAdds a Dependencies section for jedis 7.5.3 -> 8.0.0. release-please hides\nbuild(deps) commits, but a major transport bump reaches users transitively\nand is worth stating, along with the RESP2 pin that keeps protocol\nbehaviour identical to 0.10.1.\n\nCHANGELOG.md is excluded from the spellcheck gate by design, so no wordlist\nchange is needed.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs(readme): advertise the version this release actually publishes\n\nThe \"Official Releases\" snippet - the one users copy into their pom - still\npointed at 0.9.0, two releases behind: 0.10.0 and 0.10.1 both shipped without\nit being touched. The \"Snapshots\" snippet pointed at 0.10.0-SNAPSHOT, which\nwas never the current snapshot either (master was on 0.10.2-SNAPSHOT).\n\nPoints them at 0.11.0 and at 0.11.1-SNAPSHOT, the snapshot release-please\nopens immediately after this release publishes.\n\nNeither is bumped automatically today, which is why both drifted. release-please\ncan own them via an `x-release-please-version` marker in extra-files; that is a\nconfig change and is deliberately kept out of the release PR.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: falkordb-release-please[bot] <307409954+falkordb-release-please[bot]@users.noreply.github.com>\nCo-authored-by: Guy Korland <gkorland@gmail.com>\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-08-17T13:45:21+03:00",
+          "tree_id": "589dfda4176096ae5e317ed62a0b46192afc35a6",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/d8c47492b106039c167353a495f752544181befe"
+        },
+        "date": 1786963641858,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 108.912,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 138.794,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 157.122,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 112.577,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 142.09,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 162.918,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 144.955,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 225.541,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 277.285,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 226.696,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 395.587,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 503.467,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 268.637,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 2509.02,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 5944.659,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 273.167,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 7592.706,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 17091.252,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 281.148,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 16731.451,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 41284.719,
             "unit": "us"
           }
         ]
