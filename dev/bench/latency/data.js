@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786946098963,
+  "lastUpdate": 1786947724179,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -6965,6 +6965,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 47351.338,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "18bd956b2050bb32ffdbf19869b327b000bc1c17",
+          "message": "build(deps): bump github/codeql-action/analyze from 4.37.6 to 4.37.7 (#399)\n\nBumps [github/codeql-action/analyze](https://github.com/github/codeql-action) from 4.37.6 to 4.37.7.\n- [Release notes](https://github.com/github/codeql-action/releases)\n- [Changelog](https://github.com/github/codeql-action/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/github/codeql-action/compare/5595ccaf912efad79be6eef63a5619ff05969be3...ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd)\n\n---\nupdated-dependencies:\n- dependency-name: github/codeql-action/analyze\n  dependency-version: 4.37.7\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Guy Korland <gkorland@gmail.com>",
+          "timestamp": "2026-08-17T09:19:45+03:00",
+          "tree_id": "e1a298782a30b1eba926a0e8d5f3a5462ee6146b",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/18bd956b2050bb32ffdbf19869b327b000bc1c17"
+        },
+        "date": 1786947722966,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 208.539,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 242.964,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 277.428,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 250.338,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 291.445,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 319.185,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 305.161,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 466.671,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 562.452,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 492.6,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 841.726,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1036.597,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 593.547,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5612.139,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 12257.845,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 599.31,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 15629.651,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 34777.568,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 582.628,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 35945.618,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 80810.659,
             "unit": "us"
           }
         ]
