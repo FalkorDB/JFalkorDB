@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786947724179,
+  "lastUpdate": 1786950617897,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -7094,6 +7094,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 80810.659,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6aacdfb39d6b55431d7a39b04f0eed652e4402f8",
+          "message": "build(deps): bump redis.clients:jedis from 7.5.3 to 8.0.0 (#397)\n\n* build(deps): bump redis.clients:jedis from 7.5.3 to 8.0.0\n\nBumps [redis.clients:jedis](https://github.com/redis/jedis) from 7.5.3 to 8.0.0.\n- [Release notes](https://github.com/redis/jedis/releases)\n- [Commits](https://github.com/redis/jedis/compare/v7.5.3...v8.0.0)\n\n---\nupdated-dependencies:\n- dependency-name: redis.clients:jedis\n  dependency-version: 8.0.0\n  dependency-type: direct:production\n  update-type: version-update:semver-major\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n\n* fix(driver): pin RESP2 and silence the Jedis 8 auto-negotiation warning\n\nJedis 8 turns RESP3 protocol auto-negotiation on by default. The legacy\nJedis class this driver pools cannot speak RESP3: it ignores the flag,\nsilently stays on RESP2 and logs a warning for every connection it opens,\nwhich would land in every JFalkorDB user's logs after the 7.5.3 -> 8.0.0\nbump.\n\nPin autoNegotiateProtocol(false) in a single shared client-config builder\nso all three factories - driver(host, port), FalkorDB.builder() and\ndriver(URI) - agree on the wire protocol our reply parsing is written\nagainst.\n\ndriver(URI) now assembles that config explicitly instead of delegating to\nJedis' URI-based pool constructor, which offered no way to set the flag.\nHost, port, credentials, database index, TLS scheme and an explicit\nprotocol are still resolved from the URI, and an invalid URI still raises\nInvalidURIException with the same message.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Guy Korland <gkorland@gmail.com>\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-08-17T10:08:51+03:00",
+          "tree_id": "302b18e6b1dc6b7245548abfeace3db0632b0503",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/6aacdfb39d6b55431d7a39b04f0eed652e4402f8"
+        },
+        "date": 1786950617052,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 185.278,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 223.77,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 251.342,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 229.02,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 265.908,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 285.062,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 279.706,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 418.858,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 504.006,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 459.172,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 775.365,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 984.586,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 530.926,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5304.348,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 11886.038,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 542.137,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 14796.275,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 33214.096,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 534.394,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 33347.011,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 76217.648,
             "unit": "us"
           }
         ]
