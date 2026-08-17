@@ -110,12 +110,12 @@ loadScripts(document, 'script');</script>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
 <div class="block">Check if the record header contains the given key</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#getString(int)" class="member-name-link">getString</a><wbr>(int&nbsp;index)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
 <div class="block">The value at the given field index (represented as String)</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#getString(java.lang.String)" class="member-name-link">getString</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;key)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
 <div class="block">The value at the given field (represented as String)</div>
@@ -140,7 +140,7 @@ loadScripts(document, 'script');</script>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
 <div class="block">The number of fields in this record</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;</code></div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a><wbr>&lt;@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#values()" class="member-name-link">values</a>()</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
 <div class="block">The values of the record</div>
@@ -163,10 +163,16 @@ loadScripts(document, 'script');</script>
 <section class="detail" id="getValue(int)">
 <h3>getValue</h3>
 <div class="member-signature"><span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type">@Nullable T</span>&nbsp;<span class="element-name">getValue</span><wbr><span class="parameters">(int&nbsp;index)</span></div>
-<div class="block">The value at the given field index</div>
+<div class="block">The value at the given field index
+
+ <p><code>T</code> is inferred from the assignment, never checked: the cast is unchecked and erased,
+ so the compiler inserts it at <em>your</em> call site. Asking for the wrong type therefore
+ throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/ClassCastException.html" title="class or interface in java.lang" class="external-link"><code>ClassCastException</code></a> there rather than here, and throws nothing at all while the
+ value stays untyped (assigned to <code>Object</code>, or passed straight on). Check the column's
+ <a href="Header.html#getSchemaTypes()"><code>schema type</code></a> if you cannot rely on the query shape.</div>
 <dl class="notes">
 <dt>Type Parameters:</dt>
-<dd><code>T</code> - return value type</dd>
+<dd><code>T</code> - return value type, unchecked</dd>
 <dt>Parameters:</dt>
 <dd><code>index</code> - field index</dd>
 <dt>Returns:</dt>
@@ -178,40 +184,47 @@ loadScripts(document, 'script');</script>
 <section class="detail" id="getValue(java.lang.String)">
 <h3>getValue</h3>
 <div class="member-signature"><span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type">@Nullable T</span>&nbsp;<span class="element-name">getValue</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;key)</span></div>
-<div class="block">The value at the given field</div>
+<div class="block">The value at the given field
+
+ <p><code>T</code> is unchecked, exactly as in <a href="#getValue(int)"><code>getValue(int)</code></a>: a wrong type surfaces as a
+ <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/ClassCastException.html" title="class or interface in java.lang" class="external-link"><code>ClassCastException</code></a> at the caller, not here.</div>
 <dl class="notes">
 <dt>Type Parameters:</dt>
-<dd><code>T</code> - return value type</dd>
+<dd><code>T</code> - return value type, unchecked</dd>
 <dt>Parameters:</dt>
 <dd><code>key</code> - header key</dd>
 <dt>Returns:</dt>
 <dd>the value at the field, or <code>null</code> if the stored value is null</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the record has no column with that key</dd>
 </dl>
 </section>
 </li>
 <li>
 <section class="detail" id="getString(int)">
 <h3>getString</h3>
-<div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">getString</span><wbr><span class="parameters">(int&nbsp;index)</span></div>
+<div class="member-signature"><span class="return-type">@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">getString</span><wbr><span class="parameters">(int&nbsp;index)</span></div>
 <div class="block">The value at the given field index (represented as String)</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>index</code> - field index</dd>
 <dt>Returns:</dt>
-<dd>string representation of the value</dd>
+<dd>string representation of the value, or <code>null</code> if the stored value is null</dd>
 </dl>
 </section>
 </li>
 <li>
 <section class="detail" id="getString(java.lang.String)">
 <h3>getString</h3>
-<div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">getString</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;key)</span></div>
+<div class="member-signature"><span class="return-type">@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">getString</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;key)</span></div>
 <div class="block">The value at the given field (represented as String)</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>key</code> - header key</dd>
 <dt>Returns:</dt>
-<dd>string representation of the value</dd>
+<dd>string representation of the value, or <code>null</code> if the stored value is null</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the record has no column with that key</dd>
 </dl>
 </section>
 </li>
@@ -219,21 +232,30 @@ loadScripts(document, 'script');</script>
 <section class="detail" id="keys()">
 <h3>keys</h3>
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">keys</span>()</div>
-<div class="block">The keys of the record</div>
+<div class="block">The keys of the record
+
+ <p>Records share the result set's schema, so the returned list is unmodifiable; mutating it
+ throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/UnsupportedOperationException.html" title="class or interface in java.lang" class="external-link"><code>UnsupportedOperationException</code></a>. Copy it if you need a mutable list. (Before
+ 0.11.0 this exposed the shared header list, so mutating it corrupted every record in the
+ result set.)</div>
 <dl class="notes">
 <dt>Returns:</dt>
-<dd>list of the record key</dd>
+<dd>list of the record key, unmodifiable</dd>
 </dl>
 </section>
 </li>
 <li>
 <section class="detail" id="values()">
 <h3>values</h3>
-<div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;</span>&nbsp;<span class="element-name">values</span>()</div>
-<div class="block">The values of the record</div>
+<div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;</span>&nbsp;<span class="element-name">values</span>()</div>
+<div class="block">The values of the record
+
+ <p>A NULL column deserializes to <code>null</code>, so the returned list may contain null elements
+ — hence <code>List&lt;@Nullable Object&gt;</code> rather than <code>List&lt;Object&gt;</code>. Null-check an element
+ before dereferencing it, as you would the <a href="#getValue(int)"><code>getValue(int)</code></a> of that column.</div>
 <dl class="notes">
 <dt>Returns:</dt>
-<dd>list of the record values</dd>
+<dd>list of the record values, whose elements may be <code>null</code></dd>
 </dl>
 </section>
 </li>

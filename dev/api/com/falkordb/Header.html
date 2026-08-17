@@ -148,10 +148,14 @@ loadScripts(document, 'script');</script>
 <section class="detail" id="getSchemaNames()">
 <h3>getSchemaNames</h3>
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">getSchemaNames</span>()</div>
-<div class="block">Returns the schema names.</div>
+<div class="block">Returns the schema names.
+
+ <p>The returned list is unmodifiable; mutating it throws
+ <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/UnsupportedOperationException.html" title="class or interface in java.lang" class="external-link"><code>UnsupportedOperationException</code></a>. Copy it if you need a mutable list. (Before 0.11.0 this
+ exposed the header's internal list, so callers could corrupt the schema in place.)</div>
 <dl class="notes">
 <dt>Returns:</dt>
-<dd>the schema names</dd>
+<dd>the schema names, unmodifiable</dd>
 </dl>
 </section>
 </li>
@@ -159,10 +163,14 @@ loadScripts(document, 'script');</script>
 <section class="detail" id="getSchemaTypes()">
 <h3>getSchemaTypes</h3>
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="Header.ResultSetColumnTypes.html" title="enum in com.falkordb">Header.ResultSetColumnTypes</a>&gt;</span>&nbsp;<span class="element-name">getSchemaTypes</span>()</div>
-<div class="block">Returns the schema types.</div>
+<div class="block">Returns the schema types.
+
+ <p>The returned list is unmodifiable; mutating it throws
+ <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/UnsupportedOperationException.html" title="class or interface in java.lang" class="external-link"><code>UnsupportedOperationException</code></a>. Copy it if you need a mutable list. (Before 0.11.0 this
+ exposed the header's internal list, so callers could corrupt the schema in place.)</div>
 <dl class="notes">
 <dt>Returns:</dt>
-<dd>the schema types</dd>
+<dd>the schema types, unmodifiable</dd>
 </dl>
 </section>
 </li>
