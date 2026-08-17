@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786950619382,
+  "lastUpdate": 1786954153295,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -3303,6 +3303,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11973,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "41aeed7cda3cc9437d5f570633c9a0463fc0f8d7",
+          "message": "build(deps): bump org.apache.maven:apache-maven from 3.9.9 to 3.9.16 (#396)\n\n* build(deps): bump org.apache.maven:apache-maven from 3.9.9 to 3.9.16\n\nBumps org.apache.maven:apache-maven from 3.9.9 to 3.9.16.\n\n---\nupdated-dependencies:\n- dependency-name: org.apache.maven:apache-maven\n  dependency-version: 3.9.16\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n\n* build: keep the corrected mvnw.cmd out of the wrapper distribution bump\n\nDependabot regenerated mvnw.cmd from the wrapper scripts of\nwrapperVersion 3.3.2 while bumping only the Maven distribution, which\nthis repo does not want:\n\n- The blob was committed with CRLF endings. .gitattributes normalises\n  *.cmd to LF in the index and CRLF in the working tree, so every fresh\n  checkout of the branch was instantly dirty, and `just bench-compare`\n  aborts on a dirty tree - that is the benchmark-pr failure.\n- It reverted MVNW_REPO_PATTERN to the inverted 3.3.2 form, undoing the\n  corrected mvnd/maven lookup this repo already carries.\n\nThe wrapper scripts are pinned by wrapperVersion (unchanged at 3.3.2),\nso the distribution bump only needs maven-wrapper.properties.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Guy Korland <gkorland@gmail.com>\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-08-17T11:07:45+03:00",
+          "tree_id": "ea3820219e3c3516fb9ac256f6e4b16d98aa8c65",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/41aeed7cda3cc9437d5f570633c9a0463fc0f8d7"
+        },
+        "date": 1786954153263,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3539,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6040.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9047,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 12022,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11265.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11029.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11194,
             "unit": "ops/s"
           }
         ]
