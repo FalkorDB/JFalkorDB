@@ -86,10 +86,11 @@ public class HeaderImplTest {
     }
 
     @Test
-    public void concurrentFirstAccessBuildsTheSchemaExactlyOnce() throws Exception {
-        // AsyncGraph hands ResultSets to many threads. Building the schema lazily without
-        // synchronization let two threads both see an empty list and both append to it, duplicating
-        // every column. Run enough racing rounds that an unsynchronized build reliably double-populates.
+    public void concurrentReadsSeeTheSchemaExactlyOnce() throws Exception {
+        // AsyncGraph hands ResultSets to many threads. The schema is now built once in the constructor,
+        // but it used to be built lazily without synchronization, which let two threads both see an
+        // empty list and both append to it, duplicating every column. Race enough rounds that a
+        // regression back to an unsynchronized lazy build reliably double-populates.
         int threads = 8;
         ExecutorService pool = Executors.newFixedThreadPool(threads);
         try {
