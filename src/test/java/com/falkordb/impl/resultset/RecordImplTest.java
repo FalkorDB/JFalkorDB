@@ -43,6 +43,29 @@ public class RecordImplTest {
     }
 
     @Test
+    public void getValueDoesNotCheckTheRequestedType() {
+        // <T> is inferred from the assignment and erased, so the unchecked cast inside getValue cannot
+        // verify anything: the compiler inserts the checkcast at the CALLER. A wrong type therefore
+        // fails in user code rather than here -- and does not fail at all while the value stays
+        // untyped. Both halves are documented on Record#getValue; pin them so a future signature
+        // change has to face the contract.
+        RecordImpl record = new RecordImpl(Collections.singletonList("n"), Collections.singletonList((Object) 42L));
+
+        assertThrows(ClassCastException.class, () -> {
+            String misdeclared = record.getValue(0);
+            assertNull(misdeclared, "unreachable: the checkcast throws before this runs");
+        });
+        assertThrows(ClassCastException.class, () -> {
+            String misdeclared = record.getValue("n");
+            assertNull(misdeclared, "unreachable: the checkcast throws before this runs");
+        });
+
+        // The silent half: no narrowing, no exception, wrong type never noticed.
+        Object untyped = record.getValue(0);
+        assertEquals(42L, untyped);
+    }
+
+    @Test
     public void valuesMayContainNullElements() {
         // A NULL column is stored as null, so values() is List<@Nullable Object>. The @NullMarked
         // package would otherwise promise callers that every element is non-null.

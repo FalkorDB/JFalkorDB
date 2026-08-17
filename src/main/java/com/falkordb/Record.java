@@ -13,8 +13,14 @@ public interface Record {
     /**
      * The value at the given field index
      *
+     * <p>{@code T} is inferred from the assignment, never checked: the cast is unchecked and erased,
+     * so the compiler inserts it at <em>your</em> call site. Asking for the wrong type therefore
+     * throws {@link ClassCastException} there rather than here, and throws nothing at all while the
+     * value stays untyped (assigned to {@code Object}, or passed straight on). Check the column's
+     * {@link Header#getSchemaTypes() schema type} if you cannot rely on the query shape.
+     *
      * @param index field index
-     * @param <T> return value type
+     * @param <T> return value type, unchecked
      *
      * @return the value at the field, or {@code null} if the stored value is null
      */
@@ -23,8 +29,11 @@ public interface Record {
     /**
      * The value at the given field
      *
+     * <p>{@code T} is unchecked, exactly as in {@link #getValue(int)}: a wrong type surfaces as a
+     * {@link ClassCastException} at the caller, not here.
+     *
      * @param key header key
-     * @param <T> return value type
+     * @param <T> return value type, unchecked
      *
      * @return the value at the field, or {@code null} if the stored value is null
      * @throws IllegalArgumentException if the record has no column with that key

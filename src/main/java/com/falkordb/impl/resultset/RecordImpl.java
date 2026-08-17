@@ -31,6 +31,8 @@ public class RecordImpl implements Record {
 
     @Override
     public <T> @Nullable T getValue(int index) {
+        // Unchecked and erased: nothing here can verify T, so the compiler inserts the checkcast at the
+        // caller's assignment. Documented on Record#getValue(int) and pinned by RecordImplTest.
         return (T) this.values.get(index);
     }
 
