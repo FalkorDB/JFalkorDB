@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786883168658,
+  "lastUpdate": 1786946098963,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -6836,6 +6836,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 79158.118,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "198982749+Copilot@users.noreply.github.com",
+            "name": "Copilot",
+            "username": "Copilot"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "74551043e507b62f419cba54825da0f5bba83389",
+          "message": "test: stabilize GraphErrorIT across FalkorDB missing-parameter message variants (#391)\n\n* Initial plan\n\n* test: accept old and new missing-parameter messages\n\nCo-authored-by: gkorland <753206+gkorland@users.noreply.github.com>\n\n* test: match the missing-parameter message shape, not a bare substring\n\nThe helper accepted any message containing \"not found\", which is loose enough\nto pass on unrelated failures — \"Graph not found\" and \"Procedure '...' not\nfound\" are both real FalkorDB errors that would have satisfied it, so the test\ncould have gone green on a genuine regression rather than on the message it\nmeans to assert.\n\nMatching the shape \"Parameter <name> not found\" instead keeps the version\ntolerance while restoring the assertion's intent. Verified on the wire rather\nthan inferred:\n\n  latest -> \"Missing parameters\"\n  edge   -> \"Parameter param not found\"\n\nGraphErrorIT now passes against all three images the project tests: the pinned\nv4.20.1 default, latest, and edge (9/9 each; edge was 2 failures before).\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>\nCo-authored-by: gkorland <753206+gkorland@users.noreply.github.com>\nCo-authored-by: Guy Korland <gkorland@gmail.com>\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-08-17T08:53:05+03:00",
+          "tree_id": "7848d8b4afb6de42227aed8f86869327d6b501cc",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/74551043e507b62f419cba54825da0f5bba83389"
+        },
+        "date": 1786946098161,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 119.55,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 140.542,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 180.042,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 153.481,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 184.799,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 204.759,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 201.169,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 314.376,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 395.397,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 341.456,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 578.073,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 711.413,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 379.683,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 3303.867,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 8625.992,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 389.619,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 9783.725,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 23193.923,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 394.696,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 19491.013,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 47351.338,
             "unit": "us"
           }
         ]
