@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786955323838,
+  "lastUpdate": 1786962702228,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -7481,6 +7481,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 81273.528,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gkorland@gmail.com",
+            "name": "Guy Korland",
+            "username": "gkorland"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7e456e76e62d79e2e871130eb09fb4d5a3694d63",
+          "message": "fix!: non-finite doubles, header thread-safety, and Record null/unknown-column handling (#390)\n\n* fix: parse FalkorDB's non-finite double spellings\n\nFalkorDB emits non-finite doubles the C way. Verified against a live server:\n\n    RETURN 1.0/0.0   -> type 5 (VALUE_DOUBLE), value \"inf\"\n    RETURN -1.0/0.0  -> \"-inf\"\n    RETURN 0.0/0.0   -> \"-nan\"\n\nDouble.parseDouble accepts none of those spellings — it wants \"Infinity\" and\n\"NaN\" — so any query producing a non-finite double escaped as an unwrapped\nNumberFormatException from query().\n\nNote the asymmetry this removes: Utils.appendNumber already rejects non-finite\ndoubles on the way in, while the read path crashed on them.\n\nThe fast path is unchanged (Double.parseDouble first); only its failure is\ninspected, and genuinely malformed input still rethrows the original exception.\n\nCo-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>\n\n* fix: build the result-set header once, immutably\n\nTwo defects in HeaderImpl, both fixed by parsing in the constructor:\n\nLazy building was unsynchronized and buildSchema() appended without clearing,\nso concurrent first access double-populated the schema lists. The new test\ndemonstrates it emphatically — 8 racing threads produced [n, n, n, n, n, n, n, n]\nfor a single-column header. Reachable since AsyncGraph began handing a ResultSet\nto many threads; a reader could also observe an ArrayList mid-grow.\n\nbuildSchema also indexed ResultSetColumnTypes.values() with an unvalidated\nserver-supplied ordinal, so a newer server sending an unknown column type gave a\nbare ArrayIndexOutOfBoundsException. It now uses the same guarded lookup\nResultSetScalarTypes.getValue already performs for scalars, and values() is\nhoisted into a static array instead of being reallocated per row. The\n`if (type != null)` that followed was dead code — array indexing throws rather\nthan returning null.\n\nThe schema is now the object's entire state, so equals/hashCode no longer need\n`raw` excluded to behave.\n\nCo-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>\n\n* fix: make Record report null values and unknown columns clearly\n\ngetString(int) called toString() on the value with no null check, so a NULL\ncolumn threw NullPointerException — even though getValue is documented @Nullable\nand returns null for the very same cell (`RETURN n.missingProp`). It now returns\nnull, and the Record interface documents that.\n\ngetValue(String)/getString(String) passed header.indexOf(key) straight to\nvalues.get(), so a typo or an AS-aliased column surfaced as\n\"IndexOutOfBoundsException: Index -1 out of bounds\" with no mention of the key.\nThey now throw IllegalArgumentException naming the missing key and listing the\navailable columns.\n\nBehaviour change on a public interface: the unknown-key case throws\nIllegalArgumentException instead of IndexOutOfBoundsException, and getString may\nnow return null instead of throwing. Both are documented on Record, and japicmp\nreports no API break.\n\nCo-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>\n\n* refactor: share one ResultSet builder per pipeline and transaction\n\nGraphPipelineImpl and GraphTransactionImpl each declared eight byte-identical\nanonymous Builder<ResultSet> implementations — 16 copies of the same three\nlines. Every new pipeline/transaction method copied the block again, and any fix\nto the response shape had to be applied 16 times.\n\nEach class now holds one shared builder field. This also normalises the\ninconsistent @SuppressWarnings(\"unchecked\") that some copies carried and others\n(the profile ones) did not.\n\nJedis Builder<T> is an abstract class, not a functional interface, so this is a\nfield holding an anonymous subclass rather than a lambda. graph/cache are read\ninside build() rather than captured, so the transaction's reassignable cache\nfield still resolves to its current value.\n\nCo-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>\n\n* build: declare Automatic-Module-Name for JPMS consumers\n\nWithout it a modular consumer writing `requires ...;` binds to a module name\nderived from the jar FILENAME, which shading or renaming silently breaks, and\nwhich could not be stabilised later without breaking everyone already relying on\nthe derived name.\n\nThis is a manifest entry, not a module-info, so it is safe at release 8 and\ncosts nothing at runtime. Verified in the packaged jar:\n\n    Automatic-Module-Name: com.falkordb\n\nCo-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>\n\n* fix: make HeaderImpl final now that its constructor can throw\n\nCI's SpotBugs gate caught this (CT_CONSTRUCTOR_THROW): parsing in the constructor\nmeans it can throw on a malformed reply, and a partially-constructed non-final\nclass stays reachable through a subclass finalizer.\n\nMaking the class final removes the vector rather than suppressing the warning.\nResultSetImpl is already final for the same reason, and nothing extends this\ninternal type.\n\nVerified locally: spotbugs:check now reports 0 bugs (SpotBugs runs on JDK 17 as\nlong as the classes are compiled outside the quality profile, which is what kept\nthis from being caught before pushing — only Error Prone needs JDK 21).\n\nCo-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>\n\n* fix: range-check column and scalar type ordinals before narrowing\n\nReview feedback from CodeRabbit on #390: intValue() keeps only the low 32 bits,\nso an out-of-range ordinal such as 4294967297 (2^32 + 1) wrapped to 1 and was\naccepted as COLUMN_SCALAR — a hole in exactly the case the guard was added for.\nThe reply's long is now range-checked before it is narrowed.\n\nThe same hole existed on the scalar path (ResultSetScalarTypes.getValue via\ngetValueTypeFromObject), which is the lookup this PR cited as its model, so it\ngets the same treatment rather than being left inconsistent. Its exception-driven\nbounds check is now an explicit range test.\n\nRegression tests cover the wrapping value and a negative ordinal on both paths.\n\nCo-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>\n\n* fix: parse non-finite vecf32 elements, and keep the module name jfalkordb\n\nTwo review findings on #390, both verified before acting.\n\nvecf32 elements arrive with the same C spellings as scalar doubles, so the\nnon-finite fix stopped one type short. On the wire:\n\n    RETURN vecf32([1.0, 1.0/0.0, 0.0/0.0])  ->  type 12, elements \"1\", \"inf\", \"nan\"\n\nFloat.parseFloat rejects those exactly as Double.parseDouble rejects the scalar\nform, so the query failed with \"Invalid float value in vector data\". The\nnon-finite mapping is now shared between a parseDouble and a parseFloat helper;\nnarrowing is exact for these values ((float) Double.POSITIVE_INFINITY is\nFloat.POSITIVE_INFINITY, (float) Double.NaN is Float.NaN), and genuinely\nmalformed input still rethrows the original failure.\n\nThe Automatic-Module-Name value was a silent breaking change. Java already\nderives a name from the jar filename, so the published artifact is:\n\n    0.10.1        -> jfalkordb@0.10.1 automatic\n    with com.falkordb -> com.falkordb@0.10.2-SNAPSHOT automatic\n\nAny modular consumer with `requires jfalkordb;` would have failed resolution\nafter upgrading — shipped under a `fix:` title as a patch. Pinning `jfalkordb`\ninstead keeps the entire benefit (the name now survives a rename or shading)\nwith no break, so it stays a patch. Adopting reverse-DNS `com.falkordb` remains\npossible later as a deliberate minor bump with a migration note; the pom comment\nrecords that and warns against changing the value casually.\n\nCo-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>\n\n* docs!: document the unmodifiable schema/keys contract\n\nBREAKING CHANGE: three observable runtime behaviours differ from 0.10.1, none of\nwhich japicmp can see because no signature changed:\n\n  - Record.getValue(String)/getString(String) with an unknown column now throw\n    IllegalArgumentException instead of IndexOutOfBoundsException.\n  - Record.getString(int)/getString(String) return null for a NULL column\n    instead of throwing NullPointerException.\n  - Header.getSchemaNames(), Header.getSchemaTypes() and Record.keys() return\n    unmodifiable lists; mutating them throws UnsupportedOperationException.\n    0.10.1 handed back the internal ArrayList, so a caller could corrupt the\n    schema — and, because records share that list, every record in the result\n    set — in place.\n\nThe third was an unnoticed consequence of parsing the header eagerly rather than\na deliberate API decision. It is worth keeping (exposing the internal list was an\nencapsulation bug), but it has to be declared rather than shipped silently in a\npatch, which is what the repository's \"a user-facing break is at least a minor\nbump\" rule exists for.\n\nThe unmodifiable contract is now documented on the Header and Record interfaces,\nwhich previously said nothing about mutability, and locked in by tests.\n\nCo-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>\n\n* fix: declare Record.values() elements nullable\n\ncom.falkordb is @NullMarked, so `List<Object> values()` promised callers that\nevery element is non-null. A NULL column deserializes to null and is stored in\nthat list (ResultSetImpl.deserializeScalar returns null for VALUE_NULL), which\nGraphAPIIT.testNullGraphEntities already asserts, so the published nullness\nmetadata was untruthful: a JSpecify-aware caller got no warning before\ndereferencing an element with a real NPE path.\n\nThe return type is now List<@Nullable Object>, with the matching RecordImpl\nfield, constructor parameter and return type, and the ResultSetImpl row buffer\nthat holds the nulls. Type annotations leave the erasure and generic signature\nuntouched, so this is source- and binary-compatible; japicmp reports\n\"No changes.\" against 0.10.1.\n\nRecordImpl's getValue/getString overrides also carry the @Nullable their\ninterface already declared, which was previously only on the interface.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test: prove keys() immutability on the parse path, not by assumption\n\nRecordImpl deliberately SHARES the schema list rather than copying it per row,\nso the unmodifiable keys() contract is upheld by whatever HeaderImpl hands it —\nnot by RecordImpl itself. The only test covering it constructed a RecordImpl\nwith a list the test had made unmodifiable, so it presupposed the precondition\ninstead of proving it, and would have stayed green had the parse path started\nhanding out a mutable list.\n\nThe new test builds a ResultSetImpl from a raw reply — the way every\nuser-visible record is built — and asserts both keys() and getSchemaNames()\nreject mutation. Watched failing first: reverting HeaderImpl's\nunmodifiableList wrapper turns it red (\"Expected UnsupportedOperationException\nto be thrown, but nothing was thrown\"), which the old test could not detect.\n\nA defensive copy in the constructor was considered and rejected: it would\nallocate a schema copy per row (rows x columns) on the parse hot path to guard\nan internal, api-diff-excluded class whose only two call sites already pass the\nshared unmodifiable list. The precondition is documented on the constructor\ninstead.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test: name the header concurrency test for the eager build\n\nThe test was written against the lazy schema build and kept its name and\ncomment after HeaderImpl moved the work into the constructor, so both\ndescribed a \"first access\" build that no longer exists.\n\nIt still earns its place - it is the regression guard that would catch a\nreturn to an unsynchronized lazy build - so this renames it to say what\nit now verifies (concurrent reads observe the schema exactly once) and\nputs the old behaviour in the past tense.\n\nAddresses the review comment on HeaderImplTest.java:93.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test: wait for the header concurrency test's workers to terminate\n\nshutdownNow() only requests cancellation, so the test returned while 8\nworkers were still winding down - 1600 tasks over 200 rounds - leaving\nthem to be reaped while the rest of the suite ran. Await termination and\nassert it, so a worker that fails to stop fails this test rather than\ndestabilising a later one.\n\nAlso replaces the \"Handle the exception appropriately\" placeholder in\ndeserializeVector: parseFloat now maps FalkorDB's C spellings of the\nnon-finite values, so the comment should say that anything still\nreaching that catch is genuinely malformed.\n\nAddresses the two suppressed review comments on HeaderImplTest.java:113\nand ResultSetImpl.java:394.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs: state that Record.getValue does not check the requested type\n\ngetValue's <T> is inferred from the assignment and erased, so the cast\ninside the method verifies nothing - the compiler emits the checkcast in\nthe CALLER's frame:\n\n  invokevirtual RecordImpl.getValue:(I)Ljava/lang/Object;\n  checkcast     java/lang/String\n\nSo a wrong type throws ClassCastException in user code rather than at the\ncall into the client, and throws nothing at all while the value stays\nuntyped. That is the half worth writing down: an unnoticed mismatch\npropagates silently until something narrows it.\n\nDocuments both overloads on Record, notes it at the unchecked cast in\nRecordImpl, and pins both halves with a test so a future signature change\nhas to face the contract. Signature unchanged - Object or Class<T> would\nbreak every existing caller, which a documentation pass should not do.\n\nAddresses the review comment on RecordImpl.java:40.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Claude Opus 5 (1M context) <noreply@anthropic.com>\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-08-17T13:29:57+03:00",
+          "tree_id": "98df74a7af3b835b0d5f6b89c4306adab7f579ca",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/7e456e76e62d79e2e871130eb09fb4d5a3694d63"
+        },
+        "date": 1786962701657,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 218.148,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 259.464,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 287.527,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 240.208,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 286.274,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 326.642,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 312.091,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 497.739,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 612.913,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 505.002,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 857.753,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1058.457,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 593.468,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5715.88,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 12185.068,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 602.164,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 15924.279,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 35404.573,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 594.079,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 36254.662,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 81188.495,
             "unit": "us"
           }
         ]
