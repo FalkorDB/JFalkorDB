@@ -1,5 +1,65 @@
 # Changelog
 
+## [0.11.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.10.1...v0.11.0) (2026-08-17)
+
+This release makes result-set parsing correct and thread-safe, and picks up **Jedis 8**.
+The public API is **source- and binary-compatible** with 0.10.1 — `japicmp` reports
+`No changes.` — but five *runtime behaviours* changed, which is why this is a minor bump
+rather than a patch. No signature changed, so none of the following is visible to an
+API-diff tool; they are listed here instead.
+
+### ⚠ BREAKING CHANGES
+
+| Call | 0.10.1 | 0.11.0 | Migration |
+| --- | --- | --- | --- |
+| `Record.getValue(String)` / `getString(String)` with an **unknown column** | `IndexOutOfBoundsException` (`Index: -1, Size: n`) — the `-1` from the failed lookup leaked into `List.get` | `IllegalArgumentException` naming the key and listing the available columns | Catch `IllegalArgumentException`. The message now identifies the typo instead of hiding it |
+| `Record.getString(int)` / `getString(String)` on a **NULL column** | `NullPointerException` from `null.toString()` | returns `null` | Null-check the result. `getValue` already returned `null` for the same column, so the two accessors now agree |
+| `Header.getSchemaNames()`, `Header.getSchemaTypes()`, `Record.keys()` | the header's **internal mutable `ArrayList`** | an unmodifiable list; mutating it throws `UnsupportedOperationException` | Copy before mutating: `new ArrayList<>(header.getSchemaNames())` |
+| A **malformed or future column-type ordinal** in the header | `ArrayIndexOutOfBoundsException`, thrown **lazily** at the first `getSchemaTypes()` call | `JedisDataException("Unrecognized response type")`, thrown **eagerly** while the reply is parsed | Catch `JedisDataException` around the query rather than around the accessor |
+| **Non-finite doubles** (`RETURN 1.0/0.0`) and `vecf32` floats | `NumberFormatException: For input string: "inf"`, or `GraphException: Invalid float value in vector data` for vectors | `Double.POSITIVE_INFINITY`, `NEGATIVE_INFINITY`, `NaN` | None — the value now parses instead of throwing. Only affects code that *relied* on the exception |
+
+Returning the internal `ArrayList` was not a deliberate API decision: because every record
+in a result set shares the header's list, a caller who mutated it corrupted the schema for
+the whole result set in place. The mutability contract is now documented on `Header` and
+`Record` — which previously said nothing about it — and pinned by tests.
+
+One further change is **binary**-incompatible but sits in the internal `com.falkordb.impl`
+package, which is excluded from the API-diff gate:
+`com.falkordb.impl.resultset.HeaderImpl` is now `final`. `extends HeaderImpl` compiled
+against 0.10.1 and no longer does. `ResultSetImpl` was already `final` and `RecordImpl`
+remains non-final, so this is the only such change.
+
+### Bug Fixes
+
+* non-finite doubles, header thread-safety, and Record null/unknown-column handling ([#390](https://github.com/FalkorDB/JFalkorDB/issues/390)) ([7e456e7](https://github.com/FalkorDB/JFalkorDB/commit/7e456e76e62d79e2e871130eb09fb4d5a3694d63))
+
+Beyond the behaviours listed above, this also fixes a **data race**: the header used to
+parse itself lazily on first access, so two threads reading one `ResultSet` could race and
+see a half-built schema. It is now built eagerly and immutably at construction, so a
+`ResultSet` is safe to hand to another thread. Column-type lookups are also range-checked
+as `long`, closing a narrowing hole where an out-of-range ordinal such as `4294967297`
+wrapped to a valid one and silently mis-typed a column.
+
+### Dependencies
+
+* bump `redis.clients:jedis` from 7.5.3 to **8.0.0** ([#397](https://github.com/FalkorDB/JFalkorDB/issues/397)) ([6aacdfb](https://github.com/FalkorDB/JFalkorDB/commit/6aacdfb39d6b55431d7a39b04f0eed652e4402f8))
+
+Jedis 8 is a major upgrade of the transport and reaches applications transitively — check
+it against any direct Jedis use of your own. JFalkorDB pins the connection to **RESP2**
+explicitly, so protocol behaviour is unchanged from 0.10.1 and Jedis 8's per-connection
+RESP3 auto-negotiation warning does not appear.
+
+### Documentation
+
+* fix all Javadoc warnings in the javadoc jar build ([#386](https://github.com/FalkorDB/JFalkorDB/issues/386)) ([c547bfe](https://github.com/FalkorDB/JFalkorDB/commit/c547bfebe3d03a3dd2878a1dbc0fe788a825edaf))
+
+### Compatibility
+
+* **Java 8** remains the minimum and is still verified on a real JDK 8 in CI.
+* The jar now pins `Automatic-Module-Name: jfalkordb` — the same name Java already derived
+  from the filename, so existing `requires jfalkordb;` declarations are unaffected; it is
+  now guaranteed rather than incidental.
+
 ## [0.10.1](https://github.com/FalkorDB/JFalkorDB/compare/v0.10.0...v0.10.1) (2026-08-13)
 
 
