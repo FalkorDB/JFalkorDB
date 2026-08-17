@@ -2,6 +2,7 @@ package com.falkordb.impl.resultset;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.falkordb.Header;
 import java.util.ArrayList;
@@ -110,6 +111,9 @@ public class HeaderImplTest {
             }
         } finally {
             pool.shutdownNow();
+            // 1600 tasks across 200 rounds: wait for the workers to actually go away rather than
+            // leaving them to be reaped while the rest of the suite runs.
+            assertTrue(pool.awaitTermination(10, TimeUnit.SECONDS), "worker threads did not terminate");
         }
     }
 }

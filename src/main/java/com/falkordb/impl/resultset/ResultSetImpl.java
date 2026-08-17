@@ -390,7 +390,8 @@ public final class ResultSetImpl implements ResultSet {
                     try {
                         return parseFloat(SafeEncoder.encode(val));
                     } catch (NumberFormatException e) {
-                        // Handle the exception appropriately
+                        // parseFloat already maps FalkorDB's C spellings of the non-finite values, so
+                        // anything still failing here is genuinely malformed.
                         throw new GraphException("Invalid float value in vector data", e);
                     }
                 })
