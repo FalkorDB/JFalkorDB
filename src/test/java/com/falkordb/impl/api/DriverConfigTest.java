@@ -1,15 +1,18 @@
 package com.falkordb.impl.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.net.URI;
 import java.time.Duration;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.junit.jupiter.api.Test;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.exceptions.InvalidURIException;
 
 /**
  * Unit tests for the {@code FalkorDB.builder()} wiring in {@link DriverImpl}: how resolved settings
@@ -112,5 +115,55 @@ class DriverConfigTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> DriverImpl.create("localhost", 6379, null, null, false, 2000, 0, 8, 8, null));
+    }
+
+    @Test
+    void everyClientConfigPinsRESP2() {
+        // Jedis 8 enables RESP3 auto-negotiation by default, but the legacy Jedis class this driver
+        // pools cannot speak RESP3: it ignores the flag and logs a warning per connection. Every
+        // factory must therefore hand Jedis a config with auto-negotiation switched off.
+        assertFalse(
+                DriverImpl.clientConfig(null, null).isAutoNegotiateProtocol(),
+                "driver(host, port) must not auto-negotiate the protocol");
+        assertFalse(
+                DriverImpl.buildClientConfig("alice", "s3cret", true, 1500, 4000)
+                        .isAutoNegotiateProtocol(),
+                "builder() must not auto-negotiate the protocol");
+        assertFalse(
+                DriverImpl.uriClientConfig(URI.create("redis://localhost:6379")).isAutoNegotiateProtocol(),
+                "driver(URI) must not auto-negotiate the protocol");
+    }
+
+    @Test
+    void uriClientConfigMapsCredentialsDatabaseAndTimeouts() {
+        DefaultJedisClientConfig config = DriverImpl.uriClientConfig(URI.create("redis://alice:s3cret@host:6379/3"));
+
+        assertEquals("alice", config.getUser());
+        assertEquals("s3cret", config.getPassword());
+        assertEquals(3, config.getDatabase(), "database index from the URI path");
+        assertNull(config.getSslOptions(), "redis:// is not TLS");
+        assertEquals(
+                DriverImpl.DEFAULT_CONNECTION_TIMEOUT_MILLIS,
+                config.getConnectionTimeoutMillis(),
+                "driver(URI) keeps the shared connect-timeout default");
+        assertEquals(
+                DriverImpl.DEFAULT_SOCKET_TIMEOUT_MILLIS,
+                config.getSocketTimeoutMillis(),
+                "driver(URI) keeps the shared socket-timeout default (#282: no read deadline)");
+    }
+
+    @Test
+    void uriClientConfigEnablesTlsForRedissScheme() {
+        DefaultJedisClientConfig config = DriverImpl.uriClientConfig(URI.create("rediss://host:6379"));
+
+        assertNotNull(config.getSslOptions(), "rediss:// must enable TLS");
+        assertEquals(0, config.getDatabase(), "no database index in the URI means database 0");
+    }
+
+    @Test
+    void uriDriverRejectsAnInvalidUri() {
+        // Preserves the exception Jedis' own URI-based pool constructor raised before we assembled
+        // the client config ourselves.
+        assertThrows(InvalidURIException.class, () -> new DriverImpl(URI.create("http://localhost:6379")));
     }
 }
