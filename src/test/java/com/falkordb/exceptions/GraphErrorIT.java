@@ -7,12 +7,21 @@ import com.falkordb.GraphContext;
 import com.falkordb.GraphContextGenerator;
 import com.falkordb.TestServer;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class GraphErrorIT {
+
+    // FalkorDB reworded this error: v4.20.1 and `latest` say "Missing parameters", while `edge`
+    // names the offending parameter — verified on the wire:
+    //   latest -> "Missing parameters"
+    //   edge   -> "Parameter param not found"
+    // Matching the SHAPE rather than a bare "not found" substring keeps the assertion honest: the
+    // looser form would also pass on any unrelated error that happens to contain those words.
+    private static final Pattern MISSING_PARAMETER = Pattern.compile("Parameter\\s+\\S+\\s+not found");
 
     private GraphContextGenerator api;
 
@@ -75,14 +84,22 @@ public class GraphErrorIT {
     @Test
     public void testMissingParametersSyntaxErrorReporting() {
         GraphException exception = assertThrows(GraphException.class, () -> api.query("RETURN $param"));
-        assertTrue(exception.getMessage().contains("Missing parameters"));
+        assertMissingParameterMessage(exception);
     }
 
     @Test
     public void testMissingParametersSyntaxErrorReporting2() {
         GraphException exception =
                 assertThrows(GraphException.class, () -> api.query("RETURN $param", new HashMap<>()));
-        assertTrue(exception.getMessage().contains("Missing parameters"));
+        assertMissingParameterMessage(exception);
+    }
+
+    private static void assertMissingParameterMessage(GraphException exception) {
+        String message = exception.getMessage();
+        assertTrue(
+                message.contains("Missing parameters")
+                        || MISSING_PARAMETER.matcher(message).find(),
+                "Unexpected missing-parameter message: " + message);
     }
 
     @Test
