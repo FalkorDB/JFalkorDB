@@ -12,6 +12,8 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Protocol;
 import redis.clients.jedis.SslOptions;
+import redis.clients.jedis.exceptions.InvalidURIException;
+import redis.clients.jedis.util.JedisURIHelper;
 import redis.clients.jedis.util.Pool;
 import redis.clients.jedis.util.SafeEncoder;
 
@@ -81,8 +83,41 @@ public class DriverImpl implements Driver {
      * @param uri server uri
      */
     public DriverImpl(URI uri) {
-        this(new JedisPool(
-                new GenericObjectPoolConfig<Jedis>(), uri, Protocol.DEFAULT_TIMEOUT, DEFAULT_SOCKET_TIMEOUT_MILLIS));
+        this(uriPool(uri));
+    }
+
+    /**
+     * Builds the pool behind {@link #DriverImpl(URI)}. Host, port, credentials, database index and
+     * TLS are taken from the URI exactly as Jedis' own URI constructor would resolve them; going
+     * through an explicit {@link DefaultJedisClientConfig} (instead of Jedis' URI-based pool
+     * constructor) is what lets this factory share {@link #buildClientConfigBuilder}'s RESP2 pin
+     * with every other factory.
+     */
+    private static JedisPool uriPool(URI uri) {
+        if (!JedisURIHelper.isValid(uri)) {
+            throw new InvalidURIException(String.format("Cannot open Redis connection due invalid URI. %s", uri));
+        }
+        return new JedisPool(
+                new GenericObjectPoolConfig<Jedis>(), JedisURIHelper.getHostAndPort(uri), uriClientConfig(uri));
+    }
+
+    /**
+     * Builds the client configuration used by {@link #DriverImpl(URI)}: JFalkorDB's timeout defaults
+     * plus the credentials, database index, TLS scheme and explicit protocol carried by the URI.
+     *
+     * @param uri a URI already validated by {@link JedisURIHelper#isValid}
+     * @return the client config to connect with
+     */
+    static DefaultJedisClientConfig uriClientConfig(URI uri) {
+        DefaultJedisClientConfig.Builder builder = buildClientConfigBuilder(
+                        JedisURIHelper.getUser(uri),
+                        JedisURIHelper.getPassword(uri),
+                        JedisURIHelper.isRedisSSLScheme(uri),
+                        DEFAULT_CONNECTION_TIMEOUT_MILLIS,
+                        DEFAULT_SOCKET_TIMEOUT_MILLIS)
+                .database(JedisURIHelper.getDBIndex(uri))
+                .protocol(JedisURIHelper.getRedisProtocol(uri));
+        return builder.build();
     }
 
     /**
@@ -172,9 +207,26 @@ public class DriverImpl implements Driver {
      */
     static DefaultJedisClientConfig buildClientConfig(
             String user, String password, boolean ssl, int connectionTimeoutMillis, int socketTimeoutMillis) {
+        return buildClientConfigBuilder(user, password, ssl, connectionTimeoutMillis, socketTimeoutMillis)
+                .build();
+    }
+
+    /**
+     * Shared assembly for every client config this driver builds, so the host/port, builder and URI
+     * factories cannot drift apart.
+     *
+     * <p>Protocol auto-negotiation is switched off deliberately. Jedis 8 turned it on by default, but
+     * the legacy {@link Jedis} class this driver pools cannot speak RESP3: it ignores the flag,
+     * silently stays on RESP2 and logs a warning for every connection it opens. JFalkorDB's reply
+     * parsing is written against those RESP2 shapes, so pinning the flag off keeps the wire protocol
+     * explicit and keeps the warning out of our users' logs.
+     */
+    private static DefaultJedisClientConfig.Builder buildClientConfigBuilder(
+            String user, String password, boolean ssl, int connectionTimeoutMillis, int socketTimeoutMillis) {
         DefaultJedisClientConfig.Builder builder = DefaultJedisClientConfig.builder()
                 .connectionTimeoutMillis(connectionTimeoutMillis)
-                .socketTimeoutMillis(socketTimeoutMillis);
+                .socketTimeoutMillis(socketTimeoutMillis)
+                .autoNegotiateProtocol(false);
         if (user != null) {
             builder.user(user);
         }
@@ -184,7 +236,7 @@ public class DriverImpl implements Driver {
         if (ssl) {
             builder.sslOptions(SslOptions.defaults());
         }
-        return builder.build();
+        return builder;
     }
 
     /**
