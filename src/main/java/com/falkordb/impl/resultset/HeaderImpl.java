@@ -2,19 +2,25 @@ package com.falkordb.impl.resultset;
 
 import com.falkordb.Header;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.util.SafeEncoder;
 
 /**
  * Query result header interface implementation
  */
-public class HeaderImpl implements Header {
+// Final because the constructor can throw on a malformed reply: a partially-constructed non-final
+// class is reachable via a subclass finalizer (SpotBugs CT_CONSTRUCTOR_THROW). ResultSetImpl is final
+// for the same reason. Nothing extends this internal type.
+public final class HeaderImpl implements Header {
 
     // members
-    private final List<List<Object>> raw;
-    private final List<ResultSetColumnTypes> schemaTypes = new ArrayList<>();
-    private final List<String> schemaNames = new ArrayList<>();
+    private static final ResultSetColumnTypes[] COLUMN_TYPES = ResultSetColumnTypes.values();
+
+    private final List<ResultSetColumnTypes> schemaTypes;
+    private final List<String> schemaNames;
 
     /**
      * Parameterized constructor
@@ -25,7 +31,31 @@ public class HeaderImpl implements Header {
      * @param raw - raw representation of a header
      */
     public HeaderImpl(List<List<Object>> raw) {
-        this.raw = raw;
+        // Built once, up front, into immutable lists. Building lazily without synchronization let two
+        // threads both observe an empty list and both append to it, duplicating every column — reachable
+        // now that AsyncGraph hands a ResultSet to many threads.
+        List<ResultSetColumnTypes> types = new ArrayList<>(raw.size());
+        List<String> names = new ArrayList<>(raw.size());
+        for (List<Object> tuple : raw) {
+            types.add(columnType((Long) tuple.get(0)));
+            names.add(SafeEncoder.encode((byte[]) tuple.get(1)));
+        }
+        this.schemaTypes = Collections.unmodifiableList(types);
+        this.schemaNames = Collections.unmodifiableList(names);
+    }
+
+    /**
+     * Resolves a server-supplied column-type ordinal, matching the guarded lookup
+     * {@code ResultSetScalarTypes.getValue} performs for scalar types.
+     */
+    private static ResultSetColumnTypes columnType(long index) {
+        // Range-check the reply's long BEFORE narrowing: intValue() keeps only the low 32 bits, so an
+        // out-of-range ordinal such as 4294967297 would wrap to 1 and be accepted as COLUMN_SCALAR —
+        // a hole in exactly the case this guard exists for.
+        if (index < 0 || index >= COLUMN_TYPES.length) {
+            throw new JedisDataException("Unrecognized response type");
+        }
+        return COLUMN_TYPES[(int) index];
     }
 
     /**
@@ -33,9 +63,6 @@ public class HeaderImpl implements Header {
      */
     @Override
     public List<String> getSchemaNames() {
-        if (schemaNames.isEmpty()) {
-            buildSchema();
-        }
         return schemaNames;
     }
 
@@ -44,27 +71,7 @@ public class HeaderImpl implements Header {
      */
     @Override
     public List<ResultSetColumnTypes> getSchemaTypes() {
-        if (schemaTypes.isEmpty()) {
-            buildSchema();
-        }
         return schemaTypes;
-    }
-
-    /**
-     * Extracts schema names and types from the raw representation
-     */
-    private void buildSchema() {
-        for (List<Object> tuple : this.raw) {
-
-            // get type
-            ResultSetColumnTypes type = ResultSetColumnTypes.values()[((Long) tuple.get(0)).intValue()];
-            // get text
-            String text = SafeEncoder.encode((byte[]) tuple.get(1));
-            if (type != null) {
-                schemaTypes.add(type);
-                schemaNames.add(text);
-            }
-        }
     }
 
     @Override

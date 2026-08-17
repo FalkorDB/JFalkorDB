@@ -257,6 +257,26 @@
 				</executions>
 			</plugin>
 
+			<!-- Stable JPMS module name. MUST stay `jfalkordb`: that is the name Java already derives from
+				     the jar FILENAME, so it is what existing modular consumers already write in
+				     `requires jfalkordb;`. Pinning it here is what makes the name survive a rename or
+				     shading; changing the VALUE would break module resolution for those consumers and is a
+				     breaking change, not a patch. (Reverse-DNS `com.falkordb` would match the package, but
+				     adopting it means a minor bump plus a `requires` migration note.) Manifest entry only,
+				     not a module-info, so it is safe at release 8 and free at runtime. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.4.2</version>
+				<configuration>
+					<archive>
+						<manifestEntries>
+							<Automatic-Module-Name>jfalkordb</Automatic-Module-Name>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>

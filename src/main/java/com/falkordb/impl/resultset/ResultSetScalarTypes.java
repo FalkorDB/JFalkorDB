@@ -23,11 +23,15 @@ enum ResultSetScalarTypes {
 
     private static final ResultSetScalarTypes[] values = values();
 
-    public static ResultSetScalarTypes getValue(int index) {
-        try {
-            return values[index];
-        } catch (IndexOutOfBoundsException e) {
+    /**
+     * Resolves a server-supplied scalar-type ordinal. Takes a long and range-checks it before
+     * narrowing: intValue() keeps only the low 32 bits, so an out-of-range ordinal such as
+     * 4294967297 would wrap to 1 and be accepted as VALUE_NULL.
+     */
+    public static ResultSetScalarTypes getValue(long index) {
+        if (index < 0 || index >= values.length) {
             throw new JedisDataException("Unrecognized response type");
         }
+        return values[(int) index];
     }
 }

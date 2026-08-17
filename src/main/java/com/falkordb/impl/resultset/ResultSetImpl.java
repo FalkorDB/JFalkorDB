@@ -11,6 +11,7 @@ import com.falkordb.impl.graph_cache.GraphCache;
 import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.BuilderFactory;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.util.SafeEncoder;
@@ -88,7 +89,7 @@ public final class ResultSetImpl implements ResultSet {
         // go over each raw result
         for (List<Object> row : rawResultSet) {
 
-            List<Object> parsedRow = new ArrayList<>(row.size());
+            List<@Nullable Object> parsedRow = new ArrayList<>(row.size());
             // go over each object in the result
             for (int i = 0; i < row.size(); i++) {
                 // get raw representation of the object
@@ -289,7 +290,7 @@ public final class ResultSetImpl implements ResultSet {
             case VALUE_BOOLEAN:
                 return Boolean.parseBoolean(SafeEncoder.encode((byte[]) obj));
             case VALUE_DOUBLE:
-                return Double.parseDouble(SafeEncoder.encode((byte[]) obj));
+                return parseDouble(SafeEncoder.encode((byte[]) obj));
             case VALUE_INTEGER:
                 return (Long) obj;
             case VALUE_STRING:
@@ -322,6 +323,62 @@ public final class ResultSetImpl implements ResultSet {
         }
     }
 
+    /**
+     * Parses a double from the server's textual form. FalkorDB spells non-finite values the C way —
+     * {@code inf}, {@code -inf}, {@code nan}, {@code -nan} — none of which
+     * {@link Double#parseDouble} accepts (it requires {@code Infinity} / {@code NaN}), so a query such
+     * as {@code RETURN 1.0/0.0} used to escape as an unwrapped NumberFormatException.
+     *
+     * @param text the raw textual double
+     * @return the parsed value
+     */
+    private static double parseDouble(String text) {
+        try {
+            return Double.parseDouble(text);
+        } catch (NumberFormatException e) {
+            return nonFinite(text, e);
+        }
+    }
+
+    /**
+     * The {@code vecf32} counterpart of {@link #parseDouble}. Vector elements arrive with the same
+     * spellings — {@code RETURN vecf32([1.0/0.0, 0.0/0.0])} sends {@code inf} and {@code nan} — which
+     * {@link Float#parseFloat} rejects just as {@link Double#parseDouble} does.
+     *
+     * @param text the raw textual float
+     * @return the parsed value
+     */
+    private static float parseFloat(String text) {
+        try {
+            return Float.parseFloat(text);
+        } catch (NumberFormatException e) {
+            // Narrowing is exact for the non-finite values: (float) Double.POSITIVE_INFINITY is
+            // Float.POSITIVE_INFINITY, and (float) Double.NaN is Float.NaN.
+            return (float) nonFinite(text, e);
+        }
+    }
+
+    /**
+     * Maps FalkorDB's C-style spellings of the non-finite values, rethrowing the original failure for
+     * input that is genuinely malformed rather than merely spelled the C way.
+     *
+     * @param text     the raw text that failed to parse
+     * @param original the failure to rethrow if the text is not a recognised non-finite spelling
+     * @return the non-finite value the text denotes
+     */
+    private static double nonFinite(String text, NumberFormatException original) {
+        String value = text.trim().toLowerCase(Locale.ROOT);
+        boolean negative = value.startsWith("-");
+        String magnitude = negative || value.startsWith("+") ? value.substring(1) : value;
+        if ("inf".equals(magnitude) || "infinity".equals(magnitude)) {
+            return negative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+        }
+        if ("nan".equals(magnitude)) {
+            return Double.NaN;
+        }
+        throw original;
+    }
+
     private Object deserializePoint(Object rawScalarData) {
         return new Point(BuilderFactory.DOUBLE_LIST.build(rawScalarData));
     }
@@ -331,9 +388,10 @@ public final class ResultSetImpl implements ResultSet {
         return array.stream()
                 .map(val -> {
                     try {
-                        return Float.parseFloat(SafeEncoder.encode(val));
+                        return parseFloat(SafeEncoder.encode(val));
                     } catch (NumberFormatException e) {
-                        // Handle the exception appropriately
+                        // parseFloat already maps FalkorDB's C spellings of the non-finite values, so
+                        // anything still failing here is genuinely malformed.
                         throw new GraphException("Invalid float value in vector data", e);
                     }
                 })
@@ -380,7 +438,7 @@ public final class ResultSetImpl implements ResultSet {
      * @return scalar type
      */
     private ResultSetScalarTypes getValueTypeFromObject(Object rawScalarType) {
-        return ResultSetScalarTypes.getValue(((Long) rawScalarType).intValue());
+        return ResultSetScalarTypes.getValue((Long) rawScalarType);
     }
 
     @Override

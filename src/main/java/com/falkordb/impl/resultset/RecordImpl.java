@@ -3,6 +3,7 @@ package com.falkordb.impl.resultset;
 import com.falkordb.Record;
 import java.util.List;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An implementation of the Record interface.
@@ -10,36 +11,60 @@ import java.util.Objects;
 public class RecordImpl implements Record {
 
     private final List<String> header;
-    private final List<Object> values;
+    private final List<@Nullable Object> values;
 
     /**
      * Creates a new RecordImpl.
-     * @param header the header of the record
-     * @param values the values of the record
+     *
+     * <p>The header list is shared, not copied: every record in a result set holds the one schema
+     * list {@code HeaderImpl} built, so a copy here would cost an allocation per row. Callers must
+     * therefore pass an unmodifiable, unaliased list — {@code HeaderImpl.getSchemaNames()} is one —
+     * because it is handed straight back by {@link #keys()}, which is documented unmodifiable.
+     *
+     * @param header the header of the record; must be unmodifiable, as {@link #keys()} returns it
+     * @param values the values of the record; a NULL column is stored as {@code null}
      */
-    public RecordImpl(List<String> header, List<Object> values) {
+    public RecordImpl(List<String> header, List<@Nullable Object> values) {
         this.header = header;
         this.values = values;
     }
 
     @Override
-    public <T> T getValue(int index) {
+    public <T> @Nullable T getValue(int index) {
+        // Unchecked and erased: nothing here can verify T, so the compiler inserts the checkcast at the
+        // caller's assignment. Documented on Record#getValue(int) and pinned by RecordImplTest.
         return (T) this.values.get(index);
     }
 
     @Override
-    public <T> T getValue(String key) {
-        return getValue(this.header.indexOf(key));
+    public <T> @Nullable T getValue(String key) {
+        return getValue(indexOf(key));
     }
 
     @Override
-    public String getString(int index) {
-        return this.values.get(index).toString();
+    public @Nullable String getString(int index) {
+        Object value = this.values.get(index);
+        // A NULL column deserializes to null; getValue is documented @Nullable, so report the same
+        // absence here rather than throwing NPE from null.toString().
+        return value == null ? null : value.toString();
     }
 
     @Override
-    public String getString(String key) {
-        return getString(this.header.indexOf(key));
+    public @Nullable String getString(String key) {
+        return getString(indexOf(key));
+    }
+
+    /**
+     * Resolves a column name to its index, failing with the offending key rather than letting the
+     * -1 from a miss reach values.get() and surface as "Index -1 out of bounds".
+     */
+    private int indexOf(String key) {
+        int index = this.header.indexOf(key);
+        if (index < 0) {
+            throw new IllegalArgumentException(
+                    "No such column in this record: " + key + "; columns are " + this.header);
+        }
+        return index;
     }
 
     @Override
@@ -48,7 +73,7 @@ public class RecordImpl implements Record {
     }
 
     @Override
-    public List<Object> values() {
+    public List<@Nullable Object> values() {
         return this.values;
     }
 
