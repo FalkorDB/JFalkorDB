@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.11.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.10.1...v0.11.0) (2026-08-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* three observable runtime behaviours differ from 0.10.1, none of which japicmp can see because no signature changed:
+
+### Bug Fixes
+
+* non-finite doubles, header thread-safety, and Record null/unknown-column handling ([#390](https://github.com/FalkorDB/JFalkorDB/issues/390)) ([7e456e7](https://github.com/FalkorDB/JFalkorDB/commit/7e456e76e62d79e2e871130eb09fb4d5a3694d63))
+
+
+### Documentation
+
+* fix all Javadoc warnings in the javadoc jar build ([#386](https://github.com/FalkorDB/JFalkorDB/issues/386)) ([c547bfe](https://github.com/FalkorDB/JFalkorDB/commit/c547bfebe3d03a3dd2878a1dbc0fe788a825edaf))
+
 ## [0.10.1](https://github.com/FalkorDB/JFalkorDB/compare/v0.10.0...v0.10.1) (2026-08-13)
 
 
