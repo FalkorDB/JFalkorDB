@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786954153295,
+  "lastUpdate": 1786955325613,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -3362,6 +3362,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11194,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "16598640b69929b0adf507dc7f4452ce37921a45",
+          "message": "build(deps): bump org.apache.maven.wrapper:maven-wrapper from 3.3.2 to 3.3.4 (#395)\n\n* build(deps): bump org.apache.maven.wrapper:maven-wrapper\n\nBumps [org.apache.maven.wrapper:maven-wrapper](https://github.com/apache/maven-wrapper) from 3.3.2 to 3.3.4.\n- [Release notes](https://github.com/apache/maven-wrapper/releases)\n- [Commits](https://github.com/apache/maven-wrapper/compare/maven-wrapper-3.3.2...maven-wrapper-3.3.4)\n\n---\nupdated-dependencies:\n- dependency-name: org.apache.maven.wrapper:maven-wrapper\n  dependency-version: 3.3.4\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n\n* build: store mvnw.cmd LF-normalised for the 3.3.4 wrapper bump\n\n.gitattributes marks *.cmd as `text eol=crlf`, i.e. LF in the index and\nCRLF in the working tree. The regenerated mvnw.cmd was committed with\nCRLF in the blob, so every fresh checkout was immediately dirty and\n`just bench-compare` aborted on its clean-tree guard - the benchmark-pr\nfailure. Renormalise the blob; the script contents are unchanged.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* build: guard mvnw.cmd against a null Target property\n\nmaven-wrapper 3.3.4 resolves a symlinked ~/.m2 with\n\n  if ((Get-Item $MAVEN_M2_PATH).Target[0] -eq $null) { ... }\n\nOn a plain directory PowerShell 5.1 usually returns an empty collection,\nso [0] is a safe $null - but where Target is strictly $null (32-bit\nPowerShell under the Local System account, i.e. the system-profile .m2 a\nJenkins Windows service uses) indexing it raises \"Cannot index into a\nnull array\". With $ErrorActionPreference = \"Stop\" that aborts the\nwrapper before Maven ever starts.\n\nThis applies upstream's own fix (apache/maven-wrapper#416, still\nunreleased - 3.3.4 is the latest) for apache/maven-wrapper#395. Verified\nunder PowerShell 7.4: the file parses with 0 errors, the old expression\nthrows for Target = $null and for a missing Target property, and the\nguarded version falls back to the plain path while staying identical for\nan empty collection and for a real symlink target.\n\nDrop this deviation once it ships upstream.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Guy Korland <gkorland@gmail.com>\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-08-17T11:26:48+03:00",
+          "tree_id": "b90434c2c378c0f2acaf02dbd66e9a4b71715f76",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/16598640b69929b0adf507dc7f4452ce37921a45"
+        },
+        "date": 1786955325581,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3310,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6093.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9162,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 12020.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11278.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11215.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11177.333,
             "unit": "ops/s"
           }
         ]
