@@ -89,10 +89,15 @@ if (-not (Test-Path -Path $MAVEN_M2_PATH)) {
 }
 
 $MAVEN_WRAPPER_DISTS = $null
-if ((Get-Item $MAVEN_M2_PATH).Target[0] -eq $null) {
-  $MAVEN_WRAPPER_DISTS = "$MAVEN_M2_PATH/wrapper/dists"
+# Local deviation from upstream 3.3.4: guard against a null Target property,
+# which aborts the wrapper under $ErrorActionPreference = "Stop".
+# See apache/maven-wrapper#395; this is upstream's own fix (apache/maven-wrapper#416)
+# and can be dropped once it ships in a release after 3.3.4.
+$m2Item = Get-Item -Path $MAVEN_M2_PATH -Force
+if ($m2Item.PSObject.Properties['Target'] -ne $null -and $m2Item.Target -ne $null) {
+  $MAVEN_WRAPPER_DISTS = $m2Item.Target[0] + "/wrapper/dists"
 } else {
-  $MAVEN_WRAPPER_DISTS = (Get-Item $MAVEN_M2_PATH).Target[0] + "/wrapper/dists"
+  $MAVEN_WRAPPER_DISTS = "$MAVEN_M2_PATH/wrapper/dists"
 }
 
 $MAVEN_HOME_PARENT = "$MAVEN_WRAPPER_DISTS/$distributionUrlNameMain"
