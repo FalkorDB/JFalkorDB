@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786947725832,
+  "lastUpdate": 1786950619382,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -3244,6 +3244,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11062,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6aacdfb39d6b55431d7a39b04f0eed652e4402f8",
+          "message": "build(deps): bump redis.clients:jedis from 7.5.3 to 8.0.0 (#397)\n\n* build(deps): bump redis.clients:jedis from 7.5.3 to 8.0.0\n\nBumps [redis.clients:jedis](https://github.com/redis/jedis) from 7.5.3 to 8.0.0.\n- [Release notes](https://github.com/redis/jedis/releases)\n- [Commits](https://github.com/redis/jedis/compare/v7.5.3...v8.0.0)\n\n---\nupdated-dependencies:\n- dependency-name: redis.clients:jedis\n  dependency-version: 8.0.0\n  dependency-type: direct:production\n  update-type: version-update:semver-major\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n\n* fix(driver): pin RESP2 and silence the Jedis 8 auto-negotiation warning\n\nJedis 8 turns RESP3 protocol auto-negotiation on by default. The legacy\nJedis class this driver pools cannot speak RESP3: it ignores the flag,\nsilently stays on RESP2 and logs a warning for every connection it opens,\nwhich would land in every JFalkorDB user's logs after the 7.5.3 -> 8.0.0\nbump.\n\nPin autoNegotiateProtocol(false) in a single shared client-config builder\nso all three factories - driver(host, port), FalkorDB.builder() and\ndriver(URI) - agree on the wire protocol our reply parsing is written\nagainst.\n\ndriver(URI) now assembles that config explicitly instead of delegating to\nJedis' URI-based pool constructor, which offered no way to set the flag.\nHost, port, credentials, database index, TLS scheme and an explicit\nprotocol are still resolved from the URI, and an invalid URI still raises\nInvalidURIException with the same message.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Guy Korland <gkorland@gmail.com>\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-08-17T10:08:51+03:00",
+          "tree_id": "302b18e6b1dc6b7245548abfeace3db0632b0503",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/6aacdfb39d6b55431d7a39b04f0eed652e4402f8"
+        },
+        "date": 1786950619351,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3820.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6522.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 10243,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 12727.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 12034,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11929.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11973,
             "unit": "ops/s"
           }
         ]
