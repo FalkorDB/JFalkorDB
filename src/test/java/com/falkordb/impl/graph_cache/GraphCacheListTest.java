@@ -132,9 +132,8 @@ class GraphCacheListTest {
 
         @Override
         public ResultSet callProcedure(String procedure) {
-            throw new AssertionError(
-                    "cache warming must not use callProcedure: it issues GRAPH.QUERY, "
-                            + "which a replica rejects with READONLY");
+            throw new AssertionError("cache warming must not use callProcedure: it issues GRAPH.QUERY, "
+                    + "which a replica rejects with READONLY");
         }
 
         // --- unused Graph operations ---
