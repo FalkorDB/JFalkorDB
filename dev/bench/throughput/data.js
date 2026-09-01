@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788269819998,
+  "lastUpdate": 1788277484743,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -3952,6 +3952,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 17643.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7c533d8030d417be610ab5e8f2f806f64993e03b",
+          "message": "build(deps-dev): bump org.apache.maven.plugins:maven-jar-plugin (#404)\n\nBumps [org.apache.maven.plugins:maven-jar-plugin](https://github.com/apache/maven-jar-plugin) from 3.4.2 to 3.5.1.\n- [Release notes](https://github.com/apache/maven-jar-plugin/releases)\n- [Commits](https://github.com/apache/maven-jar-plugin/compare/maven-jar-plugin-3.4.2...maven-jar-plugin-3.5.1)\n\n---\nupdated-dependencies:\n- dependency-name: org.apache.maven.plugins:maven-jar-plugin\n  dependency-version: 3.5.1\n  dependency-type: direct:development\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-09-01T18:42:36+03:00",
+          "tree_id": "d69334583e7aee46f29e9cf6952c3a813f016fb6",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/7c533d8030d417be610ab5e8f2f806f64993e03b"
+        },
+        "date": 1788277484711,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3551.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6111.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9361.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11994,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11325.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11348.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11271.333,
             "unit": "ops/s"
           }
         ]
