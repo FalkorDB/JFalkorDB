@@ -100,6 +100,48 @@ public class ParameterRoundTripIT {
         assertEquals("value with \" quote", map.get("needs quoting!"));
     }
 
+    /**
+     * Bulk-create driven by a list-of-maps parameter — the pattern from issue #68. Unlike
+     * {@link #mapRoundTrips()} the map is not merely echoed back: it is consumed by {@code SET n = map}
+     * as the property source, so the encoded map literal has to be usable as a Cypher map expression
+     * and not just a value the server can parse.
+     */
+    @Test
+    public void listOfMapsDrivesBulkCreate() {
+        Map<String, Object> alice = new LinkedHashMap<>();
+        alice.put("name", "alice");
+        alice.put("age", 30);
+        // A key needing backtick-quoting and a value needing escaping, to keep the encoder honest.
+        alice.put("favourite quote", "she said \"hi\"");
+        Map<String, Object> bob = new LinkedHashMap<>();
+        bob.put("name", "bob");
+        bob.put("age", 40);
+
+        ResultSet created = client.query(
+                "UNWIND $props AS map CREATE (n:BulkPerson) SET n = map RETURN count(n) AS c",
+                Collections.singletonMap("props", Arrays.asList(alice, bob)));
+        assertEquals(2L, ((Number) created.iterator().next().getValue("c")).longValue());
+
+        ResultSet rs = client.query("MATCH (n:BulkPerson) RETURN n ORDER BY n.name");
+        Iterator<Record> it = rs.iterator();
+
+        Node first = it.next().getValue("n");
+        assertEquals(3, first.getNumberOfProperties(), "alice should have exactly her own three properties");
+        assertEquals("alice", first.getProperty("name").getValue());
+        assertEquals(30L, ((Number) first.getProperty("age").getValue()).longValue());
+        assertEquals("she said \"hi\"", first.getProperty("favourite quote").getValue());
+
+        Node second = it.next().getValue("n");
+        assertEquals("bob", second.getProperty("name").getValue());
+        assertEquals(40L, ((Number) second.getProperty("age").getValue()).longValue());
+        // Each element must be encoded independently: a key present only on alice must not leak onto
+        // bob. Without this, an encoder that merged/reused keys across list elements would still pass.
+        assertNull(second.getProperty("favourite quote"), "bob must not inherit alice's key");
+        assertEquals(2, second.getNumberOfProperties(), "bob should have exactly his own two properties");
+
+        assertFalse(it.hasNext(), "expected exactly two nodes");
+    }
+
     @ParameterizedTest(name = "integer {0} round-trips as long")
     @MethodSource("integerBoundaries")
     public void integerBoundariesRoundTrip(Object input, long expected) {
