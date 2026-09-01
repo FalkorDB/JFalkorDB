@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788281793943,
+  "lastUpdate": 1788282027388,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -9158,6 +9158,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 33306.678,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "307409954+falkordb-release-please[bot]@users.noreply.github.com",
+            "name": "falkordb-release-please[bot]",
+            "username": "falkordb-release-please[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7e0cfc7960be036b8634beeb5c47a566bb1db9b9",
+          "message": "chore(master): release 0.11.1-SNAPSHOT (#402)\n\nCo-authored-by: falkordb-release-please[bot] <307409954+falkordb-release-please[bot]@users.noreply.github.com>",
+          "timestamp": "2026-09-01T19:58:47+03:00",
+          "tree_id": "c7a7c5cc346031bc1e5b5901b5c7cc169d0f174f",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/7e0cfc7960be036b8634beeb5c47a566bb1db9b9"
+        },
+        "date": 1788282026550,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 201.617,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 236.562,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 263.803,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 231.523,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 288.89,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 349.512,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 302.32,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 495.721,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 662.509,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 493.051,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 831.002,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1031.898,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 577.409,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5536.654,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 11830.137,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 577.159,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 15327.331,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 33180.463,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 571.598,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 35672.4,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 77613.755,
             "unit": "us"
           }
         ]
