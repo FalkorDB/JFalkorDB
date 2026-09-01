@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788283530970,
+  "lastUpdate": 1788283760569,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -9674,6 +9674,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 77140.77,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gkorland@gmail.com",
+            "name": "Guy Korland",
+            "username": "gkorland"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "53bcc5f6b0afbdbf4a93ffb8ccc98f3a84c69d90",
+          "message": "build: bump api.diff.baseline to 0.11.1 (#421)\n\n0.11.1 is published to Maven Central, so the API-diff gate should compare\nagainst it. Same post-release step as #388 and #403.\n\nCo-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-09-01T20:27:09+03:00",
+          "tree_id": "1c360736fcded42794fa97c2f9e9975554c0dbf6",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/53bcc5f6b0afbdbf4a93ffb8ccc98f3a84c69d90"
+        },
+        "date": 1788283759945,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 202.237,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 238.335,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 264.875,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 234.286,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 282.388,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 334.525,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 301.723,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 462.334,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 549.315,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 502.28,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 838.264,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1023.53,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 590.852,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5712.476,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 12064.297,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 586.254,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 15664.019,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 34086.825,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 597.545,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 36662.954,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 78439.321,
             "unit": "us"
           }
         ]
