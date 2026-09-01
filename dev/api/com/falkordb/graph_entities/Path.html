@@ -92,7 +92,23 @@ loadScripts(document, 'script');</script>
 <hr>
 <div class="type-signature"><span class="modifiers">public final class </span><span class="element-name type-name-label">Path</span>
 <span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></span></div>
-<div class="block">This class represents a path in the graph.</div>
+<div class="block">This class represents a path in the graph.
+
+ <p><strong>Node order and edge direction are independent.</strong> <a href="#getNodes()"><code>getNodes()</code></a> returns the
+ nodes in <em>traversal</em> order — the order the pattern walked them — while each <a href="Edge.html" title="class in com.falkordb.graph_entities"><code>Edge</code></a> in
+ <a href="#getEdges()"><code>getEdges()</code></a> keeps the direction it is <em>stored</em> with in the graph, via
+ <a href="Edge.html#getSource()"><code>Edge.getSource()</code></a> and <a href="Edge.html#getDestination()"><code>Edge.getDestination()</code></a>. For a reverse or undirected match the
+ two deliberately disagree.
+
+ <p>Given <code>CREATE (a:A)-[:R]-&gt;(b:B)</code>, the undirected query
+ <code>MATCH p = (b:B)-[:R]-(a:A) RETURN p</code> yields a path whose nodes are <code>[b, a]</code> while its
+ single edge still reports <code>source = a</code> and <code>destination = b</code>. Preserving both is
+ lossless: edges are never reoriented to follow the traversal.
+
+ <p>Code bridging this class to an API that requires each relationship to be oriented along the
+ traversal (for example the Neo4j driver's <code>Path</code>/<code>InternalPath</code>, which rejects a
+ mismatch) must detect the reversed step — the edge whose <code>source</code> is not the node it is
+ being attached to — and flip its endpoints when converting.</div>
 </section>
 <section class="summary">
 <ul class="summary-list">
@@ -139,7 +155,7 @@ loadScripts(document, 'script');</script>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a><wbr>&lt;<a href="Edge.html" title="class in com.falkordb.graph_entities">Edge</a>&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#getEdges()" class="member-name-link">getEdges</a>()</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Returns the edges of the path.</div>
+<div class="block">Returns the edges of the path, each retaining its stored direction.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Node.html" title="class in com.falkordb.graph_entities">Node</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#getNode(int)" class="member-name-link">getNode</a><wbr>(int&nbsp;index)</code></div>
@@ -149,7 +165,7 @@ loadScripts(document, 'script');</script>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a><wbr>&lt;<a href="Node.html" title="class in com.falkordb.graph_entities">Node</a>&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#getNodes()" class="member-name-link">getNodes</a>()</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Returns the nodes of the path.</div>
+<div class="block">Returns the nodes of the path, in traversal order.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>int</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#hashCode()" class="member-name-link">hashCode</a>()</code></div>
@@ -214,7 +230,10 @@ loadScripts(document, 'script');</script>
 <section class="detail" id="getNodes()">
 <h3>getNodes</h3>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="Node.html" title="class in com.falkordb.graph_entities">Node</a>&gt;</span>&nbsp;<span class="element-name">getNodes</span>()</div>
-<div class="block">Returns the nodes of the path.</div>
+<div class="block">Returns the nodes of the path, in traversal order.
+
+ <p>This order reflects how the pattern walked the graph and is independent of the direction the
+ path's edges are stored with; see the <a href="Path.html" title="class in com.falkordb.graph_entities">class documentation</a>.</div>
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>List of nodes.</dd>
@@ -225,7 +244,11 @@ loadScripts(document, 'script');</script>
 <section class="detail" id="getEdges()">
 <h3>getEdges</h3>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="Edge.html" title="class in com.falkordb.graph_entities">Edge</a>&gt;</span>&nbsp;<span class="element-name">getEdges</span>()</div>
-<div class="block">Returns the edges of the path.</div>
+<div class="block">Returns the edges of the path, each retaining its stored direction.
+
+ <p>An edge's <a href="Edge.html#getSource()"><code>Edge.getSource()</code></a> and <a href="Edge.html#getDestination()"><code>Edge.getDestination()</code></a> are as stored in the
+ graph, so for a reverse or undirected match they need not follow the order of
+ <a href="#getNodes()"><code>getNodes()</code></a>; see the <a href="Path.html" title="class in com.falkordb.graph_entities">class documentation</a>.</div>
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>List of edges.</dd>
