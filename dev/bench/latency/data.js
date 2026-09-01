@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788280905116,
+  "lastUpdate": 1788281657418,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -8900,6 +8900,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 45142.545,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gkorland@gmail.com",
+            "name": "Guy Korland",
+            "username": "gkorland"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0d5a47e0c86c026b66c33950d472cb5295cb5634",
+          "message": "docs: document that path node order is independent of edge direction (#418)\n\nInvestigating #393 showed the client behaves correctly: FalkorDB returns\npath nodes in traversal order while each edge keeps its stored direction,\nand JFalkorDB preserves both rather than reorienting edges. For a reverse\nor undirected match the two intentionally disagree, which is easy to\nmistake for a decoding bug.\n\nThe reported IllegalArgumentException came from the Neo4j driver's\nInternalPath, which requires each relationship to be oriented along the\ntraversal. That is a stricter contract than FalkorDB's, so an adapter has\nto flip the endpoints on a reversed step.\n\nNothing in this repository was wrong, but the contract was undocumented.\nSpell it out on Path (and on getNodes/getEdges), including what an adapter\nonto a stricter API must do, and add an integration test pinning the\nbehaviour so it cannot regress silently.\n\nReferences #393\n\nCo-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-09-01T19:51:40+03:00",
+          "tree_id": "64aa81d5f1236feda1d01fc3d75c9653f9e378e7",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/0d5a47e0c86c026b66c33950d472cb5295cb5634"
+        },
+        "date": 1788281656266,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 128.229,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 185.777,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 196.689,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 116.383,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 143.637,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 160.935,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 140.09,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 217.052,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 264.767,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 212.46,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 365.818,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 458.895,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 256.208,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 2321.996,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 5735.203,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 265.357,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 6790.799,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 15127.178,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 264.79,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 14397.742,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 31128.645,
             "unit": "us"
           }
         ]
