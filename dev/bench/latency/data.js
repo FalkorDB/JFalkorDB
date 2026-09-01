@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788281657418,
+  "lastUpdate": 1788281793943,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -9029,6 +9029,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 31128.645,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "guy.lubovitch@gmail.com",
+            "name": "Guy Lubovitch",
+            "username": "dragnot"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1c50cab49a3a18f005bd0604715a42587e5ade0f",
+          "message": "fix(cache): warm the graph cache with a read-only query so replica reads work (#414)\n\n* fix(cache): warm the graph cache with a read-only query\n\nAny readOnlyQuery returning a node, relationship or path fails against a\nreplica with \"READONLY You can't write against a read only replica.\"\n\nResponses are decoded in compact mode, so labels, relationship types and\nproperty keys arrive as integer ids. ResultSetImpl resolves them through\nGraphCache, which warmed itself via callProcedure. callProcedure routes\nthrough query, which issues GRAPH.QUERY, a write command that a replica\nrejects. The client was therefore issuing a write in order to decode a read.\n\ndb.labels, db.relationshipTypes and db.propertyKeys are all read-only, so\nsending the prepared procedure through readOnlyQuery serves them over\nGRAPH.RO_QUERY. Behaviour against a primary is unchanged.\n\nQueries returning only scalars were unaffected, and a warm cache hid the\nproblem, which is why this presented as intermittent.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* style: apply spotless formatting\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test: read from a real replica in an integration test\n\nThe rest of the suite runs against a single server, where every command is\nlegal, so it could not observe the client against a read-only replica. That\ngap is why the cache warming write went unnoticed.\n\nStarts a primary and a replica on a shared network, points the replica at the\nprimary with REPLICAOF, waits for the link and for the graph to arrive, then\nreads through the client.\n\nReturning a path is the point of the test: it forces label and property-key\nresolution, which is what used to require a write. The scalar case is kept\nalongside it because it passes either way, and that asymmetry is exactly what\nmade the defect look intermittent.\n\nReverting the fix turns the path test red with the original READONLY error\nwhile the scalar test stays green.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test(replica): honour the external-server override and accept role:replica\n\nReplicaReadIT started its containers unconditionally, ignoring the\nFALKORDB_HOST/FALKORDB_PORT contract that TestServer documents. That broke\n`just verify-local`, which sets the override precisely because Testcontainers\ncannot reach Docker there — the test would try to build a two-server topology\nanyway and fail.\n\nAn external single server cannot host this topology: it needs two servers wired\nby REPLICAOF on a shared network. So skip rather than start containers behind\nthe user's back, matching the existing assumption in InstantiationIT. With the\noverride set the class now aborts in 0.03s without touching Docker, instead of\nrunning for ~10s.\n\nAlso accept `role:replica` alongside the legacy `role:slave` in the INFO\nreplication poll, so the wait survives a Redis-family image variant that adopts\nthe newer wording (FALKORDB_IMAGE matrixes over versions).\n`master_link_status:up` remains the substantive gate.\n\nCo-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\nCo-authored-by: Guy Korland <gkorland@gmail.com>",
+          "timestamp": "2026-09-01T19:54:31+03:00",
+          "tree_id": "9dc5da15938e962fe9d535152fa7c48dc52061e1",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/1c50cab49a3a18f005bd0604715a42587e5ade0f"
+        },
+        "date": 1788281792836,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 130.223,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 186.69,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 199.688,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 130.842,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 162.49,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 188.919,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 137.729,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 215.071,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 263.688,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 216.507,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 378.862,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 474.389,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 259.396,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 2464.01,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 5681.919,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 262.103,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 6691.984,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 16353.298,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 267.645,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 14041.031,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 33306.678,
             "unit": "us"
           }
         ]
