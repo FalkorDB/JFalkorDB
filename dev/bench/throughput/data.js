@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788281658923,
+  "lastUpdate": 1788281795494,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -4129,6 +4129,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 23798.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "guy.lubovitch@gmail.com",
+            "name": "Guy Lubovitch",
+            "username": "dragnot"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1c50cab49a3a18f005bd0604715a42587e5ade0f",
+          "message": "fix(cache): warm the graph cache with a read-only query so replica reads work (#414)\n\n* fix(cache): warm the graph cache with a read-only query\n\nAny readOnlyQuery returning a node, relationship or path fails against a\nreplica with \"READONLY You can't write against a read only replica.\"\n\nResponses are decoded in compact mode, so labels, relationship types and\nproperty keys arrive as integer ids. ResultSetImpl resolves them through\nGraphCache, which warmed itself via callProcedure. callProcedure routes\nthrough query, which issues GRAPH.QUERY, a write command that a replica\nrejects. The client was therefore issuing a write in order to decode a read.\n\ndb.labels, db.relationshipTypes and db.propertyKeys are all read-only, so\nsending the prepared procedure through readOnlyQuery serves them over\nGRAPH.RO_QUERY. Behaviour against a primary is unchanged.\n\nQueries returning only scalars were unaffected, and a warm cache hid the\nproblem, which is why this presented as intermittent.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* style: apply spotless formatting\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test: read from a real replica in an integration test\n\nThe rest of the suite runs against a single server, where every command is\nlegal, so it could not observe the client against a read-only replica. That\ngap is why the cache warming write went unnoticed.\n\nStarts a primary and a replica on a shared network, points the replica at the\nprimary with REPLICAOF, waits for the link and for the graph to arrive, then\nreads through the client.\n\nReturning a path is the point of the test: it forces label and property-key\nresolution, which is what used to require a write. The scalar case is kept\nalongside it because it passes either way, and that asymmetry is exactly what\nmade the defect look intermittent.\n\nReverting the fix turns the path test red with the original READONLY error\nwhile the scalar test stays green.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test(replica): honour the external-server override and accept role:replica\n\nReplicaReadIT started its containers unconditionally, ignoring the\nFALKORDB_HOST/FALKORDB_PORT contract that TestServer documents. That broke\n`just verify-local`, which sets the override precisely because Testcontainers\ncannot reach Docker there — the test would try to build a two-server topology\nanyway and fail.\n\nAn external single server cannot host this topology: it needs two servers wired\nby REPLICAOF on a shared network. So skip rather than start containers behind\nthe user's back, matching the existing assumption in InstantiationIT. With the\noverride set the class now aborts in 0.03s without touching Docker, instead of\nrunning for ~10s.\n\nAlso accept `role:replica` alongside the legacy `role:slave` in the INFO\nreplication poll, so the wait survives a Redis-family image variant that adopts\nthe newer wording (FALKORDB_IMAGE matrixes over versions).\n`master_link_status:up` remains the substantive gate.\n\nCo-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\nCo-authored-by: Guy Korland <gkorland@gmail.com>",
+          "timestamp": "2026-09-01T19:54:31+03:00",
+          "tree_id": "9dc5da15938e962fe9d535152fa7c48dc52061e1",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/1c50cab49a3a18f005bd0604715a42587e5ade0f"
+        },
+        "date": 1788281795475,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 5785,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 10839.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 19692,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 25688.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 24146.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 23672.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 24097.667,
             "unit": "ops/s"
           }
         ]
