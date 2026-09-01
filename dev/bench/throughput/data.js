@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788277484743,
+  "lastUpdate": 1788280906798,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -4011,6 +4011,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11271.333,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gkorland@gmail.com",
+            "name": "Guy Korland",
+            "username": "gkorland"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "52e1281476d2cb4d25cfb25479fa22b27ffd14ad",
+          "message": "test: cover list-of-maps bulk create with map query parameters (#417)\n\n* test: cover list-of-maps bulk create with map query parameters\n\nMap parameters have been encodable since the parameter-path hardening in\ne098807, but no test exercised the pattern issue #68 actually reported:\npassing a list of maps and consuming it with `UNWIND $props AS map\nSET n = map`.\n\nThat path is distinct from the existing mapRoundTrips coverage, where the\nmap is only echoed back by `RETURN $p`. Here the encoded map literal has to\nwork as a Cypher map expression used as a property source, so the test\npins behaviour the round-trip test cannot. It includes a key requiring\nbacktick-quoting and a value requiring escaping.\n\nVerified against a real server: the scenario passes, confirming #68 is\nalready implemented.\n\nCloses #68\n\nCo-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>\n\n* test: assert map keys don't leak between list elements\n\nAddress review feedback: the test asserted the properties each node\nshould have, but not the absence of those it shouldn't. An encoder that\nmerged or reused keys across list elements would have passed.\n\nAssert bob does not carry alice's `favourite quote` key, and pin the\nproperty count on both nodes. Verified the assertion is load-bearing by\nadding the key to bob, which fails with \"bob must not inherit alice's key\".\n\nCo-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-09-01T19:39:29+03:00",
+          "tree_id": "aeecb3ea04b4648c4276ed16c15ede0e324c2b82",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/52e1281476d2cb4d25cfb25479fa22b27ffd14ad"
+        },
+        "date": 1788280906773,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 5385.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 9004.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 14062.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 19076.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 17788.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 17303.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 17269,
             "unit": "ops/s"
           }
         ]
