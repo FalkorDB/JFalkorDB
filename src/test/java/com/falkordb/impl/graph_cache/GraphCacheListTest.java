@@ -77,6 +77,20 @@ class GraphCacheListTest {
     }
 
     @Test
+    void warmsTheCacheWithAReadOnlyQuerySoReplicasAcceptIt() {
+        CountingGraph graph = new CountingGraph("a", "b", "c");
+        GraphCacheList cache = new GraphCacheList("db.labels");
+
+        assertEquals("a", cache.getCachedData(0, graph));
+
+        assertEquals(1, graph.calls.get(), "the cache must warm through readOnlyQuery");
+        assertEquals(
+                Collections.singletonList("CALL db.labels()"),
+                graph.issuedQueries,
+                "the warming call must be the prepared procedure, sent as a read-only query");
+    }
+
+    @Test
     void clearForcesARefreshOnNextGet() {
         CountingGraph graph = new CountingGraph("a", "b", "c");
         GraphCacheList cache = new GraphCacheList("db.labels");
@@ -89,9 +103,15 @@ class GraphCacheListTest {
         assertEquals(2, graph.calls.get(), "after clear the cache must re-fetch");
     }
 
-    /** A {@link Graph} that only implements {@code callProcedure(String)}, counting invocations. */
+    /**
+     * A {@link Graph} that only implements {@code readOnlyQuery(String)}, counting invocations.
+     *
+     * {@code callProcedure} deliberately fails. Cache warming must never route through it, because
+     * it issues GRAPH.QUERY, which a replica rejects with READONLY.
+     */
     private static final class CountingGraph implements Graph {
         final AtomicInteger calls = new AtomicInteger();
+        final List<String> issuedQueries = Collections.synchronizedList(new ArrayList<>());
         private final List<String> values;
 
         CountingGraph(String... values) {
@@ -100,8 +120,9 @@ class GraphCacheListTest {
         }
 
         @Override
-        public ResultSet callProcedure(String procedure) {
+        public ResultSet readOnlyQuery(String query) {
             calls.incrementAndGet();
+            issuedQueries.add(query);
             List<Record> records = new ArrayList<>();
             for (String v : values) {
                 records.add(new RecordImpl(Collections.singletonList("col"), Collections.singletonList(v)));
@@ -109,14 +130,15 @@ class GraphCacheListTest {
             return new ListResultSet(records);
         }
 
+        @Override
+        public ResultSet callProcedure(String procedure) {
+            throw new AssertionError("cache warming must not use callProcedure: it issues GRAPH.QUERY, "
+                    + "which a replica rejects with READONLY");
+        }
+
         // --- unused Graph operations ---
         @Override
         public ResultSet query(String query) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public ResultSet readOnlyQuery(String query) {
             throw new UnsupportedOperationException();
         }
 

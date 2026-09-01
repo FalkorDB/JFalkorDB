@@ -3,6 +3,7 @@ package com.falkordb.impl.graph_cache;
 import com.falkordb.Graph;
 import com.falkordb.Record;
 import com.falkordb.ResultSet;
+import com.falkordb.impl.Utils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -17,7 +18,7 @@ class GraphCacheList {
     private final List<String> data = new CopyOnWriteArrayList<>();
     // Serializes cache refresh; don't synchronize on `data` itself (it's a concurrent collection).
     // This is a ReentrantLock rather than a `synchronized` block on purpose: refreshing the cache
-    // issues a blocking query (getProcedureInfo -> graph.callProcedure), and on JDK 21-23 a
+    // issues a blocking query (getProcedureInfo -> graph.readOnlyQuery), and on JDK 21-23 a
     // `synchronized` monitor held across a blocking call PINS the carrier thread, so many concurrent
     // queries on virtual threads would not scale. A ReentrantLock held across the same blocking call
     // does not pin. (It is still reentrant, matching `synchronized`, so a refresh that recursively
@@ -53,10 +54,21 @@ class GraphCacheList {
     }
 
     /**
-     * Auxiliary method to parse a procedure result set and refresh the cache
+     * Auxiliary method to parse a procedure result set and refresh the cache.
+     *
+     * The procedure is issued as a read-only query rather than through
+     * {@code callProcedure}, which routes to GRAPH.QUERY. GRAPH.QUERY is a write
+     * command, so a replica rejects it with READONLY. Because cache warming is
+     * triggered while decoding a compact response that contains a node, an edge
+     * or a path, sending it as a write turned every entity returning
+     * {@code readOnlyQuery} into a failure against a replica.
+     *
+     * db.labels, db.relationshipTypes and db.propertyKeys are all read-only, so
+     * GRAPH.RO_QUERY serves them on a primary and on a replica alike.
      */
     private void getProcedureInfo(Graph graph) {
-        ResultSet resultSet = graph.callProcedure(procedure);
+        String preparedProcedure = Utils.prepareProcedure(procedure, Utils.DUMMY_LIST, Utils.DUMMY_MAP);
+        ResultSet resultSet = graph.readOnlyQuery(preparedProcedure);
         List<String> newData = new ArrayList<>();
         int i = 0;
         for (Record record : resultSet) {
