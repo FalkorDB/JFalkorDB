@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788280906798,
+  "lastUpdate": 1788281658923,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -4070,6 +4070,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 17269,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gkorland@gmail.com",
+            "name": "Guy Korland",
+            "username": "gkorland"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0d5a47e0c86c026b66c33950d472cb5295cb5634",
+          "message": "docs: document that path node order is independent of edge direction (#418)\n\nInvestigating #393 showed the client behaves correctly: FalkorDB returns\npath nodes in traversal order while each edge keeps its stored direction,\nand JFalkorDB preserves both rather than reorienting edges. For a reverse\nor undirected match the two intentionally disagree, which is easy to\nmistake for a decoding bug.\n\nThe reported IllegalArgumentException came from the Neo4j driver's\nInternalPath, which requires each relationship to be oriented along the\ntraversal. That is a stricter contract than FalkorDB's, so an adapter has\nto flip the endpoints on a reversed step.\n\nNothing in this repository was wrong, but the contract was undocumented.\nSpell it out on Path (and on getNodes/getEdges), including what an adapter\nonto a stricter API must do, and add an integration test pinning the\nbehaviour so it cannot regress silently.\n\nReferences #393\n\nCo-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-09-01T19:51:40+03:00",
+          "tree_id": "64aa81d5f1236feda1d01fc3d75c9653f9e378e7",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/0d5a47e0c86c026b66c33950d472cb5295cb5634"
+        },
+        "date": 1788281658903,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 5838,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 11867.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 19418.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 26379.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 24443.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 23385.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 23798.667,
             "unit": "ops/s"
           }
         ]
