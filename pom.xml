@@ -10,7 +10,7 @@
 
 	<groupId>com.falkordb</groupId>
 	<artifactId>jfalkordb</artifactId>
-	<version>0.11.0</version>
+	<version>0.11.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>JFalkorDB</name>
@@ -85,7 +85,7 @@
 		<dependency>
 			<groupId>redis.clients</groupId>
 			<artifactId>jedis</artifactId>
-			<version>8.0.0</version>
+			<version>8.0.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -267,7 +267,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.4.2</version>
+				<version>3.5.1</version>
 				<configuration>
 					<archive>
 						<manifestEntries>
@@ -375,7 +375,7 @@
 					<plugin>
 						<groupId>com.diffplug.spotless</groupId>
 						<artifactId>spotless-maven-plugin</artifactId>
-						<version>3.9.0</version>
+						<version>3.10.1</version>
 						<configuration>
 							<java>
 								<palantirJavaFormat>
@@ -391,7 +391,7 @@
 					<plugin>
 						<groupId>com.github.spotbugs</groupId>
 						<artifactId>spotbugs-maven-plugin</artifactId>
-						<version>4.10.3.0</version>
+						<version>4.10.4.0</version>
 						<configuration>
 							<effort>Max</effort>
 							<threshold>Medium</threshold>
@@ -481,7 +481,7 @@
 					<plugin>
 						<groupId>org.pitest</groupId>
 						<artifactId>pitest-maven</artifactId>
-						<version>1.25.9</version>
+						<version>1.30.0</version>
 						<dependencies>
 							<dependency>
 								<groupId>org.pitest</groupId>
