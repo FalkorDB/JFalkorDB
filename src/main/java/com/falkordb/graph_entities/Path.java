@@ -5,6 +5,22 @@ import java.util.Objects;
 
 /**
  * This class represents a path in the graph.
+ *
+ * <p><strong>Node order and edge direction are independent.</strong> {@link #getNodes()} returns the
+ * nodes in <em>traversal</em> order — the order the pattern walked them — while each {@link Edge} in
+ * {@link #getEdges()} keeps the direction it is <em>stored</em> with in the graph, via
+ * {@link Edge#getSource()} and {@link Edge#getDestination()}. For a reverse or undirected match the
+ * two deliberately disagree.
+ *
+ * <p>Given {@code CREATE (a:A)-[:R]->(b:B)}, the undirected query
+ * {@code MATCH p = (b:B)-[:R]-(a:A) RETURN p} yields a path whose nodes are {@code [b, a]} while its
+ * single edge still reports {@code source = a} and {@code destination = b}. Preserving both is
+ * lossless: edges are never reoriented to follow the traversal.
+ *
+ * <p>Code bridging this class to an API that requires each relationship to be oriented along the
+ * traversal (for example the Neo4j driver's {@code Path}/{@code InternalPath}, which rejects a
+ * mismatch) must detect the reversed step — the edge whose {@code source} is not the node it is
+ * being attached to — and flip its endpoints when converting.
  */
 public final class Path {
 
@@ -22,7 +38,11 @@ public final class Path {
     }
 
     /**
-     * Returns the nodes of the path.
+     * Returns the nodes of the path, in traversal order.
+     *
+     * <p>This order reflects how the pattern walked the graph and is independent of the direction the
+     * path's edges are stored with; see the {@linkplain Path class documentation}.
+     *
      * @return List of nodes.
      */
     public List<Node> getNodes() {
@@ -30,7 +50,12 @@ public final class Path {
     }
 
     /**
-     * Returns the edges of the path.
+     * Returns the edges of the path, each retaining its stored direction.
+     *
+     * <p>An edge's {@link Edge#getSource()} and {@link Edge#getDestination()} are as stored in the
+     * graph, so for a reverse or undirected match they need not follow the order of
+     * {@link #getNodes()}; see the {@linkplain Path class documentation}.
+     *
      * @return List of edges.
      */
     public List<Edge> getEdges() {
