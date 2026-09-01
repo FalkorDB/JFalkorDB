@@ -126,6 +126,7 @@ public class ParameterRoundTripIT {
         Iterator<Record> it = rs.iterator();
 
         Node first = it.next().getValue("n");
+        assertEquals(3, first.getNumberOfProperties(), "alice should have exactly her own three properties");
         assertEquals("alice", first.getProperty("name").getValue());
         assertEquals(30L, ((Number) first.getProperty("age").getValue()).longValue());
         assertEquals("she said \"hi\"", first.getProperty("favourite quote").getValue());
@@ -133,6 +134,10 @@ public class ParameterRoundTripIT {
         Node second = it.next().getValue("n");
         assertEquals("bob", second.getProperty("name").getValue());
         assertEquals(40L, ((Number) second.getProperty("age").getValue()).longValue());
+        // Each element must be encoded independently: a key present only on alice must not leak onto
+        // bob. Without this, an encoder that merged/reused keys across list elements would still pass.
+        assertNull(second.getProperty("favourite quote"), "bob must not inherit alice's key");
+        assertEquals(2, second.getNumberOfProperties(), "bob should have exactly his own two properties");
 
         assertFalse(it.hasNext(), "expected exactly two nodes");
     }
