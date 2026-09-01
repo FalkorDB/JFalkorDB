@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.1](https://github.com/FalkorDB/JFalkorDB/compare/v0.11.0...v0.11.1) (2026-09-01)
+
+
+### Bug Fixes
+
+* **cache:** warm the graph cache with a read-only query so replica reads work ([#414](https://github.com/FalkorDB/JFalkorDB/issues/414)) ([1c50cab](https://github.com/FalkorDB/JFalkorDB/commit/1c50cab49a3a18f005bd0604715a42587e5ade0f))
+
+
+### Documentation
+
+* document that path node order is independent of edge direction ([#418](https://github.com/FalkorDB/JFalkorDB/issues/418)) ([0d5a47e](https://github.com/FalkorDB/JFalkorDB/commit/0d5a47e0c86c026b66c33950d472cb5295cb5634)), closes [#393](https://github.com/FalkorDB/JFalkorDB/issues/393)
+
 ## [0.11.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.10.1...v0.11.0) (2026-08-17)
 
 This release makes result-set parsing correct and thread-safe, and picks up **Jedis 8**.

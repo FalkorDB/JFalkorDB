@@ -10,7 +10,7 @@
 
 	<groupId>com.falkordb</groupId>
 	<artifactId>jfalkordb</artifactId>
-	<version>0.11.1-SNAPSHOT</version>
+	<version>0.11.1</version>
 	<packaging>jar</packaging>
 
 	<name>JFalkorDB</name>
