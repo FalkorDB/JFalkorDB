@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.Container;
@@ -45,6 +46,14 @@ public class ReplicaReadIT {
 
     @BeforeAll
     static void startPrimaryAndReplica() throws Exception {
+        // This topology cannot be served by an external FALKORDB_HOST/FALKORDB_PORT server: it needs two
+        // servers wired by REPLICAOF on a shared network, which only the Testcontainers path can build.
+        // Honour the override contract and skip rather than starting containers behind the user's back,
+        // so `just verify-local` keeps working where Testcontainers cannot reach Docker.
+        Assumptions.assumeFalse(
+                TestServer.isExternal(),
+                "the primary/replica topology requires Testcontainers, not an external server");
+
         DockerImageName image = FalkorDbImage.resolve(FalkorDbImage.pickOverride(
                 System.getProperty("FALKORDB_IMAGE"), () -> System.getenv("FALKORDB_IMAGE")));
 
@@ -131,7 +140,11 @@ public class ReplicaReadIT {
         String lastSeen = "";
         while (System.nanoTime() < deadline) {
             lastSeen = redisCli(replicaContainer, "INFO", "replication");
-            if (lastSeen.contains("role:slave") && lastSeen.contains("master_link_status:up")) {
+            // Redis reports the legacy `role:slave`; accept `role:replica` too so the check survives a
+            // Redis-family image variant that adopts the newer wording (FALKORDB_IMAGE matrixes over
+            // versions). `master_link_status:up` is the substantive gate either way.
+            boolean linkedAsReplica = lastSeen.contains("role:slave") || lastSeen.contains("role:replica");
+            if (linkedAsReplica && lastSeen.contains("master_link_status:up")) {
                 return;
             }
             Thread.sleep(250);
