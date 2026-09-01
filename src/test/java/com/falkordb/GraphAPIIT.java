@@ -854,6 +854,35 @@ public class GraphAPIIT {
         }
     }
 
+    /**
+     * A reverse/undirected match returns nodes in traversal order while the edge keeps its stored
+     * direction, so the two intentionally disagree (issue #393). Pins that contract, which adapters
+     * onto stricter path APIs (such as the Neo4j driver's) depend on.
+     */
+    @Test
+    public void testUndirectedPathKeepsStoredEdgeDirection() {
+        client.query("CREATE (:PathA {id: 1})-[:PathR]->(:PathB {id: 2})");
+
+        ResultSet resultSet = client.query("MATCH p = (b:PathB)-[:PathR]-(a:PathA) RETURN p");
+        Assertions.assertEquals(1, resultSet.size());
+
+        Path path = resultSet.iterator().next().getValue("p");
+
+        // Nodes come back in traversal order: the match started at PathB.
+        Assertions.assertEquals(2, path.nodeCount());
+        Assertions.assertEquals(2L, path.firstNode().getProperty("id").getValue());
+        Assertions.assertEquals(1L, path.lastNode().getProperty("id").getValue());
+
+        // The edge is NOT reoriented to follow that traversal: it still points PathA -> PathB, so its
+        // source is the path's LAST node. An adapter must flip the endpoints rather than assume they
+        // line up with the node order.
+        Assertions.assertEquals(1, path.length());
+        Edge edge = path.getEdge(0);
+        Assertions.assertEquals("PathR", edge.getRelationshipType());
+        Assertions.assertEquals(path.lastNode().getId(), edge.getSource());
+        Assertions.assertEquals(path.firstNode().getId(), edge.getDestination());
+    }
+
     @Test
     public void testNullGraphEntities() {
         // Create two nodes connected by a single outgoing edge.
