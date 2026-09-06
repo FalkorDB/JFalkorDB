@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788687036804,
+  "lastUpdate": 1788687555654,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -10061,6 +10061,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 71418.492,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9c65a821ee03b3a162f88961dc84d7e14fc569dc",
+          "message": "build(deps-dev): bump org.apache.maven.plugins:maven-surefire-plugin (#424)\n\nBumps [org.apache.maven.plugins:maven-surefire-plugin](https://github.com/apache/maven-surefire) from 3.5.6 to 3.6.0.\n- [Release notes](https://github.com/apache/maven-surefire/releases)\n- [Commits](https://github.com/apache/maven-surefire/compare/surefire-3.5.6...surefire-3.6.0)\n\n---\nupdated-dependencies:\n- dependency-name: org.apache.maven.plugins:maven-surefire-plugin\n  dependency-version: 3.6.0\n  dependency-type: direct:development\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Barak Bar Orion <barak.bar@gmail.com>",
+          "timestamp": "2026-09-06T12:37:08+03:00",
+          "tree_id": "fe4e30fd3dfeb085ec5729e5df9026d66634cb74",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/9c65a821ee03b3a162f88961dc84d7e14fc569dc"
+        },
+        "date": 1788687554761,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 212.498,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 247.693,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 281.998,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 241.773,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 285.624,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 334.616,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 317.464,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 516.156,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 648.855,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 501.307,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 838.309,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1038.563,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 584.113,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5639.49,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 12493.16,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 588.571,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 15895.011,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 34865.914,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 598.761,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 36691.107,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 82068.484,
             "unit": "us"
           }
         ]
