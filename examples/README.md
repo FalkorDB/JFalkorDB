@@ -10,6 +10,7 @@ module (not part of the main reactor or the published artifact); it is compiled 
 | --- | --- |
 | [`QuickStart`](src/main/java/com/falkordb/examples/QuickStart.java) | Build a driver with `FalkorDB.builder()`, run queries, iterate results. |
 | [`ConfiguredDriver`](src/main/java/com/falkordb/examples/ConfiguredDriver.java) | The full builder configuration surface — credentials, TLS, pool sizing, timeouts. |
+| [`EnvironmentConfiguredDriver`](src/main/java/com/falkordb/examples/EnvironmentConfiguredDriver.java) | The no-arg `FalkorDB.driver()` picking up `FALKORDB_URL` / `FALKORDB_HOST`+`FALKORDB_PORT` from the environment. |
 
 ## Build
 
@@ -36,3 +37,11 @@ cd examples
 
 `ConfiguredDriver` only builds and closes a driver (the pool connects lazily), so it runs without a
 server — it is there to show the configuration options.
+
+`EnvironmentConfiguredDriver` behaves like `QuickStart` but connects via the no-arg
+`FalkorDB.driver()`, so it also needs a FalkorDB reachable at `localhost:6379` by default — or
+export `FALKORDB_URL`, or both `FALKORDB_HOST` and `FALKORDB_PORT`, to point it elsewhere first:
+
+```sh
+../mvnw -q exec:java -Dexec.mainClass=com.falkordb.examples.EnvironmentConfiguredDriver
+```

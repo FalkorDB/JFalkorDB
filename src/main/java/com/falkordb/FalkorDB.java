@@ -13,12 +13,30 @@ public final class FalkorDB {
     private FalkorDB() {}
 
     /**
-     * Creates a new driver instance
+     * Creates a new driver instance, falling back to environment configuration when {@code
+     * localhost:6379} isn't what you want. Resolved in this order:
+     *
+     * <ol>
+     *   <li>{@code FALKORDB_URL} — a full connection URI ({@code redis://} or {@code rediss://}, or
+     *       the FalkorDB-branded {@code falkor://}/{@code falkors://} aliases for them); delegates to
+     *       {@link #driver(URI)}, so it also carries credentials, a database index, and TLS.
+     *   <li>{@code FALKORDB_HOST} together with {@code FALKORDB_PORT} — the convention already used
+     *       by this project's own tests; delegates to {@link #driver(String, int)}. Setting only one
+     *       of the pair is rejected rather than silently defaulting the other.
+     *   <li>Neither set — the unchanged {@code localhost:6379} default.
+     * </ol>
+     *
+     * <p>This environment fallback applies <strong>only</strong> to this no-arg overload: {@link
+     * #driver(String, int)}, {@link #driver(String, int, String, String)}, {@link #driver(URI)}, and
+     * {@link #builder()} are unaffected and always connect to exactly the arguments you pass them.
      *
      * @return a new driver instance
+     * @throws IllegalStateException if {@code FALKORDB_URL} is set but malformed, if {@code
+     *     FALKORDB_PORT} is set but not a valid integer, or if exactly one of {@code
+     *     FALKORDB_HOST}/{@code FALKORDB_PORT} is set
      */
     public static Driver driver() {
-        return driver("localhost", 6379);
+        return DriverEnvironment.resolve(System::getenv);
     }
 
     /**
