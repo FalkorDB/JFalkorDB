@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788283762338,
+  "lastUpdate": 1788681303593,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -4483,6 +4483,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 10963.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b04b8972ee10fa2f1434788f06f68a9165b35031",
+          "message": "build(deps): bump org.apache.maven.plugins:maven-compiler-plugin (#422)\n\nBumps [org.apache.maven.plugins:maven-compiler-plugin](https://github.com/apache/maven-compiler-plugin) from 3.15.0 to 3.16.0.\n- [Release notes](https://github.com/apache/maven-compiler-plugin/releases)\n- [Commits](https://github.com/apache/maven-compiler-plugin/compare/maven-compiler-plugin-3.15.0...maven-compiler-plugin-3.16.0)\n\n---\nupdated-dependencies:\n- dependency-name: org.apache.maven.plugins:maven-compiler-plugin\n  dependency-version: 3.16.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-09-06T10:52:58+03:00",
+          "tree_id": "8ce087500582c3c070f8cf5d74bdc30a17ebe093",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/b04b8972ee10fa2f1434788f06f68a9165b35031"
+        },
+        "date": 1788681303558,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 4310.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 7100,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 10771.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 13734,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 12796,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 12624,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 12753.333,
             "unit": "ops/s"
           }
         ]
