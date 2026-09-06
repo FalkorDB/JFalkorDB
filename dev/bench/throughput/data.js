@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788687038175,
+  "lastUpdate": 1788687557223,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -4601,6 +4601,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 12880.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9c65a821ee03b3a162f88961dc84d7e14fc569dc",
+          "message": "build(deps-dev): bump org.apache.maven.plugins:maven-surefire-plugin (#424)\n\nBumps [org.apache.maven.plugins:maven-surefire-plugin](https://github.com/apache/maven-surefire) from 3.5.6 to 3.6.0.\n- [Release notes](https://github.com/apache/maven-surefire/releases)\n- [Commits](https://github.com/apache/maven-surefire/compare/surefire-3.5.6...surefire-3.6.0)\n\n---\nupdated-dependencies:\n- dependency-name: org.apache.maven.plugins:maven-surefire-plugin\n  dependency-version: 3.6.0\n  dependency-type: direct:development\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Barak Bar Orion <barak.bar@gmail.com>",
+          "timestamp": "2026-09-06T12:37:08+03:00",
+          "tree_id": "fe4e30fd3dfeb085ec5729e5df9026d66634cb74",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/9c65a821ee03b3a162f88961dc84d7e14fc569dc"
+        },
+        "date": 1788687557190,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3420,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6030.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 8803.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11758,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11142.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 10964,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 10818.333,
             "unit": "ops/s"
           }
         ]
