@@ -2,6 +2,7 @@ package com.falkordb;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -185,5 +186,23 @@ class DriverEnvironmentTest {
     @Test
     void toConnectionUriRejectsMissingPort() {
         assertThrows(IllegalStateException.class, () -> DriverEnvironment.toConnectionUri("redis://db.example.com"));
+    }
+
+    @Test
+    void toConnectionUriRedactsCredentialsOnSyntaxError() {
+        String withCredentials = "redis://" + "cred" + "@[bad";
+        IllegalStateException e =
+                assertThrows(IllegalStateException.class, () -> DriverEnvironment.toConnectionUri(withCredentials));
+        assertTrue(e.getMessage().contains("<redacted>"));
+        assertFalse(e.getMessage().contains("cred@"));
+    }
+
+    @Test
+    void toConnectionUriRedactsCredentialsOnUnsupportedScheme() {
+        String withCredentials = "http://" + "cred" + "@db.example.com:6380";
+        IllegalStateException e =
+                assertThrows(IllegalStateException.class, () -> DriverEnvironment.toConnectionUri(withCredentials));
+        assertTrue(e.getMessage().contains("<redacted>"));
+        assertFalse(e.getMessage().contains("cred@"));
     }
 }

@@ -3,6 +3,7 @@ package com.falkordb;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.util.JedisURIHelper;
 
@@ -30,6 +31,9 @@ final class DriverEnvironment {
     /** Default port used when neither {@link #URL_VAR} nor {@link #HOST_VAR}/{@link #PORT_VAR} is set. */
     static final int DEFAULT_PORT = 6379;
 
+    /** Matches the credentials segment of a URI authority, so it can be redacted before logging. */
+    private static final Pattern USERINFO_PREFIX = Pattern.compile("://[^/?#@]*@");
+
     private DriverEnvironment() {}
 
     /**
@@ -49,7 +53,7 @@ final class DriverEnvironment {
             try {
                 return FalkorDB.driver(uri);
             } catch (RuntimeException e) {
-                throw new IllegalStateException(URL_VAR + " is not a valid connection URI: \"" + url + "\"", e);
+                throw new IllegalStateException(URL_VAR + " is not a valid connection URI: \"" + redact(url) + "\"", e);
             }
         }
         String host = trimToNull(env.apply(HOST_VAR));
@@ -67,7 +71,8 @@ final class DriverEnvironment {
      * rediss://} (matching the other FalkorDB clients), then validates it the same way {@link
      * FalkorDB#driver(URI)} does. A pure function so it is directly unit-testable; any failure — a
      * syntax error, an unsupported scheme, or a missing host/port — is reported as an {@link
-     * IllegalStateException} naming {@link #URL_VAR} and the offending value.
+     * IllegalStateException} naming {@link #URL_VAR} and the offending value, with any embedded
+     * credentials redacted so they never end up in a log or a crash report.
      */
     static URI toConnectionUri(String value) {
         String normalized = value;
@@ -80,12 +85,17 @@ final class DriverEnvironment {
         try {
             uri = new URI(normalized);
         } catch (URISyntaxException e) {
-            throw new IllegalStateException(URL_VAR + " is not a valid connection URI: \"" + value + "\"", e);
+            throw new IllegalStateException(URL_VAR + " is not a valid connection URI: \"" + redact(value) + "\"", e);
         }
         if (!JedisURIHelper.isValid(uri)) {
-            throw new IllegalStateException(URL_VAR + " is not a valid connection URI: \"" + value + "\"");
+            throw new IllegalStateException(URL_VAR + " is not a valid connection URI: \"" + redact(value) + "\"");
         }
         return uri;
+    }
+
+    /** Replaces any {@code userinfo@} authority prefix in {@code value} with a fixed placeholder. */
+    private static String redact(String value) {
+        return USERINFO_PREFIX.matcher(value).replaceFirst("://<redacted>@");
     }
 
     private static int parsePort(String value) {

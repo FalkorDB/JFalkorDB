@@ -3,6 +3,7 @@ package com.falkordb;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -15,8 +16,14 @@ class FalkorDBTest {
 
     @Test
     void noArgDriverDefaultsToLocalhost6379() throws IOException {
-        // Neither FALKORDB_URL, FALKORDB_HOST nor FALKORDB_PORT is set for this build (see
-        // .github/workflows/maven.yml), so this exercises the unchanged localhost:6379 default.
+        // This is a wiring sanity check for the unchanged default, not a resolution-logic test, so
+        // skip rather than fail/flake if the ambient environment happens to configure driver()
+        // differently (mirrors the same guard InstantiationIT#createDefaultClient already applies).
+        Assumptions.assumeTrue(
+                System.getenv(DriverEnvironment.URL_VAR) == null
+                        && System.getenv(DriverEnvironment.HOST_VAR) == null
+                        && System.getenv(DriverEnvironment.PORT_VAR) == null,
+                "FalkorDB.driver() environment variables are set in this environment");
         // Driver construction is lazy (see ConfigBuilderTest), so no I/O happens here.
         try (Driver driver = FalkorDB.driver()) {
             assertNotNull(driver);
