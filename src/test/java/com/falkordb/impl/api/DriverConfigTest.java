@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URI;
 import java.time.Duration;
@@ -165,5 +166,18 @@ class DriverConfigTest {
         // Preserves the exception Jedis' own URI-based pool constructor raised before we assembled
         // the client config ourselves.
         assertThrows(InvalidURIException.class, () -> new DriverImpl(URI.create("http://localhost:6379")));
+    }
+
+    @Test
+    void rejectingAnInvalidUriDoesNotLeakItsCredentials() {
+        // The URIs most likely to be rejected are hand-written ones, and a hand-written connection URI
+        // is exactly where a password sits. Jedis' message quotes the whole URI, so reporting it
+        // verbatim would put the password into every log and crash report carrying this exception.
+        InvalidURIException e = assertThrows(
+                InvalidURIException.class, () -> new DriverImpl(URI.create("http://someone:hunter2@localhost:6379/0")));
+        assertFalse(e.getMessage().contains("hunter2"), "the password must not survive into the message");
+        assertFalse(e.getMessage().contains("someone"), "the username must not survive into the message");
+        assertTrue(e.getMessage().contains("<redacted>"), "the credentials should be visibly elided");
+        assertTrue(e.getMessage().contains("localhost:6379"), "the part worth debugging should survive");
     }
 }

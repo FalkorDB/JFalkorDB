@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -256,5 +257,74 @@ class DriverEnvironmentTest {
             t.printStackTrace(writer);
         }
         return out.toString();
+    }
+
+    @Test
+    void sentinelVariablesConfigureASentinelDeployment() {
+        assertDoesNotThrow(() -> DriverEnvironment.resolve(env(
+                        DriverEnvironment.SENTINEL_MASTER_VAR, "mymaster",
+                        DriverEnvironment.SENTINELS_VAR, "a:26379,b:26379"))
+                .close());
+    }
+
+    @Test
+    void onlySentinelMasterSetThrows() {
+        IllegalStateException e = assertThrows(
+                IllegalStateException.class,
+                () -> DriverEnvironment.resolve(env(DriverEnvironment.SENTINEL_MASTER_VAR, "mymaster")));
+        assertTrue(e.getMessage().contains(DriverEnvironment.SENTINELS_VAR), e.getMessage());
+    }
+
+    @Test
+    void onlySentinelListSetThrows() {
+        IllegalStateException e = assertThrows(
+                IllegalStateException.class,
+                () -> DriverEnvironment.resolve(env(DriverEnvironment.SENTINELS_VAR, "a:26379")));
+        assertTrue(e.getMessage().contains(DriverEnvironment.SENTINEL_MASTER_VAR), e.getMessage());
+    }
+
+    @Test
+    void blankSentinelVariablesAreTreatedAsUnset() {
+        // Same rule as the host/port pair: a whitespace-only value must not trip the pairing check.
+        assertDoesNotThrow(() -> DriverEnvironment.resolve(env(
+                        DriverEnvironment.SENTINEL_MASTER_VAR, "  ",
+                        DriverEnvironment.SENTINELS_VAR, "   "))
+                .close());
+    }
+
+    @Test
+    void sentinelTakesPrecedenceOverUrlAndHostPort() {
+        // A malformed URL alongside a valid Sentinel configuration must not be reached at all, which
+        // is what proves the ordering rather than merely that both happen to work.
+        assertDoesNotThrow(() -> DriverEnvironment.resolve(env(
+                        DriverEnvironment.SENTINEL_MASTER_VAR, "mymaster",
+                        DriverEnvironment.SENTINELS_VAR, "a:26379",
+                        DriverEnvironment.URL_VAR, "not a uri at all",
+                        DriverEnvironment.HOST_VAR, "db.example.com"))
+                .close());
+    }
+
+    @Test
+    void sentinelListIsSplitTrimmedAndTolerantOfEmptyEntries() {
+        assertEquals(
+                Arrays.asList("a:26379", "b:26380", "c:26381"),
+                DriverEnvironment.parseSentinels(" a:26379 , b:26380,,c:26381 , "));
+    }
+
+    @Test
+    void sentinelListWithNoAddressesThrows() {
+        IllegalStateException e =
+                assertThrows(IllegalStateException.class, () -> DriverEnvironment.parseSentinels(",  ,"));
+        assertTrue(e.getMessage().contains(DriverEnvironment.SENTINELS_VAR), e.getMessage());
+    }
+
+    @Test
+    void malformedSentinelAddressIsRejected() {
+        // Address validation is the builder's, so this also pins that the env path routes through it.
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> DriverEnvironment.resolve(env(
+                        DriverEnvironment.SENTINEL_MASTER_VAR, "mymaster",
+                        DriverEnvironment.SENTINELS_VAR, "no-port-here")));
     }
 }

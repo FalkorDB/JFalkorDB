@@ -1,12 +1,24 @@
 package com.falkordb;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -158,5 +170,166 @@ class ConfigBuilderTest {
                 .connectionTimeout(Duration.ofNanos(500_000))
                 .build()
                 .close());
+    }
+
+    @Test
+    void sentinelSettersReturnSameBuilder() {
+        FalkorDB.Builder builder = FalkorDB.builder();
+        assertSame(builder, builder.sentinel("mymaster", "a:26379"));
+        assertSame(builder, builder.sentinel("mymaster", Collections.singletonList("a:26379")));
+        assertSame(builder, builder.sentinelCredentials("u", "p"));
+        assertSame(builder, builder.sentinelCredentials("p"));
+        assertSame(builder, builder.autoDetectSentinel(false));
+    }
+
+    @Test
+    void buildsAgainstAnExplicitSentinelDeployment() {
+        assertDoesNotThrow(() -> {
+            try (Driver driver = FalkorDB.builder()
+                    .sentinel("mymaster", "sentinel-a:26379", "sentinel-b:26379", "sentinel-c:26379")
+                    .credentials("user", "password")
+                    .sentinelCredentials("sentinel-user", "sentinel-password")
+                    .build()) {
+                assertNotNull(driver);
+            }
+        });
+    }
+
+    @Test
+    void sentinelBuildStaysLazy() {
+        // The whole point of resolving the pool on first use: naming a deployment that does not exist
+        // must not cost a DNS lookup or a connection attempt, exactly as a plain host/port build does
+        // not. If this ever regresses it will hang for the connect timeout rather than fail outright,
+        // so the assertion is on elapsed time.
+        long startedAt = System.nanoTime();
+        assertDoesNotThrow(() -> FalkorDB.builder()
+                .sentinel("mymaster", "sentinel-a.invalid:26379")
+                .build()
+                .close());
+        long elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000L;
+
+        assertTrue(elapsedMillis < 1000, "building a driver must not connect, but took " + elapsedMillis + "ms");
+    }
+
+    @Test
+    void autoDetectingBuildStaysLazyToo() {
+        long startedAt = System.nanoTime();
+        assertDoesNotThrow(
+                () -> FalkorDB.builder().host("db.invalid").port(6380).build().close());
+        long elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000L;
+
+        assertTrue(
+                elapsedMillis < 1000, "Sentinel detection must not run at build(), but took " + elapsedMillis + "ms");
+    }
+
+    @Test
+    void rejectsASentinelWithoutAMasterName() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> FalkorDB.builder().sentinel(null, "a:26379").build());
+    }
+
+    @Test
+    void rejectsASentinelWithoutAddresses() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> FalkorDB.builder().sentinel("mymaster").build());
+        assertThrows(IllegalArgumentException.class, () -> FalkorDB.builder()
+                .sentinel("mymaster", (java.util.Collection<String>) null)
+                .build());
+    }
+
+    @Test
+    void rejectsAMalformedSentinelAddress() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> FalkorDB.builder().sentinel("mymaster", "no-port-here").build());
+    }
+
+    @Test
+    void autoDetectionCanBeSwitchedOff() {
+        assertDoesNotThrow(
+                () -> FalkorDB.builder().autoDetectSentinel(false).build().close());
+    }
+
+    @Test
+    void aDriverClosedBeforeUseFailsFastInsteadOfConnecting() {
+        // Resolving the pool lazily means a closed-but-never-used driver could otherwise run the whole
+        // resolution -- Sentinel probe included -- just to hand back a pool it immediately closes.
+        // That would be real network I/O after close(), surfacing as a pool error rather than as the
+        // programming mistake it is. The host is unroutable, so the elapsed time also shows that no
+        // connection was attempted.
+        Driver driver = FalkorDB.builder().host("db.invalid").build();
+        assertDoesNotThrow(driver::close);
+
+        long startedAt = System.nanoTime();
+        assertThrows(IllegalStateException.class, driver::getConnection);
+        long elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000L;
+
+        assertTrue(elapsedMillis < 1000, "a closed driver must not connect, but took " + elapsedMillis + "ms");
+    }
+
+    @Test
+    void closingADriverTwiceIsHarmless() {
+        Driver driver = FalkorDB.builder().host("db.invalid").build();
+        assertDoesNotThrow(driver::close);
+        assertDoesNotThrow(driver::close);
+    }
+
+    @Test
+    void racingBorrowersAndCloseNeverSeeANullPool() throws Exception {
+        // Two borrowers race to resolve the pool while a third thread closes the driver. The loser of
+        // the resolution race must not read back a pool the winner has since withdrawn: doing so
+        // returns null and fails with a NullPointerException from deep inside getConnection() rather
+        // than saying the driver is closed. Failing to reach the server is expected here -- the host
+        // does not resolve -- so only the exception type is asserted.
+        ExecutorService threads = Executors.newFixedThreadPool(3);
+        try {
+            for (int attempt = 0; attempt < 40; attempt++) {
+                Driver driver = FalkorDB.builder()
+                        .host("db.invalid")
+                        .autoDetectSentinel(false)
+                        .build();
+                CyclicBarrier start = new CyclicBarrier(3);
+
+                List<Future<Throwable>> outcomes = new ArrayList<>();
+                for (int borrower = 0; borrower < 2; borrower++) {
+                    outcomes.add(threads.submit(() -> {
+                        start.await();
+                        try {
+                            driver.getConnection().close();
+                            return null;
+                        } catch (Throwable t) {
+                            return t;
+                        }
+                    }));
+                }
+                outcomes.add(threads.submit(() -> {
+                    start.await();
+                    driver.close();
+                    return null;
+                }));
+
+                for (Future<Throwable> outcome : outcomes) {
+                    Throwable thrown = outcome.get(30, TimeUnit.SECONDS);
+                    assertFalse(
+                            thrown instanceof NullPointerException,
+                            "a borrower racing close() saw a null pool: " + stackTraceOf(thrown));
+                }
+            }
+        } finally {
+            threads.shutdownNow();
+        }
+    }
+
+    private static String stackTraceOf(Throwable t) {
+        if (t == null) {
+            return "";
+        }
+        StringWriter out = new StringWriter();
+        try (PrintWriter writer = new PrintWriter(out)) {
+            t.printStackTrace(writer);
+        }
+        return out.toString();
     }
 }

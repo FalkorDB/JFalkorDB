@@ -1,8 +1,13 @@
 package com.falkordb;
 
 import com.falkordb.impl.api.DriverImpl;
+import com.falkordb.impl.api.SentinelOptions;
 import java.net.URI;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -17,6 +22,11 @@ public final class FalkorDB {
      * localhost:6379} isn't what you want. Resolved in this order:
      *
      * <ol>
+     *   <li>{@code FALKORDB_SENTINEL_MASTER} together with {@code FALKORDB_SENTINELS} (a
+     *       comma-separated list of {@code host:port} Sentinel addresses) — connects through the named
+     *       Redis Sentinel deployment. Setting only one of the pair is rejected rather than silently
+     *       ignored. Credentials are not configurable this way; use {@link #builder()} if you need
+     *       them.
      *   <li>{@code FALKORDB_URL} — a full connection URI ({@code redis://} or {@code rediss://}, or
      *       the FalkorDB-branded {@code falkor://}/{@code falkors://} aliases for them); delegates to
      *       {@link #driver(URI)}, so it also carries credentials, a database index, and TLS.
@@ -34,24 +44,32 @@ public final class FalkorDB {
      * variables above is set. Set the host and port on the builder explicitly if you need it to
      * follow the environment.
      *
+     * <p>Whichever endpoint is resolved, it is checked for Redis Sentinel — see {@link
+     * Builder#autoDetectSentinel(boolean)}.
+     *
      * @return a new driver instance
      * @throws IllegalStateException if {@code FALKORDB_URL} is set but malformed, if {@code
-     *     FALKORDB_PORT} is set but not a valid integer, or if exactly one of {@code
-     *     FALKORDB_HOST}/{@code FALKORDB_PORT} is set
+     *     FALKORDB_PORT} is set but not a valid integer, if exactly one of {@code
+     *     FALKORDB_HOST}/{@code FALKORDB_PORT} is set, or if exactly one of {@code
+     *     FALKORDB_SENTINEL_MASTER}/{@code FALKORDB_SENTINELS} is set
      */
     public static Driver driver() {
         return DriverEnvironment.resolve(System::getenv);
     }
 
     /**
-     * Creates a new driver instance
+     * Creates a new driver instance.
+     *
+     * <p>If {@code host}/{@code port} turns out to be a Redis Sentinel, the driver transparently
+     * connects to the master it monitors instead, and follows failovers from then on — see {@link
+     * Builder#autoDetectSentinel(boolean)}.
      *
      * @param host host name
      * @param port port number
      * @return a new driver instance
      */
     public static Driver driver(String host, int port) {
-        return new DriverImpl(host, port);
+        return DriverImpl.connect(host, port, null, null, SentinelOptions.autoDetect());
     }
 
     /**
@@ -64,7 +82,7 @@ public final class FalkorDB {
      * @return a new driver instance
      */
     public static Driver driver(String host, int port, String user, final String password) {
-        return new DriverImpl(host, port, user, password);
+        return DriverImpl.connect(host, port, user, password, SentinelOptions.autoDetect());
     }
 
     /**
@@ -74,7 +92,7 @@ public final class FalkorDB {
      * @return a new driver instance
      */
     public static Driver driver(URI uri) {
-        return new DriverImpl(uri);
+        return DriverImpl.connect(uri, SentinelOptions.autoDetect());
     }
 
     /**
@@ -126,6 +144,11 @@ public final class FalkorDB {
         private @Nullable Integer poolMaxTotal;
         private @Nullable Integer poolMaxIdle;
         private @Nullable Duration poolMaxWait;
+        private @Nullable String sentinelMasterName;
+        private @Nullable List<String> sentinelAddresses;
+        private @Nullable String sentinelUser;
+        private @Nullable String sentinelPassword;
+        private boolean autoDetectSentinel = true;
 
         private Builder() {}
 
@@ -248,6 +271,96 @@ public final class FalkorDB {
         }
 
         /**
+         * Connects through a Redis Sentinel deployment, naming the monitored master explicitly.
+         *
+         * <p>Use this when {@linkplain #autoDetectSentinel(boolean) auto-detection} is not enough: it
+         * lists every Sentinel rather than a single seed, so the driver can still find the master when
+         * one Sentinel is down, and it names the master, so it works with a Sentinel monitoring more
+         * than one. Setting it makes {@link #host(String)} and {@link #port(int)} irrelevant — the
+         * master's address comes from the Sentinels — and suppresses probing entirely.
+         *
+         * <pre>{@code
+         * Driver driver = FalkorDB.builder()
+         *     .sentinel("mymaster", "sentinel-a:26379", "sentinel-b:26379", "sentinel-c:26379")
+         *     .credentials("user", "password")
+         *     .build();
+         * }</pre>
+         *
+         * @param masterName name of the monitored master, as given to {@code sentinel monitor}
+         * @param sentinels  the Sentinel endpoints in {@code host:port} form; at least one is required
+         * @return this builder
+         */
+        public Builder sentinel(String masterName, String... sentinels) {
+            return sentinel(masterName, sentinels == null ? null : Arrays.asList(sentinels));
+        }
+
+        /**
+         * Connects through a Redis Sentinel deployment, naming the monitored master explicitly. The
+         * {@linkplain #sentinel(String, String...) varargs form} documents the behaviour.
+         *
+         * @param masterName name of the monitored master, as given to {@code sentinel monitor}
+         * @param sentinels  the Sentinel endpoints in {@code host:port} form; at least one is required
+         * @return this builder
+         */
+        public Builder sentinel(String masterName, Collection<String> sentinels) {
+            this.sentinelMasterName = masterName;
+            this.sentinelAddresses = sentinels == null ? null : new ArrayList<>(sentinels);
+            return this;
+        }
+
+        /**
+         * Sets the username and password used to authenticate to the Sentinels themselves, which
+         * commonly carry ACLs of their own. Unset, the {@linkplain #credentials(String, String) data
+         * credentials} are reused.
+         *
+         * @param user     Sentinel username
+         * @param password Sentinel password
+         * @return this builder
+         */
+        public Builder sentinelCredentials(String user, String password) {
+            this.sentinelUser = user;
+            this.sentinelPassword = password;
+            return this;
+        }
+
+        /**
+         * Sets a password for password-only ({@code default} user) authentication to the Sentinels,
+         * clearing any previously set Sentinel username.
+         *
+         * @param password Sentinel password
+         * @return this builder
+         */
+        public Builder sentinelCredentials(String password) {
+            this.sentinelUser = null;
+            this.sentinelPassword = password;
+            return this;
+        }
+
+        /**
+         * Enables or disables Sentinel auto-detection (default {@code true}).
+         *
+         * <p>When enabled, the driver probes the configured host/port once with {@code INFO server}
+         * the first time it is used; if that endpoint is a Sentinel, the driver resolves the single
+         * master it monitors and connects to that instead, following failovers from then on. This
+         * mirrors falkordb-py, falkordb-go and falkordb-ts, so the same address works across FalkorDB
+         * clients. Like every other connection, the probe happens on first use rather than in
+         * {@link #build()}, which performs no I/O.
+         *
+         * <p>The probe is best-effort and costs one round-trip: an endpoint that cannot be reached, or
+         * that refuses {@code INFO}, simply yields an ordinary direct connection whose failure surfaces
+         * on first use — the behaviour of every release before Sentinel support. Switch this off to
+         * skip the probe altogether when you know you are not talking to a Sentinel. It is ignored when
+         * {@link #sentinel(String, String...)} named a deployment explicitly.
+         *
+         * @param autoDetectSentinel whether to probe the endpoint for Sentinel mode
+         * @return this builder
+         */
+        public Builder autoDetectSentinel(boolean autoDetectSentinel) {
+            this.autoDetectSentinel = autoDetectSentinel;
+            return this;
+        }
+
+        /**
          * Validates the configuration and builds a driver. Unset options use the fixed defaults
          * documented on each setter, independently of the environment {@link FalkorDB#driver()} reads.
          * Range validation happens in {@link DriverImpl#create}.
@@ -266,7 +379,37 @@ public final class FalkorDB {
                     ? DriverImpl.DEFAULT_SOCKET_TIMEOUT_MILLIS
                     : toTimeoutMillis(socketTimeout, "socketTimeout");
             return DriverImpl.create(
-                    host, port, user, password, ssl, connectMillis, socketMillis, maxTotal, maxIdle, maxWait);
+                    host,
+                    port,
+                    user,
+                    password,
+                    ssl,
+                    connectMillis,
+                    socketMillis,
+                    maxTotal,
+                    maxIdle,
+                    maxWait,
+                    sentinelOptions());
+        }
+
+        /**
+         * Resolves the three Sentinel states this builder can express: an explicitly named deployment,
+         * the default probe, or no Sentinel handling at all. Sentinel credentials apply to all three,
+         * since even an auto-detected Sentinel may need its own ACL.
+         */
+        private SentinelOptions sentinelOptions() {
+            SentinelOptions options;
+            if (sentinelMasterName != null || sentinelAddresses != null) {
+                options = SentinelOptions.explicit(sentinelMasterName, sentinelAddresses);
+            } else if (autoDetectSentinel) {
+                options = SentinelOptions.autoDetect();
+            } else {
+                options = SentinelOptions.disabled();
+            }
+            if (sentinelUser != null || sentinelPassword != null) {
+                options = options.withCredentials(sentinelUser, sentinelPassword);
+            }
+            return options;
         }
 
         /**

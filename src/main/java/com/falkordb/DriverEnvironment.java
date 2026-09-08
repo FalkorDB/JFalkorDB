@@ -1,9 +1,11 @@
 package com.falkordb;
 
+import com.falkordb.impl.ConnectionUris;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.util.JedisURIHelper;
 
@@ -25,6 +27,15 @@ final class DriverEnvironment {
     /** Server port env var; must be set together with {@link #HOST_VAR}. */
     static final String PORT_VAR = "FALKORDB_PORT";
 
+    /** Sentinel master-name env var; must be set together with {@link #SENTINELS_VAR}. */
+    static final String SENTINEL_MASTER_VAR = "FALKORDB_SENTINEL_MASTER";
+
+    /**
+     * Comma-separated {@code host:port} Sentinel addresses; must be set together with {@link
+     * #SENTINEL_MASTER_VAR}.
+     */
+    static final String SENTINELS_VAR = "FALKORDB_SENTINELS";
+
     /** Default host used when neither {@link #URL_VAR} nor {@link #HOST_VAR}/{@link #PORT_VAR} is set. */
     static final String DEFAULT_HOST = "localhost";
 
@@ -37,8 +48,6 @@ final class DriverEnvironment {
      * scheme-less mistake like {@code user:password@host:6379} — which {@link URI} happily parses as
      * an opaque URI rather than rejecting — is redacted just like a well-formed {@code redis://} URL.
      */
-    private static final Pattern USERINFO_PREFIX = Pattern.compile("(^|://)[^/?#@]*@");
-
     private DriverEnvironment() {}
 
     /**
@@ -52,6 +61,17 @@ final class DriverEnvironment {
      *     FALKORDB_HOST}/{@code FALKORDB_PORT} is set
      */
     static Driver resolve(Function<String, @Nullable String> env) {
+        String sentinelMaster = trimToNull(env.apply(SENTINEL_MASTER_VAR));
+        String sentinels = trimToNull(env.apply(SENTINELS_VAR));
+        if ((sentinelMaster != null) != (sentinels != null)) {
+            throw new IllegalStateException("Set BOTH " + SENTINEL_MASTER_VAR + " and " + SENTINELS_VAR
+                    + " to configure FalkorDB.driver() against a Sentinel deployment, or neither.");
+        }
+        if (sentinelMaster != null) {
+            return FalkorDB.builder()
+                    .sentinel(sentinelMaster, parseSentinels(sentinels))
+                    .build();
+        }
         String url = trimToNull(env.apply(URL_VAR));
         if (url != null) {
             URI uri = toConnectionUri(url);
@@ -61,8 +81,9 @@ final class DriverEnvironment {
                 // Same reasoning as in toConnectionUri: Jedis' InvalidURIException formats the whole
                 // URI (credentials included) into its message, so chaining it would undo redact().
                 // The exception's type is a safe breadcrumb; its message is not.
-                throw new IllegalStateException(URL_VAR + " is not a valid connection URI: \"" + redact(url)
-                        + "\" (rejected by " + e.getClass().getSimpleName() + ")");
+                throw new IllegalStateException(
+                        URL_VAR + " is not a valid connection URI: \"" + ConnectionUris.redact(url) + "\" (rejected by "
+                                + e.getClass().getSimpleName() + ")");
             }
         }
         String host = trimToNull(env.apply(HOST_VAR));
@@ -97,21 +118,38 @@ final class DriverEnvironment {
             // Deliberately not chained as the cause: URISyntaxException.getMessage() quotes the raw
             // input, which would put the credentials we just redacted straight back into the stack
             // trace. getReason() is the value-free half of it, so carry that instead.
-            throw new IllegalStateException(
-                    URL_VAR + " is not a valid connection URI: \"" + redact(value) + "\" (" + e.getReason() + ")");
+            throw new IllegalStateException(URL_VAR + " is not a valid connection URI: \""
+                    + ConnectionUris.redact(value) + "\" (" + e.getReason() + ")");
         }
         if (!JedisURIHelper.isValid(uri)) {
-            throw new IllegalStateException(URL_VAR + " is not a valid connection URI: \"" + redact(value) + "\"");
+            throw new IllegalStateException(
+                    URL_VAR + " is not a valid connection URI: \"" + ConnectionUris.redact(value) + "\"");
         }
         return uri;
     }
 
     /**
-     * Replaces any {@code userinfo@} credentials segment in {@code value} with a fixed placeholder,
-     * keeping the {@code ://} separator (or the start of the value) that anchored it.
+     * Splits a comma-separated {@link #SENTINELS_VAR} value into {@code host:port} addresses, ignoring
+     * empty entries so a trailing comma is harmless. The addresses themselves are validated later, by
+     * the builder, so the error message for a malformed one is the same however it was configured.
+     *
+     * @param value the raw variable value, already trimmed to non-null
+     * @return the listed addresses, in order
+     * @throws IllegalStateException if the value lists no address at all
      */
-    private static String redact(String value) {
-        return USERINFO_PREFIX.matcher(value).replaceAll("$1<redacted>@");
+    static List<String> parseSentinels(String value) {
+        List<String> addresses = new ArrayList<>();
+        for (String candidate : value.split(",", -1)) {
+            String trimmed = candidate.trim();
+            if (!trimmed.isEmpty()) {
+                addresses.add(trimmed);
+            }
+        }
+        if (addresses.isEmpty()) {
+            throw new IllegalStateException(
+                    SENTINELS_VAR + " must list at least one host:port address, but was \"" + value + "\"");
+        }
+        return addresses;
     }
 
     private static int parsePort(String value) {
