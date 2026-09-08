@@ -128,16 +128,18 @@ public class DriverImpl implements Driver {
     }
 
     /**
-     * Rejects a URI Jedis would not accept, with the message Jedis' own URI-based pool constructor
-     * used before this driver assembled the client config itself.
+     * Rejects a URI Jedis would not accept, standing in for the check Jedis' own URI-based pool
+     * constructor performed before this driver assembled the client config itself.
      */
     private static void requireValidUri(URI uri) {
         if (!JedisURIHelper.isValid(uri)) {
-            // Jedis' own message quotes the URI verbatim, which puts any embedded password into the
-            // message and every stack trace that carries it. Same reasoning as DriverEnvironment:
-            // the rejected value is worth reporting, its credentials are not.
+            // Deliberately not Jedis' wording. Its message quotes the URI verbatim, which puts any
+            // embedded password into the message and every stack trace that carries it -- same
+            // reasoning as DriverEnvironment: the rejected value is worth reporting, its credentials
+            // are not. Since the text has to change anyway, it is also spelled "due to" rather than
+            // reproducing the "due invalid URI" of the original.
             throw new InvalidURIException(
-                    String.format("Cannot open Redis connection due invalid URI. %s", ConnectionUris.redact(uri)));
+                    String.format("Cannot open Redis connection due to invalid URI. %s", ConnectionUris.redact(uri)));
         }
     }
 
