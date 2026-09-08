@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788852668032,
+  "lastUpdate": 1788855567656,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -10835,6 +10835,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 49582.33,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "899622a05103393e4c18e39bdbb49e6ba15f93b2",
+          "message": "build: let release-please own the version numbers so they stop drifting (#432)\n\n* build: let release-please own the version numbers so they stop drifting\n\nNothing owned the version numbers outside pom.xml, so they drifted\nquietly. Current state on master:\n\n  README \"Official Releases\"  0.11.0          latest release is 0.11.1\n  README \"Snapshots\"          0.11.1-SNAPSHOT master is 0.11.2-SNAPSHOT\n  examples/pom.xml            0.10.0-SNAPSHOT\n  smoke-test/pom.xml          0.10.0-SNAPSHOT\n  pin-check/pom.xml           0.10.0-SNAPSHOT\n  benchmarks/pom.xml          0.10.0-SNAPSHOT\n\nThe four sibling modules had the same stale default; #401 only spotted\nexamples/. Their defaults are overridden by `just`, so the staleness was\ninvisible there, but building a module directly silently resolved a\nclient two minor versions old.\n\nAdd README.md and the four module poms to release-please's extra-files\nand mark the line to rewrite with x-release-please-version.\n\nOne correction to the plan in the issue: the marker must NOT go on the\n\"Official Releases\" snippet. With release-type: java every release PR is\nfollowed by a snapshot PR, and Java.buildSnapshotPullRequest re-applies\nthe same extra-files updaters with the -SNAPSHOT version, so a marked\nline ends every cycle holding X.Y.Z-SNAPSHOT. That is right for the\nSnapshots block and the modules' defaults, which should track master's\nsnapshot, and wrong for the block users copy into their own pom.xml --\nit would leave them pointing at something never published to Maven\nCentral. Verified by running release-please 17.6.0's own Generic updater\nover these files for both PR versions.\n\nSo the release snippet stays hand-written and is guarded instead, which\nis the alternative the issue proposed: ReadmeVersionTest checks it\nagainst CHANGELOG.md, checks it never names a SNAPSHOT, and checks the\nmarked lines still track pom.xml so a broken marker fails loudly rather\nthan silently resuming the drift. It is a plain unit test, so it runs in\nthe existing build gate with no new tooling.\n\nThat test fails on the Release PR by design -- release-please has\nwritten the new version into CHANGELOG.md while the release snippet\nstill names the previous one -- which is the release-time check that\nmakes stale docs impossible to ship. Documented in\ndocs/release-please-setup.md.\n\nFixes #401\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test: anchor README version lookup and assert the release-please contract\n\nTwo AI review findings on ReadmeVersionTest:\n\n- The `<version>` lookup matched the first one anywhere after the\n  heading, so a version mentioned in prose - or in a later section, had\n  a heading's own snippet ever been removed - would have been asserted\n  instead of the block users copy. It is now scoped to the heading's own\n  section and to the first fenced ```xml block in it that declares a\n  version. Not simply the first block: \"Snapshots\" opens with a\n  `<repositories>` snippet that has none.\n\n- The version comparisons only notice drift after it has happened. If an\n  `extra-files` entry or an `x-release-please-version` marker is deleted,\n  every version still agrees today and the tests stay green, while the\n  next release silently resumes the drift #401 was filed about. The new\n  test asserts that half of the contract directly: every marked file is\n  still listed as a \"generic\" extra-file, and README's snapshot snippet\n  still carries its marker.\n\nEach new assertion was checked by reintroducing the drift it guards\nagainst - dropping the README extra-files entry, retyping one to \"xml\",\nand removing README's marker - and confirming it fails.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* test: assert release-please's actual marker contract, not its formatting\n\nTwo more review findings, both on ReadmeVersionTest:\n\n- The marker check demanded exactly one space between the version tag\n  and the marker, which asserts formatting rather than behaviour. The\n  Generic updater is line-scoped: it rewrites the first semver-looking\n  string on any line carrying the marker, so neither the spacing nor\n  the marker's position on that line means anything to it. The check is\n  now line-scoped too, via a `lineDeclaring` helper shared with the\n  README snapshot assertion, which was looser still - it accepted the\n  marker anywhere in the fenced block, including a line release-please\n  would never look at.\n\n- `SECTION` was formatted with an unquoted heading in one place and a\n  quoted one in the other. Both call sites now go through\n  `xmlBlockUnderHeading`, so the heading is quoted once.\n\nChecked by reformatting a module POM to three spaces before the marker\n(still passes, as release-please would still update it) and by moving\nthe marker to its own line (now fails, as release-please would silently\nstop updating it).\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-09-08T11:16:45+03:00",
+          "tree_id": "e5ee5a70d0f06e8ecf80b8fe334589662b539699",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/899622a05103393e4c18e39bdbb49e6ba15f93b2"
+        },
+        "date": 1788855566670,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 124.438,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 150.339,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 173.228,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 138.032,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 174.418,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 207.27,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 174.956,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 277.453,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 340.575,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 262.442,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 461.068,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 586.442,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 325.184,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 3228.765,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 7293.154,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 332.114,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 8493.78,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 19565.634,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 327.679,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 19797.518,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 44961.19,
             "unit": "us"
           }
         ]
