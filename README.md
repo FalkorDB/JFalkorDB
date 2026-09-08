@@ -25,7 +25,7 @@ FalkorDB Java client
     <dependency>
       <groupId>com.falkordb</groupId>
       <artifactId>jfalkordb</artifactId>
-      <version>0.11.1</version>
+      <version>0.12.0</version>
     </dependency>
   </dependencies>
 ```
