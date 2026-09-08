@@ -102,40 +102,68 @@ public final class SentinelOptions {
         return new SentinelOptions(autoDetect, masterName, addresses, user, password);
     }
 
-    /** @return whether an unrecognised endpoint should be probed for Sentinel mode */
+    /**
+     * Returns whether an unrecognised endpoint should be probed for Sentinel mode.
+     *
+     * @return whether an unrecognised endpoint should be probed for Sentinel mode
+     */
     boolean isAutoDetect() {
         return autoDetect;
     }
 
-    /** @return whether the master and Sentinel addresses were configured explicitly */
+    /**
+     * Returns whether the master and Sentinel addresses were configured explicitly.
+     *
+     * @return whether the master and Sentinel addresses were configured explicitly
+     */
     boolean isExplicit() {
         return masterName != null;
     }
 
-    /** @return the configured master name, or {@code null} when not {@linkplain #isExplicit explicit} */
+    /**
+     * Returns the configured master name.
+     *
+     * @return the master name, or {@code null} when not {@linkplain #isExplicit explicit}
+     */
     @Nullable
     String masterName() {
         return masterName;
     }
 
-    /** @return the parsed Sentinel endpoints, empty when not {@linkplain #isExplicit explicit} */
+    /**
+     * Returns the parsed Sentinel endpoints.
+     *
+     * @return the Sentinel endpoints, empty when not {@linkplain #isExplicit explicit}
+     */
     Set<HostAndPort> addresses() {
         return addresses;
     }
 
-    /** @return the Sentinel username, or {@code null} to reuse the data credentials */
+    /**
+     * Returns the username to authenticate with against the Sentinels.
+     *
+     * @return the Sentinel username, or {@code null} to reuse the data credentials
+     */
     @Nullable
     String user() {
         return user;
     }
 
-    /** @return the Sentinel password, or {@code null} to reuse the data credentials */
+    /**
+     * Returns the password to authenticate with against the Sentinels.
+     *
+     * @return the Sentinel password, or {@code null} to reuse the data credentials
+     */
     @Nullable
     String password() {
         return password;
     }
 
-    /** @return whether Sentinel-specific credentials were set */
+    /**
+     * Returns whether Sentinel-specific credentials were set.
+     *
+     * @return whether Sentinel-specific credentials were set
+     */
     boolean hasCredentials() {
         return user != null || password != null;
     }

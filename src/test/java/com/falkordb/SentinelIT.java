@@ -212,7 +212,7 @@ public class SentinelIT {
         } catch (Exception e) {
             throw new IllegalStateException("could not ask the Sentinel for the master address", e);
         }
-        String[] lines = address.trim().split("\\s+");
+        String[] lines = address.trim().split("\\s+", -1);
         assertTrue(lines.length >= 2, "unexpected Sentinel reply: " + address);
 
         try (Socket socket = new Socket()) {
@@ -229,14 +229,26 @@ public class SentinelIT {
         String lastSeen = "";
         while (System.nanoTime() < deadline) {
             lastSeen = redisCli(sentinelContainer, SENTINEL_PORT, "SENTINEL", "master", MASTER_NAME);
-            // `flags` degrades to s_down/o_down while Sentinel is still making up its mind about a
-            // master it has just been pointed at; only `master` on its own means it is usable.
-            if (lastSeen.contains("master") && !lastSeen.contains("_down")) {
+            // Exactly "master": the reply also contains the master's *name*, so a substring test would
+            // match `mymaster`, and `flags` degrades to values like `master,disconnected` or
+            // `s_down,master` while Sentinel is still making up its mind about a master it has just
+            // been pointed at. Only a bare `master` means it is usable.
+            if ("master".equals(fieldsOf(lastSeen).get("flags"))) {
                 return;
             }
             Thread.sleep(250);
         }
         throw new IllegalStateException("the Sentinel never reported a healthy master. Last reply:\n" + lastSeen);
+    }
+
+    /** Reads a {@code SENTINEL master} reply, which {@code --raw} renders as alternating field/value lines. */
+    private static Map<String, String> fieldsOf(String reply) {
+        String[] lines = reply.split("\n", -1);
+        Map<String, String> fields = new HashMap<>();
+        for (int i = 0; i + 1 < lines.length; i += 2) {
+            fields.put(lines[i].trim(), lines[i + 1].trim());
+        }
+        return fields;
     }
 
     private static String redisCli(GenericContainer<?> container, int port, String... arguments) throws Exception {

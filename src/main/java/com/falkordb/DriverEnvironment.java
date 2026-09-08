@@ -147,7 +147,7 @@ final class DriverEnvironment {
      */
     static List<String> parseSentinels(String value) {
         List<String> addresses = new ArrayList<>();
-        for (String candidate : value.split(",")) {
+        for (String candidate : value.split(",", -1)) {
             String trimmed = candidate.trim();
             if (!trimmed.isEmpty()) {
                 addresses.add(trimmed);

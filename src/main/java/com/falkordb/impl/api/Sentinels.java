@@ -137,7 +137,7 @@ final class Sentinels {
         if (info == null) {
             return false;
         }
-        for (String line : info.split("\r\n|\n|\r")) {
+        for (String line : info.split("\r\n|\n|\r", -1)) {
             String trimmed = line.trim();
             if (trimmed.startsWith(REDIS_MODE_FIELD)) {
                 return SENTINEL_MODE.equalsIgnoreCase(

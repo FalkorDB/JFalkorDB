@@ -1,14 +1,24 @@
 package com.falkordb;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -264,5 +274,62 @@ class ConfigBuilderTest {
         Driver driver = FalkorDB.builder().host("db.invalid").build();
         assertDoesNotThrow(driver::close);
         assertDoesNotThrow(driver::close);
+    }
+
+    @Test
+    void racingBorrowersAndCloseNeverSeeANullPool() throws Exception {
+        // Two borrowers race to resolve the pool while a third thread closes the driver. The loser of
+        // the resolution race must not read back a pool the winner has since withdrawn: doing so
+        // returns null and fails with a NullPointerException from deep inside getConnection() rather
+        // than saying the driver is closed. Failing to reach the server is expected here -- the host
+        // does not resolve -- so only the exception type is asserted.
+        ExecutorService threads = Executors.newFixedThreadPool(3);
+        try {
+            for (int attempt = 0; attempt < 40; attempt++) {
+                Driver driver = FalkorDB.builder()
+                        .host("db.invalid")
+                        .autoDetectSentinel(false)
+                        .build();
+                CyclicBarrier start = new CyclicBarrier(3);
+
+                List<Future<Throwable>> outcomes = new ArrayList<>();
+                for (int borrower = 0; borrower < 2; borrower++) {
+                    outcomes.add(threads.submit(() -> {
+                        start.await();
+                        try {
+                            driver.getConnection().close();
+                            return null;
+                        } catch (Throwable t) {
+                            return t;
+                        }
+                    }));
+                }
+                outcomes.add(threads.submit(() -> {
+                    start.await();
+                    driver.close();
+                    return null;
+                }));
+
+                for (Future<Throwable> outcome : outcomes) {
+                    Throwable thrown = outcome.get(30, TimeUnit.SECONDS);
+                    assertFalse(
+                            thrown instanceof NullPointerException,
+                            "a borrower racing close() saw a null pool: " + stackTraceOf(thrown));
+                }
+            }
+        } finally {
+            threads.shutdownNow();
+        }
+    }
+
+    private static String stackTraceOf(Throwable t) {
+        if (t == null) {
+            return "";
+        }
+        StringWriter out = new StringWriter();
+        try (PrintWriter writer = new PrintWriter(out)) {
+            t.printStackTrace(writer);
+        }
+        return out.toString();
     }
 }

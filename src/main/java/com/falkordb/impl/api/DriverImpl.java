@@ -501,6 +501,11 @@ public class DriverImpl implements Driver {
      * to hand back a pool it immediately closes: real network I/O after {@code close()}, reported as
      * an exhausted-pool error rather than as the programming mistake it is. (A driver closed *after*
      * being used keeps reporting that through Jedis, as it always has.)
+     *
+     * <p>{@code resolvedPool} is write-once: it goes from null to a pool and never back. That is what
+     * lets the loser of the race read the winner's pool without a retry and without ever seeing null.
+     * A pool closed underneath us stays published — the driver is closed, so reporting that through
+     * Jedis is the same thing that happens to a driver closed after being used.
      */
     private Pool<Jedis> pool() {
         Pool<Jedis> existing = resolvedPool.get();
@@ -514,10 +519,10 @@ public class DriverImpl implements Driver {
             return resolvedPool.get();
         }
         if (closed.get()) {
-            // close() ran while this pool was being built; honour it rather than leak the pool.
+            // close() ran while this pool was being built. If it read resolvedPool before the CAS
+            // above it saw nothing to close, so closing here is what prevents a leak; if it read
+            // after, it closed this pool already and doing so again is harmless.
             closeQuietly(created);
-            resolvedPool.compareAndSet(created, null);
-            requireOpen();
         }
         return created;
     }
