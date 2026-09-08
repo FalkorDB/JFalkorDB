@@ -27,8 +27,12 @@ public final class FalkorDB {
      * </ol>
      *
      * <p>This environment fallback applies <strong>only</strong> to this no-arg overload: {@link
-     * #driver(String, int)}, {@link #driver(String, int, String, String)}, {@link #driver(URI)}, and
-     * {@link #builder()} are unaffected and always connect to exactly the arguments you pass them.
+     * #driver(String, int)}, {@link #driver(String, int, String, String)} and {@link #driver(URI)}
+     * always connect to exactly the arguments you pass them, and {@link #builder()} likewise ignores
+     * the environment entirely — an unconfigured {@link Builder} still defaults to {@code
+     * localhost:6379}, so {@code builder().build()} and {@code driver()} agree only when none of the
+     * variables above is set. Set the host and port on the builder explicitly if you need it to
+     * follow the environment.
      *
      * @return a new driver instance
      * @throws IllegalStateException if {@code FALKORDB_URL} is set but malformed, if {@code
@@ -77,9 +81,11 @@ public final class FalkorDB {
      * Starts building a driver with a fluent, discoverable configuration API — a superset of the
      * {@code driver(...)} factories that also exposes TLS, connection-pool sizing, and timeouts.
      *
-     * <p>With no options set, {@link Builder#build()} produces a driver identical to {@link #driver()}
-     * (host {@code localhost}, port {@code 6379}, no credentials, no TLS, Jedis' default 2000&nbsp;ms
-     * connect timeout, no socket read deadline, and the default connection pool). For example:
+     * <p>With no options set, {@link Builder#build()} produces a driver pointing at host {@code
+     * localhost}, port {@code 6379}, with no credentials, no TLS, Jedis' default 2000&nbsp;ms connect
+     * timeout, no socket read deadline, and the default connection pool. Unlike {@link #driver()},
+     * the builder never consults {@code FALKORDB_URL}/{@code FALKORDB_HOST}/{@code FALKORDB_PORT} —
+     * these defaults are fixed. For example:
      *
      * <pre>{@code
      * Driver driver = FalkorDB.builder()
@@ -103,9 +109,10 @@ public final class FalkorDB {
     /**
      * A fluent builder for a {@link Driver}, created via {@link FalkorDB#builder()}.
      *
-     * <p>All options are optional; unset options fall back to the same defaults as {@link
-     * FalkorDB#driver()}. Instances are not thread-safe and are intended to be configured and
-     * {@linkplain #build() built} on a single thread. Validation happens in {@link #build()}.
+     * <p>All options are optional; unset options fall back to the fixed defaults documented on each
+     * setter ({@code localhost:6379}, no credentials, no TLS), never to the environment {@link
+     * FalkorDB#driver()} consults. Instances are not thread-safe and are intended to be configured
+     * and {@linkplain #build() built} on a single thread. Validation happens in {@link #build()}.
      */
     public static final class Builder {
 
@@ -241,8 +248,9 @@ public final class FalkorDB {
         }
 
         /**
-         * Validates the configuration and builds a driver. Unset options use the same defaults as
-         * {@link FalkorDB#driver()}. Range validation happens in {@link DriverImpl#create}.
+         * Validates the configuration and builds a driver. Unset options use the fixed defaults
+         * documented on each setter, independently of the environment {@link FalkorDB#driver()} reads.
+         * Range validation happens in {@link DriverImpl#create}.
          *
          * @return a new driver
          * @throws IllegalArgumentException if any option is out of range (see the individual setters)

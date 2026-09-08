@@ -106,7 +106,13 @@ final class DriverEnvironment {
         }
     }
 
-    private static @Nullable String trimToNull(@Nullable String value) {
+    /**
+     * Normalizes an environment value to {@code null} when it is unset, empty, or whitespace-only, so
+     * a blank variable is treated exactly like an unset one. Package-private so tests that need to
+     * skip when the ambient environment configures {@code driver()} can apply the very same rule
+     * rather than re-implementing (and drifting from) it.
+     */
+    static @Nullable String trimToNull(@Nullable String value) {
         if (value == null) {
             return null;
         }

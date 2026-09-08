@@ -21,6 +21,11 @@ import org.junit.jupiter.api.Test;
 class DriverEnvironmentTest {
 
     private static Function<String, String> env(String... keyValuePairs) {
+        if (keyValuePairs.length % 2 != 0) {
+            throw new IllegalArgumentException(
+                    "env() takes alternating key/value arguments, so it needs an even number of them, but got "
+                            + keyValuePairs.length);
+        }
         Map<String, String> values = new HashMap<>();
         for (int i = 0; i < keyValuePairs.length; i += 2) {
             values.put(keyValuePairs[i], keyValuePairs[i + 1]);
