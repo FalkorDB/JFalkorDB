@@ -47,3 +47,5 @@ dev
 env
 arg
 URI
+README's
+updaters
