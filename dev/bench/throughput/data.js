@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788855569243,
+  "lastUpdate": 1788856187179,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -5014,6 +5014,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 18933,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "307409954+falkordb-release-please[bot]@users.noreply.github.com",
+            "name": "falkordb-release-please[bot]",
+            "username": "falkordb-release-please[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a43b9b0f3a241aff7b102a8000f35ecb39163802",
+          "message": "chore(master): release 0.12.0 (#431)\n\n* chore(master): release 0.12.0\n\n* chore(master): point the README release snippet at 0.12.0\n\nThe \"Official Releases\" snippet is deliberately not marked with\nx-release-please-version (the snapshot PR that follows every release\nwould rewrite it to a version never published to Maven Central), so\nReadmeVersionTest fails on the release PR until it is updated by hand.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: falkordb-release-please[bot] <307409954+falkordb-release-please[bot]@users.noreply.github.com>\nCo-authored-by: Barak Bar Orion <barak.bar@gmail.com>\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-09-08T11:27:19+03:00",
+          "tree_id": "5813fba3860a64d141ced22a9f6e22b0a8e1625d",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/a43b9b0f3a241aff7b102a8000f35ecb39163802"
+        },
+        "date": 1788856187147,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3487,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6176.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 8930,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11714.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11086.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11016.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 10682.333,
             "unit": "ops/s"
           }
         ]
