@@ -17,12 +17,15 @@ FalkorDB Java client
 
 ## Official Releases
 
+<!-- The version below is NOT auto-updated: release-please would rewrite it to a -SNAPSHOT (see
+     release-please-config.json). ReadmeVersionTest keeps it honest against CHANGELOG.md instead. -->
+
 ```xml
   <dependencies>
     <dependency>
       <groupId>com.falkordb</groupId>
       <artifactId>jfalkordb</artifactId>
-      <version>0.11.0</version>
+      <version>0.11.1</version>
     </dependency>
   </dependencies>
 ```
@@ -45,7 +48,7 @@ and
     <dependency>
       <groupId>com.falkordb</groupId>
       <artifactId>jfalkordb</artifactId>
-      <version>0.11.1-SNAPSHOT</version>
+      <version>0.11.2-SNAPSHOT</version> <!-- x-release-please-version -->
     </dependency>
   </dependencies>
 ```

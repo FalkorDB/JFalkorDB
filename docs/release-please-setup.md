@@ -67,6 +67,32 @@ the Maven Central publish.
 If the App token step fails, re-check that the App is **installed on the repo** and that both secrets
 are set (the private key must be the complete `.pem`).
 
+## Version numbers outside `pom.xml` (`extra-files`)
+
+`README.md` and the four sibling modules (`examples`, `smoke-test`, `pin-check`, `benchmarks`) also
+name a version, and nothing owned them until #401 — so they drifted quietly, the README's release
+snippet ending up two releases stale and every sibling module defaulting to `0.10.0-SNAPSHOT`. They
+are now listed as `extra-files` in `release-please-config.json` and carry an
+`x-release-please-version` marker on the line to rewrite.
+
+**Only snapshot-tracking numbers can be marked, and this is the trap to know about.** With
+`release-type: java`, every release PR is followed by a **snapshot PR**, and
+`buildSnapshotPullRequest` re-applies the *same* `extra-files` updaters with the `-SNAPSHOT`
+version. So a marked line ends each release cycle holding `X.Y.Z-SNAPSHOT`, never the release. That
+is exactly right for the README's **Snapshots** block and for the modules' `jfalkordb.version`
+default — all of which should track master's snapshot — and exactly wrong for the README's
+**Official Releases** block, the one users copy into their own `pom.xml`.
+
+So the release snippet is deliberately **not** marked; adding a marker there would leave it pointing
+at a version that was never published to Maven Central. `ReadmeVersionTest` guards it instead, by
+comparing it with the newest entry in `CHANGELOG.md` (and guards the marked lines by comparing them
+with `pom.xml`, so a broken marker fails loudly rather than silently resuming the drift).
+
+**Practical consequence:** `ReadmeVersionTest` fails on the Release PR, because release-please has
+written the new version into `CHANGELOG.md` while the release snippet still names the previous one.
+That is intended — it is the release-time check that makes the drift impossible to ship. Update that
+one `<version>` line in the Release PR before merging it.
+
 ## Branch protection
 
 Ensure the required status checks (`build`, `format`, `lint`, `smoke-jdk8`, `api-diff`, `lint-title`)

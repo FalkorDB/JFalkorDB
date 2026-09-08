@@ -7,7 +7,12 @@
       "release-type": "java",
       "bump-minor-pre-major": true,
       "extra-files": [
-        { "type": "pom", "path": "pom.xml" }
+        { "type": "pom", "path": "pom.xml" },
+        { "type": "generic", "path": "README.md" },
+        { "type": "generic", "path": "examples/pom.xml" },
+        { "type": "generic", "path": "smoke-test/pom.xml" },
+        { "type": "generic", "path": "pin-check/pom.xml" },
+        { "type": "generic", "path": "benchmarks/pom.xml" }
       ]
     }
   }
