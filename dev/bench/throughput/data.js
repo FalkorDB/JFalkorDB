@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788687557223,
+  "lastUpdate": 1788850144391,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -4660,6 +4660,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 10818.333,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "071b9aa40d5301e58b79ae1e6262716304adbc16",
+          "message": "build(deps-dev): bump com.github.siom79.japicmp:japicmp-maven-plugin (#426)\n\nBumps [com.github.siom79.japicmp:japicmp-maven-plugin](https://github.com/siom79/japicmp) from 0.26.1 to 0.26.2.\n- [Release notes](https://github.com/siom79/japicmp/releases)\n- [Changelog](https://github.com/siom79/japicmp/blob/master/release.py)\n- [Commits](https://github.com/siom79/japicmp/compare/japicmp-base-0.26.1...japicmp-base-0.26.2)\n\n---\nupdated-dependencies:\n- dependency-name: com.github.siom79.japicmp:japicmp-maven-plugin\n  dependency-version: 0.26.2\n  dependency-type: direct:development\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-09-08T09:46:38+03:00",
+          "tree_id": "fba23716c757c70508004e9946246d66969a82b7",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/071b9aa40d5301e58b79ae1e6262716304adbc16"
+        },
+        "date": 1788850144358,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 4241,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 7120.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 10217.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 13775.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 12941,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 12817.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 12820.667,
             "unit": "ops/s"
           }
         ]
