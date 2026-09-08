@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788850506406,
+  "lastUpdate": 1788852210054,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -4778,6 +4778,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 23722.333,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "272c846a2597fd8ae35b28a9bb6381a2b029ee7b",
+          "message": "build(deps-dev): bump org.slf4j:slf4j-simple from 2.0.18 to 2.0.19 (#428)\n\nBumps org.slf4j:slf4j-simple from 2.0.18 to 2.0.19.\n\n---\nupdated-dependencies:\n- dependency-name: org.slf4j:slf4j-simple\n  dependency-version: 2.0.19\n  dependency-type: direct:development\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Barak Bar Orion <barak.bar@gmail.com>",
+          "timestamp": "2026-09-08T10:20:59+03:00",
+          "tree_id": "6182cf1903d9c06afd6a1e4ca7fa606b483ede58",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/272c846a2597fd8ae35b28a9bb6381a2b029ee7b"
+        },
+        "date": 1788852210020,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3421.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 5878,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 8682.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11719,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11155.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 10977.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 10988.333,
             "unit": "ops/s"
           }
         ]
