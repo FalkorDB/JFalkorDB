@@ -133,6 +133,36 @@ public class GraphExample {
 }
 ```
 
+## Configuring the driver from the environment
+
+`FalkorDB.driver()` — the no-arg factory used above — connects to `localhost:6379` by default, but
+first checks for connection settings in the environment so the same artifact can be deployed across
+dev/CI/staging/prod without hand-rolled env-var plumbing. Resolution order:
+
+1. `FALKORDB_URL` — a full connection URI (`redis://`/`rediss://`, or the FalkorDB-branded
+   `falkor://`/`falkors://` aliases for them), covering host, port, credentials, and TLS in one
+   value; delegates to `FalkorDB.driver(URI)`.
+2. `FALKORDB_HOST` together with `FALKORDB_PORT` — delegates to `FalkorDB.driver(host, port)`.
+   Setting only one of the pair throws `IllegalStateException` rather than silently defaulting the
+   other.
+3. Neither set — the unchanged `localhost:6379` default.
+
+```bash
+export FALKORDB_URL=redis://<user>:<password>@db.example.com:6379
+# or, equivalently:
+export FALKORDB_HOST=db.example.com
+export FALKORDB_PORT=6379
+```
+
+```java
+// picks up FALKORDB_URL, or FALKORDB_HOST + FALKORDB_PORT, or falls back to localhost:6379
+Driver driver = FalkorDB.driver();
+```
+
+This fallback applies **only** to the no-arg `driver()` overload — `driver(host, port)`,
+`driver(host, port, user, password)`, `driver(URI)`, and `builder()` always connect to exactly the
+arguments you pass them and never consult the environment.
+
 ## Query parameters
 
 Always pass values as **parameters** rather than concatenating them into the Cypher string. Parameter

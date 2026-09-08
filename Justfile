@@ -90,8 +90,8 @@ verify-jdk8 jdk8_home:
 
 # Compile the runnable examples (examples/, standalone, release 8) against the freshly-built jfalkordb
 # jar — the CI `examples` gate; keeps the documented examples valid as the API evolves. Run one with
-# the Exec plugin (needs `just db-up`), e.g.
-# `cd examples && ../mvnw exec:java -Dexec.mainClass=com.falkordb.examples.QuickStart`.
+# the Exec plugin (needs `just db-up`) — pass the root version, since examples/pom.xml pins a default
+# that can lag behind it; see examples/README.md for the copy-pasteable form.
 examples:
     #!/usr/bin/env bash
     set -euo pipefail
