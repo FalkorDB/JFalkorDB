@@ -6,8 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import org.junit.jupiter.api.Test;
@@ -209,5 +212,49 @@ class DriverEnvironmentTest {
                 assertThrows(IllegalStateException.class, () -> DriverEnvironment.toConnectionUri(withCredentials));
         assertTrue(e.getMessage().contains("<redacted>"));
         assertFalse(e.getMessage().contains("cred@"));
+    }
+
+    @Test
+    void toConnectionUriRedactsCredentialsWhenTheSchemeIsMissing() {
+        // A scheme-less value is the easy mistake to make, and URI parses it as an *opaque* URI
+        // instead of rejecting it, so it reaches the "not valid" message with its credentials intact
+        // unless redaction is anchored at the start of the value as well as at "://".
+        String withCredentials = "user:" + "cred" + "@db.example.com:6379";
+        IllegalStateException e =
+                assertThrows(IllegalStateException.class, () -> DriverEnvironment.toConnectionUri(withCredentials));
+        assertTrue(e.getMessage().contains("<redacted>"));
+        assertFalse(e.getMessage().contains("cred@"));
+    }
+
+    @Test
+    void toConnectionUriKeepsCredentialsOutOfTheWholeCausalChain() {
+        // Redacting only the top-level message is not enough: URISyntaxException quotes the raw input
+        // in its own message, so chaining it as a cause would leak the credentials into any log or
+        // crash report that prints the stack trace.
+        String withCredentials = "redis://" + "cred" + "@[bad";
+        IllegalStateException e =
+                assertThrows(IllegalStateException.class, () -> DriverEnvironment.toConnectionUri(withCredentials));
+        assertFalse(stackTraceOf(e).contains("cred@"), "credentials leaked through the causal chain");
+    }
+
+    @Test
+    void toConnectionUriStillExplainsWhyTheUriWasRejected() {
+        // Dropping the cause must not cost the diagnosis: the value-free reason is carried over.
+        IllegalStateException e =
+                assertThrows(IllegalStateException.class, () -> DriverEnvironment.toConnectionUri("redis://[bad"));
+        assertTrue(e.getMessage().contains(DriverEnvironment.URL_VAR));
+        assertTrue(
+                e.getMessage().toLowerCase(Locale.ROOT).contains("bracket")
+                        || e.getMessage().toLowerCase(Locale.ROOT).contains("illegal"),
+                "expected the URISyntaxException reason to be carried over, but was: " + e.getMessage());
+    }
+
+    /** Renders {@code t} and its whole causal chain the way a crash report or log would. */
+    private static String stackTraceOf(Throwable t) {
+        StringWriter out = new StringWriter();
+        try (PrintWriter writer = new PrintWriter(out)) {
+            t.printStackTrace(writer);
+        }
+        return out.toString();
     }
 }

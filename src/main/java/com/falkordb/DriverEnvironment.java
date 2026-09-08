@@ -31,8 +31,13 @@ final class DriverEnvironment {
     /** Default port used when neither {@link #URL_VAR} nor {@link #HOST_VAR}/{@link #PORT_VAR} is set. */
     static final int DEFAULT_PORT = 6379;
 
-    /** Matches the credentials segment of a URI authority, so it can be redacted before logging. */
-    private static final Pattern USERINFO_PREFIX = Pattern.compile("://[^/?#@]*@");
+    /**
+     * Matches the credentials segment of a URI authority, so it can be redacted before logging.
+     * Anchored at either a {@code ://} scheme separator or the very start of the value, so a
+     * scheme-less mistake like {@code user:password@host:6379} — which {@link URI} happily parses as
+     * an opaque URI rather than rejecting — is redacted just like a well-formed {@code redis://} URL.
+     */
+    private static final Pattern USERINFO_PREFIX = Pattern.compile("(^|://)[^/?#@]*@");
 
     private DriverEnvironment() {}
 
@@ -53,7 +58,11 @@ final class DriverEnvironment {
             try {
                 return FalkorDB.driver(uri);
             } catch (RuntimeException e) {
-                throw new IllegalStateException(URL_VAR + " is not a valid connection URI: \"" + redact(url) + "\"", e);
+                // Same reasoning as in toConnectionUri: Jedis' InvalidURIException formats the whole
+                // URI (credentials included) into its message, so chaining it would undo redact().
+                // The exception's type is a safe breadcrumb; its message is not.
+                throw new IllegalStateException(URL_VAR + " is not a valid connection URI: \"" + redact(url)
+                        + "\" (rejected by " + e.getClass().getSimpleName() + ")");
             }
         }
         String host = trimToNull(env.apply(HOST_VAR));
@@ -85,7 +94,11 @@ final class DriverEnvironment {
         try {
             uri = new URI(normalized);
         } catch (URISyntaxException e) {
-            throw new IllegalStateException(URL_VAR + " is not a valid connection URI: \"" + redact(value) + "\"", e);
+            // Deliberately not chained as the cause: URISyntaxException.getMessage() quotes the raw
+            // input, which would put the credentials we just redacted straight back into the stack
+            // trace. getReason() is the value-free half of it, so carry that instead.
+            throw new IllegalStateException(
+                    URL_VAR + " is not a valid connection URI: \"" + redact(value) + "\" (" + e.getReason() + ")");
         }
         if (!JedisURIHelper.isValid(uri)) {
             throw new IllegalStateException(URL_VAR + " is not a valid connection URI: \"" + redact(value) + "\"");
@@ -93,9 +106,12 @@ final class DriverEnvironment {
         return uri;
     }
 
-    /** Replaces any {@code userinfo@} authority prefix in {@code value} with a fixed placeholder. */
+    /**
+     * Replaces any {@code userinfo@} credentials segment in {@code value} with a fixed placeholder,
+     * keeping the {@code ://} separator (or the start of the value) that anchored it.
+     */
     private static String redact(String value) {
-        return USERINFO_PREFIX.matcher(value).replaceFirst("://<redacted>@");
+        return USERINFO_PREFIX.matcher(value).replaceAll("$1<redacted>@");
     }
 
     private static int parsePort(String value) {

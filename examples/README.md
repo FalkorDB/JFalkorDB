@@ -30,9 +30,13 @@ Exec plugin:
 
 ```sh
 cd examples
-../mvnw -q exec:java -Dexec.mainClass=com.falkordb.examples.QuickStart
+# examples/pom.xml pins a default jfalkordb.version that can lag the root project, so resolve the
+# real one and pass it, exactly as `just examples` does:
+version="$(../mvnw -q -DforceStdout -f ../pom.xml help:evaluate -Dexpression=project.version)"
+../mvnw -q exec:java -Djfalkordb.version="$version" -Dexec.mainClass=com.falkordb.examples.QuickStart
 # optional host/port:
-../mvnw -q exec:java -Dexec.mainClass=com.falkordb.examples.QuickStart -Dexec.args="localhost 6379"
+../mvnw -q exec:java -Djfalkordb.version="$version" \
+    -Dexec.mainClass=com.falkordb.examples.QuickStart -Dexec.args="localhost 6379"
 ```
 
 `ConfiguredDriver` only builds and closes a driver (the pool connects lazily), so it runs without a
@@ -43,5 +47,6 @@ server — it is there to show the configuration options.
 export `FALKORDB_URL`, or both `FALKORDB_HOST` and `FALKORDB_PORT`, to point it elsewhere first:
 
 ```sh
-../mvnw -q exec:java -Dexec.mainClass=com.falkordb.examples.EnvironmentConfiguredDriver
+../mvnw -q exec:java -Djfalkordb.version="$version" \
+    -Dexec.mainClass=com.falkordb.examples.EnvironmentConfiguredDriver
 ```
