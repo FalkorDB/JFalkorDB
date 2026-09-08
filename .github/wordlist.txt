@@ -43,3 +43,7 @@ semver
 async
 cancelling
 JEP
+dev
+env
+arg
+URI
