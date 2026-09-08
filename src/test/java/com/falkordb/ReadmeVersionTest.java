@@ -38,8 +38,16 @@ import org.junit.jupiter.api.Test;
  */
 class ReadmeVersionTest {
 
-    /** The {@code <version>} inside the fenced XML block that follows a given README heading. */
-    private static final String VERSION_AFTER_HEADING = "(?s)##\\s+%s\\b.*?<version>([^<]+)</version>";
+    /** Everything under a {@code ## Heading} up to the next one, so a match cannot leak sideways. */
+    private static final String SECTION = "(?ms)^##\\s+%s\\b(.*?)(?=^##\\s|\\z)";
+
+    /** The body of a fenced {@code ```xml} block. Reluctant, so it stops at that block's fence. */
+    private static final Pattern FENCED_XML = Pattern.compile("(?s)```xml\\s(.*?)```");
+
+    private static final Pattern XML_VERSION = Pattern.compile("<version>([^<]+)</version>");
+
+    /** The marker that hands a line to release-please. */
+    private static final String MARKER = "<!-- x-release-please-version -->";
 
     /** release-please writes the newest release first, as {@code ## [x.y.z](compare-link) (date)}. */
     private static final Pattern LATEST_CHANGELOG_VERSION = Pattern.compile("(?m)^##\\s+\\[([^\\]]+)\\]");
@@ -100,18 +108,78 @@ class ReadmeVersionTest {
                     "jfalkordb.version in " + module + "/pom.xml");
             assertEquals(projectVersion, declared, module + "/pom.xml's jfalkordb.version default is stale (#401)");
             assertTrue(
-                    pom.contains("<jfalkordb.version>" + declared
-                            + "</jfalkordb.version> <!-- x-release-please-version -->"),
+                    pom.contains("<jfalkordb.version>" + declared + "</jfalkordb.version> " + MARKER),
                     module + "/pom.xml lost its x-release-please-version marker, so its default will "
                             + "drift again - check release-please-config.json (#401)");
         }
     }
 
+    /**
+     * The three tests above compare versions, so they only notice drift once it has happened. This
+     * one asserts the machinery that prevents it: every file carrying a marker must also be listed in
+     * {@code release-please-config.json}, and every marker must still be there. Delete either half
+     * and the versions still agree today, but the next release silently resumes the drift #401 was
+     * filed about.
+     */
+    @Test
+    void releasePleaseStillOwnsEveryVersionOutsideTheRootPom() throws IOException {
+        String config = read("release-please-config.json");
+        String extraFiles = firstMatch(
+                Pattern.compile("(?s)\"extra-files\"\\s*:\\s*\\[(.*?)]"),
+                config,
+                "extra-files in " + "release-please-config.json");
+
+        for (String path : new String[] {
+            "README.md", "examples/pom.xml", "smoke-test/pom.xml", "pin-check/pom.xml", "benchmarks/pom.xml"
+        }) {
+            String entry = firstMatch(
+                    Pattern.compile("(\\{[^{}]*\"path\"\\s*:\\s*\"" + Pattern.quote(path) + "\"[^{}]*})"),
+                    extraFiles,
+                    "\"" + path + "\" among the extra-files in release-please-config.json");
+            assertTrue(
+                    Pattern.compile("\"type\"\\s*:\\s*\"generic\"")
+                            .matcher(entry)
+                            .find(),
+                    "release-please-config.json lists " + path + " but not with \"type\": \"generic\", so its "
+                            + "x-release-please-version markers may stop being honoured (#401)");
+        }
+
+        assertTrue(
+                versionedXmlBlockIn(
+                                firstMatch(
+                                        Pattern.compile(String.format(SECTION, "Snapshots")),
+                                        read("README.md"),
+                                        "\"Snapshots\" section of README.md"),
+                                "Snapshots")
+                        .contains(MARKER),
+                "README.md's \"Snapshots\" snippet lost its x-release-please-version marker, so release-please "
+                        + "will stop updating it and it will go stale again (#401)");
+    }
+
     private static String versionUnderHeading(String heading) throws IOException {
-        return firstMatch(
-                Pattern.compile(String.format(VERSION_AFTER_HEADING, Pattern.quote(heading))),
+        String section = firstMatch(
+                Pattern.compile(String.format(SECTION, Pattern.quote(heading))),
                 read("README.md"),
-                "<version> under README.md heading \"" + heading + "\"");
+                "\"" + heading + "\" section of README.md");
+        return firstMatch(
+                XML_VERSION,
+                versionedXmlBlockIn(section, heading),
+                "<version> in the ```xml block under README.md heading \"" + heading + "\"");
+    }
+
+    /**
+     * The first fenced {@code ```xml} block of the section that declares a {@code <version>}. Not
+     * simply the first block: the "Snapshots" section opens with a {@code <repositories>} snippet.
+     */
+    private static String versionedXmlBlockIn(String section, String heading) {
+        Matcher blocks = FENCED_XML.matcher(section);
+        while (blocks.find()) {
+            if (XML_VERSION.matcher(blocks.group(1)).find()) {
+                return blocks.group(1);
+            }
+        }
+        throw new AssertionError("README.md's \"" + heading + "\" section has no ```xml block declaring a <version>; "
+                + "has the file's layout changed?");
     }
 
     private static String firstMatch(Pattern pattern, String haystack, String what) {
