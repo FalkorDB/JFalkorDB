@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788856185455,
+  "lastUpdate": 1788873271022,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -11093,6 +11093,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 82026.026,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "25cee11d8e25dcecd52ee9fc81dc2f8ad21e3f80",
+          "message": "feat: add Redis Sentinel support (#434)\n\n* feat: add Redis Sentinel support\n\nPoint the driver at a Sentinel and it now discovers the master and\nfollows failovers, closing #46.\n\nDetection is automatic and needs no configuration: the endpoint is\nprobed with `INFO server`, and if it reports `redis_mode:sentinel` the\nmaster is taken from `SENTINEL MASTERS`. This is what falkordb-py,\nfalkordb-go and falkordb-ts already do, so a deployment behaves the same\nwhichever client talks to it. A Sentinel monitoring several masters is\nambiguous and reports an error naming the builder call that resolves it.\n\nDetection failures are deliberately non-fatal. An endpoint that cannot\nbe probed, or that refuses `INFO` by ACL, falls back to the direct pool\nevery previous release would have built, so the new default cannot break\nan existing deployment. `autoDetectSentinel(false)` skips the probe\nentirely.\n\nThe deployment can also be named explicitly, which is required when a\nSentinel monitors more than one master and useful for listing several\nSentinels for redundancy:\n\n    FalkorDB.builder().sentinel(\"mymaster\", \"a:26379\", \"b:26379\")\n\nSentinels often have their own ACL, so `sentinelCredentials(...)`\nconfigures them separately; without it the master's credentials are\nreused. `FALKORDB_SENTINEL_MASTER` and `FALKORDB_SENTINELS` configure\nthe same thing from the environment, taking precedence over\n`FALKORDB_URL` and `FALKORDB_HOST`/`FALKORDB_PORT`.\n\nThree details worth knowing when reading the diff:\n\n`DriverImpl` now resolves its pool on first use rather than in the\nconstructor. Driver construction has never performed I/O and the suite\nrelies on that, so the probe had to be deferred. The memoisation is a\nlock-free CAS rather than a `synchronized` block because holding a\nmonitor across network I/O would pin a virtual thread's carrier, which\nthe `pin-check` gate forbids.\n\nConnections to the Sentinels get their own client config rather than\nreusing the data one. It must not carry the database index a URI can\nsupply, since Jedis would then send `SELECT` to a Sentinel, which has no\nsuch command; `JedisSentinelPool` reports that error as the Sentinel\nbeing down, making a healthy deployment look dead. It must also keep an\nunbounded read deadline, because the pool holds a `SUBSCRIBE` open on\neach Sentinel to hear `+switch-master`. Bounding the read is instead the\njob of the separate one-shot probe config, so a silent endpoint cannot\nhang the first query.\n\nVerified against a real master/replica/Sentinel topology: auto-detection,\nexplicit configuration, the environment variables, the opt-out, an\nactual `SENTINEL FAILOVER` (the driver followed the promotion without\nbeing recreated), and the multi-master error.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* fix: fail fast on a closed driver and correct stale Sentinel docs\n\nAddresses the review on #434.\n\nResolving the pool lazily left a hole: a driver closed before it was ever\nused would, on the next call, run the whole resolution -- Sentinel probe\nincluded -- only to hand back a pool it immediately closes. That is real\nnetwork I/O after close(), reported as a pool error rather than as the\nprogramming mistake it is. `pool()` now refuses to build anything once\nthe driver is closed, in the initial check and in the race with a\nconcurrent close(). A driver closed after being used keeps reporting\nthrough Jedis exactly as it always has.\n\nThe rest is documentation that the lazy refactor invalidated: three\nplaces still said the Sentinel probe happens at driver creation or in\nbuild(), when it now happens on first use.\n\nAlso pass --raw to redis-cli in SentinelIT. It already behaves that way\nwhen its output is not a terminal, which is the case here, but saying so\nmeans the address parsing does not depend on that detection.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* fix: keep the resolved pool write-once and tighten the Sentinel health check\n\nThe close-before-first-use fix in 37d585c withdrew the pool from\n`resolvedPool` when the winner of the resolution race found the driver\nclosed. That reintroduced a null into a field the loser of that race\nreads unguarded, so a borrower could get a NullPointerException instead\nof a real error.\n\nRather than surviving the null with a retry, remove the mechanism that\ncreates it: `resolvedPool` is now write-once, going from null to a pool\nand never back. The loser can therefore read the winner's pool directly\nand can never see null. A pool closed underneath a caller stays\npublished, so the driver reports through Jedis -- exactly what already\nhappens to a driver closed after being used. Failing fast on a driver\nclosed *before* it is used, which is what 37d585c was for, is unchanged.\n\nAlso make `SentinelIT.awaitMonitoredMaster` parse the reply into fields\nand require `flags` to be exactly `master`. The old substring test\nmatched the master's *name* (`mymaster`), so it accepted a Sentinel that\nhad not converged yet, and would have accepted `master,disconnected`.\n\nSilence the lint warnings this feature introduced: seven missing Javadoc\nsummary fragments in SentinelOptions and three single-argument\nString.split calls.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* fix: stop invalid connection URIs from leaking their credentials\n\nrequireValidUri reproduced Jedis' message verbatim, and that message\nformats the whole URI. A connection URI routinely carries a password in\nits userinfo, so rejecting one put that password into the exception\nmessage and every log line and crash report carrying it. The URIs most\nlikely to be rejected are hand-written ones, which is exactly where a\nhand-typed password lives.\n\nDriverEnvironment already refused to chain Jedis' exception for this\nreason and redacted the value itself, so the rule existed but only on\nthe environment path; the public FalkorDB.driver(URI) path still leaked.\nRather than copy the regex into a second file -- two copies of a rule\nlike this drift, and the copy that drifts is the one that leaks -- move\nit to com.falkordb.impl.ConnectionUris and have both paths call it.\n\nThe helper redacts the text rather than URI accessors on purpose: the\nvalues that most need redacting are the malformed ones, and a URI Java\ncannot parse into an authority still has the password in plain sight in\nits string form.\n\ncom.falkordb.impl is excluded from the javadoc and api-diff gates, so\nthis adds nothing to the public API surface.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* fix: make ConnectionUris.redact null-tolerant on both overloads\n\nredact(String) threw a NullPointerException on null while redact(URI)\nreturned \"null\", and an overload that throws where its twin returns is a\ntrap for the next caller, who will not check which one they picked.\n\nNeither call site can pass null today, so this is about the invariant\nrather than a live bug: redaction only ever runs while something is\nalready going wrong, and throwing out of the code that builds an error\nmessage replaces a useful diagnostic with a useless one -- which is the\nreasoning already written on the URI overload.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* fix: correct the grammar of the invalid-URI message\n\n\"Cannot open Redis connection due invalid URI\" reads as a typo because it is\none -- it was inherited verbatim from Jedis' JedisFactory, which this driver\nreproduced when it took over building the client config from Jedis' URI-based\npool constructor.\n\nFidelity to that wording is not worth keeping. The message already had to\ndiverge, because Jedis quotes the URI verbatim and this driver redacts the\ncredentials out of it first, so the two were never going to match anyway. No\ntest or document pins the string.\n\nThe javadoc claimed the message was Jedis', which is what made the typo look\ndeliberate; it now describes what the check stands in for instead.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* fix: keep the Sentinel read deadline off whatever the data one is\n\nsentinelClientConfig() inherited the data connections' socket timeout. That\nconnection stops issuing requests once discovery is over: all it does from then\non is hold JedisSentinelPool's master listener SUBSCRIBEd to +switch-master. A\nsocket timeout of T therefore bounds nothing and instead expires the\nsubscription every T, and MasterListener answers a read timeout by logging a\nwarning and sleeping subscribeRetryWaitTimeMillis (5s) before resubscribing\n(JedisSentinelPool.MasterListener#run, jedis 8.0.1). A caller who set a socket\ntimeout for their graph queries got a permanent cycle of log noise and repeated\nwindows with nobody listening for failovers. The active refresh on reconnect\nmeans a promotion is still picked up eventually, so this degraded failover\ntracking rather than breaking it outright - which is exactly why it would not\nhave shown up in testing.\n\nThe default was already 0, so only explicitly configured timeouts were\naffected. Forcing it off does mean a Sentinel that completes the handshake and\nthen goes silent can hang initSentinels, but that exposure is unchanged for the\ndefault configuration, the connect timeout still bounds the connect, and\nauto-detection still runs its bounded probe first.\n\nprobeClientConfig() derived its bound from sentinelClientConfig()'s socket\ntimeout, so forcing that to 0 would have quietly downgraded every explicitly\nconfigured deadline to the probe default. It now reads the caller's choice off\nthe data config, which probeConfigRespectsAnExplicitReadDeadline pins.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* fix: redact a password that contains an unescaped at-sign\n\nUSERINFO_PREFIX excluded '@' from the segment it matched, so the match ended at\nthe *first* '@' in the authority. A password containing a literal '@' therefore\nkept everything after it: redis://someone:p@ss@localhost:6379 redacted to\n\"redis://<redacted>@ss@localhost:6379\", and rediss://u:p@w@d@host to\n\"rediss://<redacted>@w@d@host\" - the tail of the credential republished in the\nvery message the redaction exists to sanitise.\n\nSuch a value is also exactly what a URI parser rejects, so it is the input most\nlikely to reach an error message in the first place: the case that needed the\nredaction most was the case it half-performed.\n\nDropping '@' from the negated class makes the greedy match run to the last '@'\nin the authority instead of the first. /?# still bound it, so the path and\nquery are untouched - redis://host:6379/graph@2 stays intact, and an authority\nwith credentials followed by a path containing '@' redacts only the authority.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-09-08T16:11:53+03:00",
+          "tree_id": "84eee3107c25a381161cb352078ea774d95de948",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/25cee11d8e25dcecd52ee9fc81dc2f8ad21e3f80"
+        },
+        "date": 1788873269709,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 121.956,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 154.539,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 175.211,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 132.305,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 164.892,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 187.83,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 170.492,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 273.727,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 348.011,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 262.901,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 450.633,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 567.639,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 312.432,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 2589.226,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 5705.852,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 320.539,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 8295.812,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 19141.869,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 328.047,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 18925.67,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 43007.428,
             "unit": "us"
           }
         ]
