@@ -70,6 +70,14 @@ public class DriverImpl implements Driver {
     public static final int DEFAULT_SENTINEL_PROBE_TIMEOUT_MILLIS = Protocol.DEFAULT_TIMEOUT;
 
     /**
+     * Read deadline for the connections to the Sentinels themselves: none, whatever the data
+     * connections use. Once discovery is done, the only thing that connection does is hold a
+     * {@code SUBSCRIBE} open for {@code +switch-master}, so a socket timeout there bounds nothing —
+     * it just expires the subscription on a timer. See {@link #sentinelClientConfig}.
+     */
+    public static final int SENTINEL_SOCKET_TIMEOUT_MILLIS = 0;
+
+    /**
      * The pool actually in use. Resolved on first demand rather than in the constructor, because
      * Sentinel {@linkplain Sentinels#detect detection} needs a round-trip and driver creation has
      * always been I/O-free: a {@link JedisPool} connects lazily, so building a driver against a server
@@ -246,11 +254,14 @@ public class DriverImpl implements Driver {
      * resulting error as the Sentinel being unreachable, so a perfectly healthy deployment would look
      * dead. A Sentinel has no keyspace to select in any case.
      *
-     * <p>The socket timeout is passed through untouched, including the default 0. {@link
-     * JedisSentinelPool}'s master listener holds a {@code SUBSCRIBE} on each Sentinel to learn about
-     * failovers, and a read deadline there would tear that subscription down and rebuild it on a
-     * timer. Bounding the read is the one-shot {@linkplain #probeClientConfig probe}'s job, not this
-     * connection's.
+     * <p>The read deadline is forced off — {@link #SENTINEL_SOCKET_TIMEOUT_MILLIS} — rather than
+     * inherited. Once discovery is over, the only thing this connection does is hold {@link
+     * JedisSentinelPool}'s master listener {@code SUBSCRIBE}d to {@code +switch-master}, so a socket
+     * timeout of {@code T} bounds no request: it expires the subscription every {@code T}, and the
+     * listener responds by logging a warning and sleeping five seconds before resubscribing. A data
+     * socket timeout would therefore buy nothing and cost a permanent cycle of log noise and windows
+     * with nobody listening for failovers. Bounding the read is the one-shot {@linkplain
+     * #probeClientConfig probe}'s job, not this connection's.
      */
     static DefaultJedisClientConfig sentinelClientConfig(
             DefaultJedisClientConfig dataConfig, SentinelOptions sentinel) {
@@ -262,7 +273,7 @@ public class DriverImpl implements Driver {
                 ownCredentials ? sentinel.password() : dataConfig.getPassword(),
                 dataConfig.getSslOptions() != null,
                 dataConfig.getConnectionTimeoutMillis(),
-                dataConfig.getSocketTimeoutMillis());
+                SENTINEL_SOCKET_TIMEOUT_MILLIS);
     }
 
     /**
@@ -273,8 +284,10 @@ public class DriverImpl implements Driver {
      */
     static DefaultJedisClientConfig probeClientConfig(DefaultJedisClientConfig dataConfig, SentinelOptions sentinel) {
         DefaultJedisClientConfig base = sentinelClientConfig(dataConfig, sentinel);
-        int socketTimeoutMillis = base.getSocketTimeoutMillis() > 0
-                ? base.getSocketTimeoutMillis()
+        // Read the caller's choice off dataConfig, not off base: base's deadline is forced off for
+        // the subscription's sake, so deriving from it would silently ignore an explicit timeout.
+        int socketTimeoutMillis = dataConfig.getSocketTimeoutMillis() > 0
+                ? dataConfig.getSocketTimeoutMillis()
                 : DEFAULT_SENTINEL_PROBE_TIMEOUT_MILLIS;
         return buildClientConfig(
                 base.getUser(),

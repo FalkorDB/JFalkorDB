@@ -66,7 +66,10 @@ class SentinelClientConfigTest {
         assertEquals("sentinel-user", sentinel.getUser());
         assertEquals("sentinel-password", sentinel.getPassword());
         assertEquals(1500, sentinel.getConnectionTimeoutMillis());
-        assertEquals(4000, sentinel.getSocketTimeoutMillis());
+        assertEquals(
+                0,
+                sentinel.getSocketTimeoutMillis(),
+                "the read deadline is the one transport setting that must not carry over");
         assertNotNull(sentinel.getSslOptions(), "TLS must carry over to the Sentinel connection");
     }
 
@@ -79,6 +82,22 @@ class SentinelClientConfigTest {
         SentinelOptions options = SentinelOptions.autoDetect().withCredentials("u", "p");
 
         assertEquals(0, DriverImpl.sentinelClientConfig(data, options).getSocketTimeoutMillis());
+    }
+
+    @Test
+    void sentinelConfigDropsADataReadDeadlineInsteadOfInheritingIt() {
+        // The case the default above cannot catch: a caller who sets a socket timeout for their
+        // graph queries must not have it applied to the Sentinel connection. Once discovery is done
+        // that connection only holds the +switch-master subscription, so a timeout of T bounds no
+        // request -- it expires the subscription every T, and MasterListener answers by logging a
+        // warning and sleeping 5s before resubscribing (JedisSentinelPool.MasterListener#run). The
+        // result is a permanent cycle of log noise and windows with nobody listening for failovers.
+        DefaultJedisClientConfig data = dataConfig(false, 2000, 4000);
+
+        assertEquals(
+                DriverImpl.SENTINEL_SOCKET_TIMEOUT_MILLIS,
+                DriverImpl.sentinelClientConfig(data, SentinelOptions.autoDetect())
+                        .getSocketTimeoutMillis());
     }
 
     @Test
@@ -95,6 +114,9 @@ class SentinelClientConfigTest {
 
     @Test
     void probeConfigRespectsAnExplicitReadDeadline() {
+        // Guards the coupling between the two derived configs: the probe used to take this bound from
+        // the Sentinel config, which now forces the deadline off, so reading it from there would
+        // quietly downgrade every explicit timeout to the probe default.
         DefaultJedisClientConfig data = dataConfig(false, 2000, 7000);
 
         assertEquals(
