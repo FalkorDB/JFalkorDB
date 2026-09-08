@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788852447309,
+  "lastUpdate": 1788852669533,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -4896,6 +4896,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 10977,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5d3ee911a6ec11a409f6d7c28dde490cd276822a",
+          "message": "build(deps-dev): bump com.github.spotbugs:spotbugs-maven-plugin (#430)\n\nBumps [com.github.spotbugs:spotbugs-maven-plugin](https://github.com/spotbugs/spotbugs-maven-plugin) from 4.10.4.0 to 4.10.4.1.\n- [Release notes](https://github.com/spotbugs/spotbugs-maven-plugin/releases)\n- [Commits](https://github.com/spotbugs/spotbugs-maven-plugin/compare/spotbugs-maven-plugin-4.10.4.0...spotbugs-maven-plugin-4.10.4.1)\n\n---\nupdated-dependencies:\n- dependency-name: com.github.spotbugs:spotbugs-maven-plugin\n  dependency-version: 4.10.4.1\n  dependency-type: direct:development\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Barak Bar Orion <barak.bar@gmail.com>",
+          "timestamp": "2026-09-08T10:29:04+03:00",
+          "tree_id": "c99cad18a6e0dab9f6e87bf264ffe31d1e1ccf0b",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/5d3ee911a6ec11a409f6d7c28dde490cd276822a"
+        },
+        "date": 1788852669506,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 5445,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 9021,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 14231,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 17079.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 16431.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 16174.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 15907.333,
             "unit": "ops/s"
           }
         ]
