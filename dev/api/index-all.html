@@ -75,6 +75,10 @@ loadScripts(document, 'script');</script>
  operation of the same name but runs it on a caller-supplied <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Executor.html" title="class or interface in java.util.concurrent" class="external-link"><code>Executor</code></a>
  and returns a <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/CompletableFuture.html" title="class or interface in java.util.concurrent" class="external-link"><code>CompletableFuture</code></a>.</div>
 </dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#autoDetectSentinel(boolean)" class="member-name-link">autoDetectSentinel(boolean)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Enables or disables Sentinel auto-detection (default <code>true</code>).</div>
+</dd>
 </dl>
 <h2 class="title" id="I:B">B</h2>
 <dl class="index">
@@ -249,7 +253,7 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/falkordb/FalkorDB.html#driver(java.lang.String,int)" class="member-name-link">driver(String, int)</a> - Static method in class com.falkordb.<a href="com/falkordb/FalkorDB.html" title="class in com.falkordb">FalkorDB</a></dt>
 <dd>
-<div class="block">Creates a new driver instance</div>
+<div class="block">Creates a new driver instance.</div>
 </dd>
 <dt><a href="com/falkordb/FalkorDB.html#driver(java.lang.String,int,java.lang.String,java.lang.String)" class="member-name-link">driver(String, int, String, String)</a> - Static method in class com.falkordb.<a href="com/falkordb/FalkorDB.html" title="class in com.falkordb">FalkorDB</a></dt>
 <dd>
@@ -920,6 +924,24 @@ loadScripts(document, 'script');</script>
 </dl>
 <h2 class="title" id="I:S">S</h2>
 <dl class="index">
+<dt><a href="com/falkordb/FalkorDB.Builder.html#sentinel(java.lang.String,java.lang.String...)" class="member-name-link">sentinel(String, String...)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Connects through a Redis Sentinel deployment, naming the monitored master explicitly.</div>
+</dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#sentinel(java.lang.String,java.util.Collection)" class="member-name-link">sentinel(String, Collection&lt;String&gt;)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Connects through a Redis Sentinel deployment, naming the monitored master explicitly.</div>
+</dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#sentinelCredentials(java.lang.String)" class="member-name-link">sentinelCredentials(String)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Sets a password for password-only (<code>default</code> user) authentication to the Sentinels,
+ clearing any previously set Sentinel username.</div>
+</dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#sentinelCredentials(java.lang.String,java.lang.String)" class="member-name-link">sentinelCredentials(String, String)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Sets the username and password used to authenticate to the Sentinels themselves, which
+ commonly carry ACLs of their own.</div>
+</dd>
 <dt><a href="com/falkordb/graph_entities/Edge.html#setDestination(long)" class="member-name-link">setDestination(long)</a> - Method in class com.falkordb.graph_entities.<a href="com/falkordb/graph_entities/Edge.html" title="class in com.falkordb.graph_entities">Edge</a></dt>
 <dd>
 <div class="block">Sets the id of the destination node.</div>

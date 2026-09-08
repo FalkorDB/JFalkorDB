@@ -140,7 +140,7 @@ loadScripts(document, 'script');</script>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#driver(java.lang.String,int)" class="member-name-link">driver</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;host,
  int&nbsp;port)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Creates a new driver instance</div>
+<div class="block">Creates a new driver instance.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Driver.html" title="interface in com.falkordb">Driver</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#driver(java.lang.String,int,java.lang.String,java.lang.String)" class="member-name-link">driver</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;host,
@@ -180,6 +180,11 @@ loadScripts(document, 'script');</script>
  localhost:6379</code> isn't what you want. Resolved in this order:
 
  <ol>
+   <li><code>FALKORDB_SENTINEL_MASTER</code> together with <code>FALKORDB_SENTINELS</code> (a
+       comma-separated list of <code>host:port</code> Sentinel addresses) — connects through the named
+       Redis Sentinel deployment. Setting only one of the pair is rejected rather than silently
+       ignored. Credentials are not configurable this way; use <a href="#builder()"><code>builder()</code></a> if you need
+       them.
    <li><code>FALKORDB_URL</code> — a full connection URI (<code>redis://</code> or <code>rediss://</code>, or
        the FalkorDB-branded <code>falkor://</code>/<code>falkors://</code> aliases for them); delegates to
        <a href="#driver(java.net.URI)"><code>driver(URI)</code></a>, so it also carries credentials, a database index, and TLS.
@@ -194,14 +199,17 @@ loadScripts(document, 'script');</script>
  the environment entirely — an unconfigured <a href="FalkorDB.Builder.html" title="class in com.falkordb"><code>FalkorDB.Builder</code></a> still defaults to <code>
  localhost:6379</code>, so <code>builder().build()</code> and <code>driver()</code> agree only when none of the
  variables above is set. Set the host and port on the builder explicitly if you need it to
- follow the environment.</div>
+ follow the environment.
+
+ <p>Whichever endpoint is resolved, it is checked for Redis Sentinel — see <a href="FalkorDB.Builder.html#autoDetectSentinel(boolean)"><code>FalkorDB.Builder.autoDetectSentinel(boolean)</code></a>.</div>
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>a new driver instance</dd>
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link">IllegalStateException</a></code> - if <code>FALKORDB_URL</code> is set but malformed, if <code>
-     FALKORDB_PORT</code> is set but not a valid integer, or if exactly one of <code>
-     FALKORDB_HOST</code>/<code>FALKORDB_PORT</code> is set</dd>
+     FALKORDB_PORT</code> is set but not a valid integer, if exactly one of <code>
+     FALKORDB_HOST</code>/<code>FALKORDB_PORT</code> is set, or if exactly one of <code>
+     FALKORDB_SENTINEL_MASTER</code>/<code>FALKORDB_SENTINELS</code> is set</dd>
 </dl>
 </section>
 </li>
@@ -210,7 +218,10 @@ loadScripts(document, 'script');</script>
 <h3>driver</h3>
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Driver.html" title="interface in com.falkordb">Driver</a></span>&nbsp;<span class="element-name">driver</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;host,
  int&nbsp;port)</span></div>
-<div class="block">Creates a new driver instance</div>
+<div class="block">Creates a new driver instance.
+
+ <p>If <code>host</code>/<code>port</code> turns out to be a Redis Sentinel, the driver transparently
+ connects to the master it monitors instead, and follows failovers from then on — see <a href="FalkorDB.Builder.html#autoDetectSentinel(boolean)"><code>FalkorDB.Builder.autoDetectSentinel(boolean)</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>host</code> - host name</dd>
