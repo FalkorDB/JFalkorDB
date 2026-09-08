@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.11.1...v0.12.0) (2026-09-08)
+
+
+### Features
+
+* let the no-arg FalkorDB.driver() pick up connection settings from the environment ([#425](https://github.com/FalkorDB/JFalkorDB/issues/425)) ([5540802](https://github.com/FalkorDB/JFalkorDB/commit/5540802cdd8470acfa546149a2ca39fb36fc3dec))
+
 ## [0.11.1](https://github.com/FalkorDB/JFalkorDB/compare/v0.11.0...v0.11.1) (2026-09-01)
 
 

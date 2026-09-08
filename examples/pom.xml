@@ -24,7 +24,7 @@
         <!-- Overridden by `just examples` with the root project's actual version; the default keeps
              this module buildable stand-alone against the current -SNAPSHOT.
              Kept current by release-please via its x-release-please-version marker. -->
-        <jfalkordb.version>0.11.2-SNAPSHOT</jfalkordb.version> <!-- x-release-please-version -->
+        <jfalkordb.version>0.12.0</jfalkordb.version> <!-- x-release-please-version -->
     </properties>
 
     <dependencies>
