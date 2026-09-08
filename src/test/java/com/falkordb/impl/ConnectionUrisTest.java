@@ -65,4 +65,11 @@ class ConnectionUrisTest {
         // message would replace a useful diagnostic with a useless one.
         assertEquals("null", ConnectionUris.redact((URI) null));
     }
+
+    @Test
+    void describesANullStringWithoutThrowing() {
+        // Same reasoning, and the two overloads have to agree: an overload that throws where its twin
+        // returns is a trap for the next caller, who will not check which one they picked.
+        assertEquals("null", ConnectionUris.redact((String) null));
+    }
 }
