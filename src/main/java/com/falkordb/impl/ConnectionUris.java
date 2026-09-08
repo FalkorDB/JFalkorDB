@@ -18,8 +18,14 @@ public final class ConnectionUris {
      * Matches a {@code userinfo@} segment, anchored either at the start of the value or at the
      * {@code ://} after the scheme. Excluding {@code /?#} keeps the match inside the authority, so a
      * later {@code @} in a path or query cannot drag the rest of the URI into the redaction.
+     *
+     * <p>{@code @} itself is deliberately <em>not</em> excluded, so the greedy match runs to the last
+     * {@code @} in the authority rather than the first. A password containing an unescaped {@code @}
+     * — precisely the kind of value that gets rejected and quoted back in an error — would otherwise
+     * keep everything after that first {@code @}: {@code redis://user:p@ss@host} redacted to the
+     * first delimiter leaves {@code <redacted>@ss@host}, publishing the tail of the password.
      */
-    private static final Pattern USERINFO_PREFIX = Pattern.compile("(^|://)[^/?#@]*@");
+    private static final Pattern USERINFO_PREFIX = Pattern.compile("(^|://)[^/?#]*@");
 
     private ConnectionUris() {}
 

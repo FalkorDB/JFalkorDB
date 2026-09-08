@@ -53,6 +53,36 @@ class ConnectionUrisTest {
     }
 
     @Test
+    void redactsAPasswordContainingAnUnescapedAtSign() {
+        // The leak this guards: matching only to the *first* '@' ends the redaction inside the
+        // password and republishes everything after it. A password with a literal '@' is also exactly
+        // the value a URI parser rejects, so it is the one most likely to reach an error message.
+        assertEquals("redis://<redacted>@localhost:6379", ConnectionUris.redact("redis://someone:p@ss@localhost:6379"));
+        assertEquals(
+                "redis://<redacted>@localhost:6379", ConnectionUris.redact("redis://someone:s3c@ret@localhost:6379"));
+    }
+
+    @Test
+    void redactsEveryAtSignInTheAuthorityNotJustTheFirstTwo() {
+        assertEquals(
+                "rediss://<redacted>@localhost:6379/2", ConnectionUris.redact("rediss://u:p@w@d@localhost:6379/2"));
+    }
+
+    @Test
+    void redactsAnAtSignRiddledPasswordWithNoScheme() {
+        assertEquals("<redacted>@localhost:6379", ConnectionUris.redact("someone:p@ss@localhost:6379"));
+    }
+
+    @Test
+    void stopsAtTheAuthorityEvenWhenThePasswordAlsoContainsAnAtSign() {
+        // The greedy match must still not cross into the path: /?# bound it, so the last '@' it can
+        // reach is the one ending the authority.
+        assertEquals(
+                "redis://<redacted>@localhost:6379/graph@2",
+                ConnectionUris.redact("redis://someone:p@ss@localhost:6379/graph@2"));
+    }
+
+    @Test
     void redactsAUriObject() {
         assertEquals(
                 "redis://<redacted>@localhost:6379",
