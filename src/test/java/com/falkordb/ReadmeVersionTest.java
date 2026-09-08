@@ -101,14 +101,15 @@ class ReadmeVersionTest {
     void siblingModulesTrackTheProjectVersion() throws IOException {
         String projectVersion = firstMatch(PROJECT_VERSION, read("pom.xml"), "project version in pom.xml");
         for (String module : new String[] {"examples", "smoke-test", "pin-check", "benchmarks"}) {
-            String pom = read(module + "/pom.xml");
+            String line = lineDeclaring(
+                    "jfalkordb.version", read(module + "/pom.xml"), "jfalkordb.version in " + module + "/pom.xml");
             String declared = firstMatch(
                     Pattern.compile("<jfalkordb\\.version>([^<]+)</jfalkordb\\.version>"),
-                    pom,
+                    line,
                     "jfalkordb.version in " + module + "/pom.xml");
             assertEquals(projectVersion, declared, module + "/pom.xml's jfalkordb.version default is stale (#401)");
             assertTrue(
-                    pom.contains("<jfalkordb.version>" + declared + "</jfalkordb.version> " + MARKER),
+                    line.contains(MARKER),
                     module + "/pom.xml lost its x-release-please-version marker, so its default will "
                             + "drift again - check release-please-config.json (#401)");
         }
@@ -145,26 +146,36 @@ class ReadmeVersionTest {
         }
 
         assertTrue(
-                versionedXmlBlockIn(
-                                firstMatch(
-                                        Pattern.compile(String.format(SECTION, "Snapshots")),
-                                        read("README.md"),
-                                        "\"Snapshots\" section of README.md"),
-                                "Snapshots")
+                lineDeclaring("version", xmlBlockUnderHeading("Snapshots"), "README.md's snapshot <version>")
                         .contains(MARKER),
                 "README.md's \"Snapshots\" snippet lost its x-release-please-version marker, so release-please "
                         + "will stop updating it and it will go stale again (#401)");
     }
 
     private static String versionUnderHeading(String heading) throws IOException {
+        return firstMatch(
+                XML_VERSION,
+                xmlBlockUnderHeading(heading),
+                "<version> in the ```xml block under README.md heading \"" + heading + "\"");
+    }
+
+    /** The fenced {@code ```xml} block carrying the version that a README heading advertises. */
+    private static String xmlBlockUnderHeading(String heading) throws IOException {
         String section = firstMatch(
                 Pattern.compile(String.format(SECTION, Pattern.quote(heading))),
                 read("README.md"),
                 "\"" + heading + "\" section of README.md");
-        return firstMatch(
-                XML_VERSION,
-                versionedXmlBlockIn(section, heading),
-                "<version> in the ```xml block under README.md heading \"" + heading + "\"");
+        return versionedXmlBlockIn(section, heading);
+    }
+
+    /**
+     * The whole line declaring {@code <tag>}, because release-please's {@code Generic} updater is
+     * line-scoped: it rewrites the first semver-looking string on any line carrying the marker.
+     * Neither the marker's position on that line nor the whitespace around it matters to it, so
+     * nothing here should assert either.
+     */
+    private static String lineDeclaring(String tag, String content, String what) {
+        return firstMatch(Pattern.compile("(?m)^(.*<" + Pattern.quote(tag) + ">.*)$"), content, what);
     }
 
     /**
