@@ -133,7 +133,8 @@ loadScripts(document, 'script');</script>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Driver.html" title="interface in com.falkordb">Driver</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#driver()" class="member-name-link">driver</a>()</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
-<div class="block">Creates a new driver instance</div>
+<div class="block">Creates a new driver instance, falling back to environment configuration when <code>
+ localhost:6379</code> isn't what you want.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Driver.html" title="interface in com.falkordb">Driver</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#driver(java.lang.String,int)" class="member-name-link">driver</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;host,
@@ -175,10 +176,32 @@ loadScripts(document, 'script');</script>
 <section class="detail" id="driver()">
 <h3>driver</h3>
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Driver.html" title="interface in com.falkordb">Driver</a></span>&nbsp;<span class="element-name">driver</span>()</div>
-<div class="block">Creates a new driver instance</div>
+<div class="block">Creates a new driver instance, falling back to environment configuration when <code>
+ localhost:6379</code> isn't what you want. Resolved in this order:
+
+ <ol>
+   <li><code>FALKORDB_URL</code> — a full connection URI (<code>redis://</code> or <code>rediss://</code>, or
+       the FalkorDB-branded <code>falkor://</code>/<code>falkors://</code> aliases for them); delegates to
+       <a href="#driver(java.net.URI)"><code>driver(URI)</code></a>, so it also carries credentials, a database index, and TLS.
+   <li><code>FALKORDB_HOST</code> together with <code>FALKORDB_PORT</code> — the convention already used
+       by this project's own tests; delegates to <a href="#driver(java.lang.String,int)"><code>driver(String, int)</code></a>. Setting only one
+       of the pair is rejected rather than silently defaulting the other.
+   <li>Neither set — the unchanged <code>localhost:6379</code> default.
+ </ol>
+
+ <p>This environment fallback applies <strong>only</strong> to this no-arg overload: <a href="#driver(java.lang.String,int)"><code>driver(String, int)</code></a>, <a href="#driver(java.lang.String,int,java.lang.String,java.lang.String)"><code>driver(String, int, String, String)</code></a> and <a href="#driver(java.net.URI)"><code>driver(URI)</code></a>
+ always connect to exactly the arguments you pass them, and <a href="#builder()"><code>builder()</code></a> likewise ignores
+ the environment entirely — an unconfigured <a href="FalkorDB.Builder.html" title="class in com.falkordb"><code>FalkorDB.Builder</code></a> still defaults to <code>
+ localhost:6379</code>, so <code>builder().build()</code> and <code>driver()</code> agree only when none of the
+ variables above is set. Set the host and port on the builder explicitly if you need it to
+ follow the environment.</div>
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>a new driver instance</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link">IllegalStateException</a></code> - if <code>FALKORDB_URL</code> is set but malformed, if <code>
+     FALKORDB_PORT</code> is set but not a valid integer, or if exactly one of <code>
+     FALKORDB_HOST</code>/<code>FALKORDB_PORT</code> is set</dd>
 </dl>
 </section>
 </li>
@@ -236,9 +259,11 @@ loadScripts(document, 'script');</script>
 <div class="block">Starts building a driver with a fluent, discoverable configuration API — a superset of the
  <code>driver(...)</code> factories that also exposes TLS, connection-pool sizing, and timeouts.
 
- <p>With no options set, <a href="FalkorDB.Builder.html#build()"><code>FalkorDB.Builder.build()</code></a> produces a driver identical to <a href="#driver()"><code>driver()</code></a>
- (host <code>localhost</code>, port <code>6379</code>, no credentials, no TLS, Jedis' default 2000&nbsp;ms
- connect timeout, no socket read deadline, and the default connection pool). For example:
+ <p>With no options set, <a href="FalkorDB.Builder.html#build()"><code>FalkorDB.Builder.build()</code></a> produces a driver pointing at host <code>
+ localhost</code>, port <code>6379</code>, with no credentials, no TLS, Jedis' default 2000&nbsp;ms connect
+ timeout, no socket read deadline, and the default connection pool. Unlike <a href="#driver()"><code>driver()</code></a>,
+ the builder never consults <code>FALKORDB_URL</code>/<code>FALKORDB_HOST</code>/<code>FALKORDB_PORT</code> —
+ these defaults are fixed. For example:
 
  <pre><code>
  Driver driver = FalkorDB.builder()

@@ -98,8 +98,9 @@ loadScripts(document, 'script');</script>
 <span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></span></div>
 <div class="block">A fluent builder for a <a href="Driver.html" title="interface in com.falkordb"><code>Driver</code></a>, created via <a href="FalkorDB.html#builder()"><code>FalkorDB.builder()</code></a>.
 
- <p>All options are optional; unset options fall back to the same defaults as <a href="FalkorDB.html#driver()"><code>FalkorDB.driver()</code></a>. Instances are not thread-safe and are intended to be configured and
- <a href="#build()">built</a> on a single thread. Validation happens in <a href="#build()"><code>build()</code></a>.</div>
+ <p>All options are optional; unset options fall back to the fixed defaults documented on each
+ setter (<code>localhost:6379</code>, no credentials, no TLS), never to the environment <a href="FalkorDB.html#driver()"><code>FalkorDB.driver()</code></a> consults. Instances are not thread-safe and are intended to be configured
+ and <a href="#build()">built</a> on a single thread. Validation happens in <a href="#build()"><code>build()</code></a>.</div>
 </section>
 <section class="summary">
 <ul class="summary-list">
@@ -331,8 +332,9 @@ loadScripts(document, 'script');</script>
 <section class="detail" id="build()">
 <h3>build</h3>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="Driver.html" title="interface in com.falkordb">Driver</a></span>&nbsp;<span class="element-name">build</span>()</div>
-<div class="block">Validates the configuration and builds a driver. Unset options use the same defaults as
- <a href="FalkorDB.html#driver()"><code>FalkorDB.driver()</code></a>. Range validation happens in <code>DriverImpl.create(java.lang.String, int, java.lang.String, java.lang.String, boolean, int, int, int, int, java.time.Duration)</code>.</div>
+<div class="block">Validates the configuration and builds a driver. Unset options use the fixed defaults
+ documented on each setter, independently of the environment <a href="FalkorDB.html#driver()"><code>FalkorDB.driver()</code></a> reads.
+ Range validation happens in <code>DriverImpl.create(java.lang.String, int, java.lang.String, java.lang.String, boolean, int, int, int, int, java.time.Duration)</code>.</div>
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>a new driver</dd>
