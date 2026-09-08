@@ -339,10 +339,12 @@ public final class FalkorDB {
         /**
          * Enables or disables Sentinel auto-detection (default {@code true}).
          *
-         * <p>When enabled, {@link #build()} probes the configured host/port once with {@code INFO
-         * server}; if that endpoint is a Sentinel, the driver resolves the single master it monitors
-         * and connects to that instead, following failovers from then on. This mirrors falkordb-py,
-         * falkordb-go and falkordb-ts, so the same address works across FalkorDB clients.
+         * <p>When enabled, the driver probes the configured host/port once with {@code INFO server}
+         * the first time it is used; if that endpoint is a Sentinel, the driver resolves the single
+         * master it monitors and connects to that instead, following failovers from then on. This
+         * mirrors falkordb-py, falkordb-go and falkordb-ts, so the same address works across FalkorDB
+         * clients. Like every other connection, the probe happens on first use rather than in
+         * {@link #build()}, which performs no I/O.
          *
          * <p>The probe is best-effort and costs one round-trip: an endpoint that cannot be reached, or
          * that refuses {@code INFO}, simply yields an ordinary direct connection whose failure surfaces

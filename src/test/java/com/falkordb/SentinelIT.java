@@ -240,11 +240,15 @@ public class SentinelIT {
     }
 
     private static String redisCli(GenericContainer<?> container, int port, String... arguments) throws Exception {
-        String[] command = new String[arguments.length + 3];
+        String[] command = new String[arguments.length + 4];
         command[0] = "redis-cli";
         command[1] = "-p";
         command[2] = Integer.toString(port);
-        System.arraycopy(arguments, 0, command, 3, arguments.length);
+        // --raw keeps multi-bulk replies as plain newline-separated values. redis-cli already does
+        // that when its output is not a terminal, which is the case here, but saying so explicitly
+        // means the parsing below does not silently depend on that detection.
+        command[3] = "--raw";
+        System.arraycopy(arguments, 0, command, 4, arguments.length);
         Container.ExecResult result = container.execInContainer(command);
         if (result.getExitCode() != 0) {
             throw new IllegalStateException("redis-cli failed: " + result.getStderr());

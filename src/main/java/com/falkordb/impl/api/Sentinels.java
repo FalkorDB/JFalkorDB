@@ -26,12 +26,12 @@ import redis.clients.jedis.util.Pool;
  * take the single master reported by {@code SENTINEL MASTERS}), so pointing any FalkorDB client at a
  * Sentinel behaves the same way in every language.
  *
- * <p>Detection is deliberately best-effort. Driver creation used to perform no I/O at all — a {@link
- * redis.clients.jedis.JedisPool} connects lazily — so a probe that cannot reach the endpoint, or that
- * is refused {@code INFO} by an ACL, falls back to the ordinary direct pool and lets the failure
- * surface on first use exactly as it always did. Only once the endpoint has positively identified
- * itself as a Sentinel do problems become fatal: at that point a direct connection is certain to fail
- * on every graph command, so a clear error at construction beats a baffling one later.
+ * <p>Detection is deliberately best-effort. Driver creation performs no I/O — the pool, and so this
+ * probe, is resolved on first use — so a probe that cannot reach the endpoint, or that is refused
+ * {@code INFO} by an ACL, falls back to the ordinary direct pool and lets the failure surface exactly
+ * as it always did. Only once the endpoint has positively identified itself as a Sentinel do problems
+ * become fatal: at that point a direct connection is certain to fail on every graph command, so
+ * failing immediately with a clear error beats a baffling one later.
  */
 final class Sentinels {
 
@@ -53,7 +53,7 @@ final class Sentinels {
      *                       ordinary FalkorDB server
      * @param probeConfig    client config for the one-shot probe; unlike {@code sentinelConfig} this
      *                       must carry a bounded read timeout, so an endpoint that accepts the
-     *                       connection but never answers cannot hang driver creation
+     *                       connection but never answers cannot hang the first query
      * @param poolConfig     commons-pool2 sizing for the resulting pool
      * @param dataConfig     client config used for connections to the master (credentials, TLS, timeouts)
      * @param sentinelConfig client config used for connections to the Sentinels themselves

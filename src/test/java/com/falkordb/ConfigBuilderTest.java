@@ -241,4 +241,28 @@ class ConfigBuilderTest {
         assertDoesNotThrow(
                 () -> FalkorDB.builder().autoDetectSentinel(false).build().close());
     }
+
+    @Test
+    void aDriverClosedBeforeUseFailsFastInsteadOfConnecting() {
+        // Resolving the pool lazily means a closed-but-never-used driver could otherwise run the whole
+        // resolution -- Sentinel probe included -- just to hand back a pool it immediately closes.
+        // That would be real network I/O after close(), surfacing as a pool error rather than as the
+        // programming mistake it is. The host is unroutable, so the elapsed time also shows that no
+        // connection was attempted.
+        Driver driver = FalkorDB.builder().host("db.invalid").build();
+        assertDoesNotThrow(driver::close);
+
+        long startedAt = System.nanoTime();
+        assertThrows(IllegalStateException.class, driver::getConnection);
+        long elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000L;
+
+        assertTrue(elapsedMillis < 1000, "a closed driver must not connect, but took " + elapsedMillis + "ms");
+    }
+
+    @Test
+    void closingADriverTwiceIsHarmless() {
+        Driver driver = FalkorDB.builder().host("db.invalid").build();
+        assertDoesNotThrow(driver::close);
+        assertDoesNotThrow(driver::close);
+    }
 }

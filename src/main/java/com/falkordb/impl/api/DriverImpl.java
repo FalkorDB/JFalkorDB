@@ -62,7 +62,7 @@ public class DriverImpl implements Driver {
      * Read deadline for the one-shot Sentinel probe when the driver's own socket timeout is the
      * default {@link #DEFAULT_SOCKET_TIMEOUT_MILLIS} (0 = no deadline). That default is right for
      * graph queries, which may legitimately run for minutes, but wrong for a probe: an endpoint that
-     * completes the TCP handshake and then never answers would hang driver creation forever. Jedis'
+     * completes the TCP handshake and then never answers would hang the first query forever. Jedis'
      * {@link Protocol#DEFAULT_TIMEOUT} is a deliberate reuse — the probe is a single round-trip, so
      * the same bound that is considered enough to establish a connection is enough to answer it.
      */
@@ -495,12 +495,19 @@ public class DriverImpl implements Driver {
      * across the Sentinel probe's network I/O, which pins a virtual thread's carrier — exactly what
      * the {@code pin-check} gate exists to prevent. Two threads racing here therefore both build a
      * pool and one is discarded, which is cheap and happens at most once per driver.
+     *
+     * <p>A closed driver never builds a pool. Without that check, borrowing from a driver that was
+     * closed before it was ever used would run the whole resolution — Sentinel probe included — only
+     * to hand back a pool it immediately closes: real network I/O after {@code close()}, reported as
+     * an exhausted-pool error rather than as the programming mistake it is. (A driver closed *after*
+     * being used keeps reporting that through Jedis, as it always has.)
      */
     private Pool<Jedis> pool() {
         Pool<Jedis> existing = resolvedPool.get();
         if (existing != null) {
             return existing;
         }
+        requireOpen();
         Pool<Jedis> created = poolFactory.get();
         if (!resolvedPool.compareAndSet(null, created)) {
             closeQuietly(created);
@@ -509,8 +516,16 @@ public class DriverImpl implements Driver {
         if (closed.get()) {
             // close() ran while this pool was being built; honour it rather than leak the pool.
             closeQuietly(created);
+            resolvedPool.compareAndSet(created, null);
+            requireOpen();
         }
         return created;
+    }
+
+    private void requireOpen() {
+        if (closed.get()) {
+            throw new IllegalStateException("the driver is closed");
+        }
     }
 
     private static void closeQuietly(Pool<Jedis> pool) {
