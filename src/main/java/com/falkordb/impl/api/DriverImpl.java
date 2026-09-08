@@ -1,6 +1,7 @@
 package com.falkordb.impl.api;
 
 import com.falkordb.Driver;
+import com.falkordb.impl.ConnectionUris;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -132,7 +133,11 @@ public class DriverImpl implements Driver {
      */
     private static void requireValidUri(URI uri) {
         if (!JedisURIHelper.isValid(uri)) {
-            throw new InvalidURIException(String.format("Cannot open Redis connection due invalid URI. %s", uri));
+            // Jedis' own message quotes the URI verbatim, which puts any embedded password into the
+            // message and every stack trace that carries it. Same reasoning as DriverEnvironment:
+            // the rejected value is worth reporting, its credentials are not.
+            throw new InvalidURIException(
+                    String.format("Cannot open Redis connection due invalid URI. %s", ConnectionUris.redact(uri)));
         }
     }
 
