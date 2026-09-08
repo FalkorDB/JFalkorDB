@@ -5,11 +5,16 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.Protocol;
 import redis.clients.jedis.SslOptions;
 import redis.clients.jedis.exceptions.InvalidURIException;
@@ -53,7 +58,29 @@ public class DriverImpl implements Driver {
      */
     public static final Duration DEFAULT_POOL_MAX_WAIT = GenericObjectPoolConfig.DEFAULT_MAX_WAIT;
 
-    private final Pool<Jedis> pool;
+    /**
+     * Read deadline for the one-shot Sentinel probe when the driver's own socket timeout is the
+     * default {@link #DEFAULT_SOCKET_TIMEOUT_MILLIS} (0 = no deadline). That default is right for
+     * graph queries, which may legitimately run for minutes, but wrong for a probe: an endpoint that
+     * completes the TCP handshake and then never answers would hang driver creation forever. Jedis'
+     * {@link Protocol#DEFAULT_TIMEOUT} is a deliberate reuse — the probe is a single round-trip, so
+     * the same bound that is considered enough to establish a connection is enough to answer it.
+     */
+    public static final int DEFAULT_SENTINEL_PROBE_TIMEOUT_MILLIS = Protocol.DEFAULT_TIMEOUT;
+
+    /**
+     * The pool actually in use. Resolved on first demand rather than in the constructor, because
+     * Sentinel {@linkplain Sentinels#detect detection} needs a round-trip and driver creation has
+     * always been I/O-free: a {@link JedisPool} connects lazily, so building a driver against a server
+     * that is not up yet has always been legal and must stay that way. See {@link #pool()}.
+     */
+    private final AtomicReference<Pool<Jedis>> resolvedPool = new AtomicReference<>();
+
+    /** Builds the pool the first time one is needed. */
+    private final Supplier<Pool<Jedis>> poolFactory;
+
+    /** Set by {@link #close()}, so a closed driver never silently rebuilds its pool. */
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     /**
      * Creates a client running on the specific host/port
@@ -94,11 +121,19 @@ public class DriverImpl implements Driver {
      * with every other factory.
      */
     private static JedisPool uriPool(URI uri) {
+        requireValidUri(uri);
+        return new JedisPool(
+                new GenericObjectPoolConfig<Jedis>(), JedisURIHelper.getHostAndPort(uri), uriClientConfig(uri));
+    }
+
+    /**
+     * Rejects a URI Jedis would not accept, with the message Jedis' own URI-based pool constructor
+     * used before this driver assembled the client config itself.
+     */
+    private static void requireValidUri(URI uri) {
         if (!JedisURIHelper.isValid(uri)) {
             throw new InvalidURIException(String.format("Cannot open Redis connection due invalid URI. %s", uri));
         }
-        return new JedisPool(
-                new GenericObjectPoolConfig<Jedis>(), JedisURIHelper.getHostAndPort(uri), uriClientConfig(uri));
     }
 
     /**
@@ -118,6 +153,128 @@ public class DriverImpl implements Driver {
                 .database(JedisURIHelper.getDBIndex(uri))
                 .protocol(JedisURIHelper.getRedisProtocol(uri));
         return builder.build();
+    }
+
+    /**
+     * Connects to a seed host/port, transparently switching to Redis Sentinel per {@code sentinel}.
+     *
+     * <p>This is what the {@code com.falkordb.FalkorDB.driver(...)} factories call, and it is where
+     * Sentinel auto-detection lives. The {@link #DriverImpl(String, int) constructors} deliberately do
+     * not probe: they are pure wiring around a lazily-connecting {@link JedisPool}, and callers that
+     * hold one directly have already chosen their endpoint.
+     *
+     * @param host     server host
+     * @param port     server port
+     * @param user     username, or {@code null} for none
+     * @param password password, or {@code null} for none
+     * @param sentinel how to treat the endpoint with respect to Sentinel
+     * @return a new driver, backed by a direct or a failover-aware pool as {@code sentinel} dictates
+     */
+    public static Driver connect(
+            String host, int port, @Nullable String user, @Nullable String password, SentinelOptions sentinel) {
+        DefaultJedisClientConfig dataConfig = clientConfig(user, password);
+        HostAndPort seed = new HostAndPort(host, port);
+        return new DriverImpl(() -> resolvePool(seed, new GenericObjectPoolConfig<Jedis>(), dataConfig, sentinel));
+    }
+
+    /**
+     * Connects to a seed URI, transparently switching to Redis Sentinel per {@code sentinel}. The
+     * URI's credentials, database index and TLS scheme are carried over to the master connections.
+     *
+     * @param uri      server uri
+     * @param sentinel how to treat the endpoint with respect to Sentinel
+     * @return a new driver, backed by a direct or a failover-aware pool as {@code sentinel} dictates
+     * @throws InvalidURIException if the URI is not a valid Redis connection URI
+     */
+    public static Driver connect(URI uri, SentinelOptions sentinel) {
+        requireValidUri(uri);
+        HostAndPort seed = JedisURIHelper.getHostAndPort(uri);
+        DefaultJedisClientConfig dataConfig = uriClientConfig(uri);
+        return new DriverImpl(() -> resolvePool(seed, new GenericObjectPoolConfig<Jedis>(), dataConfig, sentinel));
+    }
+
+    /**
+     * Chooses the pool a seed endpoint should be served by.
+     *
+     * <p>Explicit configuration wins outright and never probes — the caller has already said what the
+     * deployment looks like, and can list more Sentinels than a single seed could reveal. Otherwise
+     * the endpoint is probed only if auto-detection is on, and anything less than a positive
+     * identification leaves us on the direct pool that every previous release would have built.
+     */
+    private static Pool<Jedis> resolvePool(
+            HostAndPort seed,
+            GenericObjectPoolConfig<Jedis> poolConfig,
+            DefaultJedisClientConfig dataConfig,
+            SentinelOptions sentinel) {
+        if (sentinel.isExplicit()) {
+            return Sentinels.pool(
+                    sentinel.masterName(),
+                    sentinel.addresses(),
+                    poolConfig,
+                    dataConfig,
+                    sentinelClientConfig(dataConfig, sentinel));
+        }
+        if (sentinel.isAutoDetect()) {
+            Pool<Jedis> detected = Sentinels.detect(
+                    seed,
+                    probeClientConfig(dataConfig, sentinel),
+                    poolConfig,
+                    dataConfig,
+                    sentinelClientConfig(dataConfig, sentinel));
+            if (detected != null) {
+                return detected;
+            }
+        }
+        return new JedisPool(poolConfig, seed, dataConfig);
+    }
+
+    /**
+     * The config used for connections to the Sentinels themselves: the data connections' transport
+     * settings (TLS and timeouts) with the Sentinel credentials substituted when they were given.
+     *
+     * <p>Rebuilt rather than reused even when the credentials are identical, because the data config
+     * may carry a database index — {@code driver(URI)} takes one from the URI's path — and Jedis
+     * issues {@code SELECT} for any non-zero index on every connection it opens, including the ones to
+     * the Sentinels. Sentinel implements no {@code SELECT}, and {@code JedisSentinelPool} reports the
+     * resulting error as the Sentinel being unreachable, so a perfectly healthy deployment would look
+     * dead. A Sentinel has no keyspace to select in any case.
+     *
+     * <p>The socket timeout is passed through untouched, including the default 0. {@link
+     * JedisSentinelPool}'s master listener holds a {@code SUBSCRIBE} on each Sentinel to learn about
+     * failovers, and a read deadline there would tear that subscription down and rebuild it on a
+     * timer. Bounding the read is the one-shot {@linkplain #probeClientConfig probe}'s job, not this
+     * connection's.
+     */
+    static DefaultJedisClientConfig sentinelClientConfig(
+            DefaultJedisClientConfig dataConfig, SentinelOptions sentinel) {
+        // Without Sentinel credentials, reuse the data ones as falkordb-go does, so the common
+        // single-ACL deployment needs no extra configuration.
+        boolean ownCredentials = sentinel.hasCredentials();
+        return buildClientConfig(
+                ownCredentials ? sentinel.user() : dataConfig.getUser(),
+                ownCredentials ? sentinel.password() : dataConfig.getPassword(),
+                dataConfig.getSslOptions() != null,
+                dataConfig.getConnectionTimeoutMillis(),
+                dataConfig.getSocketTimeoutMillis());
+    }
+
+    /**
+     * The config used for the one-shot detection probe: the Sentinel config with a read deadline
+     * forced on, so an endpoint that accepts connections but never answers cannot hang driver
+     * creation. An explicitly configured socket timeout is respected; the driver's default of "no
+     * deadline" is replaced by {@link #DEFAULT_SENTINEL_PROBE_TIMEOUT_MILLIS}.
+     */
+    static DefaultJedisClientConfig probeClientConfig(DefaultJedisClientConfig dataConfig, SentinelOptions sentinel) {
+        DefaultJedisClientConfig base = sentinelClientConfig(dataConfig, sentinel);
+        int socketTimeoutMillis = base.getSocketTimeoutMillis() > 0
+                ? base.getSocketTimeoutMillis()
+                : DEFAULT_SENTINEL_PROBE_TIMEOUT_MILLIS;
+        return buildClientConfig(
+                base.getUser(),
+                base.getPassword(),
+                base.getSslOptions() != null,
+                base.getConnectionTimeoutMillis(),
+                socketTimeoutMillis);
     }
 
     /**
@@ -167,6 +324,58 @@ public class DriverImpl implements Driver {
             int poolMaxTotal,
             int poolMaxIdle,
             Duration poolMaxWait) {
+        return create(
+                host,
+                port,
+                user,
+                password,
+                ssl,
+                connectionTimeoutMillis,
+                socketTimeoutMillis,
+                poolMaxTotal,
+                poolMaxIdle,
+                poolMaxWait,
+                SentinelOptions.autoDetect());
+    }
+
+    /**
+     * Creates a driver from already-resolved connection settings, including how to treat Redis
+     * Sentinel. This is the overload {@code FalkorDB.builder()} actually calls; the {@linkplain
+     * #create(String, int, String, String, boolean, int, int, int, int, Duration) shorter one}
+     * delegates here with {@linkplain SentinelOptions#autoDetect() auto-detection}, which is the
+     * builder's default.
+     *
+     * @param host                     server host (the seed endpoint, ignored when {@code sentinel} is
+     *                                 {@linkplain SentinelOptions#explicit explicit}, though still
+     *                                 range-checked)
+     * @param port                     server port
+     * @param user                     username, or {@code null} for none
+     * @param password                 password, or {@code null} for none
+     * @param ssl                      whether to connect over TLS
+     * @param connectionTimeoutMillis  connection (connect) timeout in milliseconds
+     * @param socketTimeoutMillis      socket (read) timeout in milliseconds ({@code 0} = no deadline)
+     * @param poolMaxTotal             maximum pool size
+     * @param poolMaxIdle              maximum idle connections in the pool
+     * @param poolMaxWait              maximum time to wait for a connection when the pool is exhausted
+     * @param sentinel                 how to treat the endpoint with respect to Sentinel
+     * @return a new driver backed by the assembled pool
+     * @throws IllegalArgumentException if {@code host} is null/blank, {@code port} is outside
+     *                                  {@code [1, 65535]}, the pool sizing is invalid, a timeout is
+     *                                  negative, {@code poolMaxWait} is null, or {@code sentinel} is
+     *                                  null or carries an unparseable address
+     */
+    public static Driver create(
+            String host,
+            int port,
+            String user,
+            String password,
+            boolean ssl,
+            int connectionTimeoutMillis,
+            int socketTimeoutMillis,
+            int poolMaxTotal,
+            int poolMaxIdle,
+            Duration poolMaxWait,
+            SentinelOptions sentinel) {
         if (host == null || host.trim().isEmpty()) {
             throw new IllegalArgumentException("host must not be null or blank");
         }
@@ -195,10 +404,14 @@ public class DriverImpl implements Driver {
         if (poolMaxWait == null) {
             throw new IllegalArgumentException("poolMaxWait must not be null");
         }
-        return new DriverImpl(new JedisPool(
-                buildPoolConfig(poolMaxTotal, poolMaxIdle, poolMaxWait),
-                new HostAndPort(normalizedHost, port),
-                buildClientConfig(user, password, ssl, connectionTimeoutMillis, socketTimeoutMillis)));
+        if (sentinel == null) {
+            throw new IllegalArgumentException("sentinel must not be null");
+        }
+        HostAndPort seed = new HostAndPort(normalizedHost, port);
+        GenericObjectPoolConfig<Jedis> poolConfig = buildPoolConfig(poolMaxTotal, poolMaxIdle, poolMaxWait);
+        DefaultJedisClientConfig dataConfig =
+                buildClientConfig(user, password, ssl, connectionTimeoutMillis, socketTimeoutMillis);
+        return new DriverImpl(() -> resolvePool(seed, poolConfig, dataConfig, sentinel));
     }
 
     /**
@@ -261,7 +474,51 @@ public class DriverImpl implements Driver {
      * @param pool jedis pool to wrap
      */
     public DriverImpl(Pool<Jedis> pool) {
-        this.pool = pool;
+        this.poolFactory = () -> pool;
+        this.resolvedPool.set(pool);
+    }
+
+    /**
+     * Creates a client whose pool is built on first use, so that Sentinel detection — which needs a
+     * round-trip — never happens while merely constructing a driver.
+     *
+     * @param poolFactory builds the pool the first time a connection is borrowed
+     */
+    private DriverImpl(Supplier<Pool<Jedis>> poolFactory) {
+        this.poolFactory = poolFactory;
+    }
+
+    /**
+     * The pool, building it on first demand.
+     *
+     * <p>Lock-free on purpose. The obvious {@code synchronized} memoisation would hold a monitor
+     * across the Sentinel probe's network I/O, which pins a virtual thread's carrier — exactly what
+     * the {@code pin-check} gate exists to prevent. Two threads racing here therefore both build a
+     * pool and one is discarded, which is cheap and happens at most once per driver.
+     */
+    private Pool<Jedis> pool() {
+        Pool<Jedis> existing = resolvedPool.get();
+        if (existing != null) {
+            return existing;
+        }
+        Pool<Jedis> created = poolFactory.get();
+        if (!resolvedPool.compareAndSet(null, created)) {
+            closeQuietly(created);
+            return resolvedPool.get();
+        }
+        if (closed.get()) {
+            // close() ran while this pool was being built; honour it rather than leak the pool.
+            closeQuietly(created);
+        }
+        return created;
+    }
+
+    private static void closeQuietly(Pool<Jedis> pool) {
+        try {
+            pool.close();
+        } catch (RuntimeException ignored) {
+            // Best-effort disposal of a pool that lost the creation race or was closed concurrently.
+        }
     }
 
     @Override
@@ -271,7 +528,7 @@ public class DriverImpl implements Driver {
 
     @Override
     public Jedis getConnection() {
-        return pool.getResource();
+        return pool().getResource();
     }
 
     /**
@@ -518,10 +775,15 @@ public class DriverImpl implements Driver {
     }
 
     /**
-     * Closes the Jedis pool
+     * Closes the Jedis pool. A driver whose pool was never built closes without building one, so
+     * creating and discarding a driver still performs no I/O.
      */
     @Override
     public void close() {
-        pool.close();
+        closed.set(true);
+        Pool<Jedis> existing = resolvedPool.get();
+        if (existing != null) {
+            existing.close();
+        }
     }
 }

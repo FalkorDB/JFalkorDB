@@ -2,6 +2,8 @@ package com.falkordb;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
@@ -24,6 +26,15 @@ final class DriverEnvironment {
 
     /** Server port env var; must be set together with {@link #HOST_VAR}. */
     static final String PORT_VAR = "FALKORDB_PORT";
+
+    /** Sentinel master-name env var; must be set together with {@link #SENTINELS_VAR}. */
+    static final String SENTINEL_MASTER_VAR = "FALKORDB_SENTINEL_MASTER";
+
+    /**
+     * Comma-separated {@code host:port} Sentinel addresses; must be set together with {@link
+     * #SENTINEL_MASTER_VAR}.
+     */
+    static final String SENTINELS_VAR = "FALKORDB_SENTINELS";
 
     /** Default host used when neither {@link #URL_VAR} nor {@link #HOST_VAR}/{@link #PORT_VAR} is set. */
     static final String DEFAULT_HOST = "localhost";
@@ -52,6 +63,17 @@ final class DriverEnvironment {
      *     FALKORDB_HOST}/{@code FALKORDB_PORT} is set
      */
     static Driver resolve(Function<String, @Nullable String> env) {
+        String sentinelMaster = trimToNull(env.apply(SENTINEL_MASTER_VAR));
+        String sentinels = trimToNull(env.apply(SENTINELS_VAR));
+        if ((sentinelMaster != null) != (sentinels != null)) {
+            throw new IllegalStateException("Set BOTH " + SENTINEL_MASTER_VAR + " and " + SENTINELS_VAR
+                    + " to configure FalkorDB.driver() against a Sentinel deployment, or neither.");
+        }
+        if (sentinelMaster != null) {
+            return FalkorDB.builder()
+                    .sentinel(sentinelMaster, parseSentinels(sentinels))
+                    .build();
+        }
         String url = trimToNull(env.apply(URL_VAR));
         if (url != null) {
             URI uri = toConnectionUri(url);
@@ -112,6 +134,30 @@ final class DriverEnvironment {
      */
     private static String redact(String value) {
         return USERINFO_PREFIX.matcher(value).replaceAll("$1<redacted>@");
+    }
+
+    /**
+     * Splits a comma-separated {@link #SENTINELS_VAR} value into {@code host:port} addresses, ignoring
+     * empty entries so a trailing comma is harmless. The addresses themselves are validated later, by
+     * the builder, so the error message for a malformed one is the same however it was configured.
+     *
+     * @param value the raw variable value, already trimmed to non-null
+     * @return the listed addresses, in order
+     * @throws IllegalStateException if the value lists no address at all
+     */
+    static List<String> parseSentinels(String value) {
+        List<String> addresses = new ArrayList<>();
+        for (String candidate : value.split(",")) {
+            String trimmed = candidate.trim();
+            if (!trimmed.isEmpty()) {
+                addresses.add(trimmed);
+            }
+        }
+        if (addresses.isEmpty()) {
+            throw new IllegalStateException(
+                    SENTINELS_VAR + " must list at least one host:port address, but was \"" + value + "\"");
+        }
+        return addresses;
     }
 
     private static int parsePort(String value) {

@@ -4,9 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Collections;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -158,5 +160,85 @@ class ConfigBuilderTest {
                 .connectionTimeout(Duration.ofNanos(500_000))
                 .build()
                 .close());
+    }
+
+    @Test
+    void sentinelSettersReturnSameBuilder() {
+        FalkorDB.Builder builder = FalkorDB.builder();
+        assertSame(builder, builder.sentinel("mymaster", "a:26379"));
+        assertSame(builder, builder.sentinel("mymaster", Collections.singletonList("a:26379")));
+        assertSame(builder, builder.sentinelCredentials("u", "p"));
+        assertSame(builder, builder.sentinelCredentials("p"));
+        assertSame(builder, builder.autoDetectSentinel(false));
+    }
+
+    @Test
+    void buildsAgainstAnExplicitSentinelDeployment() {
+        assertDoesNotThrow(() -> {
+            try (Driver driver = FalkorDB.builder()
+                    .sentinel("mymaster", "sentinel-a:26379", "sentinel-b:26379", "sentinel-c:26379")
+                    .credentials("user", "password")
+                    .sentinelCredentials("sentinel-user", "sentinel-password")
+                    .build()) {
+                assertNotNull(driver);
+            }
+        });
+    }
+
+    @Test
+    void sentinelBuildStaysLazy() {
+        // The whole point of resolving the pool on first use: naming a deployment that does not exist
+        // must not cost a DNS lookup or a connection attempt, exactly as a plain host/port build does
+        // not. If this ever regresses it will hang for the connect timeout rather than fail outright,
+        // so the assertion is on elapsed time.
+        long startedAt = System.nanoTime();
+        assertDoesNotThrow(() -> FalkorDB.builder()
+                .sentinel("mymaster", "sentinel-a.invalid:26379")
+                .build()
+                .close());
+        long elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000L;
+
+        assertTrue(elapsedMillis < 1000, "building a driver must not connect, but took " + elapsedMillis + "ms");
+    }
+
+    @Test
+    void autoDetectingBuildStaysLazyToo() {
+        long startedAt = System.nanoTime();
+        assertDoesNotThrow(
+                () -> FalkorDB.builder().host("db.invalid").port(6380).build().close());
+        long elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000L;
+
+        assertTrue(
+                elapsedMillis < 1000, "Sentinel detection must not run at build(), but took " + elapsedMillis + "ms");
+    }
+
+    @Test
+    void rejectsASentinelWithoutAMasterName() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> FalkorDB.builder().sentinel(null, "a:26379").build());
+    }
+
+    @Test
+    void rejectsASentinelWithoutAddresses() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> FalkorDB.builder().sentinel("mymaster").build());
+        assertThrows(IllegalArgumentException.class, () -> FalkorDB.builder()
+                .sentinel("mymaster", (java.util.Collection<String>) null)
+                .build());
+    }
+
+    @Test
+    void rejectsAMalformedSentinelAddress() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> FalkorDB.builder().sentinel("mymaster", "no-port-here").build());
+    }
+
+    @Test
+    void autoDetectionCanBeSwitchedOff() {
+        assertDoesNotThrow(
+                () -> FalkorDB.builder().autoDetectSentinel(false).build().close());
     }
 }

@@ -142,29 +142,93 @@ public class GraphExample {
 first checks for connection settings in the environment so the same artifact can be deployed across
 dev/CI/staging/prod without hand-rolled env-var plumbing. Resolution order:
 
-1. `FALKORDB_URL` — a full connection URI (`redis://`/`rediss://`, or the FalkorDB-branded
+1. `FALKORDB_SENTINEL_MASTER` together with `FALKORDB_SENTINELS` — connect through a
+   [Redis Sentinel](#high-availability-with-redis-sentinel) deployment. `FALKORDB_SENTINELS` is a
+   comma-separated list of `host:port` Sentinel addresses. Setting only one of the pair throws
+   `IllegalStateException`.
+2. `FALKORDB_URL` — a full connection URI (`redis://`/`rediss://`, or the FalkorDB-branded
    `falkor://`/`falkors://` aliases for them), covering host, port, credentials, and TLS in one
    value; delegates to `FalkorDB.driver(URI)`.
-2. `FALKORDB_HOST` together with `FALKORDB_PORT` — delegates to `FalkorDB.driver(host, port)`.
+3. `FALKORDB_HOST` together with `FALKORDB_PORT` — delegates to `FalkorDB.driver(host, port)`.
    Setting only one of the pair throws `IllegalStateException` rather than silently defaulting the
    other.
-3. Neither set — the unchanged `localhost:6379` default.
+4. None set — the unchanged `localhost:6379` default.
 
 ```bash
 export FALKORDB_URL=redis://<user>:<password>@db.example.com:6379
 # or, equivalently:
 export FALKORDB_HOST=db.example.com
 export FALKORDB_PORT=6379
+# or, to go through Sentinel:
+export FALKORDB_SENTINEL_MASTER=mymaster
+export FALKORDB_SENTINELS=sentinel-a:26379,sentinel-b:26379,sentinel-c:26379
 ```
 
 ```java
-// picks up FALKORDB_URL, or FALKORDB_HOST + FALKORDB_PORT, or falls back to localhost:6379
+// picks up the environment settings above, or falls back to localhost:6379
 Driver driver = FalkorDB.driver();
 ```
 
 This fallback applies **only** to the no-arg `driver()` overload — `driver(host, port)`,
 `driver(host, port, user, password)`, `driver(URI)`, and `builder()` always connect to exactly the
 arguments you pass them and never consult the environment.
+
+## High availability with Redis Sentinel
+
+[Redis Sentinel](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/) monitors a
+master and its replicas and promotes a replica when the master fails. Point the driver at a Sentinel
+and it discovers the current master, then follows failovers for the lifetime of the driver — queries
+issued after a promotion go to the new master without recreating the driver.
+
+Nothing needs configuring in the common case. Every factory method probes the endpoint it is given,
+and if that endpoint turns out to be a Sentinel it resolves the master automatically:
+
+```java
+// sentinel-a is a Sentinel, not a FalkorDB server — the driver works this out for itself
+try (Driver driver = FalkorDB.driver("sentinel-a", 26379)) {
+    Graph graph = driver.graph("social");
+    graph.query("CREATE (:Person {name:'Alice'})");
+}
+```
+
+This matches how the other FalkorDB clients behave, so the same deployment works whichever language
+a service is written in. An endpoint that is an ordinary FalkorDB server is used directly, exactly as
+in every previous release; an endpoint that cannot be probed at all also falls back to a direct
+connection, so nothing that worked before starts failing.
+
+Name the deployment explicitly when a Sentinel monitors more than one master (auto-detection cannot
+guess which one you want and will tell you so), when you want to list several Sentinels for
+redundancy, or simply to skip the probe:
+
+```java
+try (Driver driver = FalkorDB.builder()
+        .sentinel("mymaster", "sentinel-a:26379", "sentinel-b:26379", "sentinel-c:26379")
+        .build()) {
+    driver.graph("social").query("CREATE (:Person {name:'Alice'})");
+}
+```
+
+Credentials given with `credentials(...)` are used for the master. Sentinels frequently have their
+own ACLs, so they can be authenticated separately; when `sentinelCredentials(...)` is omitted the
+Sentinel connections reuse the master's credentials:
+
+```java
+Driver driver = FalkorDB.builder()
+        .sentinel("mymaster", "sentinel-a:26379")
+        .credentials("app-user", "app-password")
+        .sentinelCredentials("sentinel-user", "sentinel-password")
+        .build();
+```
+
+Auto-detection costs one `INFO` command on the first connection. To skip it — for instance when the
+address is known to be a plain server and its ACL forbids `INFO` — turn it off:
+
+```java
+Driver driver = FalkorDB.builder().host("db.example.com").autoDetectSentinel(false).build();
+```
+
+Building a driver still performs no I/O: the probe, like the first connection, happens when the
+driver is first used.
 
 ## Query parameters
 

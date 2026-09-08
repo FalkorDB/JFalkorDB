@@ -49,3 +49,6 @@ arg
 URI
 README's
 updaters
+ACL
+ACLs
+failovers
