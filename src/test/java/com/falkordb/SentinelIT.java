@@ -85,8 +85,14 @@ public class SentinelIT {
                 .withCopyToContainer(Transferable.of(sentinelConfiguration(), 0666), "/tmp/sentinel.conf")
                 // The image's entrypoint script starts a FalkorDB server and ignores the command, so it
                 // has to be replaced outright rather than merely overridden with withCommand.
-                .withCreateContainerCmdModifier(cmd -> cmd.withEntrypoint("redis-sentinel"))
-                .withCommand("/tmp/sentinel.conf")
+                //
+                // Sentinel is started as `redis-server <conf> --sentinel` rather than through the
+                // `redis-sentinel` alias: the two are the same binary in the same mode, but the alias is
+                // not present in every FalkorDB image (falkordb/falkordb:edge ships redis-server and
+                // redis-cli only), which made the canary fail with "redis-sentinel: executable file not
+                // found in $PATH" while the pinned image passed.
+                .withCreateContainerCmdModifier(cmd -> cmd.withEntrypoint("redis-server"))
+                .withCommand("/tmp/sentinel.conf", "--sentinel")
                 .waitingFor(Wait.forListeningPort());
         sentinelContainer.start();
 
