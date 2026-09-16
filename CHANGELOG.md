@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.13.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.12.0...v0.13.0) (2026-09-16)
+
+
+### Features
+
+* add Redis Sentinel support ([#434](https://github.com/FalkorDB/JFalkorDB/issues/434)) ([25cee11](https://github.com/FalkorDB/JFalkorDB/commit/25cee11d8e25dcecd52ee9fc81dc2f8ad21e3f80))
+
+
+### Documentation
+
+* add a Redis Sentinel connection example ([#435](https://github.com/FalkorDB/JFalkorDB/issues/435)) ([b1b6add](https://github.com/FalkorDB/JFalkorDB/commit/b1b6add8d468f2a01b51b42babab2041c63f1eb7))
+
 ## [0.12.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.11.1...v0.12.0) (2026-09-08)
 
 
