@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789545745025,
+  "lastUpdate": 1789548493262,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -11996,6 +11996,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 31478.348,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b1b6add8d468f2a01b51b42babab2041c63f1eb7",
+          "message": "docs: add a Redis Sentinel connection example (#435)\n\n* docs: add a Redis Sentinel connection example\n\nSentinel support landed in #434 and is documented in the top-level\nREADME, but examples/ had no counterpart — the convention there is one\nrunnable class per connection style, and Sentinel was the only one\nmissing.\n\nSentinelDriver covers the four ways the API is meant to be used:\nauto-detection (the default), naming a master explicitly, supplying\nseparate Sentinel credentials, and opting out with\nautoDetectSentinel(false).\n\nOnly the first block performs I/O, so the example runs against a plain\nFalkorDB with no Sentinel in sight — which is itself the point, since\nauto-detection determines for itself whether the address it was given is\na Sentinel or a server. The remaining blocks build and close drivers\naimed at addresses that need not exist, because building one performs no\nnetwork calls.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs: make Sentinel example safe for existing databases\n\nUse a unique graph name for each run and clarify that auto-detection requires a single-master Sentinel.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-09-16T11:46:24+03:00",
+          "tree_id": "0c57ac5b3e4042ce5598fc03feaa63c886f1c127",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/b1b6add8d468f2a01b51b42babab2041c63f1eb7"
+        },
+        "date": 1789548492518,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 161.087,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 195.692,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 221.056,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 205.723,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 266.773,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 347.03,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 262.857,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 403.173,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 490.607,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 428.2,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 749.953,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 940.333,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 515.614,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 4805.28,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 11712.652,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 520.787,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 13038.483,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 30387.644,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 512.413,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 29630.631,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 67114.91,
             "unit": "us"
           }
         ]
