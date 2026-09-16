@@ -55,8 +55,9 @@ export `FALKORDB_URL`, or both `FALKORDB_HOST` and `FALKORDB_PORT`, to point it 
 `SentinelDriver` runs one query through an auto-detected endpoint and then builds three more drivers
 to show the rest of the Sentinel configuration. Only the first block talks to anything, so the
 example runs against a plain `localhost:6379` — that *is* the demonstration, since auto-detection
-works out for itself whether the address is a Sentinel or a server. Pass a Sentinel's address to
-watch it resolve a master instead:
+works out for itself whether the address is a Sentinel or a server. Pass a single-master Sentinel's
+address to watch it resolve that master instead. For a Sentinel that monitors multiple masters, use
+the example's explicit `.sentinel("master-name", ...)` configuration:
 
 ```sh
 ../mvnw -q exec:java -Djfalkordb.version="$version" \

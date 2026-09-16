@@ -6,6 +6,7 @@ import com.falkordb.GraphContextGenerator;
 import com.falkordb.Record;
 import com.falkordb.ResultSet;
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Shows connecting through a <a
@@ -34,10 +35,10 @@ import java.io.IOException;
  * reachable, because building a driver performs no I/O — the probe happens on first use, like the
  * first connection — so they are here to show the configuration, as {@link ConfiguredDriver} is.
  *
- * <p>Block 1 does need something to talk to. Pass {@code <host> <port>} to point it at a Sentinel
- * (or at a plain server, which is the point of auto-detection); it defaults to {@code
- * localhost:6379}, which {@code just db-up} provides. Build the examples with {@code just
- * examples}, then run this class — see {@code examples/README.md}.
+ * <p>Block 1 does need something to talk to. Pass {@code <host> <port>} to point it at a
+ * single-master Sentinel (or at a plain server, which is the point of auto-detection); it defaults
+ * to {@code localhost:6379}, which {@code just db-up} provides. Build the examples with {@code
+ * just examples}, then run this class — see {@code examples/README.md}.
  */
 public final class SentinelDriver {
 
@@ -61,7 +62,7 @@ public final class SentinelDriver {
         System.out.println("Connecting to " + host + ":" + port + " (Sentinel or server - detected automatically)");
 
         try (Driver driver = FalkorDB.driver(host, port)) {
-            GraphContextGenerator graph = driver.graph("social");
+            GraphContextGenerator graph = driver.graph("sentinel-example-" + UUID.randomUUID());
             try {
                 graph.query("CREATE (:Person {name: 'Alice', age: 32}), (:Person {name: 'Bob', age: 47})");
 
