@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789538668553,
+  "lastUpdate": 1789538958643,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -5368,6 +5368,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11061,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4583ee2d11c1874c502d31ce9d27cbd6b83ac555",
+          "message": "build(deps): bump org.codehaus.mojo:extra-enforcer-rules (#442)\n\nBumps [org.codehaus.mojo:extra-enforcer-rules](https://github.com/mojohaus/extra-enforcer-rules) from 1.12.0 to 1.12.1.\n- [Release notes](https://github.com/mojohaus/extra-enforcer-rules/releases)\n- [Commits](https://github.com/mojohaus/extra-enforcer-rules/compare/1.12.0...1.12.1)\n\n---\nupdated-dependencies:\n- dependency-name: org.codehaus.mojo:extra-enforcer-rules\n  dependency-version: 1.12.1\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-09-16T09:06:58+03:00",
+          "tree_id": "644921fe1d432b0e290358c07aad276a77bda37a",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/4583ee2d11c1874c502d31ce9d27cbd6b83ac555"
+        },
+        "date": 1789538958607,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3627.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6227.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 8994.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11939,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11070.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 10818.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11161,
             "unit": "ops/s"
           }
         ]
