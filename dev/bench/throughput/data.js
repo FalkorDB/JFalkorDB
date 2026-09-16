@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789538958643,
+  "lastUpdate": 1789545747255,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -5427,6 +5427,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11161,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "198982749+Copilot@users.noreply.github.com",
+            "name": "Copilot",
+            "username": "Copilot"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "26bf16f98254d0d3f2312a0999aeed5c69232e1a",
+          "message": "test: fix edge canary Sentinel startup (#440)\n\n* Initial plan\n\n* test: run SentinelIT with Redis 8 sentinel mode\n\nThe edge image no longer includes the redis-sentinel wrapper. Start Sentinel through redis-server with the Sentinel configuration instead.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>\nCo-authored-by: Barak Bar Orion <barak.bar@gmail.com>\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-09-16T10:59:37+03:00",
+          "tree_id": "35d257ed91eb9b9de39488f1af46349a028f6aa7",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/26bf16f98254d0d3f2312a0999aeed5c69232e1a"
+        },
+        "date": 1789545747231,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 5471.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 10685.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 18259.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 24783.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 24004.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 24223.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 22731,
             "unit": "ops/s"
           }
         ]
