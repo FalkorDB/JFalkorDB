@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789538956552,
+  "lastUpdate": 1789545745025,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -11867,6 +11867,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 77994,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "198982749+Copilot@users.noreply.github.com",
+            "name": "Copilot",
+            "username": "Copilot"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "26bf16f98254d0d3f2312a0999aeed5c69232e1a",
+          "message": "test: fix edge canary Sentinel startup (#440)\n\n* Initial plan\n\n* test: run SentinelIT with Redis 8 sentinel mode\n\nThe edge image no longer includes the redis-sentinel wrapper. Start Sentinel through redis-server with the Sentinel configuration instead.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>\nCo-authored-by: Barak Bar Orion <barak.bar@gmail.com>\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-09-16T10:59:37+03:00",
+          "tree_id": "35d257ed91eb9b9de39488f1af46349a028f6aa7",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/26bf16f98254d0d3f2312a0999aeed5c69232e1a"
+        },
+        "date": 1789545743462,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 132.716,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 187.736,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 198.456,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 133.097,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 163.994,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 187.743,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 145.167,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 230.937,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 286.474,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 213.586,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 375.93,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 485.07,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 261.545,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 2320.282,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 5718.459,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 266.021,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 5715.079,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 13185.02,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 278.79,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 14141.841,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 31478.348,
             "unit": "us"
           }
         ]
