@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790060489770,
+  "lastUpdate": 1790061728325,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -5722,6 +5722,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 23218,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "981827757c22d172f6899045178ed7fa9dd99439",
+          "message": "build(deps): bump benchmark-action/github-action-benchmark (#446)\n\nBumps [benchmark-action/github-action-benchmark](https://github.com/benchmark-action/github-action-benchmark) from 1.22.1 to 1.22.2.\n- [Release notes](https://github.com/benchmark-action/github-action-benchmark/releases)\n- [Changelog](https://github.com/benchmark-action/github-action-benchmark/blob/master/CHANGELOG.md)\n- [Commits](https://github.com/benchmark-action/github-action-benchmark/compare/52576c92bccf6ac60c8223ec7eb2565637cae9ba...4322e5726e6334590d251fc4f92bec0efafc45dc)\n\n---\nupdated-dependencies:\n- dependency-name: benchmark-action/github-action-benchmark\n  dependency-version: 1.22.2\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-09-22T10:19:40+03:00",
+          "tree_id": "a73dc311ca86580ca0339b2141b397316d54a5dd",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/981827757c22d172f6899045178ed7fa9dd99439"
+        },
+        "date": 1790061728302,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 6112.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 11940,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 19896.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 26351,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 24066,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 25065.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 24702,
             "unit": "ops/s"
           }
         ]
