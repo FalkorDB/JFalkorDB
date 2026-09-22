@@ -114,7 +114,7 @@ jobs:
 
     # Client latency = total round-trip minus server internal execution time (smaller is better).
     - name: Radar — client latency
-      uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+      uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc # v1.22.2
       with:
         name: Client latency
         tool: 'customSmallerIsBetter'
@@ -130,7 +130,7 @@ jobs:
 
     # Throughput at each concurrency level (bigger is better).
     - name: Radar — throughput
-      uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
+      uses: benchmark-action/github-action-benchmark@4322e5726e6334590d251fc4f92bec0efafc45dc # v1.22.2
       with:
         name: Throughput
         tool: 'customBiggerIsBetter'
