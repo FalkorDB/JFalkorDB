@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790062471775,
+  "lastUpdate": 1790144105212,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -5840,6 +5840,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11045.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "307409954+falkordb-release-please[bot]@users.noreply.github.com",
+            "name": "falkordb-release-please[bot]",
+            "username": "falkordb-release-please[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1025f9ec86f56add219e9d13563decc35ed5ee33",
+          "message": "chore(master): release 0.13.0 (#443)\n\n* chore(master): release 0.13.0\n\n* docs: point the Official Releases snippet at 0.13.0\n\nReadmeVersionTest.officialReleasesSnippetNamesTheLatestRelease fails on\nevery release PR by design: the \"Official Releases\" block carries no\nx-release-please-version marker (a marker would be rewritten to a\n-SNAPSHOT version by the snapshot PR that follows each release), so it\nmust be bumped by hand before shipping. See issue #401.\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n---------\n\nCo-authored-by: falkordb-release-please[bot] <307409954+falkordb-release-please[bot]@users.noreply.github.com>\nCo-authored-by: Barak Bar Orion <barak.bar@gmail.com>\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-09-23T09:13:18+03:00",
+          "tree_id": "65bfc6062203e343701a57817fbc8275927c2a18",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/1025f9ec86f56add219e9d13563decc35ed5ee33"
+        },
+        "date": 1790144105190,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 9005.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 15517,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 21202.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 26920,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 25629,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 25478,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 25968,
             "unit": "ops/s"
           }
         ]
