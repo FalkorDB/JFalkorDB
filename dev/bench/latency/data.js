@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790144103664,
+  "lastUpdate": 1791352894007,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -12899,6 +12899,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 29407.81,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f83a9503b94913dbe5563c65c1b7e338acc95bbb",
+          "message": "build(deps): combine open Dependabot updates (#455)\n\n* build(deps-dev): bump com.github.siom79.japicmp:japicmp-maven-plugin\n\nBumps [com.github.siom79.japicmp:japicmp-maven-plugin](https://github.com/siom79/japicmp) from 0.26.2 to 0.26.3.\n- [Release notes](https://github.com/siom79/japicmp/releases)\n- [Changelog](https://github.com/siom79/japicmp/blob/master/release.py)\n- [Commits](https://github.com/siom79/japicmp/compare/japicmp-base-0.26.2...japicmp-base-0.26.3)\n\n---\nupdated-dependencies:\n- dependency-name: com.github.siom79.japicmp:japicmp-maven-plugin\n  dependency-version: 0.26.3\n  dependency-type: direct:development\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n(cherry picked from commit bc028e348868872968991b24f6bd262dca108702)\n\n* build(deps-dev): bump com.diffplug.spotless:spotless-maven-plugin\n\nBumps [com.diffplug.spotless:spotless-maven-plugin](https://github.com/diffplug/spotless) from 3.10.2 to 3.10.3.\n- [Release notes](https://github.com/diffplug/spotless/releases)\n- [Changelog](https://github.com/diffplug/spotless/blob/main/CHANGES.md)\n- [Commits](https://github.com/diffplug/spotless/compare/maven/3.10.2...maven/3.10.3)\n\n---\nupdated-dependencies:\n- dependency-name: com.diffplug.spotless:spotless-maven-plugin\n  dependency-version: 3.10.3\n  dependency-type: direct:development\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n(cherry picked from commit 6a92cd2c043cb6e3201cdad7bbca2e535ca7764b)\n\n* build(deps): bump github/codeql-action/init from 4.38.1 to 4.38.2\n\nBumps [github/codeql-action/init](https://github.com/github/codeql-action) from 4.38.1 to 4.38.2.\n- [Release notes](https://github.com/github/codeql-action/releases)\n- [Changelog](https://github.com/github/codeql-action/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/github/codeql-action/compare/1c5b675653bb5c22dbe9b12b556ec555138e09fd...2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2)\n\n---\nupdated-dependencies:\n- dependency-name: github/codeql-action/init\n  dependency-version: 4.38.2\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n(cherry picked from commit 1a7f73811ee6db03f36e5f87a7b055f153e5084d)\n\n* build(deps): bump github/codeql-action/analyze from 4.38.1 to 4.38.2\n\nBumps [github/codeql-action/analyze](https://github.com/github/codeql-action) from 4.38.1 to 4.38.2.\n- [Release notes](https://github.com/github/codeql-action/releases)\n- [Changelog](https://github.com/github/codeql-action/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/github/codeql-action/compare/1c5b675653bb5c22dbe9b12b556ec555138e09fd...2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2)\n\n---\nupdated-dependencies:\n- dependency-name: github/codeql-action/analyze\n  dependency-version: 4.38.2\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n(cherry picked from commit 54d22aa7e76058c8484eb0e3a1268765674481ef)\n\n* build(deps-dev): bump org.slf4j:slf4j-simple from 2.0.19 to 2.0.20\n\nBumps org.slf4j:slf4j-simple from 2.0.19 to 2.0.20.\n\n---\nupdated-dependencies:\n- dependency-name: org.slf4j:slf4j-simple\n  dependency-version: 2.0.20\n  dependency-type: direct:development\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n(cherry picked from commit a242c77dac953fec07c9213c92d5144376eeeef3)\n\n* build(deps): bump org.apache.maven:apache-maven from 3.9.16 to 3.10.0\n\nTakes only the wrapper properties from #453. Dependabot's regenerated mvnw.cmd\nis left out: it drops the local null-Target guard (apache/maven-wrapper#395) and\nwas committed with CRLF in the index, which dirties the checkout under\n.gitattributes and made benchmark-pr fail.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-10-07T08:59:08+03:00",
+          "tree_id": "cbf67e35cc12af8e7a1365079e72e1897e5ebf8b",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/f83a9503b94913dbe5563c65c1b7e338acc95bbb"
+        },
+        "date": 1791352893036,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 208.351,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 249.094,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 272.788,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 255.076,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 287.385,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 304.024,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 325.607,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 548.351,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 699.713,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 516.682,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 878.426,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1079.431,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 605.679,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5698.191,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 12624.624,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 630.175,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 15474.632,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 34186.782,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 612.13,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 37670.745,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 85871.537,
             "unit": "us"
           }
         ]
