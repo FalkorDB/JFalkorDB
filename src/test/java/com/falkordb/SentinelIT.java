@@ -83,10 +83,11 @@ public class SentinelIT {
                 // Sentinel rewrites its own configuration in place as it learns the topology, so the
                 // file has to be writable and to live somewhere writable (`dir /tmp` below).
                 .withCopyToContainer(Transferable.of(sentinelConfiguration(), 0666), "/tmp/sentinel.conf")
-                // The image's entrypoint script starts a FalkorDB server and ignores the command, so it
-                // has to be replaced outright rather than merely overridden with withCommand.
-                .withCreateContainerCmdModifier(cmd -> cmd.withEntrypoint("redis-sentinel"))
-                .withCommand("/tmp/sentinel.conf")
+                // The image entrypoint starts a FalkorDB server and ignores the command, so it has to
+                // be replaced outright. Redis 8 no longer ships the redis-sentinel wrapper; its
+                // supported equivalent is redis-server <config> --sentinel.
+                .withCreateContainerCmdModifier(cmd -> cmd.withEntrypoint("redis-server"))
+                .withCommand("/tmp/sentinel.conf", "--sentinel")
                 .waitingFor(Wait.forListeningPort());
         sentinelContainer.start();
 
