@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791353231855,
+  "lastUpdate": 1791358613212,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -6017,6 +6017,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11069.333,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "34f62499b9c181bc6808cf13ca15ce7a59bf7ff8",
+          "message": "fix(build): restore Maven 3.9.16 so snapshot deploys authenticate (#456)\n\nMaven 3.10.0 (from #455) with central-publishing-maven-plugin 0.11.0 sends\nsnapshot uploads with no credentials: the plugin never retries Central's 401\nwith the `central` server's username/token, so Publish Snapshot failed with\n\"HTTP Status: 401\" on 0.13.1-SNAPSHOT. Maven 3.9.16 retries with them.\n\nReproduced locally by pointing -DcentralSnapshotsUrl at a server that answers\n401 without an Authorization header: 3.9.16 retries every request with the\ncredentials, 3.10.0 gives up on the first metadata GET.\n\nHold apache-maven >= 3.10.0 in Dependabot until a release is verified the\nsame way, since PR CI never authenticates to Central and cannot catch this.\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-10-07T10:32:51+03:00",
+          "tree_id": "6a385078854083c4e41807367457ab92847c791b",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/34f62499b9c181bc6808cf13ca15ce7a59bf7ff8"
+        },
+        "date": 1791358613176,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3607.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6063.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9392.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11850,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 10895,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 10803.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 10836.667,
             "unit": "ops/s"
           }
         ]
