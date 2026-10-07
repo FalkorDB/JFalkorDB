@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.1](https://github.com/FalkorDB/JFalkorDB/compare/v0.13.0...v0.13.1) (2026-10-07)
+
+
+### Bug Fixes
+
+* **build:** restore Maven 3.9.16 so snapshot deploys authenticate ([#456](https://github.com/FalkorDB/JFalkorDB/issues/456)) ([34f6249](https://github.com/FalkorDB/JFalkorDB/commit/34f62499b9c181bc6808cf13ca15ce7a59bf7ff8))
+
 ## [0.13.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.12.0...v0.13.0) (2026-09-22)
 
 
