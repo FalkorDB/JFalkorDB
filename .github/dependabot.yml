@@ -18,6 +18,15 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "nl.jqno.equalsverifier:equalsverifier"
         update-types: ["version-update:semver-major"]
+      # Maven 3.10.0 + central-publishing-maven-plugin 0.11.0 (the latest) deploy snapshots with no
+      # credentials: the plugin never retries the 401 from Central with the `central` server's
+      # username/token, so `Publish Snapshot` fails with "HTTP Status: 401". 3.9.x retries with
+      # them. PR CI cannot catch this (only the post-merge deploy authenticates), so verify a newer
+      # Maven before dropping this hold: run `./mvnw deploy -DskipTests -DskipITs -Dgpg.skip=true
+      # -DcentralSnapshotsUrl=http://127.0.0.1:<port>/` against a server that answers 401 without
+      # an Authorization header, and check that the retried PUTs carry the credentials.
+      - dependency-name: "org.apache.maven:apache-maven"
+        versions: [">= 3.10.0"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
