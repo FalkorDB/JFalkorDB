@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791353223145,
+  "lastUpdate": 1791358611496,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -13157,6 +13157,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 77212.984,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "34f62499b9c181bc6808cf13ca15ce7a59bf7ff8",
+          "message": "fix(build): restore Maven 3.9.16 so snapshot deploys authenticate (#456)\n\nMaven 3.10.0 (from #455) with central-publishing-maven-plugin 0.11.0 sends\nsnapshot uploads with no credentials: the plugin never retries Central's 401\nwith the `central` server's username/token, so Publish Snapshot failed with\n\"HTTP Status: 401\" on 0.13.1-SNAPSHOT. Maven 3.9.16 retries with them.\n\nReproduced locally by pointing -DcentralSnapshotsUrl at a server that answers\n401 without an Authorization header: 3.9.16 retries every request with the\ncredentials, 3.10.0 gives up on the first metadata GET.\n\nHold apache-maven >= 3.10.0 in Dependabot until a release is verified the\nsame way, since PR CI never authenticates to Central and cannot catch this.\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-10-07T10:32:51+03:00",
+          "tree_id": "6a385078854083c4e41807367457ab92847c791b",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/34f62499b9c181bc6808cf13ca15ce7a59bf7ff8"
+        },
+        "date": 1791358610669,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 198.951,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 240.557,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 267.838,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 235.81,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 296.612,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 368.969,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 301.111,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 460.996,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 552.661,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 499.43,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 838.202,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1035.41,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 605.499,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5669.278,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 12065.965,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 599.356,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 16158.127,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 33686.718,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 593.986,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 36869.263,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 82036.211,
             "unit": "us"
           }
         ]
