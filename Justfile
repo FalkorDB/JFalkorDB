@@ -32,7 +32,7 @@ lint:
 # Dependency CVE scan (OWASP dependency-check). Slow + wants an NVD API key: set NVD_API_KEY in the
 # environment (the scheduled/manual `audit` workflow provides it). Not part of `verify`.
 audit:
-    ./mvnw -B -Pquality -DskipTests -Dgpg.skip=true org.owasp:dependency-check-maven:check
+    if [ -z "${NVD_API_KEY:-}" ]; then unset NVD_API_KEY; fi; ./mvnw -B -Pquality -DskipTests -Dgpg.skip=true org.owasp:dependency-check-maven:check
 
 # Mutation testing (PITest) — OBSERVABILITY only, never a gate. Runs under the off-by-default
 # `quality` profile against the pure-unit packages (server-free, so no FalkorDB needed); HTML/XML
