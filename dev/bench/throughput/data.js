@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791363292762,
+  "lastUpdate": 1791812162067,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -6194,6 +6194,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 10949.333,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ebe7259248e2de5dc1d2e6dd3ca232e1ffed7b5f",
+          "message": "build(deps): bump redis.clients:jedis from 8.0.1 to 8.0.2 (#459)\n\nBumps [redis.clients:jedis](https://github.com/redis/jedis) from 8.0.1 to 8.0.2.\n- [Release notes](https://github.com/redis/jedis/releases)\n- [Changelog](https://github.com/redis/jedis/blob/master/docs/release-process.md)\n- [Commits](https://github.com/redis/jedis/compare/v8.0.1...v8.0.2)\n\n---\nupdated-dependencies:\n- dependency-name: redis.clients:jedis\n  dependency-version: 8.0.2\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-10-12T16:33:27+03:00",
+          "tree_id": "e93a040dbb84dd2463d616f7b918b920a08079dd",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/ebe7259248e2de5dc1d2e6dd3ca232e1ffed7b5f"
+        },
+        "date": 1791812162030,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3579.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 5981.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9363,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11718.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 10996.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 10936.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 10975,
             "unit": "ops/s"
           }
         ]
