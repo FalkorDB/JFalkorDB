@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791812162067,
+  "lastUpdate": 1791812428658,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -6253,6 +6253,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 10975,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d321b6bf4e2898f9082313642df51408c9296ad7",
+          "message": "build(deps-dev): bump com.diffplug.spotless:spotless-maven-plugin (#460)\n\nBumps [com.diffplug.spotless:spotless-maven-plugin](https://github.com/diffplug/spotless) from 3.10.3 to 3.10.4.\n- [Release notes](https://github.com/diffplug/spotless/releases)\n- [Changelog](https://github.com/diffplug/spotless/blob/main/CHANGES.md)\n- [Commits](https://github.com/diffplug/spotless/compare/maven/3.10.3...maven/3.10.4)\n\n---\nupdated-dependencies:\n- dependency-name: com.diffplug.spotless:spotless-maven-plugin\n  dependency-version: 3.10.4\n  dependency-type: direct:development\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Barak Bar Orion <barak.bar@gmail.com>",
+          "timestamp": "2026-10-12T16:38:05+03:00",
+          "tree_id": "f2bed276963f9a0a4a4586edc6d7af8989b53690",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/d321b6bf4e2898f9082313642df51408c9296ad7"
+        },
+        "date": 1791812428620,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3427.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6133.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 8872,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11759.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11051,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 10850.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11005.667,
             "unit": "ops/s"
           }
         ]
