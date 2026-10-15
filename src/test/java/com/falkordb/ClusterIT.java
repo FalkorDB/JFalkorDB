@@ -19,6 +19,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.commands.ProtocolCommand;
 import redis.clients.jedis.exceptions.JedisMovedDataException;
 import redis.clients.jedis.util.JedisClusterCRC16;
+import redis.clients.jedis.util.SafeEncoder;
 
 /**
  * Runs the driver against a real three-primary Redis Cluster.
@@ -54,21 +55,24 @@ public class ClusterIT {
 
     @Test
     public void graphsSpanEveryPrimary() {
-        List<long[]> ranges = new ArrayList<>(); // {start, end, owner port}
+        List<Object[]> ranges = new ArrayList<>(); // {start, end, owner "host:port"}
         List<Object> owned;
         try (Jedis node = new Jedis(ClusterTestServer.seedHost(), ClusterTestServer.seedPort())) {
             owned = node.clusterSlots();
         }
         for (Object range : owned) {
             List<?> entry = (List<?>) range;
-            long port = (Long) ((List<?>) entry.get(2)).get(1); // the range's primary
-            ranges.add(new long[] {(Long) entry.get(0), (Long) entry.get(1), port});
+            List<?> primary = (List<?>) entry.get(2);
+            Object host = primary.get(0);
+            String owner = (host instanceof byte[] ? SafeEncoder.encode((byte[]) host) : String.valueOf(host)) + ":"
+                    + primary.get(1);
+            ranges.add(new Object[] {entry.get(0), entry.get(1), owner});
         }
-        Set<Long> owners = new HashSet<>();
+        Set<Object> owners = new HashSet<>();
         for (int i = 0; i < GRAPHS; i++) {
             int slot = JedisClusterCRC16.getSlot(PREFIX + i);
-            for (long[] range : ranges) {
-                if (slot >= range[0] && slot <= range[1]) {
+            for (Object[] range : ranges) {
+                if (slot >= (Long) range[0] && slot <= (Long) range[1]) {
                     owners.add(range[2]);
                 }
             }

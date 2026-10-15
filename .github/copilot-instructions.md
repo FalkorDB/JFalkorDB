@@ -45,14 +45,16 @@ accordingly, and use the `TestServer` helper for server access.
 2. **Implement** the change with **code + tests + docs** (Javadoc / an example where it helps).
 3. **Validate locally via `just`** — `just verify` (or `just verify-local`) green, and **`just
    spellcheck`** whenever you touch Markdown (new technical terms go in `.github/wordlist.txt`).
-4. Open a PR on a **Conventional-Commit** branch (`feat:` / `fix:` / `build:` / `docs:` / `ci:` /
+4. Open a PR on a **Conventional-Commit** branch (`feat:` / `fix:` / `perf:` / `build:` / `docs:` / `ci:` /
    `chore:` / `bench:`); the PR **title** must be a Conventional Commit (enforced by the **`PR
    title`** check).
    **Pick the type by the release it should cause** (release-please reads it on merge; while the
    project is pre-1.0 with `bump-minor-pre-major`): `feat:` = new user-visible capability → **minor**
    (`0.13.x` → `0.14.0`); `fix:` / `perf:` → **patch**; a breaking change (`feat!:` / `fix!:` or a
-   `BREAKING CHANGE:` footer, plus the `breaking-change` label for `api-diff`) → also **minor**
-   pre-1.0, **major** after. `build:` / `ci:` / `docs:` / `chore:` / `test:` / `bench:` cut no release
+   `BREAKING CHANGE:` footer) → also **minor** pre-1.0, **major** after. The `breaking-change` label
+   only approves the `api-diff` gate; it does not choose the bump, and the `PR title` check requires a
+   `!`-marked title whenever it is set. `build:` / `ci:` / `docs:` / `chore:` / `test:` / `bench:` cut
+   no release
    on their own. Purely additive public API (new builder methods, new classes) is `feat:`, not
    breaking. State the expected next version in the PR description.
 5. **Resolve every AI review thread** — Copilot **and** CodeRabbit — reply *and* mark resolved —
