@@ -48,6 +48,13 @@ accordingly, and use the `TestServer` helper for server access.
 4. Open a PR on a **Conventional-Commit** branch (`feat:` / `fix:` / `build:` / `docs:` / `ci:` /
    `chore:` / `bench:`); the PR **title** must be a Conventional Commit (enforced by the **`PR
    title`** check).
+   **Pick the type by the release it should cause** (release-please reads it on merge; while the
+   project is pre-1.0 with `bump-minor-pre-major`): `feat:` = new user-visible capability → **minor**
+   (`0.13.x` → `0.14.0`); `fix:` / `perf:` → **patch**; a breaking change (`feat!:` / `fix!:` or a
+   `BREAKING CHANGE:` footer, plus the `breaking-change` label for `api-diff`) → also **minor**
+   pre-1.0, **major** after. `build:` / `ci:` / `docs:` / `chore:` / `test:` / `bench:` cut no release
+   on their own. Purely additive public API (new builder methods, new classes) is `feat:`, not
+   breaking. State the expected next version in the PR description.
 5. **Resolve every AI review thread** — Copilot **and** CodeRabbit — reply *and* mark resolved —
    before merge.
 6. **Never self-merge to `master`.** Open the PR, get it green, and wait for a maintainer to approve

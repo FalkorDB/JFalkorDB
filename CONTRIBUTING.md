@@ -44,6 +44,9 @@ just bench          # client load-sweep benchmark (client latency vs throughput;
 - Run `just verify-local` and keep documentation in sync with your change.
 - Use a **Conventional-Commit** branch and PR title (`feat:`, `fix:`, `build:`, `docs:`, `ci:`,
   `chore:`, `bench:`); the PR title is checked by the **`PR title`** workflow.
+  The type decides the release: `feat:` → minor, `fix:`/`perf:` → patch, a breaking change
+  (`!` or a `BREAKING CHANGE:` footer, plus the `breaking-change` label) → minor before 1.0;
+  the other types cut no release on their own.
 - After opening the PR, **resolve every Copilot and CodeRabbit review thread** (reply + mark
   resolved).
 - **Don't merge to `master` yourself** — a maintainer reviews and merges.
