@@ -9,6 +9,13 @@ updates:
     directory: "/" 
     schedule:
       interval: "daily"
+    # Runtime dependency bumps ship in the jar, so they are `fix(deps)` — a releasable conventional
+    # type, which makes release-please open a release PR. Test/build-tool bumps (`deps-dev`: JUnit,
+    # Spotless, plugins, ...) don't change the artifact and stay `build`, so they never cut a release.
+    commit-message:
+      prefix: "fix"
+      prefix-development: "build"
+      include: "scope"
     ignore:
       # Kept on the last Java-8-runnable majors on purpose. The build now runs on JDK 21 with
       # maven.compiler.release=8, so it *could* compile JUnit Jupiter 6.x / EqualsVerifier 4.x
