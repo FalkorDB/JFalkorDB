@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792051043824,
+  "lastUpdate": 1792051518928,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -14447,6 +14447,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 50698.714,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "950c19c9c2fa3b5cafe0fa6f01bbcf4a2085392b",
+          "message": "ci: release runtime dependency bumps via fix(deps) (#466)\n\nDependabot titled every bump build(deps), which release-please ignores, so\ndependency updates never produced a release PR. Use the fix prefix for runtime\ndependencies; development dependencies keep build(deps-dev).\n\nCo-authored-by: Claude Sonnet 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-10-15T11:03:32+03:00",
+          "tree_id": "70044c94aee06d3bc3008576e0453b6d2a603759",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/950c19c9c2fa3b5cafe0fa6f01bbcf4a2085392b"
+        },
+        "date": 1792051518285,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 202.56,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 241.302,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 266.55,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 236.744,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 283.011,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 336.45,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 304.961,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 474.61,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 582.24,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 501.941,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 843.851,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1035.771,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 592.579,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5645.346,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 12461.47,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 596.839,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 16184.237,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 36417.678,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 590.937,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 36233.573,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 82115.408,
             "unit": "us"
           }
         ]
