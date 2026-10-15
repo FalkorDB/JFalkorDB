@@ -1,0 +1,251 @@
+package com.falkordb.impl.api;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.jspecify.annotations.Nullable;
+import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.exceptions.JedisClusterOperationException;
+import redis.clients.jedis.exceptions.JedisConnectionException;
+import redis.clients.jedis.exceptions.JedisException;
+import redis.clients.jedis.util.JedisClusterCRC16;
+
+/**
+ * {@link Connections} for a Redis Cluster: one {@link JedisPool} per primary, and a slot table that
+ * says which primary owns which graph.
+ *
+ * <p>Every graph is a single key, so each command on a graph lands on exactly one node, and a pipeline
+ * or {@code MULTI} transaction on a graph stays on that node's connection. That is why plain Jedis
+ * connections are enough here and no cluster-wide client is needed: the slot table is the whole of
+ * the routing.
+ *
+ * <p>The table is learned on first use from {@code CLUSTER SLOTS} — asking the known primaries first
+ * and the startup nodes after — and relearned when {@link #topologyChanged()} reports a redirect or
+ * an unreachable node. Pool sizing applies to each node separately.
+ *
+ * <p>Locking: refreshes take a {@link ReentrantLock} rather than a monitor, because they do network
+ * I/O and a monitor would pin a virtual thread's carrier. Reads of the table take no lock.
+ */
+final class ClusterConnections implements Connections {
+
+    private final Set<HostAndPort> startupNodes;
+    private final GenericObjectPoolConfig<Jedis> poolConfig;
+    private final DefaultJedisClientConfig nodeConfig;
+    /** Like {@link #nodeConfig} but with a read deadline, so a silent node cannot hold the refresh lock forever. */
+    private final DefaultJedisClientConfig refreshConfig;
+
+    private final ConcurrentMap<HostAndPort, JedisPool> pools = new ConcurrentHashMap<>();
+    private final ReentrantLock refreshLock = new ReentrantLock();
+
+    /** The slot table and primaries, replaced wholesale on refresh; {@code null} until the first succeeds. */
+    private volatile @Nullable Topology topology;
+
+    /** One consistent view of the cluster, so readers never see a slot table and primaries from different refreshes. */
+    private static final class Topology {
+        final HostAndPort[] slotOwners;
+        final List<HostAndPort> primaries;
+
+        Topology(HostAndPort[] slotOwners, List<HostAndPort> primaries) {
+            this.slotOwners = slotOwners;
+            this.primaries = primaries;
+        }
+    }
+
+    /** Bumped by every successful refresh, so concurrent callers can tell theirs is already done. */
+    private final AtomicLong generation = new AtomicLong();
+
+    /** Rotates through the primaries for commands that name no graph. */
+    private final AtomicInteger nextPrimary = new AtomicInteger();
+
+    private volatile boolean closed;
+
+    /**
+     * Creates the connection source. No I/O happens until the first connection is requested.
+     *
+     * @param startupNodes where to learn the topology from; at least one
+     * @param poolConfig   commons-pool2 sizing applied to every node's pool
+     * @param nodeConfig   client config for every node connection; must not select a database, which
+     *                     a cluster does not support
+     */
+    ClusterConnections(
+            Set<HostAndPort> startupNodes,
+            GenericObjectPoolConfig<Jedis> poolConfig,
+            DefaultJedisClientConfig nodeConfig) {
+        this.startupNodes = startupNodes;
+        this.poolConfig = poolConfig;
+        this.nodeConfig = nodeConfig;
+        this.refreshConfig = DriverImpl.clusterProbeConfig(nodeConfig);
+    }
+
+    @Override
+    public boolean isCluster() {
+        return true;
+    }
+
+    @Override
+    public Jedis get(@Nullable String routingKey) {
+        return poolFor(routingKey == null ? anyPrimary() : ownerOf(routingKey)).getResource();
+    }
+
+    @Override
+    public <T> List<T> onEachPrimary(Function<Jedis, T> operation) {
+        Topology view = ensureTopology();
+        long seen = generation.get();
+        List<T> results = new ArrayList<>();
+        try {
+            for (HostAndPort node : view.primaries) {
+                try (Jedis connection = poolFor(node).getResource()) {
+                    results.add(operation.apply(connection));
+                }
+            }
+        } catch (JedisConnectionException e) {
+            // A dead primary may have been replaced; relearn so the next call does not hit the stale list.
+            try {
+                refresh(seen);
+            } catch (JedisClusterOperationException refreshFailure) {
+                e.addSuppressed(refreshFailure);
+            }
+            throw e;
+        }
+        return results;
+    }
+
+    @Override
+    public void topologyChanged() {
+        refresh(generation.get());
+    }
+
+    /** The number of topologies learned so far; pass it to {@link #topologyChanged(long)}. */
+    long generation() {
+        return generation.get();
+    }
+
+    /** Relearns the topology unless another caller has already done so since {@code seenGeneration}. */
+    void topologyChanged(long seenGeneration) {
+        refresh(seenGeneration);
+    }
+
+    @Override
+    public void close() {
+        closed = true;
+        for (JedisPool pool : pools.values()) {
+            pool.close();
+        }
+        pools.clear();
+    }
+
+    private HostAndPort ownerOf(String graphId) {
+        int slot = JedisClusterCRC16.getSlot(graphId);
+        HostAndPort owner = ensureTopology().slotOwners[slot];
+        if (owner == null) {
+            // The slot was unassigned when we looked, which also happens mid-migration; look once more.
+            owner = refresh(generation.get()).slotOwners[slot];
+        }
+        if (owner == null) {
+            throw new JedisClusterOperationException(
+                    "No cluster node serves slot " + slot + " (graph " + graphId + ")");
+        }
+        return owner;
+    }
+
+    private HostAndPort anyPrimary() {
+        List<HostAndPort> known = ensureTopology().primaries;
+        // Round-robin rather than random: it spreads keyless work just as evenly, and needs no randomness.
+        return known.get(Math.floorMod(nextPrimary.getAndIncrement(), known.size()));
+    }
+
+    private Topology ensureTopology() {
+        Topology current = topology;
+        return current != null ? current : refresh(generation.get());
+    }
+
+    private JedisPool poolFor(HostAndPort node) {
+        if (closed) {
+            throw new IllegalStateException("the driver is closed");
+        }
+        JedisPool pool = pools.computeIfAbsent(node, n -> new JedisPool(poolConfig, n, nodeConfig));
+        if (closed) {
+            // close() may have swept the map before this pool was added; do not leak it.
+            pools.remove(node, pool);
+            pool.close();
+            throw new IllegalStateException("the driver is closed");
+        }
+        return pool;
+    }
+
+    /**
+     * Relearns the slot table from the first node that answers.
+     *
+     * @param seenGeneration the generation the caller observed; if another thread has refreshed since,
+     *     that result is reused instead of asking the cluster again
+     * @return the current topology
+     * @throws JedisClusterOperationException if no node can be reached or none reports a slot
+     */
+    private Topology refresh(long seenGeneration) {
+        refreshLock.lock();
+        try {
+            Topology current = topology;
+            if (current != null && generation.get() != seenGeneration) {
+                return current;
+            }
+            JedisException lastFailure = null;
+            for (HostAndPort node : candidates()) {
+                try (Jedis connection = new Jedis(node, refreshConfig)) {
+                    HostAndPort[] table = Clusters.parseSlots(connection.clusterSlots(), node);
+                    List<HostAndPort> owners = Clusters.primaries(table);
+                    if (owners.isEmpty()) {
+                        continue;
+                    }
+                    return publish(table, owners);
+                } catch (JedisException e) {
+                    lastFailure = e;
+                }
+            }
+            throw new JedisClusterOperationException(
+                    "Could not learn the cluster topology from any of " + candidates(), lastFailure);
+        } finally {
+            refreshLock.unlock();
+        }
+    }
+
+    private Topology publish(HostAndPort[] table, List<HostAndPort> owners) {
+        Topology fresh = new Topology(table, owners);
+        topology = fresh;
+        generation.incrementAndGet();
+        Set<HostAndPort> live = new HashSet<>(owners);
+        for (HostAndPort node : new ArrayList<>(pools.keySet())) {
+            if (!live.contains(node)) {
+                JedisPool gone = pools.remove(node);
+                if (gone != null) {
+                    gone.close();
+                }
+            }
+        }
+        return fresh;
+    }
+
+    private List<HostAndPort> currentPrimaries() {
+        Topology current = topology;
+        return current == null ? Collections.emptyList() : current.primaries;
+    }
+
+    /** Known primaries first (they are the likeliest to be up to date), then the startup nodes. */
+    private List<HostAndPort> candidates() {
+        Set<HostAndPort> order = new LinkedHashSet<>(currentPrimaries());
+        order.addAll(startupNodes);
+        return new ArrayList<>(order);
+    }
+}

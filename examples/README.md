@@ -12,6 +12,7 @@ module (not part of the main reactor or the published artifact); it is compiled 
 | [`ConfiguredDriver`](src/main/java/com/falkordb/examples/ConfiguredDriver.java) | The full builder configuration surface — credentials, TLS, pool sizing, timeouts. |
 | [`EnvironmentConfiguredDriver`](src/main/java/com/falkordb/examples/EnvironmentConfiguredDriver.java) | The no-arg `FalkorDB.driver()` picking up `FALKORDB_URL` / `FALKORDB_HOST`+`FALKORDB_PORT` from the environment. |
 | [`SentinelDriver`](src/main/java/com/falkordb/examples/SentinelDriver.java) | Connecting through Redis Sentinel — auto-detection, naming a master explicitly, separate Sentinel credentials, and opting out. |
+| [`ClusterDriver`](src/main/java/com/falkordb/examples/ClusterDriver.java) | Connecting to a Redis Cluster — auto-detection, naming startup nodes, cluster-wide commands, and opting out. |
 
 ## Build
 
@@ -65,4 +66,19 @@ the example's explicit `.sentinel("master-name", ...)` configuration:
 # or against a Sentinel:
 ../mvnw -q exec:java -Djfalkordb.version="$version" \
     -Dexec.mainClass=com.falkordb.examples.SentinelDriver -Dexec.args="sentinel-a 26379"
+```
+
+`ClusterDriver` works the same way for a Redis Cluster. Its first block creates a dozen throwaway
+graphs, whose names hash to different nodes, and reads each one back, so against a cluster you can see
+that every query reaches the node owning its graph. Against a plain `localhost:6379` it behaves
+identically, since auto-detection works out for itself whether the address is a cluster node or a
+server. Pass any cluster node's address to use a cluster; the example also lists the graphs held by
+every primary, and builds two more drivers to show the remaining configuration:
+
+```sh
+../mvnw -q exec:java -Djfalkordb.version="$version" \
+    -Dexec.mainClass=com.falkordb.examples.ClusterDriver
+# or against a cluster node:
+../mvnw -q exec:java -Djfalkordb.version="$version" \
+    -Dexec.mainClass=com.falkordb.examples.ClusterDriver -Dexec.args="node-a 6379"
 ```
