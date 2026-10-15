@@ -34,7 +34,7 @@ final class FakeRedisServer implements AutoCloseable {
     FakeRedisServer(Function<List<String>, String> handler) {
         this.handler = handler;
         try {
-            this.server = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
+            this.server = new ServerSocket(0, 50, InetAddress.getByAddress(new byte[] {127, 0, 0, 1}));
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -123,14 +123,25 @@ final class FakeRedisServer implements AutoCloseable {
         if (header == null || !header.startsWith("*")) {
             return null;
         }
-        int words = Integer.parseInt(header.substring(1));
+        int words;
+        try {
+            words = Integer.parseInt(header.substring(1));
+        } catch (NumberFormatException e) {
+            return null;
+        }
         List<String> command = new ArrayList<>(words);
         for (int i = 0; i < words; i++) {
             String length = readLine(in);
-            if (length == null) {
+            if (length == null || !length.startsWith("$")) {
                 return null;
             }
-            byte[] bytes = new byte[Integer.parseInt(length.substring(1))];
+            int size;
+            try {
+                size = Integer.parseInt(length.substring(1));
+            } catch (NumberFormatException e) {
+                return null;
+            }
+            byte[] bytes = new byte[size];
             for (int read = 0; read < bytes.length; ) {
                 int n = in.read(bytes, read, bytes.length - read);
                 if (n < 0) {

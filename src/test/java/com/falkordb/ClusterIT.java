@@ -54,10 +54,24 @@ public class ClusterIT {
 
     @Test
     public void graphsSpanEveryPrimary() {
-        Set<Integer> owners = new HashSet<>();
+        List<long[]> ranges = new ArrayList<>(); // {start, end, owner port}
+        List<Object> owned;
+        try (Jedis node = new Jedis(ClusterTestServer.seedHost(), ClusterTestServer.seedPort())) {
+            owned = node.clusterSlots();
+        }
+        for (Object range : owned) {
+            List<?> entry = (List<?>) range;
+            long port = (Long) ((List<?>) entry.get(2)).get(1); // the range's primary
+            ranges.add(new long[] {(Long) entry.get(0), (Long) entry.get(1), port});
+        }
+        Set<Long> owners = new HashSet<>();
         for (int i = 0; i < GRAPHS; i++) {
             int slot = JedisClusterCRC16.getSlot(PREFIX + i);
-            owners.add(slot * 3 / 16384); // initial slot split of three nodes
+            for (long[] range : ranges) {
+                if (slot >= range[0] && slot <= range[1]) {
+                    owners.add(range[2]);
+                }
+            }
         }
         assertEquals(3, owners.size(), "the test graph names must land on all three primaries");
     }

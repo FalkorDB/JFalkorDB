@@ -159,7 +159,20 @@ class ClusterConnectionsTest {
                 cluster.node(0).count("CLUSTER", "SLOTS") + cluster.node(1).count("CLUSTER", "SLOTS");
 
         // Two callers that both saw the same generation: only the first should hit the cluster.
-        connections.topologyChanged();
+        long seen = connections.generation();
+        Thread[] callers = new Thread[2];
+        for (int i = 0; i < callers.length; i++) {
+            callers[i] = new Thread(() -> connections.topologyChanged(seen));
+            callers[i].start();
+        }
+        for (Thread caller : callers) {
+            try {
+                caller.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(e);
+            }
+        }
         long after = cluster.node(0).count("CLUSTER", "SLOTS") + cluster.node(1).count("CLUSTER", "SLOTS");
         assertEquals(before + 1, after);
     }

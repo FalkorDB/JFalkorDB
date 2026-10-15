@@ -14,11 +14,12 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.jspecify.annotations.Nullable;
+import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisClientConfig;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisClusterOperationException;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisException;
 import redis.clients.jedis.util.JedisClusterCRC16;
 
@@ -42,15 +43,26 @@ final class ClusterConnections implements Connections {
 
     private final Set<HostAndPort> startupNodes;
     private final GenericObjectPoolConfig<Jedis> poolConfig;
-    private final JedisClientConfig nodeConfig;
+    private final DefaultJedisClientConfig nodeConfig;
+    /** Like {@link #nodeConfig} but with a read deadline, so a silent node cannot hold the refresh lock forever. */
+    private final DefaultJedisClientConfig refreshConfig;
 
     private final ConcurrentMap<HostAndPort, JedisPool> pools = new ConcurrentHashMap<>();
     private final ReentrantLock refreshLock = new ReentrantLock();
 
-    /** The slot table, replaced wholesale on refresh; {@code null} until the first one succeeds. */
-    private volatile HostAndPort @Nullable [] slotOwners;
+    /** The slot table and primaries, replaced wholesale on refresh; {@code null} until the first succeeds. */
+    private volatile @Nullable Topology topology;
 
-    private volatile List<HostAndPort> primaries = Collections.emptyList();
+    /** One consistent view of the cluster, so readers never see a slot table and primaries from different refreshes. */
+    private static final class Topology {
+        final HostAndPort[] slotOwners;
+        final List<HostAndPort> primaries;
+
+        Topology(HostAndPort[] slotOwners, List<HostAndPort> primaries) {
+            this.slotOwners = slotOwners;
+            this.primaries = primaries;
+        }
+    }
 
     /** Bumped by every successful refresh, so concurrent callers can tell theirs is already done. */
     private final AtomicLong generation = new AtomicLong();
@@ -69,10 +81,13 @@ final class ClusterConnections implements Connections {
      *                     a cluster does not support
      */
     ClusterConnections(
-            Set<HostAndPort> startupNodes, GenericObjectPoolConfig<Jedis> poolConfig, JedisClientConfig nodeConfig) {
+            Set<HostAndPort> startupNodes,
+            GenericObjectPoolConfig<Jedis> poolConfig,
+            DefaultJedisClientConfig nodeConfig) {
         this.startupNodes = startupNodes;
         this.poolConfig = poolConfig;
         this.nodeConfig = nodeConfig;
+        this.refreshConfig = DriverImpl.clusterProbeConfig(nodeConfig);
     }
 
     @Override
@@ -87,12 +102,23 @@ final class ClusterConnections implements Connections {
 
     @Override
     public <T> List<T> onEachPrimary(Function<Jedis, T> operation) {
-        ensureTopology();
+        Topology view = ensureTopology();
+        long seen = generation.get();
         List<T> results = new ArrayList<>();
-        for (HostAndPort node : primaries) {
-            try (Jedis connection = poolFor(node).getResource()) {
-                results.add(operation.apply(connection));
+        try {
+            for (HostAndPort node : view.primaries) {
+                try (Jedis connection = poolFor(node).getResource()) {
+                    results.add(operation.apply(connection));
+                }
             }
+        } catch (JedisConnectionException e) {
+            // A dead primary may have been replaced; relearn so the next call does not hit the stale list.
+            try {
+                refresh(seen);
+            } catch (JedisClusterOperationException refreshFailure) {
+                e.addSuppressed(refreshFailure);
+            }
+            throw e;
         }
         return results;
     }
@@ -100,6 +126,16 @@ final class ClusterConnections implements Connections {
     @Override
     public void topologyChanged() {
         refresh(generation.get());
+    }
+
+    /** The number of topologies learned so far; pass it to {@link #topologyChanged(long)}. */
+    long generation() {
+        return generation.get();
+    }
+
+    /** Relearns the topology unless another caller has already done so since {@code seenGeneration}. */
+    void topologyChanged(long seenGeneration) {
+        refresh(seenGeneration);
     }
 
     @Override
@@ -113,12 +149,10 @@ final class ClusterConnections implements Connections {
 
     private HostAndPort ownerOf(String graphId) {
         int slot = JedisClusterCRC16.getSlot(graphId);
-        HostAndPort[] table = ensureTopology();
-        HostAndPort owner = table[slot];
+        HostAndPort owner = ensureTopology().slotOwners[slot];
         if (owner == null) {
             // The slot was unassigned when we looked, which also happens mid-migration; look once more.
-            table = refresh(generation.get());
-            owner = table[slot];
+            owner = refresh(generation.get()).slotOwners[slot];
         }
         if (owner == null) {
             throw new JedisClusterOperationException(
@@ -128,22 +162,28 @@ final class ClusterConnections implements Connections {
     }
 
     private HostAndPort anyPrimary() {
-        ensureTopology();
-        List<HostAndPort> known = primaries;
+        List<HostAndPort> known = ensureTopology().primaries;
         // Round-robin rather than random: it spreads keyless work just as evenly, and needs no randomness.
         return known.get(Math.floorMod(nextPrimary.getAndIncrement(), known.size()));
     }
 
-    private HostAndPort[] ensureTopology() {
-        HostAndPort[] table = slotOwners;
-        return table != null ? table : refresh(generation.get());
+    private Topology ensureTopology() {
+        Topology current = topology;
+        return current != null ? current : refresh(generation.get());
     }
 
     private JedisPool poolFor(HostAndPort node) {
         if (closed) {
             throw new IllegalStateException("the driver is closed");
         }
-        return pools.computeIfAbsent(node, n -> new JedisPool(poolConfig, n, nodeConfig));
+        JedisPool pool = pools.computeIfAbsent(node, n -> new JedisPool(poolConfig, n, nodeConfig));
+        if (closed) {
+            // close() may have swept the map before this pool was added; do not leak it.
+            pools.remove(node, pool);
+            pool.close();
+            throw new IllegalStateException("the driver is closed");
+        }
+        return pool;
     }
 
     /**
@@ -151,26 +191,25 @@ final class ClusterConnections implements Connections {
      *
      * @param seenGeneration the generation the caller observed; if another thread has refreshed since,
      *     that result is reused instead of asking the cluster again
-     * @return the current slot table
+     * @return the current topology
      * @throws JedisClusterOperationException if no node can be reached or none reports a slot
      */
-    private HostAndPort[] refresh(long seenGeneration) {
+    private Topology refresh(long seenGeneration) {
         refreshLock.lock();
         try {
-            HostAndPort[] current = slotOwners;
+            Topology current = topology;
             if (current != null && generation.get() != seenGeneration) {
                 return current;
             }
             JedisException lastFailure = null;
             for (HostAndPort node : candidates()) {
-                try (Jedis connection = new Jedis(node, nodeConfig)) {
+                try (Jedis connection = new Jedis(node, refreshConfig)) {
                     HostAndPort[] table = Clusters.parseSlots(connection.clusterSlots(), node);
                     List<HostAndPort> owners = Clusters.primaries(table);
                     if (owners.isEmpty()) {
                         continue;
                     }
-                    publish(table, owners);
-                    return table;
+                    return publish(table, owners);
                 } catch (JedisException e) {
                     lastFailure = e;
                 }
@@ -182,9 +221,9 @@ final class ClusterConnections implements Connections {
         }
     }
 
-    private void publish(HostAndPort[] table, List<HostAndPort> owners) {
-        slotOwners = table;
-        primaries = owners;
+    private Topology publish(HostAndPort[] table, List<HostAndPort> owners) {
+        Topology fresh = new Topology(table, owners);
+        topology = fresh;
         generation.incrementAndGet();
         Set<HostAndPort> live = new HashSet<>(owners);
         for (HostAndPort node : new ArrayList<>(pools.keySet())) {
@@ -195,11 +234,17 @@ final class ClusterConnections implements Connections {
                 }
             }
         }
+        return fresh;
+    }
+
+    private List<HostAndPort> currentPrimaries() {
+        Topology current = topology;
+        return current == null ? Collections.emptyList() : current.primaries;
     }
 
     /** Known primaries first (they are the likeliest to be up to date), then the startup nodes. */
     private List<HostAndPort> candidates() {
-        Set<HostAndPort> order = new LinkedHashSet<>(primaries);
+        Set<HostAndPort> order = new LinkedHashSet<>(currentPrimaries());
         order.addAll(startupNodes);
         return new ArrayList<>(order);
     }

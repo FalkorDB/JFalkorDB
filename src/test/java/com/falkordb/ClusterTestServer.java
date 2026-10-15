@@ -68,7 +68,13 @@ final class ClusterTestServer {
     }
 
     static int seedPort() {
-        return Integer.parseInt(seed().substring(seed().lastIndexOf(':') + 1));
+        String seed = seed();
+        String port = seed.substring(seed.lastIndexOf(':') + 1);
+        try {
+            return Integer.parseInt(port);
+        } catch (NumberFormatException e) {
+            throw new IllegalStateException("cluster seed has no valid port: " + seed, e);
+        }
     }
 
     private static String startScript() {

@@ -73,6 +73,31 @@ class DriverImplClusterTest {
     }
 
     @Test
+    void aDatabaseIndexIsRejectedWhenTheEndpointIsACluster() {
+        cluster = new FakeCluster(1, DriverImplClusterTest::queryReply);
+        driver = DriverImpl.connect(
+                java.net.URI.create("redis://127.0.0.1:" + cluster.node(0).port() + "/3"),
+                SentinelOptions.disabled(),
+                ClusterOptions.autoDetect());
+
+        assertThrows(IllegalArgumentException.class, () -> driver.graph("g").query("CREATE ()"));
+    }
+
+    @Test
+    void aFailedTopologyRefreshDoesNotHideTheOriginalFailure() {
+        cluster = new FakeCluster(1, DriverImplClusterTest::queryReply);
+        connectToSeed(cluster.node(0), ClusterOptions.autoDetect());
+        driver.graph(FakeCluster.lowGraph()).query("CREATE ()");
+
+        cluster.node(0).close();
+
+        JedisConnectionException e =
+                assertThrows(JedisConnectionException.class, () -> driver.graph(FakeCluster.lowGraph())
+                        .query("CREATE ()"));
+        assertTrue(e.getSuppressed().length > 0, "the refresh failure is attached, not thrown instead");
+    }
+
+    @Test
     void aStandaloneSeedKeepsTheDirectConnection() {
         standalone = new FakeRedisServer(c -> {
             if (FakeRedisServer.startsWith(c, "INFO")) {

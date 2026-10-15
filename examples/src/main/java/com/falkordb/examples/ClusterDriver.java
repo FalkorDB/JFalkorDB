@@ -28,8 +28,8 @@ import java.util.UUID;
  *       releases.
  *   <li><b>Explicit startup nodes</b> — name several nodes so the driver still finds the cluster when
  *       one of them is down, and skip the probe.
- *   <li><b>Cluster-wide commands</b> — listing graphs and loading UDF libraries cover every
- *       primary, not just one.
+ *   <li><b>Cluster-wide commands</b> — listing graphs covers every primary, not just one
+ *       ({@code udfLoad}, {@code udfDelete}, {@code udfFlush} and {@code configSet} do too).
  *   <li><b>Opting out</b> — skips the probe for an address known to be a plain server, or whose ACL
  *       forbids {@code INFO}.
  * </ol>
@@ -45,7 +45,7 @@ import java.util.UUID;
  */
 public final class ClusterDriver {
 
-    /** Enough graphs that, hashed by name, they spread over every primary of a small cluster. */
+    /** Enough graphs that, hashed by name, they very likely spread over every primary of a small cluster. */
     private static final int GRAPHS = 12;
 
     private ClusterDriver() {}
@@ -113,8 +113,8 @@ public final class ClusterDriver {
 
     /**
      * Server-wide state is per node, so these reach every primary: {@code listGraphs()} merges the
-     * graphs each one holds, and {@code udfLoad} / {@code udfDelete} / {@code udfFlush} /
-     * {@code configSet} run on all of them.
+     * graphs each one holds. ({@code udfLoad}, {@code udfDelete}, {@code udfFlush} and
+     * {@code configSet} likewise run on all of them.)
      */
     private static void showClusterWideCommands(String host, int port) throws IOException {
         try (Driver driver = FalkorDB.driver(host, port)) {

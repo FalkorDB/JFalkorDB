@@ -293,6 +293,7 @@ public class DriverImpl implements Driver {
                     sentinelClientConfig(dataConfig, sentinel)));
         }
         if (cluster.isExplicit()) {
+            requireNoDatabase(dataConfig);
             return new ClusterConnections(cluster.startupNodes(), poolConfig, clusterNodeConfig(dataConfig));
         }
         if (sentinel.isAutoDetect()) {
@@ -307,9 +308,17 @@ public class DriverImpl implements Driver {
             }
         }
         if (cluster.isAutoDetect() && Clusters.detect(seed, clusterProbeConfig(dataConfig))) {
+            requireNoDatabase(dataConfig);
             return new ClusterConnections(Collections.singleton(seed), poolConfig, clusterNodeConfig(dataConfig));
         }
         return new Connections.Single(new JedisPool(poolConfig, seed, dataConfig));
+    }
+
+    private static void requireNoDatabase(DefaultJedisClientConfig dataConfig) {
+        if (dataConfig.getDatabase() != 0) {
+            throw new IllegalArgumentException("a Redis Cluster has a single database, but database "
+                    + dataConfig.getDatabase() + " was requested");
+        }
     }
 
     /**
@@ -785,14 +794,20 @@ public class DriverImpl implements Driver {
             try {
                 return operation.get();
             } catch (RuntimeException e) {
-                if (isRedirect(e) && attempt < CLUSTER_REDIRECT_ATTEMPTS) {
-                    connections.topologyChanged();
-                    continue;
+                boolean redirect = isRedirect(e);
+                if (!redirect && !(e instanceof JedisConnectionException)) {
+                    throw e;
                 }
-                if (isRedirect(e) || e instanceof JedisConnectionException) {
+                try {
                     connections.topologyChanged();
+                } catch (RuntimeException refreshFailure) {
+                    // The refresh failing is a symptom; the caller needs the failure that started it.
+                    e.addSuppressed(refreshFailure);
+                    throw e;
                 }
-                throw e;
+                if (!redirect || attempt >= CLUSTER_REDIRECT_ATTEMPTS) {
+                    throw e;
+                }
             }
         }
     }

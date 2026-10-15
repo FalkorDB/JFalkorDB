@@ -30,7 +30,7 @@ public final class ClusterOptions {
 
     private ClusterOptions(boolean autoDetect, Set<HostAndPort> startupNodes) {
         this.autoDetect = autoDetect;
-        this.startupNodes = startupNodes;
+        this.startupNodes = Collections.unmodifiableSet(new LinkedHashSet<>(startupNodes));
     }
 
     /**

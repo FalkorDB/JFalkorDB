@@ -185,7 +185,10 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
 
     /**
      * Returns a new ContextedGraph bounded to a Jedis connection from the Jedis
-     * pool
+     * pool.
+     *
+     * <p>In a Redis Cluster the context stays on the node that owned the graph when it was created, and
+     * its queries are not retried after a redirect; create a new context after a reshard or failover.
      *
      * @return ContextedGraph
      */

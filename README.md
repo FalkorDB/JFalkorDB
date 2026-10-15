@@ -280,8 +280,13 @@ try (Driver driver = FalkorDB.builder()
   concern a particular graph.
 - **Copying a graph** needs both names in the same hash slot. A hash tag does that:
   `driver.graph("{social}-a").copyGraph("{social}-b")`. Otherwise the server answers `CROSSSLOT`.
-- **Resharding and failover** are followed. When a node answers that a graph has moved, the driver
-  relearns the layout and repeats the command, up to three attempts. A redirect means the command did
+- **Resharding and failover** are followed for single graph calls (`query`, `readOnlyQuery`,
+  `profile`, `explain`, `copyGraph`, `deleteGraph`). When a node answers that a graph has moved, the
+  driver relearns the layout and repeats the command, up to three attempts. Pipelines, transactions
+  and `getContext()` hold a connection to the node that owned the graph when they were created, so
+  during resharding they can fail with a redirect; create them again to pick up the new layout. A graph
+  that is mid-migration may answer `ASK`, which is treated like `MOVED`, so a call during the
+  migration window can still fail. A redirect means the command did
   not run, so a write is never applied twice. If a node cannot be reached the layout is relearned too,
   but the command is reported as failed, because it may have run before the connection dropped.
 - **Pool sizing** (`poolMaxTotal`, `poolMaxIdle`, `poolMaxWait`) applies to each node separately.
