@@ -205,6 +205,7 @@ class DriverImplClusterTest {
     void nodeConnectionsKeepTls() {
         DefaultJedisClientConfig data = DriverImpl.buildClientConfig("u", "p", true, 1000, 0);
         assertTrue(DriverImpl.clusterNodeConfig(data).getSslOptions() != null);
+        assertTrue(DriverImpl.clusterProbeConfig(data).getSslOptions() != null);
         assertFalse(DriverImpl.clusterNodeConfig(DriverImpl.buildClientConfig(null, null, false, 1000, 0))
                         .getSslOptions()
                 != null);
@@ -304,6 +305,69 @@ class DriverImplClusterTest {
         driver.graph(graph).readOnlyQuery("RETURN 1");
         driver.graph(graph).profile("RETURN 1");
         assertEquals(Arrays.asList("Results"), driver.graph(graph).explain("RETURN 1"));
+    }
+
+    @Test
+    void readOnlyQueriesWithATimeoutAreRoutedToo() {
+        cluster = new FakeCluster(
+                2, (node, command) -> FakeRedisServer.startsWith(command, "GRAPH.RO_QUERY") ? WRITE_REPLY : null);
+        connectToSeed(cluster.node(0), ClusterOptions.autoDetect());
+
+        driver.graph(FakeCluster.highGraph()).readOnlyQuery("RETURN 1", 500L);
+
+        assertEquals(1, cluster.node(1).count("GRAPH.RO_QUERY"));
+    }
+
+    @Test
+    void aDriverCanBeBuiltOnAnyConnectionSource() throws Exception {
+        cluster = new FakeCluster(1, DriverImplClusterTest::queryReply);
+        ClusterConnections connections = new ClusterConnections(
+                java.util.Collections.singleton(HostAndPort.from(cluster.node(0).address())),
+                new org.apache.commons.pool2.impl.GenericObjectPoolConfig<Jedis>(),
+                DefaultJedisClientConfig.builder().build());
+        driver = new DriverImpl(connections);
+
+        driver.graph("g").query("CREATE ()");
+
+        assertEquals(1, graphQueries(cluster.node(0)));
+    }
+
+    @Test
+    void explainPlansWithNonTextLinesOrAScalarReplyAreStillReturned() {
+        cluster = new FakeCluster(1, (node, command) -> {
+            if (FakeRedisServer.startsWith(command, "GRAPH.EXPLAIN")) {
+                return command.get(2).equals("lines")
+                        ? FakeRedisServer.array(FakeRedisServer.integer(7))
+                        : FakeRedisServer.bulk("Results");
+            }
+            return null;
+        });
+        connectToSeed(cluster.node(0), ClusterOptions.autoDetect());
+
+        assertEquals(Arrays.asList("7"), driver.graph("g").explain("lines"));
+        assertEquals(Arrays.asList("Results"), driver.graph("g").explain("scalar"));
+    }
+
+    @Test
+    void unusualUdfRepliesAreReportedAsFailure() {
+        cluster = new FakeCluster(1, (node, command) -> {
+            if (FakeRedisServer.startsWith(command, "GRAPH.UDF", "FLUSH")) {
+                return "$-1\r\n";
+            }
+            if (FakeRedisServer.startsWith(command, "GRAPH.UDF", "LOAD")) {
+                return FakeRedisServer.integer(1);
+            }
+            if (FakeRedisServer.startsWith(command, "GRAPH.UDF", "DELETE")) {
+                return command.get(2).equals("missing") ? "$-1\r\n" : FakeRedisServer.array();
+            }
+            return null;
+        });
+        connectToSeed(cluster.node(0), ClusterOptions.autoDetect());
+
+        assertFalse(driver.udfFlush());
+        assertFalse(driver.udfLoad("lib", "script", false));
+        assertFalse(driver.udfDelete("missing"));
+        assertFalse(driver.udfDelete("lib"));
     }
 
     @Test

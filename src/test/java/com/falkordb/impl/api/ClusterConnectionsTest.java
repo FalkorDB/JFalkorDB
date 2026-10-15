@@ -15,7 +15,9 @@ import org.junit.jupiter.api.Test;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisClusterOperationException;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 class ClusterConnectionsTest {
 
@@ -184,6 +186,49 @@ class ClusterConnectionsTest {
         connect(startup(cluster.addresses()));
 
         assertEquals("0", nodeOf(connections.get(FakeCluster.highGraph())));
+    }
+
+    @Test
+    void aDeadPrimaryInAClusterWideCallTriggersARelearn() {
+        cluster = new FakeCluster(2, null);
+        connect(startup(cluster.addresses()));
+        assertEquals(2, connections.onEachPrimary(c -> c.echo("x")).size());
+        long before = cluster.node(1).count("CLUSTER", "SLOTS");
+
+        cluster.node(0).close();
+        assertThrows(JedisConnectionException.class, () -> connections.onEachPrimary(c -> c.echo("x")));
+
+        assertTrue(cluster.node(1).count("CLUSTER", "SLOTS") > before, "the survivor was asked for the layout");
+    }
+
+    @Test
+    void aClusterWideCallKeepsItsFailureWhenTheRelearnFailsToo() {
+        cluster = new FakeCluster(1, null);
+        connect(startup(cluster.addresses()));
+        connections.onEachPrimary(c -> c.echo("x"));
+
+        cluster.node(0).close();
+        JedisConnectionException e =
+                assertThrows(JedisConnectionException.class, () -> connections.onEachPrimary(c -> c.echo("x")));
+
+        assertTrue(e.getSuppressed().length > 0);
+    }
+
+    @Test
+    void noConnectionIsHandedOutOnceClosed() {
+        cluster = new FakeCluster(1, null);
+        connect(startup(cluster.addresses()));
+        connections.get("g").close();
+        connections.close();
+
+        assertThrows(IllegalStateException.class, () -> connections.get("g"));
+    }
+
+    @Test
+    void aSingleSourceIgnoresTopologyChanges() {
+        Connections.Single single = new Connections.Single(new JedisPool("127.0.0.1", 1));
+        single.topologyChanged();
+        single.close();
     }
 
     @Test
