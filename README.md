@@ -230,6 +230,74 @@ Driver driver = FalkorDB.builder().host("db.example.com").autoDetectSentinel(fal
 Building a driver still performs no I/O: the probe, like the first connection, happens when the
 driver is first used.
 
+## Redis Cluster
+
+A [Redis Cluster](https://redis.io/docs/latest/operate/oss_and_stack/management/scaling/) spreads its
+keys over several primaries. A graph is a single key, so each graph lives on one node, chosen by
+hashing its name. Point the driver at any node of the cluster and it learns the layout, then sends
+every command to the node that owns the graph, so no query is answered with a `MOVED` redirect.
+
+Nothing needs configuring in the common case. Every factory method probes the endpoint it is given,
+and if that endpoint is a cluster node (`redis_mode:cluster`) the driver switches to cluster mode on
+its own, as the Python client does:
+
+```java
+// node-a is one node of a cluster; the driver finds the others
+try (Driver driver = FalkorDB.driver("node-a", 6379)) {
+    Graph graph = driver.graph("social");
+    graph.query("CREATE (:Person {name:'Alice'})");
+}
+```
+
+An endpoint that is an ordinary FalkorDB server is used directly, exactly as in every previous
+release, and an endpoint that cannot be probed also falls back to a direct connection.
+
+List several startup nodes when you want the driver to cope with one of them being down, or to skip
+the probe. Only some of the nodes need to be reachable, because the whole layout is learned from
+whichever one answers first:
+
+```java
+try (Driver driver = FalkorDB.builder()
+        .cluster("node-a:6379", "node-b:6379", "node-c:6379")
+        .credentials("app-user", "app-password")
+        .build()) {
+    driver.graph("social").query("CREATE (:Person {name:'Alice'})");
+}
+```
+
+### What changes in cluster mode
+
+- **Graph commands** (`query`, `readOnlyQuery`, `profile`, `explain`, `copyGraph`, `deleteGraph`,
+  pipelines and transactions) go to the node that owns the graph. A pipeline or transaction stays on
+  that node, so it can only touch that one graph. Plain Redis keys used inside one belong to other
+  nodes unless they share the graph's hash tag.
+- **`listGraphs()`** returns the graphs of every primary, without duplicates.
+- **`udfLoad`, `udfDelete`, `udfFlush` and `configSet`** run on every primary, because libraries and
+  configuration are per node. They return `true` only if every primary accepted the command, and an
+  error from any primary is thrown.
+- **`udfList` and `configGet`** are answered by any one primary.
+- **`getConnection()`** returns a connection to an arbitrary primary. Use it for commands that do not
+  concern a particular graph.
+- **Copying a graph** needs both names in the same hash slot. A hash tag does that:
+  `driver.graph("{social}-a").copyGraph("{social}-b")`. Otherwise the server answers `CROSSSLOT`.
+- **Resharding and failover** are followed. When a node answers that a graph has moved, the driver
+  relearns the layout and repeats the command, up to three attempts. A redirect means the command did
+  not run, so a write is never applied twice. If a node cannot be reached the layout is relearned too,
+  but the command is reported as failed, because it may have run before the connection dropped.
+- **Pool sizing** (`poolMaxTotal`, `poolMaxIdle`, `poolMaxWait`) applies to each node separately.
+- **Credentials and TLS** are the same for every node. A database index is not supported, since a
+  cluster has a single database.
+- Replicas are not read from: reads and writes both go to the primaries.
+
+Auto-detection costs one `INFO` command on the first connection. To skip it, turn it off:
+
+```java
+Driver driver = FalkorDB.builder().host("db.example.com").autoDetectCluster(false).build();
+```
+
+Building a driver still performs no I/O: the probe, like the first connection, happens when the
+driver is first used.
+
 ## Query parameters
 
 Always pass values as **parameters** rather than concatenating them into the Cypher string. Parameter

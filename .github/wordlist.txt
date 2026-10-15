@@ -52,3 +52,6 @@ updaters
 ACL
 ACLs
 failovers
+failover
+resharding
+Resharding

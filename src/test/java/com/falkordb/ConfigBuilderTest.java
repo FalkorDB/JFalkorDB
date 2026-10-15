@@ -253,6 +253,72 @@ class ConfigBuilderTest {
     }
 
     @Test
+    void clusterSettersReturnSameBuilder() {
+        FalkorDB.Builder builder = FalkorDB.builder();
+        assertSame(builder, builder.cluster("a:6379", "b:6379"));
+        assertSame(builder, builder.cluster(Collections.singletonList("a:6379")));
+        assertSame(builder, builder.autoDetectCluster(false));
+    }
+
+    @Test
+    void buildsAgainstExplicitClusterNodes() {
+        assertDoesNotThrow(() -> {
+            try (Driver driver = FalkorDB.builder()
+                    .cluster("node-a:6379", "node-b:6379", "node-c:6379")
+                    .credentials("user", "password")
+                    .build()) {
+                assertNotNull(driver);
+            }
+        });
+    }
+
+    @Test
+    void clusterBuildStaysLazy() {
+        // Like the Sentinel case: naming a cluster that does not exist must not cost a DNS lookup or a
+        // connection attempt, so the assertion is on elapsed time.
+        long startedAt = System.nanoTime();
+        assertDoesNotThrow(
+                () -> FalkorDB.builder().cluster("node-a.invalid:6379").build().close());
+        long elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000L;
+
+        assertTrue(elapsedMillis < 1000, "building a driver must not connect, but took " + elapsedMillis + "ms");
+    }
+
+    @Test
+    void rejectsClusterNodesThatAreMissing() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> FalkorDB.builder().cluster().build());
+        assertThrows(IllegalArgumentException.class, () -> FalkorDB.builder()
+                .cluster((java.util.Collection<String>) null)
+                .build());
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> FalkorDB.builder().cluster((String[]) null).build());
+    }
+
+    @Test
+    void rejectsAMalformedClusterNode() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> FalkorDB.builder().cluster("no-port-here").build());
+    }
+
+    @Test
+    void rejectsADeploymentThatIsBothASentinelAndACluster() {
+        assertThrows(IllegalArgumentException.class, () -> FalkorDB.builder()
+                .sentinel("mymaster", "sentinel-a:26379")
+                .cluster("node-a:6379")
+                .build());
+    }
+
+    @Test
+    void clusterDetectionCanBeSwitchedOff() {
+        assertDoesNotThrow(
+                () -> FalkorDB.builder().autoDetectCluster(false).build().close());
+    }
+
+    @Test
     void aDriverClosedBeforeUseFailsFastInsteadOfConnecting() {
         // Resolving the pool lazily means a closed-but-never-used driver could otherwise run the whole
         // resolution -- Sentinel probe included -- just to hand back a pool it immediately closes.

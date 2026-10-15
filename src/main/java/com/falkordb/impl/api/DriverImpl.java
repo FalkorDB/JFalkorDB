@@ -5,7 +5,10 @@ import com.falkordb.impl.ConnectionUris;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -19,6 +22,8 @@ import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.Protocol;
 import redis.clients.jedis.SslOptions;
 import redis.clients.jedis.exceptions.InvalidURIException;
+import redis.clients.jedis.exceptions.JedisConnectionException;
+import redis.clients.jedis.exceptions.JedisRedirectionException;
 import redis.clients.jedis.util.JedisURIHelper;
 import redis.clients.jedis.util.Pool;
 import redis.clients.jedis.util.SafeEncoder;
@@ -70,6 +75,20 @@ public class DriverImpl implements Driver {
     public static final int DEFAULT_SENTINEL_PROBE_TIMEOUT_MILLIS = Protocol.DEFAULT_TIMEOUT;
 
     /**
+     * How many times a graph command is attempted in a Redis Cluster when the server keeps answering
+     * that the graph lives on another node, matching the Python client's {@code
+     * cluster_error_retry_attempts} default.
+     */
+    public static final int CLUSTER_REDIRECT_ATTEMPTS = 3;
+
+    /**
+     * Read deadline for the one-shot Redis Cluster probe when the driver's own socket timeout is the
+     * default {@link #DEFAULT_SOCKET_TIMEOUT_MILLIS} (0 = no deadline), for the same reason as {@link
+     * #DEFAULT_SENTINEL_PROBE_TIMEOUT_MILLIS}.
+     */
+    public static final int DEFAULT_CLUSTER_PROBE_TIMEOUT_MILLIS = Protocol.DEFAULT_TIMEOUT;
+
+    /**
      * Read deadline for the connections to the Sentinels themselves: none, whatever the data
      * connections use. Once discovery is done, the only thing that connection does is hold a
      * {@code SUBSCRIBE} open for {@code +switch-master}, so a socket timeout there bounds nothing —
@@ -83,10 +102,10 @@ public class DriverImpl implements Driver {
      * always been I/O-free: a {@link JedisPool} connects lazily, so building a driver against a server
      * that is not up yet has always been legal and must stay that way. See {@link #pool()}.
      */
-    private final AtomicReference<Pool<Jedis>> resolvedPool = new AtomicReference<>();
+    private final AtomicReference<Connections> resolvedPool = new AtomicReference<>();
 
-    /** Builds the pool the first time one is needed. */
-    private final Supplier<Pool<Jedis>> poolFactory;
+    /** Builds the connection source the first time one is needed. */
+    private final Supplier<Connections> poolFactory;
 
     /** Set by {@link #close()}, so a closed driver never silently rebuilds its pool. */
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -187,9 +206,34 @@ public class DriverImpl implements Driver {
      */
     public static Driver connect(
             String host, int port, @Nullable String user, @Nullable String password, SentinelOptions sentinel) {
+        return connect(host, port, user, password, sentinel, ClusterOptions.autoDetect());
+    }
+
+    /**
+     * Connects to a seed host/port, transparently switching to Redis Sentinel or Redis Cluster per
+     * {@code sentinel} and {@code cluster}. See {@link #connect(String, int, String, String,
+     * SentinelOptions)}.
+     *
+     * @param host     server host
+     * @param port     server port
+     * @param user     username, or {@code null} for none
+     * @param password password, or {@code null} for none
+     * @param sentinel how to treat the endpoint with respect to Sentinel
+     * @param cluster  how to treat the endpoint with respect to Redis Cluster
+     * @return a new driver, backed by a direct, failover-aware or cluster-aware connection source as the
+     *     options dictate
+     */
+    public static Driver connect(
+            String host,
+            int port,
+            @Nullable String user,
+            @Nullable String password,
+            SentinelOptions sentinel,
+            ClusterOptions cluster) {
         DefaultJedisClientConfig dataConfig = clientConfig(user, password);
         HostAndPort seed = new HostAndPort(host, port);
-        return new DriverImpl(() -> resolvePool(seed, new GenericObjectPoolConfig<Jedis>(), dataConfig, sentinel));
+        return new DriverImpl(
+                () -> resolveConnections(seed, new GenericObjectPoolConfig<Jedis>(), dataConfig, sentinel, cluster));
     }
 
     /**
@@ -202,32 +246,54 @@ public class DriverImpl implements Driver {
      * @throws InvalidURIException if the URI is not a valid Redis connection URI
      */
     public static Driver connect(URI uri, SentinelOptions sentinel) {
-        requireValidUri(uri);
-        HostAndPort seed = JedisURIHelper.getHostAndPort(uri);
-        DefaultJedisClientConfig dataConfig = uriClientConfig(uri);
-        return new DriverImpl(() -> resolvePool(seed, new GenericObjectPoolConfig<Jedis>(), dataConfig, sentinel));
+        return connect(uri, sentinel, ClusterOptions.autoDetect());
     }
 
     /**
-     * Chooses the pool a seed endpoint should be served by.
+     * Connects to a seed URI, transparently switching to Redis Sentinel or Redis Cluster per {@code
+     * sentinel} and {@code cluster}. A cluster has no database index, so a URI that selects one is
+     * rejected when the endpoint turns out to be a cluster node.
+     *
+     * @param uri      server uri
+     * @param sentinel how to treat the endpoint with respect to Sentinel
+     * @param cluster  how to treat the endpoint with respect to Redis Cluster
+     * @return a new driver, backed by a direct, failover-aware or cluster-aware connection source as the
+     *     options dictate
+     * @throws InvalidURIException if the URI is not a valid Redis connection URI
+     */
+    public static Driver connect(URI uri, SentinelOptions sentinel, ClusterOptions cluster) {
+        requireValidUri(uri);
+        HostAndPort seed = JedisURIHelper.getHostAndPort(uri);
+        DefaultJedisClientConfig dataConfig = uriClientConfig(uri);
+        return new DriverImpl(
+                () -> resolveConnections(seed, new GenericObjectPoolConfig<Jedis>(), dataConfig, sentinel, cluster));
+    }
+
+    /**
+     * Chooses the connection source a seed endpoint should be served by.
      *
      * <p>Explicit configuration wins outright and never probes — the caller has already said what the
-     * deployment looks like, and can list more Sentinels than a single seed could reveal. Otherwise
-     * the endpoint is probed only if auto-detection is on, and anything less than a positive
-     * identification leaves us on the direct pool that every previous release would have built.
+     * deployment looks like, and can list more Sentinels or cluster nodes than a single seed could
+     * reveal. Otherwise the endpoint is probed only if auto-detection is on, Sentinel first and then
+     * Redis Cluster, and anything less than a positive identification leaves us on the direct pool that
+     * every previous release would have built.
      */
-    private static Pool<Jedis> resolvePool(
+    private static Connections resolveConnections(
             HostAndPort seed,
             GenericObjectPoolConfig<Jedis> poolConfig,
             DefaultJedisClientConfig dataConfig,
-            SentinelOptions sentinel) {
+            SentinelOptions sentinel,
+            ClusterOptions cluster) {
         if (sentinel.isExplicit()) {
-            return Sentinels.pool(
+            return new Connections.Single(Sentinels.pool(
                     sentinel.masterName(),
                     sentinel.addresses(),
                     poolConfig,
                     dataConfig,
-                    sentinelClientConfig(dataConfig, sentinel));
+                    sentinelClientConfig(dataConfig, sentinel)));
+        }
+        if (cluster.isExplicit()) {
+            return new ClusterConnections(cluster.startupNodes(), poolConfig, clusterNodeConfig(dataConfig));
         }
         if (sentinel.isAutoDetect()) {
             Pool<Jedis> detected = Sentinels.detect(
@@ -237,10 +303,44 @@ public class DriverImpl implements Driver {
                     dataConfig,
                     sentinelClientConfig(dataConfig, sentinel));
             if (detected != null) {
-                return detected;
+                return new Connections.Single(detected);
             }
         }
-        return new JedisPool(poolConfig, seed, dataConfig);
+        if (cluster.isAutoDetect() && Clusters.detect(seed, clusterProbeConfig(dataConfig))) {
+            return new ClusterConnections(Collections.singleton(seed), poolConfig, clusterNodeConfig(dataConfig));
+        }
+        return new Connections.Single(new JedisPool(poolConfig, seed, dataConfig));
+    }
+
+    /**
+     * The config used for connections to cluster nodes: the data connections' credentials, TLS and
+     * timeouts, without the database index. A cluster has a single database and Jedis issues {@code
+     * SELECT} for any non-zero index on every connection it opens, which the cluster would reject.
+     */
+    static DefaultJedisClientConfig clusterNodeConfig(DefaultJedisClientConfig dataConfig) {
+        return buildClientConfig(
+                dataConfig.getUser(),
+                dataConfig.getPassword(),
+                dataConfig.getSslOptions() != null,
+                dataConfig.getConnectionTimeoutMillis(),
+                dataConfig.getSocketTimeoutMillis());
+    }
+
+    /**
+     * The config used for the one-shot cluster detection probe: the node config with a read deadline
+     * forced on, so an endpoint that accepts connections but never answers cannot hang the first query.
+     * An explicitly configured socket timeout is respected; the driver's default of "no deadline" is
+     * replaced by {@link #DEFAULT_CLUSTER_PROBE_TIMEOUT_MILLIS}.
+     */
+    static DefaultJedisClientConfig clusterProbeConfig(DefaultJedisClientConfig dataConfig) {
+        return buildClientConfig(
+                dataConfig.getUser(),
+                dataConfig.getPassword(),
+                dataConfig.getSslOptions() != null,
+                dataConfig.getConnectionTimeoutMillis(),
+                dataConfig.getSocketTimeoutMillis() > 0
+                        ? dataConfig.getSocketTimeoutMillis()
+                        : DEFAULT_CLUSTER_PROBE_TIMEOUT_MILLIS);
     }
 
     /**
@@ -396,6 +496,62 @@ public class DriverImpl implements Driver {
             int poolMaxIdle,
             Duration poolMaxWait,
             SentinelOptions sentinel) {
+        return create(
+                host,
+                port,
+                user,
+                password,
+                ssl,
+                connectionTimeoutMillis,
+                socketTimeoutMillis,
+                poolMaxTotal,
+                poolMaxIdle,
+                poolMaxWait,
+                sentinel,
+                ClusterOptions.autoDetect());
+    }
+
+    /**
+     * Creates a driver from already-resolved connection settings, including how to treat Redis
+     * Sentinel and Redis Cluster. This is the overload {@code FalkorDB.builder()} actually calls; the
+     * shorter ones delegate here with auto-detection for whatever they leave out.
+     *
+     * <p>Pool sizing ({@code poolMaxTotal}, {@code poolMaxIdle}, {@code poolMaxWait}) applies to each
+     * cluster node's pool separately.
+     *
+     * @param host                     server host (the seed endpoint, ignored when {@code sentinel} or
+     *                                 {@code cluster} is {@linkplain ClusterOptions#explicit explicit},
+     *                                 though still range-checked)
+     * @param port                     server port
+     * @param user                     username, or {@code null} for none
+     * @param password                 password, or {@code null} for none
+     * @param ssl                      whether to connect over TLS
+     * @param connectionTimeoutMillis  connection (connect) timeout in milliseconds
+     * @param socketTimeoutMillis      socket (read) timeout in milliseconds ({@code 0} = no deadline)
+     * @param poolMaxTotal             maximum pool size
+     * @param poolMaxIdle              maximum idle connections in the pool
+     * @param poolMaxWait              maximum time to wait for a connection when the pool is exhausted
+     * @param sentinel                 how to treat the endpoint with respect to Sentinel
+     * @param cluster                  how to treat the endpoint with respect to Redis Cluster
+     * @return a new driver backed by the assembled connection source
+     * @throws IllegalArgumentException if {@code host} is null/blank, {@code port} is outside
+     *                                  {@code [1, 65535]}, the pool sizing is invalid, a timeout is
+     *                                  negative, {@code poolMaxWait}, {@code sentinel} or {@code cluster}
+     *                                  is null, or Sentinel and cluster are both explicit
+     */
+    public static Driver create(
+            String host,
+            int port,
+            String user,
+            String password,
+            boolean ssl,
+            int connectionTimeoutMillis,
+            int socketTimeoutMillis,
+            int poolMaxTotal,
+            int poolMaxIdle,
+            Duration poolMaxWait,
+            SentinelOptions sentinel,
+            ClusterOptions cluster) {
         if (host == null || host.trim().isEmpty()) {
             throw new IllegalArgumentException("host must not be null or blank");
         }
@@ -427,11 +583,18 @@ public class DriverImpl implements Driver {
         if (sentinel == null) {
             throw new IllegalArgumentException("sentinel must not be null");
         }
+        if (cluster == null) {
+            throw new IllegalArgumentException("cluster must not be null");
+        }
+        if (sentinel.isExplicit() && cluster.isExplicit()) {
+            throw new IllegalArgumentException(
+                    "a deployment is either a Redis Sentinel or a Redis Cluster: configure one of them, not both");
+        }
         HostAndPort seed = new HostAndPort(normalizedHost, port);
         GenericObjectPoolConfig<Jedis> poolConfig = buildPoolConfig(poolMaxTotal, poolMaxIdle, poolMaxWait);
         DefaultJedisClientConfig dataConfig =
                 buildClientConfig(user, password, ssl, connectionTimeoutMillis, socketTimeoutMillis);
-        return new DriverImpl(() -> resolvePool(seed, poolConfig, dataConfig, sentinel));
+        return new DriverImpl(() -> resolveConnections(seed, poolConfig, dataConfig, sentinel, cluster));
     }
 
     /**
@@ -494,8 +657,20 @@ public class DriverImpl implements Driver {
      * @param pool jedis pool to wrap
      */
     public DriverImpl(Pool<Jedis> pool) {
-        this.poolFactory = () -> pool;
-        this.resolvedPool.set(pool);
+        Connections connections = new Connections.Single(pool);
+        this.poolFactory = () -> connections;
+        this.resolvedPool.set(connections);
+    }
+
+    /**
+     * Creates a client on an existing connection source. Test seam: lets the cluster behaviour be
+     * exercised without a network.
+     *
+     * @param connections the connection source to use
+     */
+    DriverImpl(Connections connections) {
+        this.poolFactory = () -> connections;
+        this.resolvedPool.set(connections);
     }
 
     /**
@@ -504,7 +679,7 @@ public class DriverImpl implements Driver {
      *
      * @param poolFactory builds the pool the first time a connection is borrowed
      */
-    private DriverImpl(Supplier<Pool<Jedis>> poolFactory) {
+    private DriverImpl(Supplier<Connections> poolFactory) {
         this.poolFactory = poolFactory;
     }
 
@@ -527,13 +702,13 @@ public class DriverImpl implements Driver {
      * A pool closed underneath us stays published — the driver is closed, so reporting that through
      * Jedis is the same thing that happens to a driver closed after being used.
      */
-    private Pool<Jedis> pool() {
-        Pool<Jedis> existing = resolvedPool.get();
+    private Connections pool() {
+        Connections existing = resolvedPool.get();
         if (existing != null) {
             return existing;
         }
         requireOpen();
-        Pool<Jedis> created = poolFactory.get();
+        Connections created = poolFactory.get();
         if (!resolvedPool.compareAndSet(null, created)) {
             closeQuietly(created);
             return resolvedPool.get();
@@ -553,7 +728,7 @@ public class DriverImpl implements Driver {
         }
     }
 
-    private static void closeQuietly(Pool<Jedis> pool) {
+    private static void closeQuietly(Connections pool) {
         try {
             pool.close();
         } catch (RuntimeException ignored) {
@@ -566,9 +741,70 @@ public class DriverImpl implements Driver {
         return new GraphImpl(this, graphId);
     }
 
+    /**
+     * Returns a connection to the database. In a Redis Cluster the connection is to an arbitrary
+     * primary; use {@link #getConnection(String)} to reach the node that serves a particular graph.
+     */
     @Override
     public Jedis getConnection() {
-        return pool().getResource();
+        return pool().get(null);
+    }
+
+    /**
+     * Returns a connection suitable for commands on the named graph. In a Redis Cluster that is a
+     * connection to the primary that owns the graph's hash slot, so the command is not redirected;
+     * everywhere else it is the same as {@link #getConnection()}.
+     *
+     * @param graphId the graph the connection will be used for
+     * @return a connection to close after use
+     */
+    public Jedis getConnection(String graphId) {
+        return pool().get(graphId);
+    }
+
+    /**
+     * Runs {@code operation}, and in a Redis Cluster runs it again, up to {@link
+     * #CLUSTER_REDIRECT_ATTEMPTS} times in all, when the server answers that the graph lives on another
+     * node. A redirect means the command was not executed, so repeating it cannot duplicate a write.
+     * Each repeat first relearns the slot table, so a resharded or failed-over cluster is followed. An
+     * unreachable node also relearns the table, but is reported to the caller rather than retried,
+     * because the command may have been executed before the connection was lost.
+     *
+     * <p>Outside a cluster the operation runs exactly once.
+     *
+     * @param operation the work to run; it must borrow its connection afresh on every call
+     * @param <T> the result type
+     * @return the operation's result
+     */
+    <T> T routed(Supplier<T> operation) {
+        Connections connections = pool();
+        if (!connections.isCluster()) {
+            return operation.get();
+        }
+        for (int attempt = 1; ; attempt++) {
+            try {
+                return operation.get();
+            } catch (RuntimeException e) {
+                if (isRedirect(e) && attempt < CLUSTER_REDIRECT_ATTEMPTS) {
+                    connections.topologyChanged();
+                    continue;
+                }
+                if (isRedirect(e) || e instanceof JedisConnectionException) {
+                    connections.topologyChanged();
+                }
+                throw e;
+            }
+        }
+    }
+
+    /** Whether {@code failure}, or anything it wraps, is a cluster redirection (MOVED or ASK). */
+    static boolean isRedirect(Throwable failure) {
+        for (Throwable t = failure; t != null; t = t.getCause()) {
+            if (t instanceof JedisRedirectionException) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -578,10 +814,12 @@ public class DriverImpl implements Driver {
      */
     @Override
     public List<String> listGraphs() {
-        try (Jedis conn = getConnection()) {
-            Object response = conn.sendCommand(GraphCommand.LIST);
-            return parseListResponse(response);
+        // In a Redis Cluster each primary only knows the graphs it holds, so ask all of them.
+        Set<String> names = new LinkedHashSet<>();
+        for (List<String> part : pool().onEachPrimary(conn -> parseListResponse(conn.sendCommand(GraphCommand.LIST)))) {
+            names.addAll(part);
         }
+        return new ArrayList<>(names);
     }
 
     /**
@@ -595,25 +833,38 @@ public class DriverImpl implements Driver {
      */
     @Override
     public boolean udfLoad(String libraryName, String script, boolean replace) {
-        try (Jedis conn = getConnection()) {
+        // Libraries are server-wide state, so a Redis Cluster needs the load on every primary.
+        return allTrue(pool().onEachPrimary(conn -> {
             Object response;
             if (replace) {
                 response = conn.sendCommand(GraphCommand.UDF, "LOAD", "REPLACE", libraryName, script);
             } else {
                 response = conn.sendCommand(GraphCommand.UDF, "LOAD", libraryName, script);
             }
-            // Validate response
-            if (response == null) {
+            return isOk(response);
+        }));
+    }
+
+    private static boolean allTrue(List<Boolean> results) {
+        for (Boolean result : results) {
+            if (!result) {
                 return false;
             }
-            String status;
-            if (response instanceof byte[]) {
-                status = SafeEncoder.encode((byte[]) response);
-            } else {
-                status = response.toString();
-            }
-            return "OK".equalsIgnoreCase(status);
         }
+        return true;
+    }
+
+    private static boolean isOk(Object response) {
+        if (response == null) {
+            return false;
+        }
+        String status;
+        if (response instanceof byte[]) {
+            status = SafeEncoder.encode((byte[]) response);
+        } else {
+            status = response.toString();
+        }
+        return "OK".equalsIgnoreCase(status);
     }
 
     /**
@@ -668,20 +919,7 @@ public class DriverImpl implements Driver {
      */
     @Override
     public boolean udfFlush() {
-        try (Jedis conn = getConnection()) {
-            Object response = conn.sendCommand(GraphCommand.UDF, "FLUSH");
-            // Validate response
-            if (response == null) {
-                return false;
-            }
-            String status;
-            if (response instanceof byte[]) {
-                status = SafeEncoder.encode((byte[]) response);
-            } else {
-                status = response.toString();
-            }
-            return "OK".equalsIgnoreCase(status);
-        }
+        return allTrue(pool().onEachPrimary(conn -> isOk(conn.sendCommand(GraphCommand.UDF, "FLUSH"))));
     }
 
     /**
@@ -693,29 +931,30 @@ public class DriverImpl implements Driver {
      */
     @Override
     public boolean udfDelete(String libraryName) {
-        try (Jedis conn = getConnection()) {
-            Object response = conn.sendCommand(GraphCommand.UDF, "DELETE", libraryName);
+        return allTrue(pool().onEachPrimary(
+                        conn -> parseUdfDeleteResponse(conn.sendCommand(GraphCommand.UDF, "DELETE", libraryName))));
+    }
 
-            if (response == null) {
-                return false;
-            }
-
-            if (response instanceof Long) {
-                return ((Long) response) > 0;
-            }
-
-            if (response instanceof String) {
-                return "OK".equalsIgnoreCase((String) response);
-            }
-
-            if (response instanceof byte[]) {
-                String decoded = SafeEncoder.encode((byte[]) response);
-                return "OK".equalsIgnoreCase(decoded);
-            }
-
-            // Unknown response type: conservatively report failure
+    private static boolean parseUdfDeleteResponse(Object response) {
+        if (response == null) {
             return false;
         }
+
+        if (response instanceof Long) {
+            return ((Long) response) > 0;
+        }
+
+        if (response instanceof String) {
+            return "OK".equalsIgnoreCase((String) response);
+        }
+
+        if (response instanceof byte[]) {
+            String decoded = SafeEncoder.encode((byte[]) response);
+            return "OK".equalsIgnoreCase(decoded);
+        }
+
+        // Unknown response type: conservatively report failure
+        return false;
     }
 
     /**
@@ -743,10 +982,9 @@ public class DriverImpl implements Driver {
      */
     @Override
     public boolean configSet(String name, Object value) {
-        try (Jedis conn = getConnection()) {
-            Object response = conn.sendCommand(GraphCommand.CONFIG, "SET", name, String.valueOf(value));
-            return parseConfigSetResponse(response);
-        }
+        // Configuration is per node, so a Redis Cluster needs it set on every primary.
+        return allTrue(pool().onEachPrimary(conn ->
+                parseConfigSetResponse(conn.sendCommand(GraphCommand.CONFIG, "SET", name, String.valueOf(value)))));
     }
 
     /**
@@ -821,7 +1059,7 @@ public class DriverImpl implements Driver {
     @Override
     public void close() {
         closed.set(true);
-        Pool<Jedis> existing = resolvedPool.get();
+        Connections existing = resolvedPool.get();
         if (existing != null) {
             existing.close();
         }
