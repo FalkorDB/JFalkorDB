@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792051518928,
+  "lastUpdate": 1792054536207,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -14576,6 +14576,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 82115.408,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ad0d8501d589540c2d36016df7428cab9fe8611c",
+          "message": "build(deps-dev): bump com.github.spotbugs:spotbugs-maven-plugin (#467)\n\nBumps [com.github.spotbugs:spotbugs-maven-plugin](https://github.com/spotbugs/spotbugs-maven-plugin) from 4.10.4.1 to 4.10.5.0.\n- [Release notes](https://github.com/spotbugs/spotbugs-maven-plugin/releases)\n- [Commits](https://github.com/spotbugs/spotbugs-maven-plugin/compare/spotbugs-maven-plugin-4.10.4.1...spotbugs-maven-plugin-4.10.5.0)\n\n---\nupdated-dependencies:\n- dependency-name: com.github.spotbugs:spotbugs-maven-plugin\n  dependency-version: 4.10.5.0\n  dependency-type: direct:development\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-10-15T11:53:25+03:00",
+          "tree_id": "2a1f6ad53aa039856d7dba9f582b017920a2b9d1",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/ad0d8501d589540c2d36016df7428cab9fe8611c"
+        },
+        "date": 1792054535585,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 216.918,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 250.65,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 275.848,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 242.545,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 282.333,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 321.733,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 324.72,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 523.251,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 643.638,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 514.015,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 854.975,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1056.004,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 591.98,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5711.568,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 12612.398,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 590.747,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 16281.956,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 35492.565,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 600.777,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 37302.655,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 83725.288,
             "unit": "us"
           }
         ]
