@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791865888706,
+  "lastUpdate": 1792050500845,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -6489,6 +6489,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 10905.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9b2967389a8574020f88b1694d162faecb7923c1",
+          "message": "build(deps-dev): bump net.jqwik:jqwik from 1.10.1 to 1.10.2 (#464)\n\nBumps [net.jqwik:jqwik](https://github.com/jqwik-team/jqwik) from 1.10.1 to 1.10.2.\n- [Release notes](https://github.com/jqwik-team/jqwik/releases)\n- [Commits](https://github.com/jqwik-team/jqwik/compare/1.10.1...1.10.2)\n\n---\nupdated-dependencies:\n- dependency-name: net.jqwik:jqwik\n  dependency-version: 1.10.2\n  dependency-type: direct:development\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-10-15T10:45:49+03:00",
+          "tree_id": "d87ce8603b7a7b871454b40955a5169ea05f5e20",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/9b2967389a8574020f88b1694d162faecb7923c1"
+        },
+        "date": 1792050500816,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 5646.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 10507.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 15761.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 21329,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 20086.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 19655.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 19644.333,
             "unit": "ops/s"
           }
         ]
