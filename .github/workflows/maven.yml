@@ -53,6 +53,10 @@ jobs:
         cache: maven
     - name: Install just
       uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+    # Resolve every plugin and dependency up front, with the retries from .mvn/maven.config, so a
+    # transient Maven Central error fails here (cheap, retryable) rather than midway through the build.
+    - name: Warm Maven cache (via just)
+      run: just fetch-deps
     - name: Build & test (via just)
       run: just verify
 
@@ -86,6 +90,10 @@ jobs:
         cache: maven
     - name: Install just
       uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+    # Resolve every plugin and dependency up front, with the retries from .mvn/maven.config, so a
+    # transient Maven Central error fails here (cheap, retryable) rather than midway through the build.
+    - name: Warm Maven cache (via just)
+      run: just fetch-deps
     # FALKORDB_IMAGE is read by the TestServer harness (FalkorDbImage.resolve) so the whole suite runs
     # against this tag instead of the pinned default digest.
     - name: Build & test against falkordb/falkordb:${{ env.FALKORDB_VERSION }} (via just)
