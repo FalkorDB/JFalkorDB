@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792051045492,
+  "lastUpdate": 1792051520580,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -6607,6 +6607,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 16577.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "950c19c9c2fa3b5cafe0fa6f01bbcf4a2085392b",
+          "message": "ci: release runtime dependency bumps via fix(deps) (#466)\n\nDependabot titled every bump build(deps), which release-please ignores, so\ndependency updates never produced a release PR. Use the fix prefix for runtime\ndependencies; development dependencies keep build(deps-dev).\n\nCo-authored-by: Claude Sonnet 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-10-15T11:03:32+03:00",
+          "tree_id": "70044c94aee06d3bc3008576e0453b6d2a603759",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/950c19c9c2fa3b5cafe0fa6f01bbcf4a2085392b"
+        },
+        "date": 1792051520544,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3579,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6121,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9255,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11783,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 10955,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 10867.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 10954,
             "unit": "ops/s"
           }
         ]
