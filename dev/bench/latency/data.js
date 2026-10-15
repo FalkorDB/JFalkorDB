@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792050499276,
+  "lastUpdate": 1792051043824,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -14318,6 +14318,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 32992.197,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3e63628e4df0f54ef596b2e4debc53902e1046b7",
+          "message": "ci: retry Maven downloads and warm the dependency cache (#465)\n\nThe daily canary failed after all 334 tests passed because maven-jar-plugin's\ndependency maven-archiver:3.6.6 could not be resolved, a transient Maven Central\nerror. Raise the resolver's HTTP retry count via .mvn/maven.config (Maven 3.9 uses\nthe native transport, so the wagon.* properties would be ignored) and resolve all\nplugins/dependencies up front with `just fetch-deps` in the verify jobs.\n\nCo-authored-by: Claude Sonnet 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-10-15T10:55:33+03:00",
+          "tree_id": "18270472bd77be827c182ddc166102bd5d56e4d0",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/3e63628e4df0f54ef596b2e4debc53902e1046b7"
+        },
+        "date": 1792051043299,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 123.854,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 157.534,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 182.17,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 153.658,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 188.269,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 238.794,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 205.751,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 326.205,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 402.187,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 319.576,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 560.233,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 699.671,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 394.948,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 3486.876,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 8732.27,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 397.62,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 9361.967,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 21736.857,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 398.011,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 21973.522,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 50698.714,
             "unit": "us"
           }
         ]
