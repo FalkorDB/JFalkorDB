@@ -75,6 +75,10 @@ loadScripts(document, 'script');</script>
  operation of the same name but runs it on a caller-supplied <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/Executor.html" title="class or interface in java.util.concurrent" class="external-link"><code>Executor</code></a>
  and returns a <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/CompletableFuture.html" title="class or interface in java.util.concurrent" class="external-link"><code>CompletableFuture</code></a>.</div>
 </dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#autoDetectCluster(boolean)" class="member-name-link">autoDetectCluster(boolean)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Enables or disables Redis Cluster auto-detection (default <code>true</code>).</div>
+</dd>
 <dt><a href="com/falkordb/FalkorDB.Builder.html#autoDetectSentinel(boolean)" class="member-name-link">autoDetectSentinel(boolean)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
 <dd>
 <div class="block">Enables or disables Sentinel auto-detection (default <code>true</code>).</div>
@@ -157,6 +161,14 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/falkordb/Graph.html#close()" class="member-name-link">close()</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#cluster(java.lang.String...)" class="member-name-link">cluster(String...)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Connects to a Redis Cluster through the given startup nodes, without probing.</div>
+</dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#cluster(java.util.Collection)" class="member-name-link">cluster(Collection&lt;String&gt;)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Connects to a Redis Cluster through the given startup nodes, without probing.</div>
+</dd>
 <dt><a href="com/falkordb/Header.ResultSetColumnTypes.html#COLUMN_NODE" class="member-name-link">COLUMN_NODE</a> - Enum constant in enum com.falkordb.<a href="com/falkordb/Header.ResultSetColumnTypes.html" title="enum in com.falkordb">Header.ResultSetColumnTypes</a></dt>
 <dd>
 <div class="block">A node column type.</div>

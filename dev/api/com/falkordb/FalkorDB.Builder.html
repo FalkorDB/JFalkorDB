@@ -116,92 +116,107 @@ loadScripts(document, 'script');</script>
 <div class="table-header col-second">Method</div>
 <div class="table-header col-last">Description</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#autoDetectSentinel(boolean)" class="member-name-link">autoDetectSentinel</a><wbr>(boolean&nbsp;autoDetectSentinel)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#autoDetectCluster(boolean)" class="member-name-link">autoDetectCluster</a><wbr>(boolean&nbsp;autoDetectCluster)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Enables or disables Sentinel auto-detection (default <code>true</code>).</div>
-</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Driver.html" title="interface in com.falkordb">Driver</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#build()" class="member-name-link">build</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Validates the configuration and builds a driver.</div>
-</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#connectionTimeout(java.time.Duration)" class="member-name-link">connectionTimeout</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;connectionTimeout)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Sets the connection (connect) timeout (default 2000&nbsp;ms).</div>
+<div class="block">Enables or disables Redis Cluster auto-detection (default <code>true</code>).</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#credentials(java.lang.String)" class="member-name-link">credentials</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#autoDetectSentinel(boolean)" class="member-name-link">autoDetectSentinel</a><wbr>(boolean&nbsp;autoDetectSentinel)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Enables or disables Sentinel auto-detection (default <code>true</code>).</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Driver.html" title="interface in com.falkordb">Driver</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#build()" class="member-name-link">build</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Validates the configuration and builds a driver.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#cluster(java.lang.String...)" class="member-name-link">cluster</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>...&nbsp;startupNodes)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Connects to a Redis Cluster through the given startup nodes, without probing.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#cluster(java.util.Collection)" class="member-name-link">cluster</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;startupNodes)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Connects to a Redis Cluster through the given startup nodes, without probing.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#connectionTimeout(java.time.Duration)" class="member-name-link">connectionTimeout</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;connectionTimeout)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Sets the connection (connect) timeout (default 2000&nbsp;ms).</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#credentials(java.lang.String)" class="member-name-link">credentials</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets a password for password-only (<code>default</code> user) authentication, clearing any
  previously set username.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#credentials(java.lang.String,java.lang.String)" class="member-name-link">credentials</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;user,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#credentials(java.lang.String,java.lang.String)" class="member-name-link">credentials</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;user,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets the username and password used to authenticate.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#host(java.lang.String)" class="member-name-link">host</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;host)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#host(java.lang.String)" class="member-name-link">host</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;host)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets the server host (default <code>"localhost"</code>).</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#poolMaxIdle(int)" class="member-name-link">poolMaxIdle</a><wbr>(int&nbsp;poolMaxIdle)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#poolMaxIdle(int)" class="member-name-link">poolMaxIdle</a><wbr>(int&nbsp;poolMaxIdle)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets the maximum number of idle connections kept in the pool (default <code>8</code>).</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#poolMaxTotal(int)" class="member-name-link">poolMaxTotal</a><wbr>(int&nbsp;poolMaxTotal)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#poolMaxTotal(int)" class="member-name-link">poolMaxTotal</a><wbr>(int&nbsp;poolMaxTotal)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets the maximum connection-pool size (default <code>8</code>).</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#poolMaxWait(java.time.Duration)" class="member-name-link">poolMaxWait</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;poolMaxWait)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#poolMaxWait(java.time.Duration)" class="member-name-link">poolMaxWait</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;poolMaxWait)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets the maximum time to wait for a connection when the pool is exhausted (default: wait
  indefinitely).</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#port(int)" class="member-name-link">port</a><wbr>(int&nbsp;port)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#port(int)" class="member-name-link">port</a><wbr>(int&nbsp;port)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets the server port (default <code>6379</code>).</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sentinel(java.lang.String,java.lang.String...)" class="member-name-link">sentinel</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;masterName,
- <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>...&nbsp;sentinels)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Connects through a Redis Sentinel deployment, naming the monitored master explicitly.</div>
-</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sentinel(java.lang.String,java.util.Collection)" class="member-name-link">sentinel</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;masterName,
- <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;sentinels)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sentinel(java.lang.String,java.lang.String...)" class="member-name-link">sentinel</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;masterName,
+ <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>...&nbsp;sentinels)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Connects through a Redis Sentinel deployment, naming the monitored master explicitly.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sentinelCredentials(java.lang.String)" class="member-name-link">sentinelCredentials</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sentinel(java.lang.String,java.util.Collection)" class="member-name-link">sentinel</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;masterName,
+ <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;sentinels)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Connects through a Redis Sentinel deployment, naming the monitored master explicitly.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sentinelCredentials(java.lang.String)" class="member-name-link">sentinelCredentials</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets a password for password-only (<code>default</code> user) authentication to the Sentinels,
  clearing any previously set Sentinel username.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sentinelCredentials(java.lang.String,java.lang.String)" class="member-name-link">sentinelCredentials</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;user,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sentinelCredentials(java.lang.String,java.lang.String)" class="member-name-link">sentinelCredentials</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;user,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets the username and password used to authenticate to the Sentinels themselves, which
  commonly carry ACLs of their own.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#socketTimeout(java.time.Duration)" class="member-name-link">socketTimeout</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;socketTimeout)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#socketTimeout(java.time.Duration)" class="member-name-link">socketTimeout</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;socketTimeout)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets the socket (read) timeout (default <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html#ZERO" title="class or interface in java.time" class="external-link"><code>Duration.ZERO</code></a> = no read deadline, so a
  long-running server query is never cut off client-side).</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#ssl(boolean)" class="member-name-link">ssl</a><wbr>(boolean&nbsp;ssl)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#ssl(boolean)" class="member-name-link">ssl</a><wbr>(boolean&nbsp;ssl)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Enables or disables TLS (default <code>false</code>).</div>
 </div>
 </div>
@@ -454,6 +469,86 @@ loadScripts(document, 'script');</script>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>autoDetectSentinel</code> - whether to probe the endpoint for Sentinel mode</dd>
+<dt>Returns:</dt>
+<dd>this builder</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="autoDetectCluster(boolean)">
+<h3>autoDetectCluster</h3>
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></span>&nbsp;<span class="element-name">autoDetectCluster</span><wbr><span class="parameters">(boolean&nbsp;autoDetectCluster)</span></div>
+<div class="block">Enables or disables Redis Cluster auto-detection (default <code>true</code>).
+
+ <p>When enabled, the driver probes the configured host/port once with <code>INFO server</code>
+ the first time it is used; if that endpoint reports <code>redis_mode:cluster</code>, the driver
+ learns the cluster's topology from it and sends every graph command to the node that owns the
+ graph, so the same address works for a standalone server and a cluster. This mirrors
+ falkordb-py. Like every other connection, the probe happens on first use rather than in
+ <a href="#build()"><code>build()</code></a>, which performs no I/O.
+
+ <p>In cluster mode:
+
+ <ul>
+   <li>a graph lives on a single node, chosen by hashing its name, so queries, pipelines and
+       transactions on one graph are served by that node. Copying a graph needs both names
+       in the same hash slot, which a hash tag arranges (<code>{social}-a</code> and
+       <code>{social}-b</code>); otherwise the server answers <code>CROSSSLOT</code>;
+   <li><a href="Driver.html#listGraphs()"><code>Driver.listGraphs()</code></a> returns the graphs of every primary, and the server-wide
+       commands (<code>udfLoad</code>, <code>udfDelete</code>, <code>udfFlush</code>, <code>configSet</code>) run
+       on every primary;
+   <li>pool sizing applies to each node separately, and the connection settings are used for
+       every node, so all nodes must accept the same credentials and TLS setting;
+   <li>a cluster has a single database, so a database index in a URI is not supported;
+   <li>when the cluster reshards or fails over, the driver follows the redirect and retries
+       the command, up to three attempts.
+ </ul>
+
+ <p>The probe is best-effort and costs one round-trip: an endpoint that cannot be reached, or
+ that refuses <code>INFO</code>, simply yields an ordinary direct connection. Switch this off to
+ skip the probe altogether. It is ignored when <a href="#cluster(java.lang.String...)"><code>cluster(String...)</code></a> named the nodes
+ explicitly.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>autoDetectCluster</code> - whether to probe the endpoint for cluster mode</dd>
+<dt>Returns:</dt>
+<dd>this builder</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="cluster(java.lang.String...)">
+<h3>cluster</h3>
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></span>&nbsp;<span class="element-name">cluster</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>...&nbsp;startupNodes)</span></div>
+<div class="block">Connects to a Redis Cluster through the given startup nodes, without probing.
+
+ <p>Use this when <a href="#autoDetectCluster(boolean)">auto-detection</a> is not enough: it
+ lists several nodes rather than a single seed, so the driver can still learn the topology
+ when one of them is down. Only some of the nodes need to be reachable. The host and port set
+ on this builder are ignored. See <a href="#autoDetectCluster(boolean)"><code>autoDetectCluster(boolean)</code></a> for how a driver behaves
+ in cluster mode.
+
+ <pre><code>
+ Driver driver = FalkorDB.builder()
+     .cluster("node-a:6379", "node-b:6379", "node-c:6379")
+     .build();
+ </code></pre></div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>startupNodes</code> - the cluster nodes in <code>host:port</code> form; at least one is required</dd>
+<dt>Returns:</dt>
+<dd>this builder</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="cluster(java.util.Collection)">
+<h3>cluster</h3>
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></span>&nbsp;<span class="element-name">cluster</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;startupNodes)</span></div>
+<div class="block">Connects to a Redis Cluster through the given startup nodes, without probing. The <a href="#cluster(java.lang.String...)">varargs form</a> documents the behaviour.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>startupNodes</code> - the cluster nodes in <code>host:port</code> form; at least one is required</dd>
 <dt>Returns:</dt>
 <dd>this builder</dd>
 </dl>
