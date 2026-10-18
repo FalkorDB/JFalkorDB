@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792055273259,
+  "lastUpdate": 1792299217931,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -14834,6 +14834,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 81197.793,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gkorland@gmail.com",
+            "name": "Guy Korland",
+            "username": "gkorland"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "daae63d49a486b665be5dbf3cc1b506dda422825",
+          "message": "docs: fix stale links (#470)\n\n- Update stale links: `master` links on repos whose default branch is now `main`, and the shut-down OSSRH snapshot repository (`oss.sonatype.org`) replaced with the Central Portal snapshot repository, which this project already publishes to.\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-10-18T07:51:42+03:00",
+          "tree_id": "1aa1071bb3b5c235fa12c1fdc43abeddfd4b1df4",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/daae63d49a486b665be5dbf3cc1b506dda422825"
+        },
+        "date": 1792299216806,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 202.439,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 244.627,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 270.557,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 250.249,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 284.382,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 302.997,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 304.11,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 466.883,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 566.417,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 492.15,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 832.078,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1031.952,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 576.279,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5637.384,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 12138.445,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 574.996,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 15496.654,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 35496.501,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 576.76,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 36000.689,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 80444.661,
             "unit": "us"
           }
         ]
