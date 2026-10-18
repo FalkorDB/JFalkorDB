@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792299220097,
+  "lastUpdate": 1792300406859,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -6843,6 +6843,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11156.333,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1d2fe4c4c6a89a309736f9528582a7adaa770475",
+          "message": "feat: support Redis Cluster (#469)\n\n* feat: support Redis Cluster\n\nConnect to a FalkorDB deployment running as a Redis Cluster, following the\nPython client: the driver probes the endpoint with INFO server and, if it\nreports redis_mode:cluster, learns the slot layout with CLUSTER SLOTS and\nsends every graph command to the primary that owns the graph's hash slot.\n\n- Graph commands, pipelines and transactions go to the node owning the graph.\n- listGraphs() merges the graphs of every primary; udfLoad/udfDelete/udfFlush\n  and configSet run on every primary; configGet and udfList ask one node.\n- A MOVED/ASK redirect relearns the layout and retries (3 attempts); an\n  unreachable node relearns the layout but is not retried.\n- FalkorDB.builder() gains cluster(...) for explicit startup nodes and\n  autoDetectCluster(boolean) to skip the probe.\n- Adds ClusterOptions, Clusters, ClusterConnections and a Connections seam in\n  DriverImpl; the existing single-pool behaviour is unchanged.\n\nAdds unit tests against an in-process fake cluster, an integration test against\na real three-primary cluster, an example and README documentation.\n\nCloses #26\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>\n\n* fix: address review feedback on cluster support\n\nBound the topology-refresh read timeout, publish slot table and primaries as one\nsnapshot, relearn the topology after a failed cluster-wide call, keep the original\nfailure when a refresh also fails, reject a database index against a cluster, close\npools created during close(), and tighten docs, example and tests.\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>\n\n* test: raise patch coverage of cluster support\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>\n\n* docs: say which commit type causes which release\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>\n\n* fix: key ClusterIT owners by endpoint and tighten release-type docs\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>\n\n* docs: list test: among accepted PR title types\n\nCo-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Sonnet 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-10-18T08:10:59+03:00",
+          "tree_id": "10674f34f55fc64d88321267cc84c4240eb95df0",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/1d2fe4c4c6a89a309736f9528582a7adaa770475"
+        },
+        "date": 1792300406829,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 5101,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 8954,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 13479,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 18175,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 17343.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 17085.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 17199,
             "unit": "ops/s"
           }
         ]
