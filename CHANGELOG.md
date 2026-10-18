@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.14.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.13.1...v0.14.0) (2026-10-18)
+
+
+### Features
+
+* support Redis Cluster ([#469](https://github.com/FalkorDB/JFalkorDB/issues/469)) ([1d2fe4c](https://github.com/FalkorDB/JFalkorDB/commit/1d2fe4c4c6a89a309736f9528582a7adaa770475))
+
+
+### Documentation
+
+* fix stale links ([#470](https://github.com/FalkorDB/JFalkorDB/issues/470)) ([daae63d](https://github.com/FalkorDB/JFalkorDB/commit/daae63d49a486b665be5dbf3cc1b506dda422825))
+
 ## [0.13.1](https://github.com/FalkorDB/JFalkorDB/compare/v0.13.0...v0.13.1) (2026-10-07)
 
 
