@@ -40,9 +40,11 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendQuery(String preparedQuery) {
-        try (GraphContext contextedGraph = new GraphContextImpl(driver.getConnection(), this.cache, this.graphId)) {
-            return contextedGraph.query(preparedQuery);
-        }
+        return driver.routed(() -> {
+            try (GraphContext contextedGraph = newContext()) {
+                return contextedGraph.query(preparedQuery);
+            }
+        });
     }
 
     /**
@@ -55,9 +57,11 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendReadOnlyQuery(String preparedQuery) {
-        try (GraphContext contextedGraph = new GraphContextImpl(driver.getConnection(), this.cache, this.graphId)) {
-            return contextedGraph.readOnlyQuery(preparedQuery);
-        }
+        return driver.routed(() -> {
+            try (GraphContext contextedGraph = newContext()) {
+                return contextedGraph.readOnlyQuery(preparedQuery);
+            }
+        });
     }
 
     /**
@@ -71,9 +75,11 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendQuery(String preparedQuery, long timeout) {
-        try (GraphContext contextedGraph = new GraphContextImpl(driver.getConnection(), this.cache, this.graphId)) {
-            return contextedGraph.query(preparedQuery, timeout);
-        }
+        return driver.routed(() -> {
+            try (GraphContext contextedGraph = newContext()) {
+                return contextedGraph.query(preparedQuery, timeout);
+            }
+        });
     }
 
     /**
@@ -87,9 +93,11 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendReadOnlyQuery(String preparedQuery, long timeout) {
-        try (GraphContext contextedGraph = new GraphContextImpl(driver.getConnection(), this.cache, this.graphId)) {
-            return contextedGraph.readOnlyQuery(preparedQuery, timeout);
-        }
+        return driver.routed(() -> {
+            try (GraphContext contextedGraph = newContext()) {
+                return contextedGraph.readOnlyQuery(preparedQuery, timeout);
+            }
+        });
     }
 
     /**
@@ -102,9 +110,11 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendProfile(String preparedQuery) {
-        try (GraphContext contextedGraph = new GraphContextImpl(driver.getConnection(), this.cache, this.graphId)) {
-            return contextedGraph.profile(preparedQuery);
-        }
+        return driver.routed(() -> {
+            try (GraphContext contextedGraph = newContext()) {
+                return contextedGraph.profile(preparedQuery);
+            }
+        });
     }
 
     /**
@@ -115,10 +125,12 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     public String copyGraph(String destinationGraphId) {
-        try (Jedis conn = driver.getConnection()) {
-            Object response = conn.sendCommand(GraphCommand.COPY, graphId, destinationGraphId);
-            return SafeEncoder.encode((byte[]) response);
-        }
+        return driver.routed(() -> {
+            try (Jedis conn = driver.getConnection(graphId)) {
+                Object response = conn.sendCommand(GraphCommand.COPY, graphId, destinationGraphId);
+                return SafeEncoder.encode((byte[]) response);
+            }
+        });
     }
 
     /**
@@ -128,12 +140,14 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     public String deleteGraph() {
-        try (Jedis conn = driver.getConnection()) {
-            Object response = conn.sendCommand(GraphCommand.DELETE, graphId);
-            // clear local state
-            cache.clear();
-            return SafeEncoder.encode((byte[]) response);
-        }
+        return driver.routed(() -> {
+            try (Jedis conn = driver.getConnection(graphId)) {
+                Object response = conn.sendCommand(GraphCommand.DELETE, graphId);
+                // clear local state
+                cache.clear();
+                return SafeEncoder.encode((byte[]) response);
+            }
+        });
     }
 
     /**
@@ -145,37 +159,47 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
     @Override
     @SuppressWarnings("unchecked")
     protected List<String> sendExplain(String preparedQuery) {
-        try (Jedis conn = driver.getConnection()) {
-            Object response = conn.sendCommand(GraphCommand.EXPLAIN, graphId, preparedQuery);
+        return driver.routed(() -> {
+            try (Jedis conn = driver.getConnection(graphId)) {
+                Object response = conn.sendCommand(GraphCommand.EXPLAIN, graphId, preparedQuery);
 
-            // GRAPH.EXPLAIN returns an array of byte arrays, convert to list of strings
-            if (response instanceof List) {
-                List<Object> responseList = (List<Object>) response;
-                List<String> result = new ArrayList<>(responseList.size());
-                for (Object item : responseList) {
-                    if (item instanceof byte[]) {
-                        result.add(SafeEncoder.encode((byte[]) item));
-                    } else {
-                        result.add(item.toString());
+                // GRAPH.EXPLAIN returns an array of byte arrays, convert to list of strings
+                if (response instanceof List) {
+                    List<Object> responseList = (List<Object>) response;
+                    List<String> result = new ArrayList<>(responseList.size());
+                    for (Object item : responseList) {
+                        if (item instanceof byte[]) {
+                            result.add(SafeEncoder.encode((byte[]) item));
+                        } else {
+                            result.add(item.toString());
+                        }
                     }
+                    return result;
+                } else {
+                    // Fallback for unexpected response format
+                    return Arrays.asList(SafeEncoder.encode((byte[]) response));
                 }
-                return result;
-            } else {
-                // Fallback for unexpected response format
-                return Arrays.asList(SafeEncoder.encode((byte[]) response));
             }
-        }
+        });
     }
 
     /**
      * Returns a new ContextedGraph bounded to a Jedis connection from the Jedis
-     * pool
+     * pool.
+     *
+     * <p>In a Redis Cluster the context stays on the node that owned the graph when it was created, and
+     * its queries are not retried after a redirect; create a new context after a reshard or failover.
      *
      * @return ContextedGraph
      */
     @Override
     public GraphContext getContext() {
-        return new GraphContextImpl(driver.getConnection(), this.cache, this.graphId);
+        return newContext();
+    }
+
+    /** A context on a connection to the node that serves this graph (any node outside a cluster). */
+    private GraphContext newContext() {
+        return new GraphContextImpl(driver.getConnection(this.graphId), this.cache, this.graphId);
     }
 
     @Override

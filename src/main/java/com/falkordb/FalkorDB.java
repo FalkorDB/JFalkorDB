@@ -1,5 +1,6 @@
 package com.falkordb;
 
+import com.falkordb.impl.api.ClusterOptions;
 import com.falkordb.impl.api.DriverImpl;
 import com.falkordb.impl.api.SentinelOptions;
 import java.net.URI;
@@ -45,7 +46,8 @@ public final class FalkorDB {
      * follow the environment.
      *
      * <p>Whichever endpoint is resolved, it is checked for Redis Sentinel — see {@link
-     * Builder#autoDetectSentinel(boolean)}.
+     * Builder#autoDetectSentinel(boolean)} — and for Redis Cluster — see {@link
+     * Builder#autoDetectCluster(boolean)}.
      *
      * @return a new driver instance
      * @throws IllegalStateException if {@code FALKORDB_URL} is set but malformed, if {@code
@@ -149,6 +151,8 @@ public final class FalkorDB {
         private @Nullable String sentinelUser;
         private @Nullable String sentinelPassword;
         private boolean autoDetectSentinel = true;
+        private @Nullable List<String> clusterNodes;
+        private boolean autoDetectCluster = true;
 
         private Builder() {}
 
@@ -361,6 +365,82 @@ public final class FalkorDB {
         }
 
         /**
+         * Enables or disables Redis Cluster auto-detection (default {@code true}).
+         *
+         * <p>When enabled, the driver probes the configured host/port once with {@code INFO server}
+         * the first time it is used; if that endpoint reports {@code redis_mode:cluster}, the driver
+         * learns the cluster's topology from it and sends every graph command to the node that owns the
+         * graph, so the same address works for a standalone server and a cluster. This mirrors
+         * falkordb-py. Like every other connection, the probe happens on first use rather than in
+         * {@link #build()}, which performs no I/O.
+         *
+         * <p>In cluster mode:
+         *
+         * <ul>
+         *   <li>a graph lives on a single node, chosen by hashing its name, so queries, pipelines and
+         *       transactions on one graph are served by that node. Copying a graph needs both names
+         *       in the same hash slot, which a hash tag arranges ({@code {social}-a} and
+         *       {@code {social}-b}); otherwise the server answers {@code CROSSSLOT};
+         *   <li>{@link Driver#listGraphs()} returns the graphs of every primary, and the server-wide
+         *       commands ({@code udfLoad}, {@code udfDelete}, {@code udfFlush}, {@code configSet}) run
+         *       on every primary;
+         *   <li>pool sizing applies to each node separately, and the connection settings are used for
+         *       every node, so all nodes must accept the same credentials and TLS setting;
+         *   <li>a cluster has a single database, so a database index in a URI is not supported;
+         *   <li>when the cluster reshards or fails over, the driver follows the redirect and retries
+         *       the command, up to three attempts.
+         * </ul>
+         *
+         * <p>The probe is best-effort and costs one round-trip: an endpoint that cannot be reached, or
+         * that refuses {@code INFO}, simply yields an ordinary direct connection. Switch this off to
+         * skip the probe altogether. It is ignored when {@link #cluster(String...)} named the nodes
+         * explicitly.
+         *
+         * @param autoDetectCluster whether to probe the endpoint for cluster mode
+         * @return this builder
+         */
+        public Builder autoDetectCluster(boolean autoDetectCluster) {
+            this.autoDetectCluster = autoDetectCluster;
+            return this;
+        }
+
+        /**
+         * Connects to a Redis Cluster through the given startup nodes, without probing.
+         *
+         * <p>Use this when {@linkplain #autoDetectCluster(boolean) auto-detection} is not enough: it
+         * lists several nodes rather than a single seed, so the driver can still learn the topology
+         * when one of them is down. Only some of the nodes need to be reachable. The host and port set
+         * on this builder are ignored. See {@link #autoDetectCluster(boolean)} for how a driver behaves
+         * in cluster mode.
+         *
+         * <pre>{@code
+         * Driver driver = FalkorDB.builder()
+         *     .cluster("node-a:6379", "node-b:6379", "node-c:6379")
+         *     .build();
+         * }</pre>
+         *
+         * @param startupNodes the cluster nodes in {@code host:port} form; at least one is required
+         * @return this builder
+         */
+        public Builder cluster(String... startupNodes) {
+            return cluster(startupNodes == null ? null : Arrays.asList(startupNodes));
+        }
+
+        /**
+         * Connects to a Redis Cluster through the given startup nodes, without probing. The {@linkplain
+         * #cluster(String...) varargs form} documents the behaviour.
+         *
+         * @param startupNodes the cluster nodes in {@code host:port} form; at least one is required
+         * @return this builder
+         */
+        public Builder cluster(Collection<String> startupNodes) {
+            // A null or empty list is still an explicit (and invalid) choice: build() rejects it rather than
+            // silently falling back to auto-detection.
+            this.clusterNodes = startupNodes == null ? new ArrayList<String>() : new ArrayList<>(startupNodes);
+            return this;
+        }
+
+        /**
          * Validates the configuration and builds a driver. Unset options use the fixed defaults
          * documented on each setter, independently of the environment {@link FalkorDB#driver()} reads.
          * Range validation happens in {@link DriverImpl#create}.
@@ -389,7 +469,19 @@ public final class FalkorDB {
                     maxTotal,
                     maxIdle,
                     maxWait,
-                    sentinelOptions());
+                    sentinelOptions(),
+                    clusterOptions());
+        }
+
+        /**
+         * Resolves the three cluster states this builder can express: explicitly named startup nodes,
+         * the default probe, or no cluster handling at all.
+         */
+        private ClusterOptions clusterOptions() {
+            if (clusterNodes != null) {
+                return ClusterOptions.explicit(clusterNodes);
+            }
+            return autoDetectCluster ? ClusterOptions.autoDetect() : ClusterOptions.disabled();
         }
 
         /**
