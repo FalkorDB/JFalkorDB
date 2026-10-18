@@ -43,7 +43,7 @@ just bench          # client load-sweep benchmark (client latency vs throughput;
 
 - Run `just verify-local` and keep documentation in sync with your change.
 - Use a **Conventional-Commit** branch and PR title (`feat:`, `fix:`, `perf:`, `build:`, `docs:`, `ci:`,
-  `chore:`, `bench:`); the PR title is checked by the **`PR title`** workflow.
+  `chore:`, `bench:`, `test:`); the PR title is checked by the **`PR title`** workflow.
   The type decides the release: `feat:` → minor, `fix:`/`perf:` → patch, a breaking change
   (`!` in the title or a `BREAKING CHANGE:` footer; the `breaking-change` label only approves the
   `api-diff` gate and requires a `!`-marked title) → minor before 1.0;
