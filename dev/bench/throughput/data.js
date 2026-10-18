@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792055274925,
+  "lastUpdate": 1792299220097,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -6784,6 +6784,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 10980,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "gkorland@gmail.com",
+            "name": "Guy Korland",
+            "username": "gkorland"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "daae63d49a486b665be5dbf3cc1b506dda422825",
+          "message": "docs: fix stale links (#470)\n\n- Update stale links: `master` links on repos whose default branch is now `main`, and the shut-down OSSRH snapshot repository (`oss.sonatype.org`) replaced with the Central Portal snapshot repository, which this project already publishes to.\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-10-18T07:51:42+03:00",
+          "tree_id": "1aa1071bb3b5c235fa12c1fdc43abeddfd4b1df4",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/daae63d49a486b665be5dbf3cc1b506dda422825"
+        },
+        "date": 1792299220061,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3538,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 5987.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9340.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11910.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11274,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11238.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11156.333,
             "unit": "ops/s"
           }
         ]
