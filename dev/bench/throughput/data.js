@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792393213387,
+  "lastUpdate": 1792395260085,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -7197,6 +7197,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 23370.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "21416cc6ee8c8cdc5e426676195c738c2f2733ea",
+          "message": "build(deps): bump actions/setup-java from 6.0.1 to 6.1.0 (#476)\n\nBumps [actions/setup-java](https://github.com/actions/setup-java) from 6.0.1 to 6.1.0.\n- [Release notes](https://github.com/actions/setup-java/releases)\n- [Commits](https://github.com/actions/setup-java/compare/de7274f081f381c8f8158605e0321c36c376e2e6...b843ebf9b913146b38da2eaa7aeddf76074ae1ad)\n\n---\nupdated-dependencies:\n- dependency-name: actions/setup-java\n  dependency-version: 6.1.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Barak Bar Orion <barak.bar@gmail.com>",
+          "timestamp": "2026-10-19T10:28:31+03:00",
+          "tree_id": "5fc3a3a24be25f6fde08106fc5e53f747cc47b00",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/21416cc6ee8c8cdc5e426676195c738c2f2733ea"
+        },
+        "date": 1792395260043,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3556,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6093,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 8670.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11704,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11033.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11016.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 10840,
             "unit": "ops/s"
           }
         ]
