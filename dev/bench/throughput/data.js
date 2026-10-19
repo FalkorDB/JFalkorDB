@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792391508738,
+  "lastUpdate": 1792392254242,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -7079,6 +7079,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11260.333,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3d31265203fb8313733245a212505911d5c4e47d",
+          "message": "build(deps-dev): bump org.sonatype.central:central-publishing-maven-plugin (#474)\n\nBumps [org.sonatype.central:central-publishing-maven-plugin](https://github.com/sonatype-nexus-community/central-publishing-maven-plugin) from 0.11.0 to 0.12.0.\n- [Release notes](https://github.com/sonatype-nexus-community/central-publishing-maven-plugin/releases)\n- [Commits](https://github.com/sonatype-nexus-community/central-publishing-maven-plugin/commits/release-0.12.0)\n\n---\nupdated-dependencies:\n- dependency-name: org.sonatype.central:central-publishing-maven-plugin\n  dependency-version: 0.12.0\n  dependency-type: direct:development\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Barak Bar Orion <barak.bar@gmail.com>",
+          "timestamp": "2026-10-19T09:41:33+03:00",
+          "tree_id": "e08ecdc5214b274e206b4a5bbdd7e2bbea06690a",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/3d31265203fb8313733245a212505911d5c4e47d"
+        },
+        "date": 1792392254203,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3459.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 5872.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9531.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11769.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11053.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 10993,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11094.333,
             "unit": "ops/s"
           }
         ]
