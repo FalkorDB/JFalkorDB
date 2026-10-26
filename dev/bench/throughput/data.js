@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792995725050,
+  "lastUpdate": 1792995931452,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -7433,6 +7433,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11147.333,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7ee2556cfe907489a43807e874ade94b1c42417c",
+          "message": "fix(deps): bump com.google.errorprone:error_prone_core (#480)\n\nBumps [com.google.errorprone:error_prone_core](https://github.com/google/error-prone) from 2.50.0 to 2.51.0.\n- [Release notes](https://github.com/google/error-prone/releases)\n- [Commits](https://github.com/google/error-prone/compare/v2.50.0...v2.51.0)\n\n---\nupdated-dependencies:\n- dependency-name: com.google.errorprone:error_prone_core\n  dependency-version: 2.51.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Barak Bar Orion <barak.bar@gmail.com>",
+          "timestamp": "2026-10-26T08:22:50+02:00",
+          "tree_id": "25e9b6d27145160b8678ece353979a10f8007f62",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/7ee2556cfe907489a43807e874ade94b1c42417c"
+        },
+        "date": 1792995931414,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3268.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 5909.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9287.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11710.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11022.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 10999,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 10971.667,
             "unit": "ops/s"
           }
         ]
