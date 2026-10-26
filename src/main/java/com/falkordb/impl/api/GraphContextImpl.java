@@ -17,7 +17,10 @@ import redis.clients.jedis.util.SafeEncoder;
 
 /**
  * An implementation of GraphContext. Allows sending Graph and some Redis commands,
- * within a specific connection context
+ * within a specific connection context.
+ *
+ * <p>The context owns its connection for its whole lifetime: the connection stays bound to it even
+ * after a command fails, and only {@link #close()} releases it.
  */
 public class GraphContextImpl extends AbstractGraph implements GraphContext {
 
@@ -196,21 +199,23 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     }
 
     /**
-     * Deletes the entire graph
+     * Deletes the entire graph. If the server rejects the command, the connection stays bound to this
+     * context, which remains usable until it is closed.
      * @return delete running time statistics
+     * @throws GraphException if the server rejects the command, e.g. because the graph does not exist
      */
     @Override
     public String deleteGraph() {
         Object response;
         try {
             response = connection.sendCommand(GraphCommand.DELETE, graphId);
-        } catch (Exception e) {
-            connection.close();
-            throw e;
+        } catch (GraphException ge) {
+            throw ge;
+        } catch (JedisDataException de) {
+            throw new GraphException(de);
         }
         // clear local state
         this.cache.clear();
-        // caches.removeGraphCache(graphId);
         return SafeEncoder.encode((byte[]) response);
     }
 
@@ -250,7 +255,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     }
 
     /**
-     * closes the Jedis connection
+     * Releases the context's connection, returning it to its pool when it was borrowed from one.
+     * This is the only method that releases the connection.
      */
     @Override
     public void close() {
