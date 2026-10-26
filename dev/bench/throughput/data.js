@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792996262693,
+  "lastUpdate": 1792996555131,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -7551,6 +7551,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 10825.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "400fdb55eb6e5ca10df2d2d03ae32f7527f2912a",
+          "message": "build(deps): bump github/codeql-action/analyze from 4.39.0 to 4.39.1 (#482)\n\nBumps [github/codeql-action/analyze](https://github.com/github/codeql-action) from 4.39.0 to 4.39.1.\n- [Release notes](https://github.com/github/codeql-action/releases)\n- [Changelog](https://github.com/github/codeql-action/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/github/codeql-action/compare/6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee...9b3254085494b55a0f7c4c2b3d2d52cc712ce370)\n\n---\nupdated-dependencies:\n- dependency-name: github/codeql-action/analyze\n  dependency-version: 4.39.1\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Barak Bar Orion <barak.bar@gmail.com>",
+          "timestamp": "2026-10-26T08:33:36+02:00",
+          "tree_id": "009d9e2ef8561683cecbfcc0a7ce0a948ae46dcb",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/400fdb55eb6e5ca10df2d2d03ae32f7527f2912a"
+        },
+        "date": 1792996555102,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 6180.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 11645,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 18397.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 24701.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 23798,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 23006,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 22968,
             "unit": "ops/s"
           }
         ]
