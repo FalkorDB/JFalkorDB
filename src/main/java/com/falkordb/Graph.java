@@ -50,8 +50,8 @@ public interface Graph extends Closeable {
      * (including {@link java.math.BigDecimal}), out-of-range integers, non-finite floating-point
      * values, cyclic containers, non-String map keys, invalid parameter names, and a null
      * {@code query} or {@code params} are rejected with {@link IllegalArgumentException}. This does not
-     * cover the query text itself or dynamic labels/identifiers. (Procedure names are checked by
-     * {@link #callProcedure(String, List, Map)}.)
+     * cover the query text itself or dynamic labels/identifiers. (The form of procedure names is
+     * checked by {@link #callProcedure(String, List, Map)}, but not which procedure they name.)
      *
      * @param query Cypher query. Must not be {@code null}.
      * @param params parameters map. Must not be {@code null}.

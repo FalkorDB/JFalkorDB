@@ -330,6 +330,9 @@ column a single identifier, where an identifier is ASCII letters, digits and und
 with a digit (`[A-Za-z_][A-Za-z0-9_]*`). Quoted names and `AS` aliases are not accepted. Anything else,
 or a `null` argument, is rejected with `IllegalArgumentException` before anything is sent. The
 procedure's arguments are encoded as string literals, like parameter values.
+The check is about form only: it doesn't limit which procedure runs, and some change the graph, such
+as `db.idx.fulltext.drop`. If the procedure name comes from untrusted input, check it against a list
+of the procedures you allow.
 
 ## Configuring Connection Pool
 
