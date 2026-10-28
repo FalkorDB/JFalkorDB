@@ -31,8 +31,9 @@
 
 - Parameter **values** are safely encoded, so they can't inject Cypher. This does **not** extend to
   the query text itself or dynamic **labels/identifiers** — never build those from untrusted input.
-  `callProcedure` rejects a procedure name that isn't identifiers joined by dots (such as `db.labels`),
-  and a `YIELD` column that isn't a single identifier, with `IllegalArgumentException`.
+  `callProcedure` requires the procedure name to be identifiers joined by dots (such as `db.labels`)
+  and each `YIELD` column to be a single identifier, where an identifier is `[A-Za-z_][A-Za-z0-9_]*`;
+  anything else throws `IllegalArgumentException`.
 - A read against a graph that doesn't exist yet errors — create it with a write query first.
 
 See `README.md` for the full API and examples.

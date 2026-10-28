@@ -324,11 +324,12 @@ parameter names are rejected with `IllegalArgumentException`.
 This safety covers parameter **values** only — it does not extend to the query text or to dynamic
 labels/identifiers, so never build those from untrusted input.
 
-`callProcedure` checks the names it writes into the query itself. The procedure name must be Cypher
+`callProcedure` checks the names it writes into the query itself. The procedure name must be
 identifiers joined by dots, such as `db.labels` or `db.idx.fulltext.queryNodes`, and each `YIELD`
-column a single identifier; quoted names and `AS` aliases are not accepted. Anything else, or a `null`
-argument, is rejected with `IllegalArgumentException` before anything is sent. The procedure's
-arguments are encoded as string literals, like parameter values.
+column a single identifier, where an identifier is ASCII letters, digits and underscores, not starting
+with a digit (`[A-Za-z_][A-Za-z0-9_]*`). Quoted names and `AS` aliases are not accepted. Anything else,
+or a `null` argument, is rejected with `IllegalArgumentException` before anything is sent. The
+procedure's arguments are encoded as string literals, like parameter values.
 
 ## Configuring Connection Pool
 

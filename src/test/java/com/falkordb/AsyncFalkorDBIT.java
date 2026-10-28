@@ -11,7 +11,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -88,7 +87,7 @@ public class AsyncFalkorDBIT {
         CompletableFuture<ResultSet> future =
                 async.callProcedure("db.labels() YIELD label MATCH (n) DETACH DELETE n //");
 
-        CompletionException failure = assertThrows(CompletionException.class, future::join);
+        ExecutionException failure = assertThrows(ExecutionException.class, () -> future.get(30, TimeUnit.SECONDS));
         assertTrue(failure.getCause() instanceof IllegalArgumentException, String.valueOf(failure.getCause()));
     }
 

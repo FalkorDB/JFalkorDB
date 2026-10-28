@@ -87,7 +87,8 @@ public interface Graph extends Closeable {
 
     /**
      * Invokes stored procedures without arguments
-     * @param procedure procedure name to invoke: Cypher identifiers joined by dots, such as {@code db.labels}
+     * @param procedure procedure name to invoke: identifiers ({@code [A-Za-z_][A-Za-z0-9_]*})
+     *     joined by dots, such as {@code db.labels}
      * @return result set with the procedure data
      * @throws IllegalArgumentException if {@code procedure} is null or not a valid procedure name
      * @throws com.falkordb.exceptions.GraphException if the server rejects the call
@@ -113,7 +114,8 @@ public interface Graph extends Closeable {
 
     /**
      * Invokes stored procedure with arguments
-     * @param procedure procedure name to invoke: Cypher identifiers joined by dots, such as {@code db.labels}
+     * @param procedure procedure name to invoke: identifiers ({@code [A-Za-z_][A-Za-z0-9_]*})
+     *     joined by dots, such as {@code db.labels}
      * @param args procedure arguments, sent as string literals
      * @return result set with the procedure data
      * @throws IllegalArgumentException if {@code procedure} is null or not a valid procedure name, or
@@ -124,7 +126,8 @@ public interface Graph extends Closeable {
 
     /**
      * Invoke a stored procedure
-     * @param procedure - procedure name to invoke: Cypher identifiers joined by dots, such as {@code db.labels}
+     * @param procedure - procedure name to invoke: identifiers ({@code [A-Za-z_][A-Za-z0-9_]*})
+     *     joined by dots, such as {@code db.labels}
      * @param args - procedure arguments, sent as string literals
      * @param kwargs - procedure output arguments: the {@code "y"} entry lists the output
      *     columns to bind with Cypher's {@code YIELD} clause, each a Cypher identifier ({@code

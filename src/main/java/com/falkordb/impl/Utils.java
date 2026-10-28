@@ -371,10 +371,11 @@ public class Utils {
      * Prepare and format a procedure call and its arguments.
      *
      * <p>The procedure name and the {@code YIELD} columns are written into the query as they are, so they
-     * are validated first: the name must be Cypher identifiers joined by dots, such as {@code db.labels} or
-     * {@code db.idx.fulltext.queryNodes}, and each column a single Cypher identifier ({@code
-     * [A-Za-z_][A-Za-z0-9_]*}). Backtick-quoted names and {@code AS} aliases are not accepted. The arguments
-     * are encoded as string literals, like parameter values.
+     * are validated first: the name must be identifiers joined by dots, such as {@code db.labels} or
+     * {@code db.idx.fulltext.queryNodes}, and each column a single identifier, where an identifier is
+     * {@code [A-Za-z_][A-Za-z0-9_]*} (ASCII only). Backtick-quoted names and {@code AS} aliases are not
+     * accepted. An absent or null {@code "y"} entry means no {@code YIELD} clause. The arguments are encoded
+     * as string literals, like parameter values.
      *
      * @param procedure - procedure to invoke
      * @param args - procedure arguments
