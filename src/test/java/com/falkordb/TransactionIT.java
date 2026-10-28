@@ -119,6 +119,23 @@ public class TransactionIT {
     }
 
     @Test
+    public void testQueryFollowedByDeleteGraphInSameTransaction() {
+        api.query("CREATE (:Person {name:'a'})");
+        api.query("MATCH (n:Person) RETURN n"); // caches the label and the property key
+        try (GraphContext c = api.getContext()) {
+            GraphTransaction transaction = c.multi();
+            transaction.query("MATCH (n:Person) RETURN n");
+            transaction.deleteGraph();
+            List<Object> results = transaction.exec();
+
+            Node node = (Node) ((ResultSet) results.get(0)).iterator().next().getValue(0);
+            Assertions.assertEquals("Person", node.getLabel(0));
+            Assertions.assertEquals("a", node.getProperty("name").getValue());
+        }
+        api.query("CREATE (:Person)"); // for deleteGraph() in tearDown
+    }
+
+    @Test
     public void testWriteTransactionWatch() {
 
         GraphContext c1 = api.getContext();

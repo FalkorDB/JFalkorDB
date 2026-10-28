@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import redis.clients.jedis.*;
 import redis.clients.jedis.commands.ProtocolCommand;
 import redis.clients.jedis.util.SafeEncoder;
@@ -19,23 +20,10 @@ import redis.clients.jedis.util.SafeEncoder;
  */
 public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPipeline {
 
-    private final Graph graph;
-    private GraphCache cache;
     private final String graphId;
-
-    /**
-     * Builds a {@link ResultSet} from a raw graph reply. One shared instance replaces the eight
-     * byte-identical anonymous builders this class used to declare, so a fix to the response shape
-     * lands in one place. Jedis {@code Builder} is an abstract class, not a functional interface, so
-     * this cannot be a lambda. {@code graph}/{@code cache} are read at build time, not captured.
-     */
-    private final Builder<ResultSet> resultSetBuilder = new Builder<ResultSet>() {
-        @SuppressWarnings("unchecked")
-        @Override
-        public ResultSet build(Object o) {
-            return new ResultSetImpl((List<Object>) o, graph, cache);
-        }
-    };
+    private final QueuedReplies replies;
+    /** True while sync() or syncAndReturnAll() reads the replies, so none is outstanding on the connection. */
+    private boolean draining;
 
     /**
      * Creates a new pipeline for a given graph.
@@ -45,10 +33,25 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      * @param graphId the graph ID to use
      */
     public GraphPipelineImpl(Connection connection, Graph graph, GraphCache cache, String graphId) {
+        this(connection, (reply, replyCache) -> new ResultSetImpl(reply, graph, replyCache), cache, graphId);
+    }
+
+    /**
+     * Creates a new pipeline whose replies {@code decoder} decodes, given the cache each one is decoded with.
+     */
+    GraphPipelineImpl(
+            Connection connection,
+            BiFunction<List<Object>, GraphCache, ResultSet> decoder,
+            GraphCache cache,
+            String graphId) {
         super(connection);
-        this.graph = graph;
-        this.cache = cache;
         this.graphId = graphId;
+        this.replies = new QueuedReplies(decoder, cache, () -> hasPipelinedResponse() && !draining);
+    }
+
+    /** How this pipeline decodes its replies; the context that created it watches it through this. */
+    QueuedReplies replies() {
+        return replies;
     }
 
     /**
@@ -74,7 +77,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
     @Override
     public Response<ResultSet> query(String query) {
         return appendWithResponse(
-                GraphCommand.QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), resultSetBuilder);
+                GraphCommand.QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), replies.resultSet());
     }
 
     /**
@@ -85,7 +88,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
     @Override
     public Response<ResultSet> readOnlyQuery(String query) {
         return appendWithResponse(
-                GraphCommand.RO_QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), resultSetBuilder);
+                GraphCommand.RO_QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), replies.resultSet());
     }
 
     /**
@@ -101,7 +104,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
         return appendWithResponse(
                 GraphCommand.QUERY,
                 Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout)),
-                resultSetBuilder);
+                replies.resultSet());
     }
 
     /**
@@ -117,7 +120,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
         return appendWithResponse(
                 GraphCommand.RO_QUERY,
                 Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout)),
-                resultSetBuilder);
+                replies.resultSet());
     }
 
     /**
@@ -131,7 +134,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
         return appendWithResponse(
                 GraphCommand.QUERY,
                 Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING),
-                resultSetBuilder);
+                replies.resultSet());
     }
 
     /**
@@ -145,7 +148,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
         return appendWithResponse(
                 GraphCommand.RO_QUERY,
                 Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING),
-                resultSetBuilder);
+                replies.resultSet());
     }
 
     /**
@@ -168,7 +171,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
                         Utils.COMPACT_STRING,
                         Utils.TIMEOUT_STRING,
                         Long.toString(timeout)),
-                resultSetBuilder);
+                replies.resultSet());
     }
 
     /**
@@ -191,7 +194,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
                         Utils.COMPACT_STRING,
                         Utils.TIMEOUT_STRING,
                         Long.toString(timeout)),
-                resultSetBuilder);
+                replies.resultSet());
     }
 
     /**
@@ -237,12 +240,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
     @Override
     public Response<ResultSet> profile(String query) {
         return appendWithResponse(
-                GraphCommand.PROFILE, Arrays.asList(graphId, query, Utils.COMPACT_STRING), new Builder<ResultSet>() {
-                    @Override
-                    public ResultSet build(Object data) {
-                        return new ResultSetImpl((List<Object>) data, graph, cache);
-                    }
-                });
+                GraphCommand.PROFILE, Arrays.asList(graphId, query, Utils.COMPACT_STRING), replies.resultSet());
     }
 
     /**
@@ -257,12 +255,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
         return appendWithResponse(
                 GraphCommand.PROFILE,
                 Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING),
-                new Builder<ResultSet>() {
-                    @Override
-                    public ResultSet build(Object data) {
-                        return new ResultSetImpl((List<Object>) data, graph, cache);
-                    }
-                });
+                replies.resultSet());
     }
 
     /**
@@ -276,15 +269,44 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
     }
 
     /**
-     * Deletes the entire graph
+     * Deletes the entire graph. The client's schema cache is cleared once the delete has run, when its reply is
+     * read: replies queued before it are still decoded with the cache as it was when the batch was sent.
      * @return response with the deletion running time statistics
      */
     @Override
     public Response<String> deleteGraph() {
+        Builder<String> builder = replies.delete();
+        return replies.deleteQueued(appendWithResponse(GraphCommand.DELETE, Arrays.asList(graphId), builder), builder);
+    }
+
+    /**
+     * Reads the replies to every command queued so far, without decoding them; each is decoded when its
+     * {@code Response} is read. A {@link #deleteGraph()} that ran clears the schema cache now.
+     */
+    @Override
+    public void sync() {
+        draining = true;
         try {
-            return appendWithResponse(GraphCommand.DELETE, Arrays.asList(graphId), BuilderFactory.STRING);
+            super.sync();
         } finally {
-            cache.clear();
+            draining = false;
+        }
+        replies.synced();
+    }
+
+    /**
+     * Reads and decodes the replies to every command queued so far, in order.
+     * @return the decoded replies, an error in place of each command that failed
+     */
+    @Override
+    public List<Object> syncAndReturnAll() {
+        replies.decodingAll();
+        draining = true;
+        try {
+            return super.syncAndReturnAll();
+        } finally {
+            draining = false;
+            replies.done();
         }
     }
 
