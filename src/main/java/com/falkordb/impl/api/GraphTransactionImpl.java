@@ -298,19 +298,22 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public @Nullable List<Object> exec() {
-        replies.decodingAll();
         draining = true;
+        boolean ran = false;
         List<Object> results = null;
         try {
             results = super.exec();
+            ran = true;
             return results;
         } finally {
             draining = false;
             queuing = false;
-            if (results != null) {
-                replies.done();
+            if (!ran) {
+                replies.unknown(); // EXEC may have run before the connection failed
+            } else if (results == null) {
+                replies.discarded(); // aborted: a watched key changed, nothing ran
             } else {
-                replies.discarded(); // aborted: nothing ran
+                replies.read();
             }
         }
     }

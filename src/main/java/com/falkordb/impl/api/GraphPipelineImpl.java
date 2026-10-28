@@ -286,12 +286,18 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
     @Override
     public void sync() {
         draining = true;
+        boolean read = false;
         try {
             super.sync();
+            read = true;
         } finally {
             draining = false;
+            if (read) {
+                replies.read();
+            } else {
+                replies.unknown();
+            }
         }
-        replies.synced();
     }
 
     /**
@@ -300,13 +306,19 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      */
     @Override
     public List<Object> syncAndReturnAll() {
-        replies.decodingAll();
         draining = true;
+        boolean read = false;
         try {
-            return super.syncAndReturnAll();
+            List<Object> results = super.syncAndReturnAll();
+            read = true;
+            return results;
         } finally {
             draining = false;
-            replies.done();
+            if (read) {
+                replies.read();
+            } else {
+                replies.unknown();
+            }
         }
     }
 

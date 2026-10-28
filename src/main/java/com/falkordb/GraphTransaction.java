@@ -16,8 +16,8 @@ import redis.clients.jedis.commands.RedisModulePipelineCommands;
  * schema cache when {@code exec()} has run the delete: not when it is queued, and not at all if the
  * transaction is discarded or aborted. Once the delete has run, a reply queued before it can't look an id up
  * any more: the graph that sent the reply is gone, and a lookup would find whatever graph has the name by then.
- * So the reply is decoded with what the cache held when {@code exec()} was called, and an id the cache lacked
- * is reported as a {@link com.falkordb.exceptions.GraphException}. {@code exec()} decodes the replies before it
+ * So the reply is decoded with what the cache held when the delete was queued, and an id the cache lacked is
+ * reported as a {@link com.falkordb.exceptions.GraphException}. {@code exec()} decodes the replies before it
  * learns whether the delete succeeded, so it does the same for a delete that fails.
  *
  * <p>A {@link com.falkordb.exceptions.GraphException} while decoding a reply becomes that reply's element of

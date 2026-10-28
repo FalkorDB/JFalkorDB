@@ -21,7 +21,8 @@ import redis.clients.jedis.commands.RedisModulePipelineCommands;
  * <p>{@link #deleteGraph()} clears the client's schema cache once the delete has run, not when it is queued.
  * Once it has run, a reply queued before it can't look an id up any more: the graph that sent the reply is
  * gone, and a lookup would find whatever graph has the name by then. So the reply is decoded with what the
- * cache held, and an id the cache lacked is reported as a {@link com.falkordb.exceptions.GraphException}.
+ * cache held when the delete was queued, and an id the cache lacked is reported as a
+ * {@link com.falkordb.exceptions.GraphException}.
  * {@link #syncAndReturnAll()} decodes every reply before it learns whether the delete succeeded, so it does the
  * same for a delete that fails; after {@link #sync()}, the replies before a delete that failed are decoded as
  * usual.

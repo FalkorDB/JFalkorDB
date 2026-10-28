@@ -35,6 +35,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.Response;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.util.SafeEncoder;
 
@@ -359,6 +360,45 @@ class QueuedRepliesTest {
     }
 
     @Test
+    void aReplyIsNotDecodedWithNamesTheCacheLearnedAfterItsDeleteWasQueued() throws InterruptedException {
+        // The delete and a recreate reach the server, and another context of the same graph then reads the new
+        // graph, teaching the shared cache its labels. The reply queued before the delete still must not use them.
+        handler.labelsAfterDelete = Collections.singletonList("Animal");
+        GraphPipeline pipeline = context.pipelined();
+        Response<ResultSet> earlier = pipeline.query("MATCH (n) RETURN n");
+        pipeline.sync();
+        pipeline.deleteGraph();
+        String padding = String.join("", Collections.nCopies(10_000, "x"));
+        pipeline.query("CREATE (n:Animal {padding:'" + padding + "'}) RETURN n");
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        while (server.count("GRAPH.DELETE") == 0) {
+            assertTrue(System.nanoTime() < deadline, "the delete never reached the server");
+            Thread.sleep(5);
+        }
+        try (Jedis other = pool.getResource()) {
+            GraphContextImpl second = new GraphContextImpl(other, cache, "g");
+            assertEquals(
+                    "Animal",
+                    ((Node) second.query("MATCH (n) RETURN n").iterator().next().getValue(0)).getLabel(0));
+        }
+
+        GraphException e = assertThrows(GraphException.class, () -> label(earlier));
+        assertTrue(e.getMessage().contains("label id 0"), e.getMessage());
+        pipeline.sync();
+    }
+
+    @Test
+    void anExecThatFailsPartWayClearsTheCache() {
+        // The connection broke while EXEC was answered, so the delete may have run.
+        warmCache("Person");
+        handler.breakExec = true;
+        GraphTransaction transaction = context.multi();
+        transaction.deleteGraph();
+        assertThrows(JedisConnectionException.class, transaction::exec);
+        assertEquals(1, cache.clears);
+    }
+
+    @Test
     void afterSyncARepliesQueuedBeforeAFailedDeleteIsDecodedAsUsual() {
         // The graph was not deleted, so its labels can still be looked up.
         handler.deleteReply =
@@ -375,7 +415,7 @@ class QueuedRepliesTest {
     }
 
     @Test
-    void aTransactionDecodesTheRepliesQueuedBeforeItsDeleteWithTheCacheAsItWasAtExec() {
+    void aTransactionDecodesTheRepliesQueuedBeforeItsDeleteWithTheCacheAsItWasWhenTheDeleteWasQueued() {
         warmCache("Person");
         handler.labels = Collections.singletonList("Animal");
 
@@ -422,6 +462,8 @@ class QueuedRepliesTest {
         volatile boolean abortExec;
         /** The {@link #labels} once a delete has run, standing for a graph recreated right after it. */
         volatile List<String> labelsAfterDelete;
+        /** Answer {@code EXEC} with something that isn't RESP, which breaks the connection. */
+        volatile boolean breakExec;
 
         private final ThreadLocal<List<String>> transaction = new ThreadLocal<>();
 
@@ -434,6 +476,9 @@ class QueuedRepliesTest {
             if (FakeRedisServer.startsWith(command, "EXEC")) {
                 List<String> replies = transaction.get();
                 transaction.remove();
+                if (breakExec) {
+                    return "?\r\n";
+                }
                 return abortExec ? "*-1\r\n" : array(replies.toArray(new String[0]));
             }
             if (FakeRedisServer.startsWith(command, "DISCARD")) {

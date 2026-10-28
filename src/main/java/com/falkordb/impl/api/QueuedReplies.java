@@ -20,19 +20,18 @@ import redis.clients.jedis.exceptions.JedisDataException;
  * <ul>
  *   <li>Which connection looks up a label, property-key or relationship-type id the cache doesn't hold: see
  *       {@link GraphContextImpl#decodeQueued}.
- *   <li>Which cache decodes the reply. Each {@code deleteGraph()} ends a <em>segment</em> of the queue. Once a
- *       delete has run, the replies queued before it can't look ids up any more: the graph that sent them is
- *       gone, and a lookup would find whatever graph has the name by then. So they are decoded with a
+ *   <li>Which cache decodes the reply. Each {@code deleteGraph()} ends a <em>segment</em> of the queue. Once the
+ *       delete can have run, the replies queued before it can't look ids up any more: the graph that sent them
+ *       may be gone, and a lookup would find whatever graph has the name by then. So they are decoded with a
  *       {@linkplain GraphCache#snapshot() frozen copy} of the cache, and an id the copy lacks is reported.
  * </ul>
  *
- * <p>When the segment is frozen depends on how the replies are read. {@code sync()} reads them without
- * decoding, then builds each delete's reply in order: a delete that ran freezes the segment it ends with the
- * cache as it is at that point, then clears the live cache; a delete that failed re-opens its segment, which
- * is then decoded like the one after it. {@code syncAndReturnAll()} and {@code exec()} decode every reply in
- * order before any delete's outcome is known, so the segments ended by their batch's deletes are frozen just
- * before: the first with the cache as it is then, any later one with an empty copy, because the graph it was
- * queued against existed only while the batch ran.
+ * <p>The copy is taken when the delete is queued, the last moment the delete is sure not to have run: Jedis may
+ * send it to the server long before the replies are read, and from then on the shared cache can learn the names
+ * of a graph recreated under the same name, from this pipeline or from any other context of the graph. A segment
+ * queued after another delete that hasn't run yet belongs to a graph the client has never read, so its copy is
+ * empty. When the replies have been read, a delete that turns out to have failed, or a transaction that was
+ * discarded or aborted, re-opens the segments of the deletes that didn't run.
  */
 final class QueuedReplies {
 
@@ -52,17 +51,11 @@ final class QueuedReplies {
         /** The segment after the delete that ended this one; null while this is the current segment. */
         @Nullable
         Segment next;
-        /** Set when the delete that ends the segment has run, or is about to be read with its batch. */
+        /** The copy taken when the delete that ends the segment was queued; null for the current segment. */
         @Nullable
         GraphCache frozen;
-        /** Set when the delete that ended the segment failed: the graph is still the one {@link #next} has. */
+        /** Set when the delete that ended the segment didn't run: the graph is still the one {@link #next} has. */
         boolean reopened;
-        /**
-         * Set while the delete that ended the segment is queued but its outcome is unknown. Jedis may have
-         * flushed the delete to the server already, so the graph may be gone, or recreated: a reply read then is
-         * decoded with a copy of the cache and looks nothing up.
-         */
-        boolean deletePending;
 
         GraphCache cache() {
             Segment segment = this;
@@ -70,10 +63,6 @@ final class QueuedReplies {
                 segment = segment.next;
             }
             GraphCache copy = segment.frozen;
-            if (copy == null && segment.deletePending) {
-                copy = cache.snapshot();
-                segment.frozen = copy;
-            }
             return copy != null ? copy : cache;
         }
     }
@@ -89,7 +78,7 @@ final class QueuedReplies {
         }
     }
 
-    /** Builds a delete's reply: the delete ran, so it freezes the segment it ended and clears the cache. */
+    /** Builds a delete's reply: the delete ran, so it clears the live cache. */
     private final class DeleteBuilder extends Builder<String> {
         /** Null for a delete that ran at once rather than being queued, as after {@code exec()}. */
         @Nullable
@@ -100,12 +89,8 @@ final class QueuedReplies {
             String statistics = BuilderFactory.STRING.build(reply);
             Segment segment = ended;
             if (segment != null) {
-                if (segment.frozen == null) {
-                    segment.frozen = cache.snapshot();
-                }
-                segment.deletePending = false;
-                // Only a segment re-opened by a failed delete follows the link, and this delete ran. Dropping it
-                // keeps a reply held from an early batch from holding every later segment's copy of the cache.
+                // Only a segment re-opened by a delete that didn't run follows the link, and this delete ran.
+                // Dropping it keeps a reply held from an early batch from holding every later segment's copy.
                 segment.next = null;
             }
             cache.clear();
@@ -154,7 +139,7 @@ final class QueuedReplies {
     }
 
     /**
-     * Records a queued delete, which ends the current segment. Not for a delete that ran at once.
+     * Records a queued delete, which ends the current segment and freezes it. Not for a delete that ran at once.
      *
      * @param reply   the response of a command queued with a {@link #delete()} builder
      * @param builder that builder
@@ -162,60 +147,57 @@ final class QueuedReplies {
      */
     Response<String> deleteQueued(Response<String> reply, Builder<String> builder) {
         Segment ended = current;
+        ended.frozen = deletes.isEmpty() ? cache.snapshot() : EMPTY;
         current = new Segment();
         ended.next = current;
-        ended.deletePending = true;
         ((DeleteBuilder) builder).ended = ended;
         deletes.add(new QueuedDelete(reply, ended));
         return reply;
     }
 
     /**
-     * Called just before {@code syncAndReturnAll()} or {@code exec()} reads and decodes the replies. Freezes the
-     * segments their deletes end: the first with a copy of the cache as it is now, which is the deleted graph's,
-     * and any later one with an empty copy.
+     * Called once the replies have been read: by {@code sync()}, which leaves them unbuilt, or by
+     * {@code syncAndReturnAll()} or {@code exec()}, which have built them. Builds each delete's reply, so a
+     * delete that ran clears the cache even if its reply is never read, and re-opens the segment of a delete that
+     * failed. The error stays in its response for the caller.
      */
-    void decodingAll() {
-        boolean first = true;
-        for (QueuedDelete delete : deletes) {
-            if (delete.ended.frozen == null) {
-                delete.ended.frozen = first ? cache.snapshot() : EMPTY;
-            }
-            first = false;
-        }
-    }
-
-    /**
-     * Called after {@code sync()}, which reads the replies without building them. Builds the deletes' replies in
-     * order, so a delete that ran clears the cache even if its reply is never read, and re-opens the segment of
-     * a delete that failed. The error stays in its response for the caller.
-     */
-    void synced() {
+    void read() {
         for (QueuedDelete delete : deletes) {
             try {
                 delete.reply.get();
             } catch (JedisDataException failed) {
-                delete.ended.reopened = true;
-                delete.ended.deletePending = false;
+                didNotRun(delete.ended);
             }
         }
         deletes.clear();
     }
 
-    /** Called after {@code syncAndReturnAll()} or {@code exec()} decoded the replies. */
-    void done() {
+    /** Called after a transaction was discarded or aborted: none of its deletes ran. */
+    void discarded() {
+        for (QueuedDelete delete : deletes) {
+            didNotRun(delete.ended);
+        }
         deletes.clear();
     }
 
     /**
-     * Called after a transaction was discarded or aborted: its deletes never ran, so their segments go on as
-     * part of the one after them.
+     * Called when reading the replies failed part way, so whether the deletes ran is unknown. The live cache is
+     * cleared, in case one did; the segments stay frozen.
      */
-    void discarded() {
-        for (QueuedDelete delete : deletes) {
-            delete.ended.reopened = true;
-            delete.ended.deletePending = false;
+    void unknown() {
+        if (!deletes.isEmpty()) {
+            cache.clear();
         }
         deletes.clear();
+    }
+
+    /** The delete that ended {@code segment} didn't run: its replies come from the graph the next segment has. */
+    private static void didNotRun(Segment segment) {
+        segment.reopened = true;
+        Segment next = segment.next;
+        if (next != null && next.frozen == EMPTY) {
+            // The next segment got an empty copy because this delete was due to run before it.
+            next.frozen = segment.frozen;
+        }
     }
 }
