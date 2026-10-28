@@ -61,7 +61,7 @@ class QueryTimeoutTest {
                             || FakeRedisServer.startsWith(c, "GRAPH.RO_QUERY"))
                     .filter(c -> c.containsAll(Arrays.asList("TIMEOUT", "50")))
                     .count();
-            assertEquals(2 * calls.size(), sent);
+            assertEquals(2L * calls.size(), sent);
         }
     }
 
