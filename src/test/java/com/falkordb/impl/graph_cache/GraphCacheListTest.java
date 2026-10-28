@@ -161,11 +161,14 @@ class GraphCacheListTest {
         AtomicBoolean stop = new AtomicBoolean();
         AtomicReference<Throwable> failure = new AtomicReference<>();
         int readers = 4;
+        CountDownLatch reading = new CountDownLatch(readers);
         ExecutorService pool = Executors.newFixedThreadPool(readers);
         try {
             for (int i = 0; i < readers; i++) {
                 pool.execute(() -> {
                     try {
+                        assertEquals("c", cache.getCachedData(2, graph));
+                        reading.countDown();
                         while (!stop.get()) {
                             assertEquals("c", cache.getCachedData(2, graph));
                         }
@@ -174,6 +177,8 @@ class GraphCacheListTest {
                     }
                 });
             }
+            // clear only once every reader is looking up, so the race is really run
+            assertTrue(reading.await(10, TimeUnit.SECONDS), "the readers did not start in time");
             long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(200);
             while (System.nanoTime() < deadline && failure.get() == null) {
                 cache.clear();
