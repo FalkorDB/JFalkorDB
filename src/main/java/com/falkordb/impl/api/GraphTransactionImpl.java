@@ -279,7 +279,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     /**
      * Deletes the entire graph, in multi/exec context. The client's schema cache is cleared when {@link #exec()}
      * has run the delete, not when it is queued, and not at all if the transaction is discarded or aborted.
-     * Replies queued before it are decoded with the cache as it was when {@code exec()} was called.
+     * Replies queued before it are decoded with the cache as it was when the delete was queued.
      * @return response with the deletion running time statistics
      */
     @Override

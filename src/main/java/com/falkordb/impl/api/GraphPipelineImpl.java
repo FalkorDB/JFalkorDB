@@ -270,7 +270,8 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
 
     /**
      * Deletes the entire graph. The client's schema cache is cleared once the delete has run, when its reply is
-     * read: replies queued before it are still decoded with the cache as it was when the batch was sent.
+     * read: replies queued before it are decoded with the cache as it was when the delete was queued. See
+     * {@link com.falkordb.GraphPipeline} for a delete that fails.
      * @return response with the deletion running time statistics
      */
     @Override
