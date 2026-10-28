@@ -235,7 +235,8 @@ class ClusterRedirectTest {
             return null;
         });
         connect();
-        driver.udfList(); // learns the two primaries
+        driver.udfList(); // learns the two primaries, starting at node 0
+        assertEquals(Collections.singletonList("library-1"), names(driver.udfList())); // node 1 answers
         cluster.node(1).close(); // the slot table still lists node 1
 
         // Round-robin starts each call at the next primary, so half of these start at the dead one.
