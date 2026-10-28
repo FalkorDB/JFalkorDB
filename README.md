@@ -443,6 +443,13 @@ JedisPool jedisPool = new JedisPool(poolConfig, hostAndPort, clientConfig);
 Driver driver = new DriverImpl(jedisPool);
 ```
 
+The socket timeout bounds every wait for a reply, including a query sent with a timeout, such as
+`graph.query(query, 30_000)`. That timeout limits how long the server runs the query, not how long the
+client waits for it, so keep the socket timeout longer than the query timeouts you pass, or set it to
+`0` for no read deadline. A pool built without one, like the first two examples above, gets Jedis'
+default of 2000 ms. A driver built with `FalkorDB.builder()` has no read deadline unless you set
+`socketTimeout`.
+
 ### Connection Pool Configuration with SSL/TLS
 
 ```java

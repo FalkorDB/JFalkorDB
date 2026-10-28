@@ -88,6 +88,7 @@ public abstract class AbstractGraph implements Graph {
      */
     @Override
     public ResultSet query(String query, long timeout) {
+        Utils.checkTimeout(timeout);
         return sendQuery(query, timeout);
     }
 
@@ -99,6 +100,7 @@ public abstract class AbstractGraph implements Graph {
      */
     @Override
     public ResultSet readOnlyQuery(String query, long timeout) {
+        Utils.checkTimeout(timeout);
         return sendReadOnlyQuery(query, timeout);
     }
 
@@ -135,6 +137,7 @@ public abstract class AbstractGraph implements Graph {
      */
     @Override
     public ResultSet query(String query, Map<String, Object> params, long timeout) {
+        Utils.checkTimeout(timeout);
         String preparedQuery = Utils.prepareQuery(query, params);
         return sendQuery(preparedQuery, timeout);
     }
@@ -148,6 +151,7 @@ public abstract class AbstractGraph implements Graph {
      */
     @Override
     public ResultSet readOnlyQuery(String query, Map<String, Object> params, long timeout) {
+        Utils.checkTimeout(timeout);
         String preparedQuery = Utils.prepareQuery(query, params);
         return sendReadOnlyQuery(preparedQuery, timeout);
     }

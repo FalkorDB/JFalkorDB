@@ -85,7 +85,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     protected ResultSet sendQuery(String preparedQuery, long timeout) {
         try {
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>) connection.sendBlockingCommand(
+            List<Object> rawResponse = (List<Object>) connection.sendCommand(
                     GraphCommand.QUERY,
                     graphId,
                     preparedQuery,
@@ -110,7 +110,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     protected ResultSet sendReadOnlyQuery(String preparedQuery, long timeout) {
         try {
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>) connection.sendBlockingCommand(
+            List<Object> rawResponse = (List<Object>) connection.sendCommand(
                     GraphCommand.RO_QUERY,
                     graphId,
                     preparedQuery,
