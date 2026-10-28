@@ -48,7 +48,8 @@ public interface AsyncGraph {
     /**
      * Asynchronously runs {@link Graph#query(String, long)}.
      *
-     * <p>A negative timeout completes the future exceptionally with an {@link IllegalArgumentException}.
+     * <p>When the task runs, a negative timeout completes the future exceptionally with an {@link
+     * IllegalArgumentException}.
      *
      * @param query   the Cypher query
      * @param timeout timeout in milliseconds
@@ -59,7 +60,8 @@ public interface AsyncGraph {
     /**
      * Asynchronously runs {@link Graph#readOnlyQuery(String, long)}.
      *
-     * <p>A negative timeout completes the future exceptionally with an {@link IllegalArgumentException}.
+     * <p>When the task runs, a negative timeout completes the future exceptionally with an {@link
+     * IllegalArgumentException}.
      *
      * @param query   the Cypher query
      * @param timeout timeout in milliseconds
@@ -88,7 +90,8 @@ public interface AsyncGraph {
     /**
      * Asynchronously runs {@link Graph#query(String, Map, long)}.
      *
-     * <p>A negative timeout completes the future exceptionally with an {@link IllegalArgumentException}.
+     * <p>When the task runs, a negative timeout completes the future exceptionally with an {@link
+     * IllegalArgumentException}.
      *
      * @param query   the Cypher query
      * @param params  the query parameters
@@ -100,7 +103,8 @@ public interface AsyncGraph {
     /**
      * Asynchronously runs {@link Graph#readOnlyQuery(String, Map, long)}.
      *
-     * <p>A negative timeout completes the future exceptionally with an {@link IllegalArgumentException}.
+     * <p>When the task runs, a negative timeout completes the future exceptionally with an {@link
+     * IllegalArgumentException}.
      *
      * @param query   the Cypher query
      * @param params  the query parameters
