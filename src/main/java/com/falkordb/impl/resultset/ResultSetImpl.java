@@ -209,13 +209,31 @@ public final class ResultSetImpl implements ResultSet {
         deserializeGraphEntityId(node, (Long) rawNodeData.get(0));
 
         for (Long labelIndex : labelsIndices) {
-            String label = cache.getLabel(labelIndex.intValue(), graph);
+            String label = cache.getLabel(schemaId(labelIndex, "label"), graph);
             node.addLabel(label);
         }
 
         deserializeGraphEntityProperties(node, rawProperties);
 
         return node;
+    }
+
+    /**
+     * Narrows a label, relationship-type or property-key id from the reply to the int the cache takes. The
+     * long is range-checked first, as {@code HeaderImpl} does for column types: {@code intValue()} keeps
+     * only the low 32 bits, so an id such as 4294967296 would wrap to 0 and decode as the first label.
+     *
+     * @param rawId     the id as the reply has it, a Long
+     * @param entryName what the id names, for the error message
+     * @return the id
+     * @throws GraphException if the id is negative or does not fit in an int
+     */
+    private static int schemaId(Object rawId, String entryName) {
+        long id = (Long) rawId;
+        if (id < 0 || id > Integer.MAX_VALUE) {
+            throw new GraphException("Invalid " + entryName + " id " + id);
+        }
+        return (int) id;
     }
 
     /**
@@ -241,7 +259,7 @@ public final class ResultSetImpl implements ResultSet {
         Edge edge = new Edge(rawProperties.size());
         deserializeGraphEntityId(edge, (Long) rawEdgeData.get(0));
 
-        String relationshipType = cache.getRelationshipType(((Long) rawEdgeData.get(1)).intValue(), graph);
+        String relationshipType = cache.getRelationshipType(schemaId(rawEdgeData.get(1), "relationship type"), graph);
         edge.setRelationshipType(relationshipType);
 
         edge.setSource((long) rawEdgeData.get(2));
@@ -264,7 +282,7 @@ public final class ResultSetImpl implements ResultSet {
 
         for (List<Object> rawProperty : rawProperties) {
             Property<Object> property = new Property<>();
-            property.setName(cache.getPropertyName(((Long) rawProperty.get(0)).intValue(), graph));
+            property.setName(cache.getPropertyName(schemaId(rawProperty.get(0), "property key"), graph));
 
             // trimmed for getting to value using deserializeScalar
             List<Object> propertyScalar = rawProperty.subList(1, rawProperty.size());
