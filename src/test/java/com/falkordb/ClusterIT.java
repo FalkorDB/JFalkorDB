@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.falkordb.exceptions.GraphException;
+import com.falkordb.graph_entities.Node;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -241,6 +242,82 @@ public class ClusterIT {
         } finally {
             driver.udfFlush();
         }
+    }
+
+    @Test
+    public void aGraphInTheMiddleOfAMigrationIsFollowedThroughAsk() {
+        // A real slot migration, stopped halfway: the graph has moved to the importing node, but the slot still
+        // belongs to the node it is leaving, which answers ASK. Decoding the reply looks labels up, and those
+        // lookups need ASKING on the importing node too.
+        String graph = "{" + PREFIX + "migrating}";
+        int slot = JedisClusterCRC16.getSlot(graph);
+        for (int i = 0; i < GRAPHS; i++) {
+            assertTrue(
+                    JedisClusterCRC16.getSlot(PREFIX + i) != slot,
+                    "the migrated slot must not move other tests' graphs");
+        }
+        driver.graph(graph).query("CREATE (:Person {name:'a'})");
+        HostAndPort source = ownerOf(slot);
+        HostAndPort target = null;
+        for (String address : ClusterTestServer.nodes()) {
+            HostAndPort node = HostAndPort.from(address);
+            if (!node.equals(source)) {
+                target = node;
+                break;
+            }
+        }
+        assertNotNull(target);
+
+        try (Jedis from = new Jedis(source);
+                Jedis to = new Jedis(target)) {
+            String targetId = to.clusterMyId();
+            to.clusterSetSlotImporting(slot, from.clusterMyId());
+            from.clusterSetSlotMigrating(slot, targetId);
+            assertEquals("OK", from.migrate(target.getHost(), target.getPort(), graph, 0, 5000));
+            try {
+                GraphContextGenerator fresh = driver.graph(graph); // its own, empty cache
+                Node node = (Node)
+                        fresh.query("MATCH (n) RETURN n").iterator().next().getValue(0);
+                assertEquals("Person", node.getLabel(0));
+                assertEquals("a", node.getProperty("name").getValue());
+
+                fresh.query("CREATE (:Person {name:'b'})");
+                Long nodes = fresh.readOnlyQuery("MATCH (n) RETURN count(n)")
+                        .iterator()
+                        .next()
+                        .getValue(0);
+                assertEquals(2L, nodes.longValue());
+            } finally {
+                // Finish the migration everywhere, so the other tests see a settled cluster.
+                to.clusterSetSlotNode(slot, targetId);
+                from.clusterSetSlotNode(slot, targetId);
+                for (String address : ClusterTestServer.nodes()) {
+                    HostAndPort node = HostAndPort.from(address);
+                    if (!node.equals(source) && !node.equals(target)) {
+                        try (Jedis other = new Jedis(node)) {
+                            other.clusterSetSlotNode(slot, targetId);
+                        }
+                    }
+                }
+                driver.graph(graph).deleteGraph();
+            }
+        }
+    }
+
+    /** The primary that owns {@code slot}, as the cluster reports it. */
+    private static HostAndPort ownerOf(int slot) {
+        try (Jedis node = new Jedis(ClusterTestServer.seedHost(), ClusterTestServer.seedPort())) {
+            for (Object range : node.clusterSlots()) {
+                List<?> entry = (List<?>) range;
+                if (slot >= (Long) entry.get(0) && slot <= (Long) entry.get(1)) {
+                    List<?> primary = (List<?>) entry.get(2);
+                    Object host = primary.get(0);
+                    String name = host instanceof byte[] ? SafeEncoder.encode((byte[]) host) : String.valueOf(host);
+                    return new HostAndPort(name, ((Long) primary.get(1)).intValue());
+                }
+            }
+        }
+        throw new AssertionError("no node owns slot " + slot);
     }
 
     @Test

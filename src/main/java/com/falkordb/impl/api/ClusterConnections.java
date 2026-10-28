@@ -128,6 +128,80 @@ final class ClusterConnections implements Connections {
         refresh(generation.get());
     }
 
+    /**
+     * Tries the primaries in turn, starting with the next one in round-robin order, until one answers. When
+     * one can't be reached, the topology is relearned once, so a primary that failed over is replaced, and the
+     * read moves on to a primary it hasn't tried yet. If the relearning fails too, the read gives up: the
+     * cluster is unreachable, and trying every startup node again for each primary would only make the caller
+     * wait longer for the same answer.
+     */
+    @Override
+    public <T> T onAnyPrimary(Function<Jedis, T> read) {
+        Topology view = ensureTopology();
+        long seen = generation.get();
+        int start = nextPrimary.getAndIncrement();
+        Set<HostAndPort> tried = new HashSet<>();
+        JedisConnectionException failure = null;
+        boolean relearned = false;
+        while (true) {
+            HostAndPort node = untried(view.primaries, start, tried);
+            if (node == null) {
+                if (failure == null) {
+                    throw new JedisClusterOperationException("No cluster primary is known");
+                }
+                throw failure;
+            }
+            tried.add(node);
+            try (Jedis connection = poolFor(node).getResource()) {
+                return read.apply(connection);
+            } catch (JedisConnectionException e) {
+                if (failure == null) {
+                    failure = e;
+                } else {
+                    failure.addSuppressed(e);
+                }
+                if (!relearned) {
+                    relearned = true;
+                    try {
+                        view = refresh(seen);
+                    } catch (JedisClusterOperationException refreshFailure) {
+                        failure.addSuppressed(refreshFailure);
+                        throw failure;
+                    }
+                }
+            }
+        }
+    }
+
+    private static @Nullable HostAndPort untried(List<HostAndPort> primaries, int start, Set<HostAndPort> tried) {
+        for (int i = 0; i < primaries.size(); i++) {
+            HostAndPort node = primaries.get(Math.floorMod(start + i, primaries.size()));
+            if (!tried.contains(node)) {
+                return node;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public HostAndPort nodeOf(String routingKey) {
+        return ownerOf(routingKey);
+    }
+
+    @Override
+    public Jedis connectionTo(HostAndPort node, boolean asking) {
+        Jedis connection = poolFor(node).getResource();
+        if (asking) {
+            try {
+                connection.asking();
+            } catch (RuntimeException e) {
+                connection.close();
+                throw e;
+            }
+        }
+        return connection;
+    }
+
     /** The number of topologies learned so far; pass it to {@link #topologyChanged(long)}. */
     long generation() {
         return generation.get();
