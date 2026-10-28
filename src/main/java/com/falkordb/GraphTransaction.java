@@ -14,11 +14,11 @@ import redis.clients.jedis.commands.RedisModulePipelineCommands;
  *
  * <p>{@link #exec()} decodes every graph reply before it returns. {@link #deleteGraph()} clears the client's
  * schema cache when {@code exec()} has run the delete: not when it is queued, and not at all if the
- * transaction is discarded or aborted. A reply queued before the delete can no longer look an id up, because
- * the graph that sent it is gone, so it is decoded with what the cache held when {@code exec()} was called,
- * and an id the cache lacked is reported as a {@link com.falkordb.exceptions.GraphException}. {@code exec()}
- * decodes the replies before it learns whether the delete succeeded, so this applies even to a delete that
- * fails.
+ * transaction is discarded or aborted. Once the delete has run, a reply queued before it can't look an id up
+ * any more: the graph that sent the reply is gone, and a lookup would find whatever graph has the name by then.
+ * So the reply is decoded with what the cache held when {@code exec()} was called, and an id the cache lacked
+ * is reported as a {@link com.falkordb.exceptions.GraphException}. {@code exec()} decodes the replies before it
+ * learns whether the delete succeeded, so it does the same for a delete that fails.
  *
  * <p>A {@link com.falkordb.exceptions.GraphException} while decoding a reply becomes that reply's element of
  * the list {@code exec()} returns, like an error reply. Jedis does not keep it, so reading the same

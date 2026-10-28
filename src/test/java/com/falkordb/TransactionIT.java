@@ -1,5 +1,6 @@
 package com.falkordb;
 
+import com.falkordb.exceptions.GraphException;
 import com.falkordb.graph_entities.Node;
 import com.falkordb.graph_entities.Property;
 import com.falkordb.impl.resultset.ResultSetImpl;
@@ -131,6 +132,9 @@ public class TransactionIT {
             Node node = (Node) ((ResultSet) results.get(0)).iterator().next().getValue(0);
             Assertions.assertEquals("Person", node.getLabel(0));
             Assertions.assertEquals("a", node.getProperty("name").getValue());
+            // the delete ran: its statistics came back, and the graph is gone
+            Assertions.assertTrue(results.get(1) instanceof String, String.valueOf(results.get(1)));
+            Assertions.assertThrows(GraphException.class, () -> api.readOnlyQuery("MATCH (n) RETURN count(n)"));
         }
         api.query("CREATE (:Person)"); // for deleteGraph() in tearDown
     }

@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisDataException;
@@ -37,7 +38,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     private final Set<QueuedReplies> connectionUsers = Collections.newSetFromMap(new WeakHashMap<>());
 
-    private volatile boolean closed;
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     /**
      * Generates a new instance with a specific Jedis connection
@@ -65,8 +66,9 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      * property-key or relationship-type id the cache doesn't hold.
      *
      * <p>While this context is open and no pipeline or transaction on it awaits a reply, the lookup runs on
-     * this context's connection, which costs no extra connection. Otherwise the reply is decoded with a
-     * context of its own, borrowed from the graph that created this one. After {@link #close()} this
+     * this context's connection, which costs no extra connection. Otherwise a reply that needs a lookup is
+     * decoded with a context of its own, borrowed from the graph that created this one; one that needs none
+     * borrows nothing, so a context holding its pool's only connection can still read it. After {@link #close()} this
      * context's connection may already be lent to another thread, and while replies are outstanding a lookup
      * on it would read one of them instead of its own. That connection is borrowed before decoding starts,
      * because decoding can refresh the cache under its lock, and a thread must not wait for the pool while it
@@ -77,12 +79,18 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     ResultSet decodeQueued(List<Object> reply, GraphCache replyCache) {
         GraphContextGenerator pool = poolGraph;
-        if (pool != null && (closed || connectionAwaitsReplies())) {
+        if (pool == null || !(closed.get() || connectionAwaitsReplies())) {
+            return new ResultSetImpl(reply, this, replyCache);
+        }
+        try {
+            // Most replies need no lookup, so try without one first: then only a reply that does borrows a
+            // connection. A context holding its pool's only connection can't borrow another.
+            return new ResultSetImpl(reply, NoLookups.GRAPH, replyCache);
+        } catch (NoLookups.Needed lookupNeeded) {
             try (GraphContext own = pool.getContext()) {
                 return new ResultSetImpl(reply, own, replyCache);
             }
         }
-        return new ResultSetImpl(reply, this, replyCache);
     }
 
     private boolean connectionAwaitsReplies() {
@@ -316,11 +324,9 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     @Override
     public void close() {
         // Once only: a second close() would hand the connection to the pool again.
-        if (closed) {
-            return;
+        if (closed.compareAndSet(false, true)) {
+            this.connection.close();
         }
-        closed = true;
-        this.connection.close();
     }
 
     @Override

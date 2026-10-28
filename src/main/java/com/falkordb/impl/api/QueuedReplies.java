@@ -89,8 +89,13 @@ final class QueuedReplies {
         public String build(Object reply) {
             String statistics = BuilderFactory.STRING.build(reply);
             Segment segment = ended;
-            if (segment != null && segment.frozen == null) {
-                segment.frozen = cache.snapshot();
+            if (segment != null) {
+                if (segment.frozen == null) {
+                    segment.frozen = cache.snapshot();
+                }
+                // Only a segment re-opened by a failed delete follows the link, and this delete ran. Dropping it
+                // keeps a reply held from an early batch from holding every later segment's copy of the cache.
+                segment.next = null;
             }
             cache.clear();
             return statistics;

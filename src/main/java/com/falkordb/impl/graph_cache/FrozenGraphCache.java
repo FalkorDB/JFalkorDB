@@ -35,6 +35,12 @@ final class FrozenGraphCache extends GraphCache {
         return lookup(propertyNames, index, "property key");
     }
 
+    /** A copy never changes, so it is its own snapshot. */
+    @Override
+    public GraphCache snapshot() {
+        return this;
+    }
+
     /** A copy is never refreshed, so there is nothing to clear. */
     @Override
     public void clear() {}

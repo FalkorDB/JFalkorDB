@@ -19,11 +19,12 @@ import redis.clients.jedis.commands.RedisModulePipelineCommands;
  * queued can wait for a free connection.
  *
  * <p>{@link #deleteGraph()} clears the client's schema cache once the delete has run, not when it is queued.
- * A reply queued before the delete can then no longer look an id up, because the graph that sent it is gone,
- * so it is decoded with what the cache held, and an id the cache lacked is reported as a
- * {@link com.falkordb.exceptions.GraphException}. {@link #syncAndReturnAll()} decodes every reply before it
- * learns whether the delete succeeded, so it treats a queued delete as having run; after {@link #sync()},
- * the replies before a delete that failed are decoded as usual.
+ * Once it has run, a reply queued before it can't look an id up any more: the graph that sent the reply is
+ * gone, and a lookup would find whatever graph has the name by then. So the reply is decoded with what the
+ * cache held, and an id the cache lacked is reported as a {@link com.falkordb.exceptions.GraphException}.
+ * {@link #syncAndReturnAll()} decodes every reply before it learns whether the delete succeeded, so it does the
+ * same for a delete that fails; after {@link #sync()}, the replies before a delete that failed are decoded as
+ * usual.
  *
  * <p>Like the context that created it, a pipeline is meant for one thread: until that context is closed,
  * read the replies on the thread that uses the context.

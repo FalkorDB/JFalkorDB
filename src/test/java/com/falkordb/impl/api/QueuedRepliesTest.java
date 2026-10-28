@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.falkordb.GraphContext;
 import com.falkordb.GraphPipeline;
 import com.falkordb.GraphTransaction;
 import com.falkordb.ResultSet;
@@ -179,6 +180,31 @@ class QueuedRepliesTest {
             assertEquals("Person", decoded.get(10, TimeUnit.SECONDS));
         } finally {
             decoding.shutdownNow();
+        }
+    }
+
+    @Test
+    void aReplyThatNeedsNoLookupBorrowsNothing() {
+        // The context holds its pool's only connection and a command is still queued on it, so no other
+        // connection can be had. A scalar, or an entity whose label the cache knows, must still decode.
+        JedisPoolConfig oneConnection = new JedisPoolConfig();
+        oneConnection.setMaxTotal(1);
+        oneConnection.setMaxWait(Duration.ofSeconds(2));
+        try (JedisPool single = new JedisPool(oneConnection, "127.0.0.1", server.port());
+                DriverImpl singleDriver = new DriverImpl(single)) {
+            try (GraphContext own = singleDriver.graph("g").getContext()) {
+                own.query("MATCH (n) RETURN n"); // learns the label, on the context's connection
+                GraphPipeline pipeline = own.pipelined();
+                Response<ResultSet> scalar = pipeline.query("RETURN 1");
+                Response<ResultSet> node = pipeline.query("MATCH (n) RETURN n");
+                pipeline.sync();
+                pipeline.set("k", "v");
+
+                Long one = scalar.get().iterator().next().getValue(0);
+                assertEquals(1L, one.longValue());
+                assertEquals("Person", label(node));
+                pipeline.sync();
+            }
         }
     }
 
@@ -399,6 +425,12 @@ class QueuedRepliesTest {
         }
 
         private String reply(List<String> command) {
+            if (FakeRedisServer.startsWith(command, "GRAPH.QUERY")
+                    && command.get(2).equals("RETURN 1")) {
+                String header = array(array(integer(1), bulk("1")));
+                String one = array(integer(3), integer(1)); // VALUE_INTEGER
+                return array(header, array(array(one)), array(bulk("Cached execution: 0")));
+            }
             if (FakeRedisServer.startsWith(command, "GRAPH.QUERY")) {
                 String header = array(array(integer(1), bulk("n")));
                 String node = array(integer(8), array(integer(7), array(integer(0)), array())); // VALUE_NODE, label 0
