@@ -90,26 +90,45 @@ public interface GraphTransaction
 
     /**
      * Invokes stored procedures without arguments
-     * @param procedure procedure name to invoke
+     *
+     * <p>The call is checked before it is queued, so a rejected call queues nothing.
+     *
+     * @param procedure procedure name to invoke: identifiers ({@code [A-Za-z_][A-Za-z0-9_]*})
+     *     joined by dots, such as {@code db.labels}
      * @return a response which builds result set with the procedure data
+     * @throws IllegalArgumentException if {@code procedure} is null or not a valid procedure name
      */
     Response<ResultSet> callProcedure(String procedure);
 
     /**
      * Invokes stored procedure with arguments
-     * @param procedure procedure name to invoke
-     * @param args procedure arguments
+     *
+     * <p>The call is checked before it is queued, so a rejected call queues nothing.
+     *
+     * @param procedure procedure name to invoke: identifiers ({@code [A-Za-z_][A-Za-z0-9_]*})
+     *     joined by dots, such as {@code db.labels}
+     * @param args procedure arguments, sent as string literals
      * @return a response which builds result set with the procedure data
+     * @throws IllegalArgumentException if {@code procedure} is null or not a valid procedure name, or
+     *     {@code args} or one of its elements is null
      */
     Response<ResultSet> callProcedure(String procedure, List<String> args);
 
     /**
      * Invoke a stored procedure
-     * @param procedure - procedure to execute
-     * @param args - procedure arguments
+     *
+     * <p>The call is checked before it is queued, so a rejected call queues nothing.
+     *
+     * @param procedure - procedure name to invoke: identifiers ({@code [A-Za-z_][A-Za-z0-9_]*})
+     *     joined by dots, such as {@code db.labels}
+     * @param args - procedure arguments, sent as string literals
      * @param kwargs - procedure output arguments: the {@code "y"} entry lists the output
-     *     columns to bind with Cypher's {@code YIELD} clause
+     *     columns to bind with Cypher's {@code YIELD} clause, each a Cypher identifier ({@code
+     *     [A-Za-z_][A-Za-z0-9_]*}, without an {@code AS} alias)
      * @return a response which builds result set with the procedure data
+     * @throws IllegalArgumentException if {@code procedure} is null or not a valid procedure name, if
+     *     {@code args}, {@code kwargs} or an argument is null, or if a {@code YIELD} column is not a
+     *     Cypher identifier
      */
     Response<ResultSet> callProcedure(String procedure, List<String> args, Map<String, List<String>> kwargs);
 

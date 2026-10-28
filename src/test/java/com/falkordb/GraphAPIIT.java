@@ -1260,6 +1260,27 @@ public class GraphAPIIT {
     }
 
     @Test
+    public void testProcedureAndYieldNamesCannotAddClauses() {
+        // The procedure name and the YIELD columns are written into the query as they are. Both payloads
+        // used to make the server delete every node before it reported anything. The injected clause runs
+        // once per db.labels() row, which is why the nodes have a label.
+        client.query("CREATE (:Person), (:Person)");
+
+        Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> client.callProcedure("db.labels() YIELD label MATCH (n) DETACH DELETE n //"));
+
+        Map<String, List<String>> kwargs = new HashMap<>();
+        kwargs.put("y", Collections.singletonList("label MATCH (n) DETACH DELETE n"));
+        Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> client.callProcedure("db.labels", Collections.<String>emptyList(), kwargs));
+
+        Long nodes = client.query("MATCH (n) RETURN count(n)").iterator().next().getValue(0);
+        Assertions.assertEquals(2L, nodes.longValue());
+    }
+
+    @Test
     public void testNonFiniteDoubles() {
         // FalkorDB spells non-finite doubles the C way — "inf", "-inf", "-nan" — which
         // Double.parseDouble rejects (Java wants "Infinity"/"NaN"), so these queries used to escape as
