@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792996966276,
+  "lastUpdate": 1793161537290,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -16769,6 +16769,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 81992.441,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c8fe919b2ca6a0a45c7b95ec7e299ea054267bcf",
+          "message": "docs: import the engineering conventions into CLAUDE.md (#494)\n\nCLAUDE.md only linked to .github/copilot-instructions.md. Claude Code\ndoesn't follow Markdown links when a session starts, so a session began\nwithout the conventions unless it happened to open the file. An @-import\nline makes Claude Code load the file into every session.\n\n\"github\" joins the spellcheck wordlist because the spellchecker reads the\nimport path as prose.\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-10-28T06:22:54+02:00",
+          "tree_id": "c9d50f8675812f93f8d06be10b1c2f8d52d66d29",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/c8fe919b2ca6a0a45c7b95ec7e299ea054267bcf"
+        },
+        "date": 1793161536702,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 170.609,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 218.378,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 259.976,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 214.952,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 263.341,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 300.882,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 297.566,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 453.075,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 548.287,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 513.63,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 853.427,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1056.798,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 594.331,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5240.907,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 10935.877,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 624.157,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 14956.055,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 31701.861,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 621.482,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 35616.454,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 76018.733,
             "unit": "us"
           }
         ]
