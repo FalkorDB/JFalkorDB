@@ -45,8 +45,9 @@ class GraphErrorWrappingTest {
                     assertWrapped(() -> command.accept(context));
                 }
             }
+            assertEquals(0, pool.getNumActive(), "every failed command returned its connection");
             assertEquals(
-                    2 * COMMANDS.size(),
+                    2L * COMMANDS.size(),
                     server.received().stream()
                             .filter(c -> FakeRedisServer.startsWith(c, "GRAPH.EXPLAIN")
                                     || FakeRedisServer.startsWith(c, "GRAPH.COPY")
@@ -89,6 +90,8 @@ class GraphErrorWrappingTest {
         GraphException e = assertThrows(GraphException.class, command::run);
         assertTrue(e.getCause() instanceof JedisDataException, String.valueOf(e.getCause()));
         assertEquals(EMPTY_KEY, e.getCause().getMessage());
+        // the message names the cause's class, as for the commands that were already wrapped
+        assertEquals(JedisDataException.class.getName() + ": " + EMPTY_KEY, e.getMessage());
     }
 
     private static String rejectGraphCommands(List<String> command) {

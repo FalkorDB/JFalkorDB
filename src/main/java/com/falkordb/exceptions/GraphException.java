@@ -11,8 +11,9 @@ import redis.clients.jedis.exceptions.JedisDataException;
  * a query, a procedure call, {@code profile}, {@code explain}, {@code copyGraph} or {@code deleteGraph} —
  * throws this exception, with the {@link JedisDataException} Jedis raised for the error reply as its cause.
  * Jedis raises a subclass for some errors, such as {@code JedisAccessControlException} for {@code NOPERM},
- * so look at {@link #getCause()} to tell them apart. A reply the client can't read is reported as this
- * exception too.
+ * so look at {@link #getCause()} to tell them apart. An error the server reports inside a reply, such as a
+ * query that fails while it runs, and some replies the client can't decode, such as a malformed vector, are
+ * reported as this exception too.
  */
 public class GraphException extends JedisDataException {
     private static final long serialVersionUID = -476099681322055468L;
