@@ -34,7 +34,8 @@ public interface GraphTransaction
      *
      * <p>The timeout is sent with the query and limits how long the server runs it; {@code 0} sets none, so
      * the server's default ({@code TIMEOUT_DEFAULT}) applies. It doesn't change how long the client waits
-     * for the replies in {@link #exec()}: a socket (read) timeout on the connection still ends that wait.
+     * for the replies in {@link #exec()}, which a socket (read) timeout on the connection can still end: see
+     * {@link Graph#query(String, long)}.
      *
      * @param query Cypher query
      * @param timeout timeout in milliseconds; not negative

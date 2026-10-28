@@ -443,13 +443,19 @@ JedisPool jedisPool = new JedisPool(poolConfig, hostAndPort, clientConfig);
 Driver driver = new DriverImpl(jedisPool);
 ```
 
-The socket timeout bounds every wait for a reply, including a query sent with a timeout, such as
-`graph.query(query, 30_000)`. That timeout limits how long the server runs the query, not how long the
-client waits for it, so keep the socket timeout longer than the query timeouts you pass, or set it to
-`0` for no read deadline. A pool built without one, like the first two examples above, gets Jedis'
-default of 2000 ms. A driver built with `FalkorDB.builder()` puts no read deadline on the connections
-that carry queries unless you set `socketTimeout`; only its short Sentinel and cluster discovery
-requests use a 2000 ms deadline.
+The socket timeout limits how long each read of a reply waits for data, and that includes the reply to
+a query sent with a timeout, such as `graph.query(query, 30_000)`. That timeout limits how long the
+server runs the query, not how long the client waits for it. The server sends nothing until the query
+has finished, so keep the socket timeout longer than the query timeouts you pass, or set it to `0` for
+no read deadline. A socket timeout doesn't stop the query either: the server may still run it to the
+end, so after one you can't tell whether a write was applied, and retrying a query that isn't
+idempotent can apply it twice.
+
+A pool built without a socket timeout, like the first two examples above, gets Jedis' default of
+2000 ms. A driver built with `FalkorDB.builder()` sets no read deadline unless you set `socketTimeout`,
+with two exceptions. The one-shot probes that detect a Sentinel or a Redis Cluster wait at most
+2000 ms when `socketTimeout` isn't set. The connections to the Sentinels themselves, which look up the
+master's address and listen for failovers, never have a read deadline.
 
 ### Connection Pool Configuration with SSL/TLS
 

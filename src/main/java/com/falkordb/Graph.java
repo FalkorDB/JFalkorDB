@@ -28,8 +28,11 @@ public interface Graph extends Closeable {
      *
      * <p>The timeout limits how long the server runs the query; {@code 0} sets none, so the server's
      * default ({@code TIMEOUT_DEFAULT}) applies. It doesn't change how long the client waits for the
-     * reply: a socket (read) timeout on the connection still ends that wait, so keep it longer than the
-     * query timeouts you pass, or turn it off (see {@link FalkorDB.Builder#socketTimeout(java.time.Duration)}).
+     * reply. A socket (read) timeout on the connection limits how long each read waits for data, and the
+     * server sends nothing until the query has finished, so keep the socket timeout longer than the query
+     * timeouts you pass, or turn it off (see {@link FalkorDB.Builder#socketTimeout(java.time.Duration)}).
+     * A socket timeout doesn't stop the query on the server, which may still run it to the end: after one,
+     * whether a write was applied is unknown, and retrying a query that isn't idempotent can apply it twice.
      *
      * @param query Cypher query
      * @param timeout timeout in milliseconds; not negative
