@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792996968855,
+  "lastUpdate": 1793161538887,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -7669,6 +7669,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11041.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c8fe919b2ca6a0a45c7b95ec7e299ea054267bcf",
+          "message": "docs: import the engineering conventions into CLAUDE.md (#494)\n\nCLAUDE.md only linked to .github/copilot-instructions.md. Claude Code\ndoesn't follow Markdown links when a session starts, so a session began\nwithout the conventions unless it happened to open the file. An @-import\nline makes Claude Code load the file into every session.\n\n\"github\" joins the spellcheck wordlist because the spellchecker reads the\nimport path as prose.\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-10-28T06:22:54+02:00",
+          "tree_id": "c9d50f8675812f93f8d06be10b1c2f8d52d66d29",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/c8fe919b2ca6a0a45c7b95ec7e299ea054267bcf"
+        },
+        "date": 1793161538849,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3966.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6596.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9632,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11894.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11447.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 10955.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 10961,
             "unit": "ops/s"
           }
         ]
