@@ -50,7 +50,8 @@ public interface Graph extends Closeable {
      * (including {@link java.math.BigDecimal}), out-of-range integers, non-finite floating-point
      * values, cyclic containers, non-String map keys, invalid parameter names, and a null
      * {@code query} or {@code params} are rejected with {@link IllegalArgumentException}. This does not
-     * cover the query text itself, dynamic labels/identifiers, or procedure names.
+     * cover the query text itself or dynamic labels/identifiers. (Procedure names are checked by
+     * {@link #callProcedure(String, List, Map)}.)
      *
      * @param query Cypher query. Must not be {@code null}.
      * @param params parameters map. Must not be {@code null}.
@@ -86,8 +87,10 @@ public interface Graph extends Closeable {
 
     /**
      * Invokes stored procedures without arguments
-     * @param procedure procedure name to invoke
+     * @param procedure procedure name to invoke: Cypher identifiers joined by dots, such as {@code db.labels}
      * @return result set with the procedure data
+     * @throws IllegalArgumentException if {@code procedure} is null or not a valid procedure name
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the call
      */
     ResultSet callProcedure(String procedure);
 
@@ -110,19 +113,27 @@ public interface Graph extends Closeable {
 
     /**
      * Invokes stored procedure with arguments
-     * @param procedure procedure name to invoke
-     * @param args procedure arguments
+     * @param procedure procedure name to invoke: Cypher identifiers joined by dots, such as {@code db.labels}
+     * @param args procedure arguments, sent as string literals
      * @return result set with the procedure data
+     * @throws IllegalArgumentException if {@code procedure} is null or not a valid procedure name, or
+     *     {@code args} or one of its elements is null
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the call
      */
     ResultSet callProcedure(String procedure, List<String> args);
 
     /**
      * Invoke a stored procedure
-     * @param procedure - procedure to execute
-     * @param args - procedure arguments
+     * @param procedure - procedure name to invoke: Cypher identifiers joined by dots, such as {@code db.labels}
+     * @param args - procedure arguments, sent as string literals
      * @param kwargs - procedure output arguments: the {@code "y"} entry lists the output
-     *     columns to bind with Cypher's {@code YIELD} clause
+     *     columns to bind with Cypher's {@code YIELD} clause, each a Cypher identifier ({@code
+     *     [A-Za-z_][A-Za-z0-9_]*}, without an {@code AS} alias)
      * @return result set with the procedure data
+     * @throws IllegalArgumentException if {@code procedure} is null or not a valid procedure name, if
+     *     {@code args}, {@code kwargs} or an argument is null, or if a {@code YIELD} column is not a
+     *     Cypher identifier
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the call
      */
     ResultSet callProcedure(String procedure, List<String> args, Map<String, List<String>> kwargs);
 

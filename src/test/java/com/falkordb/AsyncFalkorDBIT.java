@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -77,6 +78,18 @@ public class AsyncFalkorDBIT {
 
         ExecutionException failure = assertThrows(ExecutionException.class, () -> future.get(30, TimeUnit.SECONDS));
         assertTrue(failure.getCause() instanceof RuntimeException, "server error should surface as the cause");
+    }
+
+    @Test
+    public void anInvalidProcedureNameFailsTheFuture() throws Exception {
+        AsyncGraph async = asyncClient();
+        async.query("CREATE (:Item)").get(30, TimeUnit.SECONDS); // so cleanup() has a graph to delete
+
+        CompletableFuture<ResultSet> future =
+                async.callProcedure("db.labels() YIELD label MATCH (n) DETACH DELETE n //");
+
+        CompletionException failure = assertThrows(CompletionException.class, future::join);
+        assertTrue(failure.getCause() instanceof IllegalArgumentException, String.valueOf(failure.getCause()));
     }
 
     @AfterEach

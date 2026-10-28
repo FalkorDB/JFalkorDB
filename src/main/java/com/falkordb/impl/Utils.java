@@ -37,7 +37,7 @@ public class Utils {
      */
     public static final String TIMEOUT_STRING = "TIMEOUT";
 
-    /** A Cypher identifier: used for parameter names and bare (unquoted) map keys. */
+    /** A Cypher identifier: used for parameter names, bare (unquoted) map keys and YIELD columns. */
     private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
 
     private Utils() {}
@@ -343,34 +343,90 @@ public class Utils {
     }
 
     /**
+     * Whether {@code name} is Cypher identifiers joined by dots, such as {@code db.labels}. This is a loop
+     * rather than a regex because Java matches a repeated regex group recursively, so a long enough dotted
+     * name would overflow the stack instead of failing the check.
+     */
+    private static boolean isProcedureName(String name) {
+        int segmentStart = 0;
+        for (int i = 0; i <= name.length(); i++) {
+            if (i == name.length() || name.charAt(i) == '.') {
+                if (i == segmentStart) {
+                    return false; // an empty name or segment
+                }
+                segmentStart = i + 1;
+            } else if (!isIdentifierChar(name.charAt(i), i == segmentStart)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Whether {@code c} may appear in a Cypher identifier, at its start when {@code first} is set. */
+    private static boolean isIdentifierChar(char c, boolean first) {
+        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_' || (!first && c >= '0' && c <= '9');
+    }
+
+    /**
      * Prepare and format a procedure call and its arguments.
+     *
+     * <p>The procedure name and the {@code YIELD} columns are written into the query as they are, so they
+     * are validated first: the name must be Cypher identifiers joined by dots, such as {@code db.labels} or
+     * {@code db.idx.fulltext.queryNodes}, and each column a single Cypher identifier ({@code
+     * [A-Za-z_][A-Za-z0-9_]*}). Backtick-quoted names and {@code AS} aliases are not accepted. The arguments
+     * are encoded as string literals, like parameter values.
      *
      * @param procedure - procedure to invoke
      * @param args - procedure arguments
-     * @param kwargs - procedure output arguments
+     * @param kwargs - procedure output arguments: the {@code "y"} entry lists the columns to {@code YIELD}
      * @return formatter procedure call
+     * @throws IllegalArgumentException if {@code procedure}, {@code args}, {@code kwargs} or an argument
+     *     is null, or the procedure name or a {@code YIELD} column is not valid as described above
      */
     public static String prepareProcedure(String procedure, List<String> args, Map<String, List<String>> kwargs) {
+        if (procedure == null || !isProcedureName(procedure)) {
+            throw new IllegalArgumentException("Invalid procedure name: " + safeDisplay(procedure)
+                    + " (must be Cypher identifiers joined by dots, such as db.labels)");
+        }
+        if (args == null) {
+            throw new IllegalArgumentException("args must not be null");
+        }
+        if (kwargs == null) {
+            throw new IllegalArgumentException("kwargs must not be null");
+        }
         StringBuilder queryStringBuilder = new StringBuilder();
         queryStringBuilder.append("CALL ").append(procedure).append('(');
         int i = 0;
-        for (; i < args.size() - 1; i++) {
-            queryStringBuilder.append(quoteString(args.get(i))).append(',');
-        }
-        if (i == args.size() - 1) {
-            queryStringBuilder.append(quoteString(args.get(i)));
+        for (String arg : args) {
+            if (arg == null) {
+                throw new IllegalArgumentException("Procedure argument at index " + i + " must not be null");
+            }
+            if (i > 0) {
+                queryStringBuilder.append(',');
+            }
+            queryStringBuilder.append(quoteString(arg));
+            i++;
         }
         queryStringBuilder.append(')');
-        List<String> kwargsList = kwargs.getOrDefault("y", null);
+        List<String> kwargsList = kwargs.get("y");
         if (kwargsList != null && !kwargsList.isEmpty()) {
             // The output columns are bound with Cypher's YIELD clause; without the keyword the
             // emitted query is a syntax error.
             queryStringBuilder.append(" YIELD ");
-            i = 0;
-            for (; i < kwargsList.size() - 1; i++) {
-                queryStringBuilder.append(kwargsList.get(i)).append(',');
+            boolean first = true;
+            // Each column is read once, so the value checked is the value written even if the caller
+            // changes the list meanwhile (the async facade reads it later, on a worker thread).
+            for (String column : kwargsList) {
+                if (column == null || !IDENTIFIER.matcher(column).matches()) {
+                    throw new IllegalArgumentException(
+                            "Invalid YIELD column: " + safeDisplay(column) + " (must match [A-Za-z_][A-Za-z0-9_]*)");
+                }
+                if (!first) {
+                    queryStringBuilder.append(',');
+                }
+                queryStringBuilder.append(column);
+                first = false;
             }
-            queryStringBuilder.append(kwargsList.get(i));
         }
         return queryStringBuilder.toString();
     }
