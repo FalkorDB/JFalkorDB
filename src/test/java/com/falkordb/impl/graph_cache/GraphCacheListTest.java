@@ -158,29 +158,40 @@ class GraphCacheListTest {
         CountingGraph graph = new CountingGraph("a", "b", "c");
         graph.recordQueries = false;
         GraphCacheList cache = new GraphCacheList("db.labels", "label");
+        AtomicBoolean clearing = new AtomicBoolean();
         AtomicBoolean stop = new AtomicBoolean();
         AtomicReference<Throwable> failure = new AtomicReference<>();
         int readers = 4;
-        CountDownLatch reading = new CountDownLatch(readers);
+        // each reader counts down once it has finished a lookup that began after the clearing did
+        CountDownLatch raced = new CountDownLatch(readers);
         ExecutorService pool = Executors.newFixedThreadPool(readers);
         try {
             for (int i = 0; i < readers; i++) {
                 pool.execute(() -> {
                     try {
-                        assertEquals("c", cache.getCachedData(2, graph));
-                        reading.countDown();
+                        boolean counted = false;
                         while (!stop.get()) {
+                            boolean duringClears = clearing.get();
                             assertEquals("c", cache.getCachedData(2, graph));
+                            if (duringClears && !counted) {
+                                raced.countDown();
+                                counted = true;
+                            }
                         }
                     } catch (Throwable t) {
                         failure.compareAndSet(null, t);
                     }
                 });
             }
-            // clear only once every reader is looking up, so the race is really run
-            assertTrue(reading.await(10, TimeUnit.SECONDS), "the readers did not start in time");
-            long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(200);
-            while (System.nanoTime() < deadline && failure.get() == null) {
+            clearing.set(true);
+            // clear for 200 ms, and on until every reader has looked up while the clears ran, so the race is
+            // really run even by a reader that was slow to start
+            long start = System.nanoTime();
+            long minimum = TimeUnit.MILLISECONDS.toNanos(200);
+            long limit = TimeUnit.SECONDS.toNanos(10);
+            while ((System.nanoTime() - start < minimum || raced.getCount() > 0)
+                    && System.nanoTime() - start < limit
+                    && failure.get() == null) {
                 cache.clear();
             }
         } finally {
@@ -189,6 +200,7 @@ class GraphCacheListTest {
             assertTrue(pool.awaitTermination(10, TimeUnit.SECONDS), "a reader did not stop in time");
         }
         assertNull(failure.get(), () -> "a lookup failed while the cache was being cleared: " + failure.get());
+        assertEquals(0, raced.getCount(), "a reader did not look up while the cache was being cleared");
     }
 
     /**
