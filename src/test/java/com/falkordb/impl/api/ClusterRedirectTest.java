@@ -169,6 +169,37 @@ class ClusterRedirectTest {
         assertEquals(1, slotTableReads());
     }
 
+    @Test
+    void aMovedFromTheAskTargetRelearnsTheSlotTable() {
+        // Node 1 stopped importing the slot between the ASK and the attempt it sent there, and node 2 owns the
+        // slot now, which only the slot table can tell.
+        AtomicInteger targetQueries = new AtomicInteger();
+        cluster = new FakeCluster(3, (node, command) -> {
+            if (startsWith(command, "GRAPH.QUERY")) {
+                if (node == 0) {
+                    return error("ASK 100 " + cluster.node(1).address());
+                }
+                if (node == 1 && targetQueries.getAndIncrement() == 0) {
+                    cluster.assign(2, 1);
+                    return error("MOVED 100 " + cluster.node(2).address());
+                }
+                return graphReply(command);
+            }
+            return startsWith(command, "GRAPH.RO_QUERY") ? graphReply(command) : null;
+        });
+        connect();
+
+        ResultSet result = driver.graph(GRAPH).query("MATCH (n) RETURN n");
+
+        assertEquals("Person", ((Node) result.iterator().next().getValue(0)).getLabel(0));
+        assertEquals(1, cluster.node(0).count("GRAPH.QUERY"));
+        assertEquals(1, cluster.node(1).count("GRAPH.QUERY"));
+        assertEquals(1, cluster.node(2).count("GRAPH.QUERY"));
+        assertEveryGraphCommandFollowsAsking(cluster.node(1));
+        assertEquals(0, cluster.node(2).count("ASKING"), "the attempt after the MOVED is not an ASK attempt");
+        assertEquals(2, slotTableReads(), "the MOVED made the driver relearn the slot table");
+    }
+
     // --- a redirect while decoding ----------------------------------------------------------------
 
     @Test
