@@ -300,12 +300,18 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     public @Nullable List<Object> exec() {
         replies.decodingAll();
         draining = true;
+        List<Object> results = null;
         try {
-            return super.exec();
+            results = super.exec();
+            return results;
         } finally {
             draining = false;
             queuing = false;
-            replies.done();
+            if (results != null) {
+                replies.done();
+            } else {
+                replies.discarded(); // aborted: nothing ran
+            }
         }
     }
 
@@ -320,7 +326,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
             return super.discard();
         } finally {
             queuing = false;
-            replies.done();
+            replies.discarded();
         }
     }
 

@@ -57,6 +57,12 @@ final class QueuedReplies {
         GraphCache frozen;
         /** Set when the delete that ended the segment failed: the graph is still the one {@link #next} has. */
         boolean reopened;
+        /**
+         * Set while the delete that ended the segment is queued but its outcome is unknown. Jedis may have
+         * flushed the delete to the server already, so the graph may be gone, or recreated: a reply read then is
+         * decoded with a copy of the cache and looks nothing up.
+         */
+        boolean deletePending;
 
         GraphCache cache() {
             Segment segment = this;
@@ -64,6 +70,10 @@ final class QueuedReplies {
                 segment = segment.next;
             }
             GraphCache copy = segment.frozen;
+            if (copy == null && segment.deletePending) {
+                copy = cache.snapshot();
+                segment.frozen = copy;
+            }
             return copy != null ? copy : cache;
         }
     }
@@ -93,6 +103,7 @@ final class QueuedReplies {
                 if (segment.frozen == null) {
                     segment.frozen = cache.snapshot();
                 }
+                segment.deletePending = false;
                 // Only a segment re-opened by a failed delete follows the link, and this delete ran. Dropping it
                 // keeps a reply held from an early batch from holding every later segment's copy of the cache.
                 segment.next = null;
@@ -153,6 +164,7 @@ final class QueuedReplies {
         Segment ended = current;
         current = new Segment();
         ended.next = current;
+        ended.deletePending = true;
         ((DeleteBuilder) builder).ended = ended;
         deletes.add(new QueuedDelete(reply, ended));
         return reply;
@@ -184,13 +196,26 @@ final class QueuedReplies {
                 delete.reply.get();
             } catch (JedisDataException failed) {
                 delete.ended.reopened = true;
+                delete.ended.deletePending = false;
             }
         }
         deletes.clear();
     }
 
-    /** Called after the replies were decoded ({@code syncAndReturnAll()}, {@code exec()}) or discarded. */
+    /** Called after {@code syncAndReturnAll()} or {@code exec()} decoded the replies. */
     void done() {
+        deletes.clear();
+    }
+
+    /**
+     * Called after a transaction was discarded or aborted: its deletes never ran, so their segments go on as
+     * part of the one after them.
+     */
+    void discarded() {
+        for (QueuedDelete delete : deletes) {
+            delete.ended.reopened = true;
+            delete.ended.deletePending = false;
+        }
         deletes.clear();
     }
 }

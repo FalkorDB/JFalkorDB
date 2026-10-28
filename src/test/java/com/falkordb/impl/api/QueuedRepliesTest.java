@@ -336,6 +336,29 @@ class QueuedRepliesTest {
     }
 
     @Test
+    void aReplyReadWhileADeleteIsQueuedLooksNothingUp() throws InterruptedException {
+        // A reply from an earlier batch, read after deleteGraph() and a recreate were queued but before they are
+        // synced. Jedis may have flushed them to the server already, so the graph may be the new one by then.
+        handler.labelsAfterDelete = Collections.singletonList("Animal");
+        GraphPipeline pipeline = context.pipelined();
+        Response<ResultSet> earlier = pipeline.query("MATCH (n) RETURN n");
+        pipeline.sync();
+        pipeline.deleteGraph();
+        // larger than Jedis' output buffer, so the delete before it is flushed to the server
+        String padding = String.join("", Collections.nCopies(10_000, "x"));
+        pipeline.query("CREATE (n:Animal {padding:'" + padding + "'}) RETURN n");
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        while (server.count("GRAPH.DELETE") == 0) {
+            assertTrue(System.nanoTime() < deadline, "the delete never reached the server");
+            Thread.sleep(5);
+        }
+
+        GraphException e = assertThrows(GraphException.class, () -> label(earlier));
+        assertTrue(e.getMessage().contains("label id 0"), e.getMessage());
+        pipeline.sync();
+    }
+
+    @Test
     void afterSyncARepliesQueuedBeforeAFailedDeleteIsDecodedAsUsual() {
         // The graph was not deleted, so its labels can still be looked up.
         handler.deleteReply =
@@ -397,6 +420,8 @@ class QueuedRepliesTest {
         volatile String deleteReply = bulk("Graph removed");
         /** Answer {@code EXEC} as when a watched key changed. */
         volatile boolean abortExec;
+        /** The {@link #labels} once a delete has run, standing for a graph recreated right after it. */
+        volatile List<String> labelsAfterDelete;
 
         private final ThreadLocal<List<String>> transaction = new ThreadLocal<>();
 
@@ -445,6 +470,9 @@ class QueuedRepliesTest {
                 return array(header, array(rows.toArray(new String[0])), array(bulk("Cached execution: 0")));
             }
             if (FakeRedisServer.startsWith(command, "GRAPH.DELETE")) {
+                if (labelsAfterDelete != null) {
+                    labels = labelsAfterDelete;
+                }
                 return deleteReply;
             }
             return FakeRedisServer.ok();
