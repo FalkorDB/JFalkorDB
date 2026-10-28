@@ -173,25 +173,17 @@ public class GraphExplainUnitTest {
     }
 
     /**
-     * Helper method to test the response parsing logic similar to GraphImpl.sendExplain
+     * Parses a mock reply with the parser GraphImpl and GraphContextImpl use.
      */
-    private List<String> parseExplainResponse(List<Object> responseList) {
-        List<String> result = new ArrayList<>(responseList.size());
-        for (Object item : responseList) {
-            if (item instanceof byte[]) {
-                result.add(SafeEncoder.encode((byte[]) item));
-            } else {
-                result.add(item.toString());
-            }
-        }
-        return result;
+    private static List<String> parseExplainResponse(List<Object> responseList) {
+        return ExplainPlans.lines(responseList);
     }
 
     /**
-     * Helper method to test the fallback response parsing logic
+     * The same parser, given a single bulk string instead of an array.
      */
-    private List<String> parseExplainResponseFallback(byte[] response) {
-        return Arrays.asList(SafeEncoder.encode(response));
+    private static List<String> parseExplainResponseFallback(byte[] response) {
+        return ExplainPlans.lines(response);
     }
 
     /**
@@ -233,20 +225,9 @@ public class GraphExplainUnitTest {
         protected List<String> sendExplain(String preparedQuery) {
             this.lastPreparedQuery = preparedQuery;
 
-            // Simulate the parsing logic from GraphImpl.sendExplain
-            if (mockExplainResponse != null) {
-                List<String> result = new ArrayList<>(mockExplainResponse.size());
-                for (Object item : mockExplainResponse) {
-                    if (item instanceof byte[]) {
-                        result.add(SafeEncoder.encode((byte[]) item));
-                    } else {
-                        result.add(item.toString());
-                    }
-                }
-                return result;
-            } else {
-                return Arrays.asList("Fallback response");
-            }
+            // a missing mock reply stands for a reply that is a single bulk string
+            return ExplainPlans.lines(
+                    mockExplainResponse != null ? mockExplainResponse : SafeEncoder.encode("Fallback response"));
         }
 
         @Override
