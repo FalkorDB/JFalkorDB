@@ -22,7 +22,9 @@ import redis.clients.jedis.commands.RedisModulePipelineCommands;
  * Once it has run, a reply queued before it can't look an id up any more: the graph that sent the reply is
  * gone, and a lookup would find whatever graph has the name by then. So the reply is decoded with what the
  * cache held when the delete was queued, and an id the cache lacked is reported as a
- * {@link com.falkordb.exceptions.GraphException}.
+ * {@link com.falkordb.exceptions.GraphException}. A reply queued between two deletes that are both still to run
+ * comes from a graph that exists only in between, which the client has never read, so it can't be decoded if it
+ * names any label, property key or relationship type.
  * {@link #syncAndReturnAll()} decodes every reply before it learns whether the delete succeeded, so it does the
  * same for a delete that fails; after {@link #sync()}, the replies before a delete that failed are decoded as
  * usual.

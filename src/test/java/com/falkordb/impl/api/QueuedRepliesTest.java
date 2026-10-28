@@ -371,8 +371,9 @@ class QueuedRepliesTest {
         String padding = String.join("", Collections.nCopies(10_000, "x"));
         pipeline.query("CREATE (n:Animal {padding:'" + padding + "'}) RETURN n");
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
-        while (server.count("GRAPH.DELETE") == 0) {
-            assertTrue(System.nanoTime() < deadline, "the delete never reached the server");
+        // The server records a command before it handles it, so wait for the handler to have run the delete.
+        while (!handler.labels.equals(Collections.singletonList("Animal"))) {
+            assertTrue(System.nanoTime() < deadline, "the delete never ran on the server");
             Thread.sleep(5);
         }
         try (Jedis other = pool.getResource()) {
@@ -385,6 +386,17 @@ class QueuedRepliesTest {
         GraphException e = assertThrows(GraphException.class, () -> label(earlier));
         assertTrue(e.getMessage().contains("label id 0"), e.getMessage());
         pipeline.sync();
+    }
+
+    @Test
+    void anExecTheServerRefusesLeavesTheCacheAlone() {
+        // EXECABORT: a command failed to queue, so the server ran none of them.
+        handler.refuseExec = true;
+        GraphTransaction transaction = context.multi();
+        transaction.deleteGraph();
+        JedisDataException e = assertThrows(JedisDataException.class, transaction::exec);
+        assertTrue(e.getMessage().startsWith("EXECABORT"), e.getMessage());
+        assertEquals(0, cache.clears);
     }
 
     @Test
@@ -464,6 +476,8 @@ class QueuedRepliesTest {
         volatile List<String> labelsAfterDelete;
         /** Answer {@code EXEC} with something that isn't RESP, which breaks the connection. */
         volatile boolean breakExec;
+        /** Answer {@code EXEC} with {@code EXECABORT}, as after a command that failed to queue. */
+        volatile boolean refuseExec;
 
         private final ThreadLocal<List<String>> transaction = new ThreadLocal<>();
 
@@ -478,6 +492,9 @@ class QueuedRepliesTest {
                 transaction.remove();
                 if (breakExec) {
                     return "?\r\n";
+                }
+                if (refuseExec) {
+                    return FakeRedisServer.error("EXECABORT Transaction discarded because of previous errors.");
                 }
                 return abortExec ? "*-1\r\n" : array(replies.toArray(new String[0]));
             }

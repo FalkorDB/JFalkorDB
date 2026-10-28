@@ -14,6 +14,7 @@ import java.util.function.BiFunction;
 import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.*;
 import redis.clients.jedis.commands.ProtocolCommand;
+import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.util.SafeEncoder;
 
 /**
@@ -300,20 +301,24 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     public @Nullable List<Object> exec() {
         draining = true;
         boolean ran = false;
+        boolean refused = false;
         List<Object> results = null;
         try {
             results = super.exec();
             ran = true;
             return results;
+        } catch (JedisDataException e) {
+            refused = true; // EXEC answered with an error, EXECABORT: the server ran none of the commands
+            throw e;
         } finally {
             draining = false;
             queuing = false;
-            if (!ran) {
-                replies.unknown(); // EXEC may have run before the connection failed
-            } else if (results == null) {
-                replies.discarded(); // aborted: a watched key changed, nothing ran
-            } else {
+            if (refused || (ran && results == null)) {
+                replies.discarded(); // refused, or aborted because a watched key changed: nothing ran
+            } else if (ran) {
                 replies.read();
+            } else {
+                replies.unknown(); // EXEC may have run before the connection failed
             }
         }
     }
