@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.14.1](https://github.com/FalkorDB/JFalkorDB/compare/v0.14.0...v0.14.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* **deps:** bump com.google.errorprone:error_prone_core ([#480](https://github.com/FalkorDB/JFalkorDB/issues/480)) ([7ee2556](https://github.com/FalkorDB/JFalkorDB/commit/7ee2556cfe907489a43807e874ade94b1c42417c))
+
+
+### Documentation
+
+* import the engineering conventions into CLAUDE.md ([#494](https://github.com/FalkorDB/JFalkorDB/issues/494)) ([c8fe919](https://github.com/FalkorDB/JFalkorDB/commit/c8fe919b2ca6a0a45c7b95ec7e299ea054267bcf))
+
 ## [0.14.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.13.1...v0.14.0) (2026-10-18)
 
 
