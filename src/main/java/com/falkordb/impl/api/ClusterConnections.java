@@ -131,9 +131,10 @@ final class ClusterConnections implements Connections {
     /**
      * Tries the primaries in turn, starting with the next one in round-robin order, until one answers. When
      * one can't be reached, the topology is relearned once, so a primary that failed over is replaced, and the
-     * read moves on to a primary it hasn't tried yet. If the relearning fails too, the read gives up: the
-     * cluster is unreachable, and trying every startup node again for each primary would only make the caller
-     * wait longer for the same answer.
+     * read moves on to a primary it hasn't tried yet. If the relearning fails, the read still tries the other
+     * primaries it already knew, without relearning again: a primary that refuses new connections may still
+     * answer on one its pool already holds. The read fails only when no primary answers, with the first failure
+     * and the others, the failed relearning included, suppressed in it.
      */
     @Override
     public <T> T onAnyPrimary(Function<Jedis, T> read) {
@@ -166,16 +167,17 @@ final class ClusterConnections implements Connections {
                         view = refresh(seen);
                     } catch (JedisClusterOperationException refreshFailure) {
                         failure.addSuppressed(refreshFailure);
-                        throw failure;
                     }
                 }
             }
         }
     }
 
-    private static @Nullable HostAndPort untried(List<HostAndPort> primaries, int start, Set<HostAndPort> tried) {
+    /** The first primary not in {@code tried}, going round from position {@code start}. */
+    static @Nullable HostAndPort untried(List<HostAndPort> primaries, int start, Set<HostAndPort> tried) {
         for (int i = 0; i < primaries.size(); i++) {
-            HostAndPort node = primaries.get(Math.floorMod(start + i, primaries.size()));
+            // in long: start + i could wrap past Integer.MAX_VALUE and visit one primary twice, another never
+            HostAndPort node = primaries.get((int) Math.floorMod((long) start + i, (long) primaries.size()));
             if (!tried.contains(node)) {
                 return node;
             }
@@ -190,7 +192,7 @@ final class ClusterConnections implements Connections {
 
     @Override
     public Jedis connectionTo(HostAndPort node, boolean asking) {
-        Jedis connection = poolFor(node).getResource();
+        Jedis connection = borrow(node);
         if (asking) {
             try {
                 connection.asking();
@@ -219,6 +221,24 @@ final class ClusterConnections implements Connections {
             pool.close();
         }
         pools.clear();
+    }
+
+    /**
+     * Borrows a connection to {@code node}. A refresh closes the pools of nodes that serve no slot, which includes
+     * an empty node importing its first slot, the target of an {@code ASK}. If a refresh closed the pool between
+     * looking it up and borrowing from it, the borrow is retried on a new one.
+     */
+    private Jedis borrow(HostAndPort node) {
+        for (int attempt = 1; ; attempt++) {
+            JedisPool pool = poolFor(node);
+            try {
+                return pool.getResource();
+            } catch (JedisException e) {
+                if (!pool.isClosed() || closed || attempt >= 3) {
+                    throw e;
+                }
+            }
+        }
     }
 
     private HostAndPort ownerOf(String graphId) {

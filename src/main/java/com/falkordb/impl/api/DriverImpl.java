@@ -844,7 +844,7 @@ public class DriverImpl implements Driver {
      *   <li>An unreachable node: the slot table is relearned too, but the failure is reported rather than
      *       retried, because the command may have run before the connection was lost.
      *   <li>A {@link ReplyDecodeException}: the command ran, and only decoding its reply was redirected, so
-     *       it is reported rather than run again.
+     *       it is reported rather than run again; after a {@code MOVED} the slot table is relearned first.
      * </ul>
      *
      * <p>Outside a cluster the operation runs exactly once.
@@ -866,6 +866,14 @@ public class DriverImpl implements Driver {
                 return operation.apply(route);
             } catch (RuntimeException e) {
                 if (e instanceof ReplyDecodeException) {
+                    // The command ran, so it isn't repeated. A MOVED still means the slot table is out of date.
+                    if (askRedirect(e) == null) {
+                        try {
+                            connections.topologyChanged();
+                        } catch (RuntimeException refreshFailure) {
+                            e.addSuppressed(refreshFailure);
+                        }
+                    }
                     throw e;
                 }
                 JedisAskDataException ask = askRedirect(e);

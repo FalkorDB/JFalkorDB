@@ -6,6 +6,7 @@ import static com.falkordb.impl.api.FakeRedisServer.error;
 import static com.falkordb.impl.api.FakeRedisServer.integer;
 import static com.falkordb.impl.api.FakeRedisServer.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -16,10 +17,13 @@ import com.falkordb.graph_entities.Node;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.exceptions.JedisAskDataException;
 import redis.clients.jedis.exceptions.JedisClusterOperationException;
 import redis.clients.jedis.exceptions.JedisConnectionException;
@@ -95,6 +99,7 @@ class ClusterRedirectTest {
         assertEquals(1, cluster.node(1).count("GRAPH.QUERY"));
         assertEquals(1, cluster.node(1).count("GRAPH.RO_QUERY"));
         assertEveryGraphCommandFollowsAsking(cluster.node(1));
+        assertEquals(2, cluster.node(1).count("ASKING"), "one ASKING per graph command");
         assertEquals(1, slotTableReads(), "the slot table was read once, when the driver started");
     }
 
@@ -187,6 +192,7 @@ class ClusterRedirectTest {
         assertTrue(e.getMessage().startsWith("The command ran, but its reply could not be decoded"), e.getMessage());
         assertTrue(DriverImpl.isRedirect(e), "the redirect stays the cause");
         assertEquals(1, cluster.node(0).count("GRAPH.QUERY"), "the query ran once");
+        assertEquals(2, slotTableReads(), "the MOVED still made the driver relearn the slot table");
     }
 
     @Test
@@ -239,6 +245,33 @@ class ClusterRedirectTest {
             assertEquals("1000", driver.configGet("RESULTSET_SIZE"));
         }
         assertTrue(cluster.node(0).count("CLUSTER", "SLOTS") > 1, "the slot table was relearned");
+    }
+
+    @Test
+    void whenRelearningFailsTheOtherKnownPrimariesAreStillTried() {
+        // Node 1 can't help relearn the layout, but it can still answer the read itself.
+        cluster = new FakeCluster(
+                2, (node, command) -> startsWith(command, "GRAPH.UDF", "LIST") ? array(bulk("library-" + node)) : null);
+        connect();
+        driver.udfList(); // learns the two primaries
+        cluster.node(0).close();
+        cluster.refuseSlotQueries(true);
+
+        for (int i = 0; i < 4; i++) {
+            assertEquals(Collections.singletonList("library-1"), names(driver.udfList()));
+        }
+    }
+
+    @Test
+    void theRoundRobinVisitsEveryPrimaryWhenItsCounterWraps() {
+        List<HostAndPort> primaries =
+                Arrays.asList(new HostAndPort("a", 1), new HostAndPort("b", 2), new HostAndPort("c", 3));
+        Set<HostAndPort> tried = new HashSet<>();
+        for (int i = 0; i < primaries.size(); i++) {
+            tried.add(ClusterConnections.untried(primaries, Integer.MAX_VALUE, tried));
+        }
+        assertEquals(new HashSet<>(primaries), tried);
+        assertNull(ClusterConnections.untried(primaries, Integer.MAX_VALUE, tried));
     }
 
     @Test

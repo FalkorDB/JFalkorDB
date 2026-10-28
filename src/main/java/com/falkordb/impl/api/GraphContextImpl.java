@@ -26,6 +26,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     private GraphCache cache;
     /** Set by {@link #askBeforeEachCommand()}. */
     private boolean asking;
+    /** Whether the connection came with {@code ASKING} already sent, which covers the first command. */
+    private boolean firstCommandAsked;
 
     /**
      * Generates a new instance with a specific Jedis connection
@@ -46,10 +48,16 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     void askBeforeEachCommand() {
         asking = true;
+        firstCommandAsked = true; // the route sent ASKING when it lent the connection
     }
 
     private void askIfImporting() {
-        if (asking) {
+        if (!asking) {
+            return;
+        }
+        if (firstCommandAsked) {
+            firstCommandAsked = false;
+        } else {
             connection.asking();
         }
     }

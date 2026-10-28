@@ -270,11 +270,15 @@ public class ClusterIT {
 
         try (Jedis from = new Jedis(source);
                 Jedis to = new Jedis(target)) {
+            String sourceId = from.clusterMyId();
             String targetId = to.clusterMyId();
-            to.clusterSetSlotImporting(slot, from.clusterMyId());
-            from.clusterSetSlotMigrating(slot, targetId);
-            assertEquals("OK", from.migrate(target.getHost(), target.getPort(), graph, 0, 5000));
+            boolean migrated = false;
             try {
+                to.clusterSetSlotImporting(slot, sourceId);
+                from.clusterSetSlotMigrating(slot, targetId);
+                assertEquals("OK", from.migrate(target.getHost(), target.getPort(), graph, 0, 5000));
+                migrated = true;
+
                 GraphContextGenerator fresh = driver.graph(graph); // its own, empty cache
                 Node node = (Node)
                         fresh.query("MATCH (n) RETURN n").iterator().next().getValue(0);
@@ -288,16 +292,23 @@ public class ClusterIT {
                         .getValue(0);
                 assertEquals(2L, nodes.longValue());
             } finally {
-                // Finish the migration everywhere, so the other tests see a settled cluster.
-                to.clusterSetSlotNode(slot, targetId);
-                from.clusterSetSlotNode(slot, targetId);
-                for (String address : ClusterTestServer.nodes()) {
-                    HostAndPort node = HostAndPort.from(address);
-                    if (!node.equals(source) && !node.equals(target)) {
-                        try (Jedis other = new Jedis(node)) {
-                            other.clusterSetSlotNode(slot, targetId);
+                // Leave a settled cluster for the other tests, however far the migration got.
+                if (migrated) {
+                    // the graph is on the target: give it the slot everywhere
+                    to.clusterSetSlotNode(slot, targetId);
+                    from.clusterSetSlotNode(slot, targetId);
+                    for (String address : ClusterTestServer.nodes()) {
+                        HostAndPort other = HostAndPort.from(address);
+                        if (!other.equals(source) && !other.equals(target)) {
+                            try (Jedis node = new Jedis(other)) {
+                                node.clusterSetSlotNode(slot, targetId);
+                            }
                         }
                     }
+                } else {
+                    // the graph never left the source: call the migration off
+                    to.clusterSetSlotStable(slot);
+                    from.clusterSetSlotStable(slot);
                 }
                 driver.graph(graph).deleteGraph();
             }

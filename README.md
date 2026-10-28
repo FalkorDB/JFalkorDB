@@ -293,9 +293,9 @@ try (Driver driver = FalkorDB.builder()
   node, so during a migration it can fail with `TRYAGAIN`, which is reported rather than retried.
   Pipelines, transactions and `getContext()` hold a connection to the node that owned the graph when
   they were created, so during resharding they can fail with a redirect; create them again to pick up
-  the new layout. A redirect means the command did not run, so repeating it cannot apply a write twice.
-  A query that ran but whose reply hit a redirect while being decoded (decoding can look labels up on
-  the node) is reported instead, not repeated; a read-only query is repeated. If a node cannot be
+  the new layout. A redirect on the command means it did not run, so repeating it cannot apply a write
+  twice. A query that ran but whose reply hit a redirect while being decoded (decoding can look labels
+  up on the node) is reported instead, not repeated; a read-only query is repeated. If a node cannot be
   reached the layout is relearned too, but the command is reported as failed, because it may have run
   before the connection dropped.
 - **Pool sizing** (`poolMaxTotal`, `poolMaxIdle`, `poolMaxWait`) applies to each node separately.
