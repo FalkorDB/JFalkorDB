@@ -20,6 +20,8 @@ final class FakeCluster implements AutoCloseable {
 
     private volatile boolean reportEmptyHosts;
 
+    private volatile boolean refuseSlotQueries;
+
     FakeCluster(int size, BiFunction<Integer, List<String>, String> extra) {
         ownerOfHalf = new int[] {0, Math.min(1, size - 1)};
         for (int i = 0; i < size; i++) {
@@ -30,7 +32,7 @@ final class FakeCluster implements AutoCloseable {
 
     private String answer(int index, List<String> command, BiFunction<Integer, List<String>, String> extra) {
         if (FakeRedisServer.startsWith(command, "CLUSTER", "SLOTS")) {
-            return slotsReply();
+            return refuseSlotQueries ? FakeRedisServer.error("ERR not now") : slotsReply();
         }
         if (FakeRedisServer.startsWith(command, "INFO")) {
             return FakeRedisServer.bulk("# Server\r\nredis_mode:cluster\r\n");
@@ -48,6 +50,11 @@ final class FakeCluster implements AutoCloseable {
     /** Slots 0-8191 belong to {@code lowOwner}, the rest to {@code highOwner}. */
     void assign(int lowOwner, int highOwner) {
         ownerOfHalf = new int[] {lowOwner, highOwner};
+    }
+
+    /** Answer {@code CLUSTER SLOTS} with an error, so the driver cannot relearn the layout. */
+    void refuseSlotQueries(boolean value) {
+        refuseSlotQueries = value;
     }
 
     /** Report nodes with an empty host, as a cluster behind a proxy does. */

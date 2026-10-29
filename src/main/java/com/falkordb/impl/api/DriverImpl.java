@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.jspecify.annotations.Nullable;
@@ -22,6 +23,7 @@ import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.Protocol;
 import redis.clients.jedis.SslOptions;
 import redis.clients.jedis.exceptions.InvalidURIException;
+import redis.clients.jedis.exceptions.JedisAskDataException;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisRedirectionException;
 import redis.clients.jedis.util.JedisURIHelper;
@@ -772,28 +774,117 @@ public class DriverImpl implements Driver {
     }
 
     /**
-     * Runs {@code operation}, and in a Redis Cluster runs it again, up to {@link
-     * #CLUSTER_REDIRECT_ATTEMPTS} times in all, when the server answers that the graph lives on another
-     * node. A redirect means the command was not executed, so repeating it cannot duplicate a write.
-     * Each repeat first relearns the slot table, so a resharded or failed-over cluster is followed. An
-     * unreachable node also relearns the table, but is reported to the caller rather than retried,
-     * because the command may have been executed before the connection was lost.
+     * Where one attempt of a {@linkplain #routed routed} command goes.
+     */
+    interface Route {
+
+        /**
+         * Borrows the connection for this attempt: to the node that owns the graph's slot or, when the attempt
+         * follows an {@code ASK} redirect, to the node the redirect named, with {@code ASKING} already sent.
+         *
+         * @return a connection to close after use
+         */
+        Jedis connection();
+
+        /**
+         * Whether this attempt follows an {@code ASK}. The node it goes to is importing the graph's slot and
+         * accepts a command for it only right after {@code ASKING}, so every command the attempt sends needs
+         * one, including the lookups that decode a reply.
+         *
+         * @return {@code true} after an {@code ASK}
+         */
+        boolean asking();
+    }
+
+    /** One attempt: it borrows its connection on demand and remembers the node it went to. */
+    private static final class Attempt implements Route {
+        private final Connections connections;
+        private final String graphId;
+        private final @Nullable HostAndPort askTarget;
+        /** The node the attempt's connection went to, once borrowed in a cluster. */
+        private @Nullable HostAndPort node;
+
+        Attempt(Connections connections, String graphId, @Nullable HostAndPort askTarget) {
+            this.connections = connections;
+            this.graphId = graphId;
+            this.askTarget = askTarget;
+        }
+
+        @Override
+        public Jedis connection() {
+            if (askTarget != null) {
+                node = askTarget;
+                return connections.connectionTo(askTarget, true);
+            }
+            HostAndPort owner = connections.nodeOf(graphId);
+            if (owner == null) {
+                return connections.get(graphId);
+            }
+            node = owner;
+            return connections.connectionTo(owner, false);
+        }
+
+        @Override
+        public boolean asking() {
+            return askTarget != null;
+        }
+    }
+
+    /**
+     * Runs {@code operation}, and in a Redis Cluster runs it again, up to {@link #CLUSTER_REDIRECT_ATTEMPTS}
+     * times in all, when the server answers that the graph lives elsewhere. A redirect means the command was
+     * not executed, so repeating it cannot duplicate a write.
+     *
+     * <ul>
+     *   <li>{@code MOVED}: the slot has a new owner. The slot table is relearned and the next attempt goes to
+     *       the new owner, so a resharded or failed-over cluster is followed.
+     *   <li>{@code ASK}: the slot is being migrated and the graph has already moved, for now and for this command
+     *       only. The slot table still names the old owner, so it is not relearned; the next attempt goes to the
+     *       node the {@code ASK} names, preceded by {@code ASKING} (see {@link Route#asking()}).
+     *   <li>An unreachable node: the slot table is relearned too, but the failure is reported rather than
+     *       retried, because the command may have run before the connection was lost.
+     *   <li>A {@link ReplyDecodeException}: the command ran, and only decoding its reply was redirected, so
+     *       it is reported rather than run again; after a {@code MOVED} the slot table is relearned first.
+     * </ul>
      *
      * <p>Outside a cluster the operation runs exactly once.
      *
-     * @param operation the work to run; it must borrow its connection afresh on every call
+     * @param graphId   the graph the command is for
+     * @param operation the work to run; it must borrow its connection from the {@link Route} it is given
      * @param <T> the result type
      * @return the operation's result
      */
-    <T> T routed(Supplier<T> operation) {
+    <T> T routed(String graphId, Function<Route, T> operation) {
         Connections connections = pool();
         if (!connections.isCluster()) {
-            return operation.get();
+            return operation.apply(new Attempt(connections, graphId, null));
         }
+        HostAndPort askTarget = null;
         for (int attempt = 1; ; attempt++) {
+            Attempt route = new Attempt(connections, graphId, askTarget);
             try {
-                return operation.get();
+                return operation.apply(route);
             } catch (RuntimeException e) {
+                if (e instanceof ReplyDecodeException) {
+                    // The command ran, so it isn't repeated. A MOVED still means the slot table is out of date.
+                    if (askRedirect(e) == null) {
+                        try {
+                            connections.topologyChanged();
+                        } catch (RuntimeException refreshFailure) {
+                            e.addSuppressed(refreshFailure);
+                        }
+                    }
+                    throw e;
+                }
+                JedisAskDataException ask = askRedirect(e);
+                if (ask != null) {
+                    if (attempt >= CLUSTER_REDIRECT_ATTEMPTS) {
+                        throw e;
+                    }
+                    askTarget = Clusters.redirectTarget(ask.getTargetNode(), route.node);
+                    continue;
+                }
+                askTarget = null;
                 boolean redirect = isRedirect(e);
                 if (!redirect && !(e instanceof JedisConnectionException)) {
                     throw e;
@@ -810,6 +901,16 @@ public class DriverImpl implements Driver {
                 }
             }
         }
+    }
+
+    /** The {@code ASK} redirection in {@code failure}'s cause chain, if there is one. */
+    static @Nullable JedisAskDataException askRedirect(Throwable failure) {
+        for (Throwable t = failure; t != null; t = t.getCause()) {
+            if (t instanceof JedisAskDataException) {
+                return (JedisAskDataException) t;
+            }
+        }
+        return null;
     }
 
     /** Whether {@code failure}, or anything it wraps, is a cluster redirection (MOVED or ASK). */
@@ -889,13 +990,8 @@ public class DriverImpl implements Driver {
      */
     @Override
     public List<Object> udfList() {
-        try (Jedis conn = getConnection()) {
-            Object response = conn.sendCommand(GraphCommand.UDF, "LIST");
-            if (response instanceof List<?>) {
-                return (List<Object>) response;
-            }
-            return new ArrayList<>();
-        }
+        // Libraries are loaded on every primary, so any one can list them.
+        return pool().onAnyPrimary(conn -> asList(conn.sendCommand(GraphCommand.UDF, "LIST")));
     }
 
     /**
@@ -907,23 +1003,29 @@ public class DriverImpl implements Driver {
      */
     @Override
     public List<Object> udfList(String libraryName, boolean withCode) {
-        try (Jedis conn = getConnection()) {
+        if (libraryName == null && !withCode) {
+            return udfList();
+        }
+        return pool().onAnyPrimary(conn -> {
             Object response;
             if (libraryName != null && withCode) {
                 response = conn.sendCommand(GraphCommand.UDF, "LIST", libraryName, "WITHCODE");
             } else if (libraryName != null) {
                 response = conn.sendCommand(GraphCommand.UDF, "LIST", libraryName);
-            } else if (withCode) {
-                response = conn.sendCommand(GraphCommand.UDF, "LIST", "WITHCODE");
             } else {
-                return udfList();
+                response = conn.sendCommand(GraphCommand.UDF, "LIST", "WITHCODE");
             }
+            return asList(response);
+        });
+    }
 
-            if (response instanceof List<?>) {
-                return (List<Object>) response;
-            }
-            return new ArrayList<>();
+    /** Reads a {@code GRAPH.UDF LIST} reply; one that isn't a list reads as no libraries. */
+    @SuppressWarnings("unchecked")
+    private static List<Object> asList(Object response) {
+        if (response instanceof List<?>) {
+            return (List<Object>) response;
         }
+        return new ArrayList<>();
     }
 
     /**
@@ -981,10 +1083,7 @@ public class DriverImpl implements Driver {
      */
     @Override
     public String configGet(String name) {
-        try (Jedis conn = getConnection()) {
-            Object response = conn.sendCommand(GraphCommand.CONFIG, "GET", name);
-            return parseConfigGetResponse(response);
-        }
+        return pool().onAnyPrimary(conn -> parseConfigGetResponse(conn.sendCommand(GraphCommand.CONFIG, "GET", name)));
     }
 
     /**

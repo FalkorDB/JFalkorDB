@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -42,10 +44,10 @@ import redis.clients.jedis.util.JedisClusterCRC16;
 final class ClusterConnections implements Connections {
 
     private final Set<HostAndPort> startupNodes;
-    private final GenericObjectPoolConfig<Jedis> poolConfig;
-    private final DefaultJedisClientConfig nodeConfig;
-    /** Like {@link #nodeConfig} but with a read deadline, so a silent node cannot hold the refresh lock forever. */
+    /** Like the node config but with a read deadline, so a silent node cannot hold the refresh lock forever. */
     private final DefaultJedisClientConfig refreshConfig;
+    /** Makes the connection pool for a node. */
+    private final Function<HostAndPort, JedisPool> newPool;
 
     private final ConcurrentMap<HostAndPort, JedisPool> pools = new ConcurrentHashMap<>();
     private final ReentrantLock refreshLock = new ReentrantLock();
@@ -84,10 +86,24 @@ final class ClusterConnections implements Connections {
             Set<HostAndPort> startupNodes,
             GenericObjectPoolConfig<Jedis> poolConfig,
             DefaultJedisClientConfig nodeConfig) {
+        this(startupNodes, nodeConfig, node -> new JedisPool(poolConfig, node, nodeConfig));
+    }
+
+    /**
+     * Creates the connection source with its own way of making a node's pool, so that a test can act between a
+     * pool being looked up and being borrowed from. No I/O happens until the first connection is requested.
+     *
+     * @param startupNodes where to learn the topology from; at least one
+     * @param nodeConfig   client config the topology is learned with; must not select a database
+     * @param newPool      makes the connection pool for a node
+     */
+    ClusterConnections(
+            Set<HostAndPort> startupNodes,
+            DefaultJedisClientConfig nodeConfig,
+            Function<HostAndPort, JedisPool> newPool) {
         this.startupNodes = startupNodes;
-        this.poolConfig = poolConfig;
-        this.nodeConfig = nodeConfig;
         this.refreshConfig = DriverImpl.clusterProbeConfig(nodeConfig);
+        this.newPool = newPool;
     }
 
     @Override
@@ -128,6 +144,80 @@ final class ClusterConnections implements Connections {
         refresh(generation.get());
     }
 
+    /**
+     * Tries the primaries in turn, starting with the next one in round-robin order, until one answers. When
+     * one can't be reached, the topology is relearned once, so a primary that failed over is replaced, and the
+     * read moves on to a primary it hasn't tried yet. If the relearning fails, the read still tries the other
+     * primaries it already knew, without relearning again: a primary that refuses new connections may still
+     * answer on one its pool already holds. The read fails only when no primary answers, with the first failure
+     * and the others, the failed relearning included, suppressed in it.
+     */
+    @Override
+    public <T> T onAnyPrimary(Function<Jedis, T> read) {
+        Topology view = ensureTopology();
+        long seen = generation.get();
+        int start = nextPrimary.getAndIncrement();
+        Set<HostAndPort> tried = new HashSet<>();
+        JedisConnectionException failure = null;
+        boolean relearned = false;
+        while (true) {
+            HostAndPort node = untried(view.primaries, start, tried);
+            if (node == null) {
+                // Every primary was tried and failed: a topology always has one, and each failure was kept.
+                throw Objects.requireNonNull(failure);
+            }
+            tried.add(node);
+            try (Jedis connection = borrow(node)) {
+                return read.apply(connection);
+            } catch (JedisConnectionException e) {
+                if (failure == null) {
+                    failure = e;
+                } else {
+                    failure.addSuppressed(e);
+                }
+                if (!relearned) {
+                    relearned = true;
+                    try {
+                        view = refresh(seen);
+                    } catch (JedisClusterOperationException refreshFailure) {
+                        failure.addSuppressed(refreshFailure);
+                    }
+                }
+            }
+        }
+    }
+
+    /** The first primary not in {@code tried}, going round from position {@code start}. */
+    static @Nullable HostAndPort untried(List<HostAndPort> primaries, int start, Set<HostAndPort> tried) {
+        for (int i = 0; i < primaries.size(); i++) {
+            // in long: start + i could wrap past Integer.MAX_VALUE and visit one primary twice, another never
+            HostAndPort node = primaries.get((int) Math.floorMod((long) start + i, (long) primaries.size()));
+            if (!tried.contains(node)) {
+                return node;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public HostAndPort nodeOf(String routingKey) {
+        return ownerOf(routingKey);
+    }
+
+    @Override
+    public Jedis connectionTo(HostAndPort node, boolean asking) {
+        Jedis connection = borrow(node);
+        if (asking) {
+            try {
+                connection.asking();
+            } catch (RuntimeException e) {
+                connection.close();
+                throw e;
+            }
+        }
+        return connection;
+    }
+
     /** The number of topologies learned so far; pass it to {@link #topologyChanged(long)}. */
     long generation() {
         return generation.get();
@@ -145,6 +235,25 @@ final class ClusterConnections implements Connections {
             pool.close();
         }
         pools.clear();
+    }
+
+    /**
+     * Borrows a connection to {@code node}. A refresh closes the idle pools of nodes that serve no slot: a primary
+     * that was replaced, or an empty node importing its first slot, the target of an {@code ASK}. If a refresh closed
+     * the pool between looking it up and borrowing from it, the borrow is retried on a new one. Jedis reports the closed
+     * pool as a plain {@link JedisException}, which callers would otherwise not take for an unreachable node.
+     */
+    private Jedis borrow(HostAndPort node) {
+        for (int attempt = 1; ; attempt++) {
+            JedisPool pool = poolFor(node);
+            try {
+                return pool.getResource();
+            } catch (JedisException e) {
+                if (!pool.isClosed() || closed || attempt >= 3) {
+                    throw e;
+                }
+            }
+        }
     }
 
     private HostAndPort ownerOf(String graphId) {
@@ -172,11 +281,16 @@ final class ClusterConnections implements Connections {
         return current != null ? current : refresh(generation.get());
     }
 
+    /**
+     * Returns the pool of {@code node}, creating it on first use.
+     *
+     * @throws IllegalStateException if the driver is closed
+     */
     private JedisPool poolFor(HostAndPort node) {
         if (closed) {
             throw new IllegalStateException("the driver is closed");
         }
-        JedisPool pool = pools.computeIfAbsent(node, n -> new JedisPool(poolConfig, n, nodeConfig));
+        JedisPool pool = pools.computeIfAbsent(node, newPool);
         if (closed) {
             // close() may have swept the map before this pool was added; do not leak it.
             pools.remove(node, pool);
@@ -221,17 +335,23 @@ final class ClusterConnections implements Connections {
         }
     }
 
+    /**
+     * Makes a slot table just learned the current topology, as a new {@linkplain #generation() generation}, and
+     * closes the pools of nodes that own no slot in it, unless some of their connections are out.
+     */
     private Topology publish(HostAndPort[] table, List<HostAndPort> owners) {
         Topology fresh = new Topology(table, owners);
         topology = fresh;
         generation.incrementAndGet();
         Set<HostAndPort> live = new HashSet<>(owners);
-        for (HostAndPort node : new ArrayList<>(pools.keySet())) {
-            if (!live.contains(node)) {
-                JedisPool gone = pools.remove(node);
-                if (gone != null) {
-                    gone.close();
-                }
+        for (Map.Entry<HostAndPort, JedisPool> entry : pools.entrySet()) {
+            JedisPool pool = entry.getValue();
+            // A node that serves no slot can still be in use: an empty node importing its first slot is the target
+            // of every ASK for it. Its pool stays while connections are out, so they and the next ones share its
+            // limit, and goes at a later refresh once it is idle.
+            if (!live.contains(entry.getKey()) && pool.getNumActive() == 0) {
+                pools.remove(entry.getKey(), pool);
+                pool.close();
             }
         }
         return fresh;

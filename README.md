@@ -277,20 +277,27 @@ try (Driver driver = FalkorDB.builder()
 - **`udfLoad`, `udfDelete`, `udfFlush` and `configSet`** run on every primary, because libraries and
   configuration are per node. They return `true` only if every primary accepted the command, and an
   error from any primary is thrown.
-- **`udfList` and `configGet`** are answered by any one primary.
+- **`udfList` and `configGet`** are answered by any one primary. If it refuses the connection or drops it,
+  the driver relearns the layout once and asks another primary. A primary that hangs without answering
+  still holds the call up, unless a socket timeout is set.
 - **`getConnection()`** returns a connection to an arbitrary primary. Use it for commands that do not
   concern a particular graph.
 - **Copying a graph** needs both names in the same hash slot. A hash tag does that:
   `driver.graph("{social}-a").copyGraph("{social}-b")`. Otherwise the server answers `CROSSSLOT`.
 - **Resharding and failover** are followed for single graph calls (`query`, `readOnlyQuery`,
-  `profile`, `explain`, `copyGraph`, `deleteGraph`). When a node answers that a graph has moved, the
-  driver relearns the layout and repeats the command, up to three attempts. Pipelines, transactions
-  and `getContext()` hold a connection to the node that owned the graph when they were created, so
-  during resharding they can fail with a redirect; create them again to pick up the new layout. A graph
-  that is mid-migration may answer `ASK`, which is treated like `MOVED`, so a call during the
-  migration window can still fail. A redirect means the command did
-  not run, so a write is never applied twice. If a node cannot be reached the layout is relearned too,
-  but the command is reported as failed, because it may have run before the connection dropped.
+  `profile`, `explain`, `copyGraph`, `deleteGraph`). When a node answers that a graph has moved
+  (`MOVED`), the driver relearns the layout and repeats the command, up to three attempts. While a
+  graph's slot is being migrated, the node giving it up answers `ASK` once the graph has gone: the driver
+  then repeats the command on the node the `ASK` names, preceded by `ASKING`, without relearning the
+  layout, which still names the old node until the migration ends. `copyGraph` needs both graphs on one
+  node, so during a migration it can fail with `TRYAGAIN`, which is reported rather than retried.
+  Pipelines, transactions and `getContext()` hold a connection to the node that owned the graph when
+  they were created, so during resharding they can fail with a redirect; create them again to pick up
+  the new layout. A redirect on the command means it did not run, so repeating it cannot apply a write
+  twice. A query that ran but whose reply hit a redirect while being decoded (decoding can look labels
+  up on the node) is reported instead, not repeated; a read-only query is repeated. If a node cannot be
+  reached the layout is relearned too, but the command is reported as failed, because it may have run
+  before the connection dropped.
 - **Pool sizing** (`poolMaxTotal`, `poolMaxIdle`, `poolMaxWait`) applies to each node separately.
 - **Credentials and TLS** are the same for every node. A database index is not supported, since a
   cluster has a single database.

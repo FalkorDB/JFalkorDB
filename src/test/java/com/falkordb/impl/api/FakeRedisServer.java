@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
@@ -81,6 +82,13 @@ final class FakeRedisServer implements AutoCloseable {
         } catch (IOException ignored) {
             // shutting down
         }
+        // The socket may finish closing only once the acceptor wakes up, and a connection it accepts meanwhile
+        // must be closed too: wait for it, so no client is left being served.
+        try {
+            acceptor.join(TimeUnit.SECONDS.toMillis(5));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         for (Socket client : clients) {
             try {
                 client.close();
@@ -94,6 +102,10 @@ final class FakeRedisServer implements AutoCloseable {
         while (!closed) {
             try {
                 Socket client = server.accept();
+                if (closed) {
+                    client.close();
+                    return;
+                }
                 clients.add(client);
                 Thread worker = new Thread(() -> serve(client), "fake-redis-client");
                 worker.setDaemon(true);

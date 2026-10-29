@@ -24,6 +24,10 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     private final Jedis connection;
     private final String graphId;
     private GraphCache cache;
+    /** Set by {@link #askBeforeEachCommand()}. */
+    private boolean asking;
+    /** Whether the connection came with {@code ASKING} already sent, which covers the first command. */
+    private boolean firstCommandAsked;
 
     /**
      * Generates a new instance with a specific Jedis connection
@@ -38,17 +42,59 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     }
 
     /**
+     * Makes this context send {@code ASKING} before every graph command. A routed command that follows an
+     * {@code ASK} redirect runs on the node importing the graph's slot, which accepts a command for it only right
+     * after {@code ASKING}; the reply's schema lookups are commands too.
+     */
+    void askBeforeEachCommand() {
+        asking = true;
+        firstCommandAsked = true; // the route sent ASKING when it lent the connection
+    }
+
+    /**
+     * Sends {@code ASKING} before a graph command once {@link #askBeforeEachCommand()} was called, except before the
+     * first command: the route sent its {@code ASKING} when it lent the connection.
+     */
+    private void askIfImporting() {
+        if (!asking) {
+            return;
+        }
+        if (firstCommandAsked) {
+            firstCommandAsked = false;
+        } else {
+            connection.asking();
+        }
+    }
+
+    /**
+     * Decodes the reply of a command that may have written, a query or a profile. If a lookup the decoding needs
+     * is redirected, the command has still run: the failure is reported as a {@link ReplyDecodeException}, which
+     * {@link DriverImpl#routed} doesn't retry, rather than as a redirect it would.
+     */
+    private ResultSet decodeRan(List<Object> reply) {
+        try {
+            return new ResultSetImpl(reply, this, this.cache);
+        } catch (GraphException e) {
+            if (DriverImpl.isRedirect(e)) {
+                throw new ReplyDecodeException(e);
+            }
+            throw e;
+        }
+    }
+
+    /**
      * Sends the query over the instance only connection
      * @param preparedQuery prepared query
      * @return Result set with the query answer
      */
     @Override
     protected ResultSet sendQuery(String preparedQuery) {
+        askIfImporting();
         try {
             @SuppressWarnings("unchecked")
             List<Object> rawResponse = (List<Object>)
                     connection.sendCommand(GraphCommand.QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
-            return new ResultSetImpl(rawResponse, this, this.cache);
+            return decodeRan(rawResponse);
         } catch (GraphException rt) {
             throw rt;
         } catch (JedisDataException j) {
@@ -63,6 +109,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     protected ResultSet sendReadOnlyQuery(String preparedQuery) {
+        askIfImporting();
         try {
             @SuppressWarnings("unchecked")
             List<Object> rawResponse = (List<Object>)
@@ -83,6 +130,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     protected ResultSet sendQuery(String preparedQuery, long timeout) {
+        askIfImporting();
         try {
             @SuppressWarnings("unchecked")
             List<Object> rawResponse = (List<Object>) connection.sendBlockingCommand(
@@ -92,7 +140,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
                     Utils.COMPACT_STRING,
                     Utils.TIMEOUT_STRING,
                     Long.toString(timeout));
-            return new ResultSetImpl(rawResponse, this, this.cache);
+            return decodeRan(rawResponse);
         } catch (GraphException rt) {
             throw rt;
         } catch (JedisDataException j) {
@@ -108,6 +156,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     protected ResultSet sendReadOnlyQuery(String preparedQuery, long timeout) {
+        askIfImporting();
         try {
             @SuppressWarnings("unchecked")
             List<Object> rawResponse = (List<Object>) connection.sendBlockingCommand(
@@ -132,11 +181,12 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     protected ResultSet sendProfile(String preparedQuery) {
+        askIfImporting();
         try {
             @SuppressWarnings("unchecked")
             List<Object> rawResponse = (List<Object>)
                     connection.sendCommand(GraphCommand.PROFILE, graphId, preparedQuery, Utils.COMPACT_STRING);
-            return new ResultSetImpl(rawResponse, this, this.cache);
+            return decodeRan(rawResponse);
         } catch (GraphException ge) {
             throw ge;
         } catch (JedisDataException de) {
@@ -191,6 +241,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public String copyGraph(String destinationGraphId) {
+        askIfImporting();
         Object response = connection.sendCommand(GraphCommand.COPY, graphId, destinationGraphId);
         return SafeEncoder.encode((byte[]) response);
     }
@@ -201,6 +252,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public String deleteGraph() {
+        askIfImporting();
         Object response;
         try {
             response = connection.sendCommand(GraphCommand.DELETE, graphId);
@@ -223,6 +275,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     @Override
     @SuppressWarnings("unchecked")
     protected List<String> sendExplain(String preparedQuery) {
+        askIfImporting();
         try {
             Object response = connection.sendCommand(GraphCommand.EXPLAIN, graphId, preparedQuery);
 

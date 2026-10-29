@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
+import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.util.Pool;
 
@@ -53,6 +54,41 @@ interface Connections {
      * it can re-learn which node owns which slot. A no-op outside a cluster.
      */
     default void topologyChanged() {}
+
+    /**
+     * Runs {@code read}, a command that any primary can answer and that is safe to repeat, and returns its
+     * result. A non-cluster deployment has a single node, so the read runs once.
+     *
+     * @param read the work to run on a borrowed connection
+     * @param <T> the result type
+     * @return the read's result
+     */
+    default <T> T onAnyPrimary(Function<Jedis, T> read) {
+        try (Jedis connection = get(null)) {
+            return read.apply(connection);
+        }
+    }
+
+    /**
+     * The node that serves {@code routingKey} now, in a cluster.
+     *
+     * @param routingKey the graph
+     * @return the node, or {@code null} outside a cluster, where {@link #get(String)} has one place to go
+     */
+    default @Nullable HostAndPort nodeOf(String routingKey) {
+        return null;
+    }
+
+    /**
+     * Borrows a connection to one node of a cluster, sending {@code ASKING} on it first if asked to.
+     *
+     * @param node   the node
+     * @param asking whether to send {@code ASKING}, which lets the next command reach a slot the node is importing
+     * @return a connection to close after use
+     */
+    default Jedis connectionTo(HostAndPort node, boolean asking) {
+        throw new UnsupportedOperationException("only a Redis Cluster has several nodes");
+    }
 
     /** Releases every pooled connection. */
     void close();
