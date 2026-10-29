@@ -1,6 +1,7 @@
 package com.falkordb.impl.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -8,6 +9,7 @@ import com.falkordb.Graph;
 import com.falkordb.GraphContext;
 import com.falkordb.GraphContextGenerator;
 import com.falkordb.exceptions.GraphException;
+import com.falkordb.impl.graph_cache.GraphCache;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -15,6 +17,7 @@ import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.commands.ProtocolCommand;
 import redis.clients.jedis.exceptions.JedisDataException;
 
 /**
@@ -83,6 +86,23 @@ class GraphErrorWrappingTest {
             }
             assertEquals(0, pool.getNumActive());
             assertEquals(1, pool.getNumIdle());
+        }
+    }
+
+    @Test
+    void aGraphExceptionFromTheConnectionIsNotWrappedAgain() {
+        // GraphException is itself a JedisDataException, so wrapping every JedisDataException the connection
+        // throws would nest one GraphException in another.
+        GraphException rejection = new GraphException("ERR rejected");
+        Jedis connection = new Jedis() {
+            @Override
+            public Object sendCommand(ProtocolCommand cmd, String... args) {
+                throw rejection;
+            }
+        };
+        try (GraphContext context = new GraphContextImpl(connection, new GraphCache(), "g")) {
+            assertSame(rejection, assertThrows(GraphException.class, () -> context.copyGraph("copy")));
+            assertSame(rejection, assertThrows(GraphException.class, context::deleteGraph));
         }
     }
 
