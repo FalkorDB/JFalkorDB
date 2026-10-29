@@ -1,16 +1,18 @@
 package com.falkordb.impl.api;
 
+import com.falkordb.exceptions.GraphException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.util.SafeEncoder;
 
 /**
- * Unit tests for the response parsing Builder logic used in GraphPipelineImpl and GraphTransactionImpl
- * explain methods. This tests the specific Builder.build() methods to ensure comprehensive coverage.
+ * Unit tests for the explain reply parser, {@link ExplainPlans}, that GraphPipelineImpl, GraphTransactionImpl,
+ * GraphContextImpl and GraphImpl share. These tests used to exercise private copies of the parsing logic.
  */
 public class GraphExplainBuilderUnitTest {
 
@@ -173,61 +175,34 @@ public class GraphExplainBuilderUnitTest {
         Assertions.assertEquals("Line 99", result.get(99));
     }
 
-    /**
-     * Helper method that mimics the Builder.build() logic from GraphPipelineImpl/GraphTransactionImpl
-     */
-    private List<String> buildExplainResponse(Object o) {
-        // GRAPH.EXPLAIN returns an array of byte arrays, convert to list of strings
-        if (o instanceof List) {
-            @SuppressWarnings("unchecked")
-            List<Object> responseList = (List<Object>) o;
-            List<String> result = new ArrayList<>(responseList.size());
-            for (Object item : responseList) {
-                if (item instanceof byte[]) {
-                    result.add(SafeEncoder.encode((byte[]) item));
-                } else {
-                    result.add(item.toString());
-                }
-            }
-            return result;
-        } else {
-            // Fallback for unexpected response format
-            return Arrays.asList(SafeEncoder.encode((byte[]) o));
-        }
+    @Test
+    public void testExplainBuilderWithNoReply() {
+        Assertions.assertTrue(buildExplainResponse(null).isEmpty());
     }
 
-    /**
-     * Helper method that safely handles null items in response
-     */
-    private List<String> buildExplainResponseSafely(Object o) {
-        // GRAPH.EXPLAIN returns an array of byte arrays, convert to list of strings
-        if (o instanceof List) {
-            @SuppressWarnings("unchecked")
-            List<Object> responseList = (List<Object>) o;
-            List<String> result = new ArrayList<>(responseList.size());
-            for (Object item : responseList) {
-                if (item instanceof byte[]) {
-                    result.add(SafeEncoder.encode((byte[]) item));
-                } else {
-                    result.add(item != null ? item.toString() : "null");
-                }
-            }
-            return result;
-        } else {
-            // Fallback for unexpected response format
-            return Arrays.asList(SafeEncoder.encode((byte[]) o));
-        }
+    @Test
+    public void testExplainBuilderThrowsAnErrorInsideTheReply() {
+        // Jedis puts an error element of an array reply into the list as an exception. It is not a plan
+        // line: turning it into one with toString() would hide the error.
+        JedisDataException error = new JedisDataException("ERR something failed");
+        List<Object> response = Arrays.asList(SafeEncoder.encode("Results"), error);
+
+        GraphException e = Assertions.assertThrows(GraphException.class, () -> buildExplainResponse(response));
+        Assertions.assertSame(error, e.getCause());
     }
 
-    /**
-     * Helper method that mimics the fallback logic from GraphPipelineImpl/GraphTransactionImpl
-     */
-    private List<String> buildExplainResponseFallback(Object o) {
-        // Fallback for unexpected response format
-        if (o instanceof byte[]) {
-            return Arrays.asList(SafeEncoder.encode((byte[]) o));
-        } else {
-            return Arrays.asList(o.toString());
-        }
+    /** Runs the builder that GraphPipelineImpl and GraphTransactionImpl attach to an explain command. */
+    private static List<String> buildExplainResponse(Object o) {
+        return ExplainPlans.BUILDER.build(o);
+    }
+
+    /** The same builder: a null line is converted with {@code String.valueOf}, like any other non-text line. */
+    private static List<String> buildExplainResponseSafely(Object o) {
+        return ExplainPlans.BUILDER.build(o);
+    }
+
+    /** The same builder, given a reply that is not an array. */
+    private static List<String> buildExplainResponseFallback(Object o) {
+        return ExplainPlans.BUILDER.build(o);
     }
 }

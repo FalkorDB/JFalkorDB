@@ -13,6 +13,7 @@ public interface Graph extends Closeable {
      * Execute a Cypher query.
      * @param query Cypher query
      * @return a result set
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the query
      */
     ResultSet query(String query);
 
@@ -20,6 +21,7 @@ public interface Graph extends Closeable {
      * Execute a Cypher read-only query.
      * @param query Cypher query
      * @return a result set
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the query
      */
     ResultSet readOnlyQuery(String query);
 
@@ -55,6 +57,7 @@ public interface Graph extends Closeable {
      * @param query Cypher query. Must not be {@code null}.
      * @param params parameters map. Must not be {@code null}.
      * @return a result set.
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the query
      */
     ResultSet query(String query, Map<String, Object> params);
 
@@ -63,6 +66,7 @@ public interface Graph extends Closeable {
      * @param query Cypher query.
      * @param params parameters map.
      * @return a result set.
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the query
      */
     ResultSet readOnlyQuery(String query, Map<String, Object> params);
 
@@ -96,6 +100,7 @@ public interface Graph extends Closeable {
      * for each operation's execution.
      * @param query Cypher query
      * @return a result set with execution plan and performance metrics
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the query
      */
     ResultSet profile(String query);
 
@@ -105,6 +110,7 @@ public interface Graph extends Closeable {
      * @param query Cypher query
      * @param params parameters map
      * @return a result set with execution plan and performance metrics
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the query
      */
     ResultSet profile(String query, Map<String, Object> params);
 
@@ -130,12 +136,16 @@ public interface Graph extends Closeable {
      * Copies the graph
      * @param destinationGraphId duplicated graph name
      * @return copy running time statistics
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the command, for instance because
+     *     the graph does not exist
      */
     String copyGraph(String destinationGraphId);
 
     /**
      * Deletes the entire graph
      * @return delete running time statistics
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the command, for instance because
+     *     the graph does not exist
      */
     String deleteGraph();
 
@@ -143,6 +153,7 @@ public interface Graph extends Closeable {
      * Get the execution plan for a given query.
      * @param query Cypher query
      * @return execution plan as list of strings
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the query
      */
     List<String> explain(String query);
 
@@ -151,6 +162,7 @@ public interface Graph extends Closeable {
      * @param query Cypher query
      * @param params parameters map
      * @return execution plan as list of strings
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the query
      */
     List<String> explain(String query, Map<String, Object> params);
 

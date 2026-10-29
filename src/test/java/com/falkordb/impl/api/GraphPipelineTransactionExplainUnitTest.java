@@ -189,40 +189,19 @@ public class GraphPipelineTransactionExplainUnitTest {
         List<Object> responseWithNull =
                 Arrays.asList(SafeEncoder.encode("Valid line"), null, SafeEncoder.encode("Another valid line"));
 
+        // A null line is kept, converted with String.valueOf like any other line that isn't text, so the
+        // plan keeps its shape; GraphExplainBuilderUnitTest covers the same rule.
         List<String> convertedWithNulls = convertResponseSafely(responseWithNull);
-        Assertions.assertEquals(2, convertedWithNulls.size());
-        Assertions.assertEquals("Valid line", convertedWithNulls.get(0));
-        Assertions.assertEquals("Another valid line", convertedWithNulls.get(1));
+        Assertions.assertEquals(Arrays.asList("Valid line", "null", "Another valid line"), convertedWithNulls);
     }
 
-    /**
-     * Helper method to convert mock explain response similar to actual implementation
-     */
-    private List<String> convertResponse(List<Object> response) {
-        List<String> result = new ArrayList<>();
-        for (Object item : response) {
-            if (item instanceof byte[]) {
-                result.add(SafeEncoder.encode((byte[]) item));
-            } else if (item != null) {
-                result.add(item.toString());
-            }
-        }
-        return result;
+    /** Converts a mock explain reply with the parser the pipeline and the transaction use. */
+    private static List<String> convertResponse(List<Object> response) {
+        return ExplainPlans.lines(response);
     }
 
-    /**
-     * Helper method to safely convert response, handling null values
-     */
-    private List<String> convertResponseSafely(List<Object> response) {
-        List<String> result = new ArrayList<>();
-        for (Object item : response) {
-            if (item instanceof byte[]) {
-                result.add(SafeEncoder.encode((byte[]) item));
-            } else if (item != null) {
-                result.add(item.toString());
-            }
-            // Skip null items
-        }
-        return result;
+    /** The same parser; there is no separate null-skipping variant any more. */
+    private static List<String> convertResponseSafely(List<Object> response) {
+        return ExplainPlans.lines(response);
     }
 }

@@ -8,8 +8,6 @@ import com.falkordb.exceptions.GraphException;
 import com.falkordb.impl.Utils;
 import com.falkordb.impl.graph_cache.GraphCache;
 import com.falkordb.impl.resultset.ResultSetImpl;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisDataException;
@@ -188,29 +186,39 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      * Copies the graph
      * @param destinationGraphId duplicated graph name
      * @return copy running time statistics
+     * @throws GraphException if the server rejects the command, e.g. because the graph does not exist
      */
     @Override
     public String copyGraph(String destinationGraphId) {
-        Object response = connection.sendCommand(GraphCommand.COPY, graphId, destinationGraphId);
+        Object response;
+        try {
+            response = connection.sendCommand(GraphCommand.COPY, graphId, destinationGraphId);
+        } catch (GraphException ge) {
+            throw ge;
+        } catch (JedisDataException de) {
+            throw new GraphException(de);
+        }
         return SafeEncoder.encode((byte[]) response);
     }
 
     /**
-     * Deletes the entire graph
+     * Deletes the entire graph. If the server rejects the command, the connection stays bound to this
+     * context, which remains usable until it is closed.
      * @return delete running time statistics
+     * @throws GraphException if the server rejects the command, e.g. because the graph does not exist
      */
     @Override
     public String deleteGraph() {
         Object response;
         try {
             response = connection.sendCommand(GraphCommand.DELETE, graphId);
-        } catch (Exception e) {
-            connection.close();
-            throw e;
+        } catch (GraphException ge) {
+            throw ge;
+        } catch (JedisDataException de) {
+            throw new GraphException(de);
         }
         // clear local state
         this.cache.clear();
-        // caches.removeGraphCache(graphId);
         return SafeEncoder.encode((byte[]) response);
     }
 
@@ -221,27 +229,9 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      * @return execution plan as list of strings
      */
     @Override
-    @SuppressWarnings("unchecked")
     protected List<String> sendExplain(String preparedQuery) {
         try {
-            Object response = connection.sendCommand(GraphCommand.EXPLAIN, graphId, preparedQuery);
-
-            // GRAPH.EXPLAIN returns an array of byte arrays, convert to list of strings
-            if (response instanceof List) {
-                List<Object> responseList = (List<Object>) response;
-                List<String> result = new ArrayList<>(responseList.size());
-                for (Object item : responseList) {
-                    if (item instanceof byte[]) {
-                        result.add(SafeEncoder.encode((byte[]) item));
-                    } else {
-                        result.add(item.toString());
-                    }
-                }
-                return result;
-            } else {
-                // Fallback for unexpected response format
-                return Arrays.asList(SafeEncoder.encode((byte[]) response));
-            }
+            return ExplainPlans.lines(connection.sendCommand(GraphCommand.EXPLAIN, graphId, preparedQuery));
         } catch (GraphException ge) {
             throw ge;
         } catch (JedisDataException de) {
