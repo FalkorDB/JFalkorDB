@@ -331,6 +331,22 @@ class QueuedRepliesTest {
         assertEquals(1, cache.clears, "the delete may have run");
     }
 
+    @Test
+    void aReplyReadBeforeADeleteWhoseSendFailedIsDecodedWithTheCopyTakenBeforeIt() {
+        // The delete may have reached the server and run, and the graph been recreated, before this reply is built.
+        warmCache("Person");
+        try (Connection connection = new DeleteFailsToSend(server.port())) {
+            GraphPipelineImpl pipeline = new GraphPipelineImpl(connection, new LabelSource("Animal"), cache, "g");
+            Response<ResultSet> before = pipeline.query(QUERY);
+            pipeline.sync(); // read, but not built
+
+            assertThrows(JedisConnectionException.class, pipeline::deleteGraph);
+
+            assertEquals("Person", label(before), "decoded with the copy taken before the delete was sent");
+        }
+        assertEquals(1, cache.clears, "the delete may have run");
+    }
+
     // --- when deleteGraph clears the cache --------------------------------------------------------
 
     @Test

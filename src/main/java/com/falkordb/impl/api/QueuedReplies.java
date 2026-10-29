@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.Builder;
 import redis.clients.jedis.BuilderFactory;
@@ -136,31 +137,39 @@ final class QueuedReplies {
         };
     }
 
-    /** Returns the builder for a {@code GRAPH.DELETE}; pass the response to {@link #deleteQueued} once queued. */
-    Builder<String> delete() {
-        return new DeleteBuilder();
-    }
-
     /**
-     * Called when sending a {@code GRAPH.DELETE} failed. Jedis writes a command before it records its response, so the
-     * delete may have reached the server and run although it was never recorded: the live cache is cleared.
-     */
-    void deleteSendFailed() {
-        cache.clear();
-    }
-
-    /**
-     * Records a queued delete, which ends the current segment and freezes it. Not for a delete that ran at once.
+     * Queues a {@code GRAPH.DELETE}, which ends the current segment. The segment is frozen before the delete is sent,
+     * the last moment the delete is sure not to have run.
      *
-     * @param reply the response of a command queued with a {@link #delete()} builder
+     * <p>Jedis writes a command before it records its response, so a delete whose send failed may still have reached
+     * the server and run. Its segment then stays frozen, and the live cache is cleared.
+     *
+     * @param send queues the delete with the builder it is given, and returns its response
      * @return the response
      */
-    Response<String> deleteQueued(Response<String> reply) {
+    Response<String> queueDelete(Function<Builder<String>, Response<String>> send) {
         Segment ended = current;
         ended.frozen = deletes.isEmpty() ? cache.snapshot() : EMPTY;
         current = new Segment();
+        Response<String> reply = runDelete(send);
         deletes.add(new QueuedDelete(reply, ended, current));
         return reply;
+    }
+
+    /**
+     * Sends a {@code GRAPH.DELETE} that isn't queued, as a transaction does after {@code exec()}: its builder clears
+     * the live cache once it ran. So does a failed send, after which the delete may have run.
+     *
+     * @param send sends the delete with the builder it is given, and returns its response
+     * @return the response
+     */
+    Response<String> runDelete(Function<Builder<String>, Response<String>> send) {
+        try {
+            return send.apply(new DeleteBuilder());
+        } catch (RuntimeException e) {
+            cache.clear();
+            throw e;
+        }
     }
 
     /**

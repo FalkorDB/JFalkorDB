@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.*;
 import redis.clients.jedis.commands.ProtocolCommand;
@@ -286,15 +287,10 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     public Response<String> deleteGraph() {
         // GRAPH.DELETE replies with a bulk string, which Jedis hands to the builder as a byte[] — casting it to
         // String throws, so the builder decodes it, as the pipeline's does.
-        Response<String> reply;
-        try {
-            reply = appendWithResponse(GraphCommand.DELETE, Arrays.asList(graphId), replies.delete());
-        } catch (RuntimeException e) {
-            replies.deleteSendFailed();
-            throw e;
-        }
+        Function<Builder<String>, Response<String>> send =
+                builder -> appendWithResponse(GraphCommand.DELETE, Arrays.asList(graphId), builder);
         // after exec() or discard() Jedis runs a command at once instead of queuing it
-        return queuing ? replies.deleteQueued(reply) : reply;
+        return queuing ? replies.queueDelete(send) : replies.runDelete(send);
     }
 
     /**
