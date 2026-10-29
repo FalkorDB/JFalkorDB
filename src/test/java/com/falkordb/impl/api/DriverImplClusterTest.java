@@ -10,6 +10,7 @@ import com.falkordb.Driver;
 import com.falkordb.exceptions.GraphException;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
@@ -623,6 +624,23 @@ class DriverImplClusterTest {
         assertEquals(
                 1,
                 cluster.node(0).count("GRAPH.CONFIG", "GET") + cluster.node(1).count("GRAPH.CONFIG", "GET"));
+    }
+
+    @Test
+    void allConfigIsReadFromOnePrimary() {
+        cluster = new FakeCluster(
+                2,
+                (node, command) -> FakeRedisServer.startsWith(command, "GRAPH.CONFIG", "GET")
+                        ? FakeRedisServer.array(FakeRedisServer.array(
+                                FakeRedisServer.bulk("RESULTSET_SIZE"), FakeRedisServer.integer(100)))
+                        : null);
+        connectToSeed(cluster.node(0), ClusterOptions.autoDetect());
+
+        assertEquals(Collections.singletonMap("RESULTSET_SIZE", "100"), driver.configGetAll());
+        assertEquals(
+                1,
+                cluster.node(0).count("GRAPH.CONFIG", "GET", "*")
+                        + cluster.node(1).count("GRAPH.CONFIG", "GET", "*"));
     }
 
     @Test

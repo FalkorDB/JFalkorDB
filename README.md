@@ -277,7 +277,7 @@ try (Driver driver = FalkorDB.builder()
 - **`udfLoad`, `udfDelete`, `udfFlush` and `configSet`** run on every primary, because libraries and
   configuration are per node. They return `true` only if every primary accepted the command, and an
   error from any primary is thrown.
-- **`udfList` and `configGet`** are answered by any one primary.
+- **`udfList`, `configGet` and `configGetAll`** are answered by any one primary.
 - **`getConnection()`** returns a connection to an arbitrary primary. Use it for commands that do not
   concern a particular graph.
 - **Copying a graph** needs both names in the same hash slot. A hash tag does that:

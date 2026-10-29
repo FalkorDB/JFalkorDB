@@ -2,6 +2,7 @@ package com.falkordb;
 
 import java.io.Closeable;
 import java.util.List;
+import java.util.Map;
 import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.Jedis;
 
@@ -76,11 +77,38 @@ public interface Driver extends Closeable {
     /**
      * Gets the value of a FalkorDB configuration parameter.
      *
+     * <p>Reads one parameter, whose name is matched case-insensitively. The {@code "*"} wildcard names
+     * every parameter, so it is rejected here; {@link #configGetAll()} reads them all.
+     *
      * @param name The configuration parameter name (e.g., "RESULTSET_SIZE")
      * @return The value of the configuration parameter as a String
+     * @throws IllegalArgumentException if {@code name} is null or {@code "*"}, or the server answers with
+     *     more than one parameter
+     * @throws redis.clients.jedis.exceptions.JedisDataException if the server rejects the name, for
+     *     example because there is no such parameter
      * @see <a href="https://docs.falkordb.com/commands/graph.config-get.html">GRAPH.CONFIG GET</a>
      */
     String configGet(String name);
+
+    /**
+     * Gets every FalkorDB configuration parameter, as {@code GRAPH.CONFIG GET *} reports them.
+     *
+     * <p>The map is in the order the server lists the parameters. It is keyed by their names as the
+     * server spells them, in upper case (e.g., "RESULTSET_SIZE"), so unlike {@link #configGet(String)}
+     * a lookup in it is case-sensitive. Each value is the string {@code configGet} returns for that
+     * parameter. The map is unmodifiable: mutating it throws {@link UnsupportedOperationException}.
+     *
+     * <p>The default implementation throws {@link UnsupportedOperationException}, so that a class
+     * implementing this interface outside this library keeps compiling. Every driver this library
+     * creates implements it.
+     *
+     * @return every configuration parameter's value, by name
+     * @throws UnsupportedOperationException if this driver does not implement it
+     * @see <a href="https://docs.falkordb.com/commands/graph.config-get.html">GRAPH.CONFIG GET</a>
+     */
+    default Map<String, String> configGetAll() {
+        throw new UnsupportedOperationException(getClass().getName() + " does not implement configGetAll()");
+    }
 
     /**
      * Sets the value of a FalkorDB configuration parameter.
@@ -88,6 +116,8 @@ public interface Driver extends Closeable {
      * @param name The configuration parameter name (e.g., "RESULTSET_SIZE")
      * @param value The value to set
      * @return true if the configuration was set successfully
+     * @throws IllegalArgumentException if {@code name} is null
+     * @throws redis.clients.jedis.exceptions.JedisDataException if the server rejects the name or value
      * @see <a href="https://docs.falkordb.com/commands/graph.config-set.html">GRAPH.CONFIG SET</a>
      */
     boolean configSet(String name, Object value);
