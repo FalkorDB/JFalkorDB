@@ -25,17 +25,32 @@ public interface Graph extends Closeable {
 
     /**
      * Execute a Cypher query with timeout.
+     *
+     * <p>The timeout limits how long the server runs the query; {@code 0} sets none, so the server's
+     * default ({@code TIMEOUT_DEFAULT}) applies. It doesn't change how long the client waits for the
+     * reply. A socket (read) timeout on the connection limits how long each read waits for data, and the
+     * server sends nothing until the query has finished, so keep the socket timeout longer than the query
+     * timeouts you pass, or turn it off (see {@link FalkorDB.Builder#socketTimeout(java.time.Duration)}).
+     * A socket timeout doesn't stop the query on the server, which may still run it to the end: after one,
+     * whether a write was applied is unknown, and retrying a query that isn't idempotent can apply it twice.
+     *
      * @param query Cypher query
-     * @param timeout timeout in milliseconds
+     * @param timeout timeout in milliseconds; not negative
      * @return a result set
+     * @throws IllegalArgumentException if {@code timeout} is negative
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the query, for instance when it
+     *     runs out of time
      */
     ResultSet query(String query, long timeout);
 
     /**
-     * Execute a Cypher read-only query with timeout.
+     * Execute a Cypher read-only query with timeout. The timeout works as for {@link #query(String, long)}.
      * @param query Cypher query
-     * @param timeout timeout in milliseconds
+     * @param timeout timeout in milliseconds; not negative
      * @return a result set
+     * @throws IllegalArgumentException if {@code timeout} is negative
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the query, for instance when it
+     *     runs out of time
      */
     ResultSet readOnlyQuery(String query, long timeout);
 
@@ -67,20 +82,28 @@ public interface Graph extends Closeable {
     ResultSet readOnlyQuery(String query, Map<String, Object> params);
 
     /**
-     * Executes a cypher query with parameters and timeout.
+     * Executes a cypher query with parameters and timeout. The parameters work as for {@link #query(String,
+     * Map)}, and the timeout as for {@link #query(String, long)}.
      * @param query Cypher query.
      * @param params parameters map.
-     * @param timeout timeout in milliseconds
+     * @param timeout timeout in milliseconds; not negative
      * @return a result set.
+     * @throws IllegalArgumentException if {@code timeout} is negative
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the query, for instance when it
+     *     runs out of time
      */
     ResultSet query(String query, Map<String, Object> params, long timeout);
 
     /**
-     * Executes a cypher read-only query with parameters and timeout.
+     * Executes a cypher read-only query with parameters and timeout. The parameters work as for {@link
+     * #query(String, Map)}, and the timeout as for {@link #query(String, long)}.
      * @param query Cypher query.
      * @param params parameters map.
-     * @param timeout timeout in milliseconds
+     * @param timeout timeout in milliseconds; not negative
      * @return a result set
+     * @throws IllegalArgumentException if {@code timeout} is negative
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the query, for instance when it
+     *     runs out of time
      */
     ResultSet readOnlyQuery(String query, Map<String, Object> params, long timeout);
 
