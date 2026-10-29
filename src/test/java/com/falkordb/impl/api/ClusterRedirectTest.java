@@ -379,6 +379,37 @@ class ClusterRedirectTest {
     }
 
     @Test
+    void udfListAndConfigGetRefreshTopologyWhenAPrimaryGoesDown() {
+        // A failover: node 1 goes down and node 0 takes over its slots. The first read that tries node 1 relearns
+        // the slot table, which no longer lists node 1, so no later read tries it.
+        cluster = new FakeCluster(2, (node, command) -> {
+            if (startsWith(command, "GRAPH.UDF", "LIST")) {
+                return array(bulk("library-" + node));
+            }
+            if (startsWith(command, "GRAPH.CONFIG", "GET")) {
+                return array(bulk("RESULTSET_SIZE"), integer(1000));
+            }
+            return null;
+        });
+        connect();
+        driver.udfList(); // learns the two primaries, starting at node 0
+        cluster.node(1).close();
+        cluster.assign(0, 0);
+        long learned = cluster.node(0).count("CLUSTER", "SLOTS");
+
+        assertEquals(Collections.singletonList("library-0"), names(driver.udfList())); // starts at node 1
+        long relearned = cluster.node(0).count("CLUSTER", "SLOTS");
+        assertTrue(relearned > learned, "the slot table was relearned");
+
+        for (int i = 0; i < 4; i++) {
+            assertEquals(Collections.singletonList("library-0"), names(driver.udfList()));
+            assertEquals(Collections.singletonList("library-0"), names(driver.udfList("library-0", true)));
+            assertEquals("1000", driver.configGet("RESULTSET_SIZE"));
+        }
+        assertEquals(relearned, cluster.node(0).count("CLUSTER", "SLOTS"), "no read tried node 1 again");
+    }
+
+    @Test
     void udfListSendsTheFiltersItIsGiven() {
         // Each node answers with the arguments that followed GRAPH.UDF LIST.
         cluster = new FakeCluster(
