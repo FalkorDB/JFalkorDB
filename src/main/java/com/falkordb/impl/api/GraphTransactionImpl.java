@@ -307,7 +307,9 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
             ran = true;
             return results;
         } catch (JedisDataException e) {
-            refused = true; // EXEC answered with an error, EXECABORT: the server ran none of the commands
+            // EXECABORT: a command failed to queue, so the server ran none of them. Any other error, such as EXEC
+            // without MULTI after the server refused MULTI, can follow commands that ran as they were sent.
+            refused = String.valueOf(e.getMessage()).startsWith("EXECABORT");
             throw e;
         } finally {
             draining = false;
@@ -324,16 +326,24 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
 
     /**
      * Drops the queued commands without running them; a queued {@link #deleteGraph()} then leaves the schema
-     * cache alone.
+     * cache alone. If {@code DISCARD} fails, as when the server refused {@code MULTI} and ran each command as it
+     * was sent, the cache is cleared in case a delete ran.
      * @return "OK"
      */
     @Override
     public String discard() {
+        boolean dropped = false;
         try {
-            return super.discard();
+            String reply = super.discard();
+            dropped = true;
+            return reply;
         } finally {
             queuing = false;
-            replies.discarded();
+            if (dropped) {
+                replies.discarded();
+            } else {
+                replies.unknown();
+            }
         }
     }
 

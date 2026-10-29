@@ -523,6 +523,33 @@ class QueuedRepliesTest {
     }
 
     @Test
+    void anExecAfterARefusedMultiClearsTheCache() {
+        // The server refused MULTI, so every command after it ran as it was sent, the delete included, and EXEC
+        // then finds no transaction. Only EXECABORT says that nothing ran.
+        handler.refuseMulti = true;
+        GraphTransaction transaction = context.multi();
+        transaction.deleteGraph();
+
+        JedisDataException e = assertThrows(JedisDataException.class, transaction::exec);
+
+        assertEquals("ERR EXEC without MULTI", e.getMessage());
+        assertEquals(1, cache.clears, "the delete may have run");
+    }
+
+    @Test
+    void aDiscardAfterARefusedMultiClearsTheCache() {
+        // As above: DISCARD finds no transaction to drop, because the commands already ran.
+        handler.refuseMulti = true;
+        GraphTransaction transaction = context.multi();
+        transaction.deleteGraph();
+
+        JedisDataException e = assertThrows(JedisDataException.class, transaction::discard);
+
+        assertEquals("ERR DISCARD without MULTI", e.getMessage());
+        assertEquals(1, cache.clears, "the delete may have run");
+    }
+
+    @Test
     void anExecThatFailsPartWayClearsTheCache() {
         // The connection broke while EXEC was answered, so the delete may have run.
         warmCache("Person");
@@ -766,17 +793,25 @@ class QueuedRepliesTest {
         volatile boolean breakExec;
         /** Answer {@code EXEC} with {@code EXECABORT}, as after a command that failed to queue. */
         volatile boolean refuseExec;
+        /** Refuse {@code MULTI}, as an ACL that denies it does: the commands after it then run as they are sent. */
+        volatile boolean refuseMulti;
 
         private final ThreadLocal<List<String>> transaction = new ThreadLocal<>();
 
         @Override
         public String apply(List<String> command) {
             if (FakeRedisServer.startsWith(command, "MULTI")) {
+                if (refuseMulti) {
+                    return FakeRedisServer.error("NOPERM this user has no permissions to run the 'multi' command");
+                }
                 transaction.set(new ArrayList<>());
                 return FakeRedisServer.ok();
             }
             if (FakeRedisServer.startsWith(command, "EXEC")) {
                 List<String> replies = transaction.get();
+                if (replies == null) {
+                    return FakeRedisServer.error("ERR EXEC without MULTI");
+                }
                 transaction.remove();
                 if (breakExec) {
                     return "?\r\n";
@@ -787,6 +822,9 @@ class QueuedRepliesTest {
                 return abortExec ? "*-1\r\n" : array(replies.toArray(new String[0]));
             }
             if (FakeRedisServer.startsWith(command, "DISCARD")) {
+                if (transaction.get() == null) {
+                    return FakeRedisServer.error("ERR DISCARD without MULTI");
+                }
                 transaction.remove();
                 return FakeRedisServer.ok();
             }
