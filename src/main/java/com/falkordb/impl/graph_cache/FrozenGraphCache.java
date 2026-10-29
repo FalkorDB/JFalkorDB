@@ -45,6 +45,7 @@ final class FrozenGraphCache extends GraphCache {
     @Override
     public void clear() {}
 
+    /** Returns the name with the given id, or throws a {@link GraphException} for an id the copy doesn't hold. */
     private static String lookup(List<String> entries, int index, String entryName) {
         if (index < 0 || index >= entries.size()) {
             throw new GraphException("Cannot decode " + entryName + " id " + index + ": deleteGraph() was queued after"

@@ -93,6 +93,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
         }
     }
 
+    /** Whether a pipeline or transaction opened on this context still awaits replies on the context's connection. */
     private boolean connectionAwaitsReplies() {
         for (QueuedReplies user : connectionUsers) {
             if (user.awaitsReplies()) {

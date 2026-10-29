@@ -60,6 +60,11 @@ final class QueuedReplies {
         @Nullable
         Segment reopenedInto;
 
+        /**
+         * The cache this segment's replies are decoded with: the copy taken when the delete that ends the segment
+         * was queued, or the live cache for the current segment. A segment re-opened because its delete didn't run
+         * is decoded like the segment it was re-opened into.
+         */
         GraphCache cache() {
             Segment segment = this;
             for (Segment next = segment.reopenedInto; next != null; next = segment.reopenedInto) {
