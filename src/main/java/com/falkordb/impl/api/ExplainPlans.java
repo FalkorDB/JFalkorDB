@@ -50,6 +50,7 @@ final class ExplainPlans {
         return lines;
     }
 
+    /** Decodes a bulk string as UTF-8; anything else is converted with {@link String#valueOf(Object)}. */
     private static String line(@Nullable Object item) {
         return item instanceof byte[] ? SafeEncoder.encode((byte[]) item) : String.valueOf(item);
     }
