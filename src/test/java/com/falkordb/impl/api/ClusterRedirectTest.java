@@ -6,6 +6,7 @@ import static com.falkordb.impl.api.FakeRedisServer.error;
 import static com.falkordb.impl.api.FakeRedisServer.integer;
 import static com.falkordb.impl.api.FakeRedisServer.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,16 +15,19 @@ import com.falkordb.Driver;
 import com.falkordb.ResultSet;
 import com.falkordb.exceptions.GraphException;
 import com.falkordb.graph_entities.Node;
+import com.falkordb.impl.graph_cache.GraphCache;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisAskDataException;
 import redis.clients.jedis.exceptions.JedisClusterOperationException;
 import redis.clients.jedis.exceptions.JedisConnectionException;
@@ -200,6 +204,32 @@ class ClusterRedirectTest {
         assertEquals(2, slotTableReads(), "the MOVED made the driver relearn the slot table");
     }
 
+    @Test
+    void aContextForAnAskAttemptAsksBeforeEachCommandAfterItsFirst() {
+        // Copies, deletes and explains on a Graph go out on the route's own connection, so no driver test reaches
+        // them on a context made for an ASK attempt; a context asks before them all the same.
+        try (FakeRedisServer node = new FakeRedisServer(command -> startsWith(command, "GRAPH.EXPLAIN")
+                        ? array(bulk("Results"))
+                        : startsWith(command, "GRAPH.") ? bulk("done in 0.1 ms") : FakeRedisServer.ok());
+                GraphContextImpl context =
+                        new GraphContextImpl(new Jedis("127.0.0.1", node.port()), new GraphCache(), GRAPH)) {
+            context.askBeforeEachCommand();
+
+            context.explain("RETURN 1"); // the route sent ASKING with the connection
+            context.copyGraph(GRAPH + "-copy");
+            context.deleteGraph();
+
+            List<String> sent = new ArrayList<>();
+            for (List<String> command : node.received()) {
+                String name = command.get(0).toUpperCase(Locale.ROOT);
+                if (name.startsWith("GRAPH.") || name.equals("ASKING")) {
+                    sent.add(name);
+                }
+            }
+            assertEquals(Arrays.asList("GRAPH.EXPLAIN", "ASKING", "GRAPH.COPY", "ASKING", "GRAPH.DELETE"), sent);
+        }
+    }
+
     // --- a redirect while decoding ----------------------------------------------------------------
 
     @Test
@@ -252,6 +282,75 @@ class ClusterRedirectTest {
         assertEquals(2, reads, "the read ran again");
     }
 
+    @Test
+    void aRedirectWhileDecodingAQueryKeepsAFailedRelearnWithIt() {
+        cluster = new FakeCluster(2, (node, command) -> {
+            if (startsWith(command, "GRAPH.QUERY")) {
+                return nodeReply();
+            }
+            if (startsWith(command, "GRAPH.RO_QUERY")) {
+                return error("MOVED 100 " + cluster.node(1).address());
+            }
+            return null;
+        });
+        connect();
+        driver.udfFlush(); // learns the slot table
+        cluster.refuseSlotQueries(true);
+
+        GraphException e =
+                assertThrows(GraphException.class, () -> driver.graph(GRAPH).query("CREATE (n:Person) RETURN n"));
+
+        assertTrue(e.getMessage().startsWith("The command ran, but its reply could not be decoded"), e.getMessage());
+        assertTrue(
+                Arrays.stream(e.getSuppressed()).anyMatch(s -> s instanceof JedisClusterOperationException),
+                "the failed relearn is attached: " + Arrays.toString(e.getSuppressed()));
+        assertEquals(1, cluster.node(0).count("GRAPH.QUERY"), "the query ran once");
+    }
+
+    @Test
+    void anAskWhileDecodingAQueryIsReportedWithoutRelearning() {
+        // An ASK leaves the slot table as it is: the slot still belongs to the node that answered.
+        cluster = new FakeCluster(2, (node, command) -> {
+            if (startsWith(command, "GRAPH.QUERY")) {
+                return nodeReply();
+            }
+            if (startsWith(command, "GRAPH.RO_QUERY")) {
+                return error("ASK 100 " + cluster.node(1).address());
+            }
+            return null;
+        });
+        connect();
+
+        GraphException e =
+                assertThrows(GraphException.class, () -> driver.graph(GRAPH).query("CREATE (n:Person) RETURN n"));
+
+        assertTrue(e.getMessage().startsWith("The command ran, but its reply could not be decoded"), e.getMessage());
+        assertTrue(DriverImpl.askRedirect(e) != null, "the ASK stays the cause");
+        assertEquals(1, cluster.node(0).count("GRAPH.QUERY"), "the query ran once");
+        assertEquals(1, slotTableReads(), "the slot table was not relearned");
+    }
+
+    @Test
+    void anErrorWhileDecodingAQueryThatIsNotARedirectIsReportedAsItIs() {
+        cluster = new FakeCluster(2, (node, command) -> {
+            if (startsWith(command, "GRAPH.QUERY")) {
+                return nodeReply();
+            }
+            if (startsWith(command, "GRAPH.RO_QUERY")) {
+                return error("ERR lookup failed");
+            }
+            return null;
+        });
+        connect();
+
+        GraphException e =
+                assertThrows(GraphException.class, () -> driver.graph(GRAPH).query("CREATE (n:Person) RETURN n"));
+
+        assertFalse(e instanceof ReplyDecodeException, "only a redirect needs telling apart from one: " + e);
+        assertTrue(e.getMessage().endsWith("ERR lookup failed"), e.getMessage());
+        assertEquals(1, cluster.node(0).count("GRAPH.QUERY"), "the query ran once");
+    }
+
     // --- reads any primary can answer --------------------------------------------------------------
 
     @Test
@@ -277,6 +376,31 @@ class ClusterRedirectTest {
             assertEquals("1000", driver.configGet("RESULTSET_SIZE"));
         }
         assertTrue(cluster.node(0).count("CLUSTER", "SLOTS") > 1, "the slot table was relearned");
+    }
+
+    @Test
+    void udfListSendsTheFiltersItIsGiven() {
+        // Each node answers with the arguments that followed GRAPH.UDF LIST.
+        cluster = new FakeCluster(
+                2,
+                (node, command) -> startsWith(command, "GRAPH.UDF", "LIST")
+                        ? array(bulk(String.join(" ", command.subList(2, command.size()))))
+                        : null);
+        connect();
+
+        assertEquals(Collections.singletonList(""), names(driver.udfList(null, false)));
+        assertEquals(Collections.singletonList("WITHCODE"), names(driver.udfList(null, true)));
+        assertEquals(Collections.singletonList("lib"), names(driver.udfList("lib", false)));
+        assertEquals(Collections.singletonList("lib WITHCODE"), names(driver.udfList("lib", true)));
+    }
+
+    @Test
+    void aUdfListReplyThatIsNotAListReadsAsNoLibraries() {
+        cluster = new FakeCluster(2, (node, command) -> startsWith(command, "GRAPH.UDF", "LIST") ? "$-1\r\n" : null);
+        connect();
+
+        assertEquals(Collections.emptyList(), driver.udfList());
+        assertEquals(Collections.emptyList(), driver.udfList("lib", true));
     }
 
     @Test
