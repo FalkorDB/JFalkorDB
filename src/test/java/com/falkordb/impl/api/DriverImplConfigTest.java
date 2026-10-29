@@ -2,15 +2,18 @@ package com.falkordb.impl.api;
 
 import com.falkordb.Driver;
 import com.falkordb.FalkorDB;
+import com.falkordb.GraphContextGenerator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.util.SafeEncoder;
 
@@ -232,6 +235,17 @@ public class DriverImplConfigTest {
     }
 
     @Test
+    public void testConfigGetAllIsUnsupportedByADriverThatDoesNotImplementIt() {
+        // A Driver implemented outside this library, before configGetAll() existed, still compiles; calling the
+        // new method says which class lacks it.
+        Driver legacy = new LegacyDriver();
+
+        UnsupportedOperationException e =
+                Assertions.assertThrows(UnsupportedOperationException.class, legacy::configGetAll);
+        Assertions.assertEquals(LegacyDriver.class.getName() + " does not implement configGetAll()", e.getMessage());
+    }
+
+    @Test
     public void testParseConfigSetResponseWithOkBytes() {
         boolean result = driverImpl.parseConfigSetResponse(SafeEncoder.encode("OK"));
         Assertions.assertTrue(result);
@@ -265,6 +279,62 @@ public class DriverImplConfigTest {
     /** A [name, value] pair as Jedis decodes it: the name is a bulk string, so it arrives as bytes. */
     private static List<Object> pair(String name, Object value) {
         return Arrays.asList(SafeEncoder.encode(name), value);
+    }
+
+    /** A {@link Driver} written before {@code configGetAll()} existed: it implements every other method. */
+    private static final class LegacyDriver implements Driver {
+        @Override
+        public GraphContextGenerator graph(String graphId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Jedis getConnection() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<String> listGraphs() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean udfLoad(String libraryName, String script, boolean replace) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<Object> udfList() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<Object> udfList(@Nullable String libraryName, boolean withCode) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean udfFlush() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean udfDelete(String libraryName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String configGet(String name) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean configSet(String name, Object value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void close() {}
     }
 
     /**
