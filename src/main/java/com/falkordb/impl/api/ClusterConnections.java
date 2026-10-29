@@ -281,6 +281,11 @@ final class ClusterConnections implements Connections {
         return current != null ? current : refresh(generation.get());
     }
 
+    /**
+     * Returns the pool of {@code node}, creating it on first use.
+     *
+     * @throws IllegalStateException if the driver is closed
+     */
     private JedisPool poolFor(HostAndPort node) {
         if (closed) {
             throw new IllegalStateException("the driver is closed");
@@ -330,6 +335,10 @@ final class ClusterConnections implements Connections {
         }
     }
 
+    /**
+     * Makes a slot table just learned the current topology, as a new {@linkplain #generation() generation}, and
+     * closes the pools of nodes that own no slot in it, unless some of their connections are out.
+     */
     private Topology publish(HostAndPort[] table, List<HostAndPort> owners) {
         Topology fresh = new Topology(table, owners);
         topology = fresh;

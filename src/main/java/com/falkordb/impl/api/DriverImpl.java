@@ -1019,6 +1019,7 @@ public class DriverImpl implements Driver {
         });
     }
 
+    /** Reads a {@code GRAPH.UDF LIST} reply; one that isn't a list reads as no libraries. */
     @SuppressWarnings("unchecked")
     private static List<Object> asList(Object response) {
         if (response instanceof List<?>) {

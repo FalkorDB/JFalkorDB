@@ -51,6 +51,10 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
         firstCommandAsked = true; // the route sent ASKING when it lent the connection
     }
 
+    /**
+     * Sends {@code ASKING} before a graph command once {@link #askBeforeEachCommand()} was called, except before the
+     * first command: the route sent its {@code ASKING} when it lent the connection.
+     */
     private void askIfImporting() {
         if (!asking) {
             return;
