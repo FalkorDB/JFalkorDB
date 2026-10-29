@@ -1,6 +1,7 @@
 package com.falkordb.impl.api;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
@@ -250,6 +251,29 @@ class ClusterConnectionsTest {
         } finally {
             single.close();
         }
+    }
+
+    @Test
+    void aRefreshKeepsThePoolOfANodeWithoutSlotsWhileItsConnectionsAreOut() {
+        // Node 1 owns no slot, like an empty node importing its first one. Closing its pool while an ASK attempt
+        // holds a connection would make the next attempt open another pool, past the node's limit.
+        cluster = new FakeCluster(2, null);
+        cluster.assign(0, 0);
+        HostAndPort node1 = HostAndPort.from(cluster.node(1).address());
+        Pools pools = new Pools(node1, 0, () -> {});
+        connections = new ClusterConnections(startup(cluster.addresses()), config(), pools);
+
+        try (Jedis held = connections.connectionTo(node1, true)) {
+            connections.topologyChanged();
+            try (Jedis next = connections.connectionTo(node1, true)) {
+                assertEquals("1", next.echo("who"));
+            }
+            assertEquals(1, pools.made.size(), "both borrows shared the node's pool");
+            assertFalse(pools.made.get(0).isClosed());
+        }
+
+        connections.topologyChanged();
+        assertTrue(pools.made.get(0).isClosed(), "once idle, the pool went at the next refresh");
     }
 
     @Test

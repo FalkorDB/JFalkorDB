@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -237,9 +238,9 @@ final class ClusterConnections implements Connections {
     }
 
     /**
-     * Borrows a connection to {@code node}. A refresh closes the pools of nodes that serve no slot: a primary that
-     * was replaced, or an empty node importing its first slot, the target of an {@code ASK}. If a refresh closed the
-     * pool between looking it up and borrowing from it, the borrow is retried on a new one. Jedis reports the closed
+     * Borrows a connection to {@code node}. A refresh closes the idle pools of nodes that serve no slot: a primary
+     * that was replaced, or an empty node importing its first slot, the target of an {@code ASK}. If a refresh closed
+     * the pool between looking it up and borrowing from it, the borrow is retried on a new one. Jedis reports the closed
      * pool as a plain {@link JedisException}, which callers would otherwise not take for an unreachable node.
      */
     private Jedis borrow(HostAndPort node) {
@@ -334,12 +335,14 @@ final class ClusterConnections implements Connections {
         topology = fresh;
         generation.incrementAndGet();
         Set<HostAndPort> live = new HashSet<>(owners);
-        for (HostAndPort node : new ArrayList<>(pools.keySet())) {
-            if (!live.contains(node)) {
-                JedisPool gone = pools.remove(node);
-                if (gone != null) {
-                    gone.close();
-                }
+        for (Map.Entry<HostAndPort, JedisPool> entry : pools.entrySet()) {
+            JedisPool pool = entry.getValue();
+            // A node that serves no slot can still be in use: an empty node importing its first slot is the target
+            // of every ASK for it. Its pool stays while connections are out, so they and the next ones share its
+            // limit, and goes at a later refresh once it is idle.
+            if (!live.contains(entry.getKey()) && pool.getNumActive() == 0) {
+                pools.remove(entry.getKey(), pool);
+                pool.close();
             }
         }
         return fresh;
