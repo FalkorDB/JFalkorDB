@@ -13,8 +13,10 @@ import com.falkordb.GraphContext;
 import com.falkordb.GraphContextGenerator;
 import com.falkordb.GraphPipeline;
 import com.falkordb.GraphTransaction;
+import com.falkordb.ResultSet;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +27,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
+import redis.clients.jedis.Response;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
 /**
@@ -120,6 +123,42 @@ class QueryTimeoutTest {
     }
 
     @Test
+    void aPipelineAndATransactionSendTheTimeout() throws Exception {
+        try (FakeRedisServer server = new FakeRedisServer(QueryTimeoutTest::answerTransactionsAndGraphQueries);
+                Driver driver = driver(server, Duration.ZERO);
+                GraphContext context = driver.graph("g").getContext()) {
+            GraphPipeline pipeline = context.pipelined();
+            List<Response<ResultSet>> pipelined = Arrays.asList(
+                    pipeline.query("CREATE ()", 1000L),
+                    pipeline.readOnlyQuery("RETURN 1", 1000L),
+                    pipeline.query("CREATE ()", PARAMS, 1000L),
+                    pipeline.readOnlyQuery("RETURN $x", PARAMS, 1000L));
+            pipeline.sync();
+
+            GraphTransaction transaction = context.multi();
+            List<Response<ResultSet>> transacted = Arrays.asList(
+                    transaction.query("CREATE ()", 1000L),
+                    transaction.readOnlyQuery("RETURN 1", 1000L),
+                    transaction.query("CREATE ()", PARAMS, 1000L),
+                    transaction.readOnlyQuery("RETURN $x", PARAMS, 1000L));
+            transaction.exec();
+
+            for (Response<ResultSet> reply : pipelined) {
+                assertEquals(1, reply.get().getStatistics().nodesCreated());
+            }
+            for (Response<ResultSet> reply : transacted) {
+                assertEquals(1, reply.get().getStatistics().nodesCreated());
+            }
+            long timed = server.received().stream()
+                    .filter(c -> FakeRedisServer.startsWith(c, "GRAPH.QUERY")
+                            || FakeRedisServer.startsWith(c, "GRAPH.RO_QUERY"))
+                    .filter(c -> c.containsAll(Arrays.asList("TIMEOUT", "1000")))
+                    .count();
+            assertEquals(8, timed);
+        }
+    }
+
+    @Test
     void aZeroTimeoutIsSent() throws Exception {
         // 0 sets no timeout of the query's own, so the server's default applies.
         try (FakeRedisServer server = new FakeRedisServer(QueryTimeoutTest::answerGraphQueries);
@@ -184,5 +223,27 @@ class QueryTimeoutTest {
             return WRITE_REPLY;
         }
         return FakeRedisServer.ok();
+    }
+
+    /** The replies a connection's open MULTI has queued; the fake serves each connection on its own thread. */
+    private static final ThreadLocal<List<String>> QUEUED = new ThreadLocal<>();
+
+    /** Like {@link #answerGraphQueries}, but queues commands between MULTI and EXEC as Redis does. */
+    private static String answerTransactionsAndGraphQueries(List<String> command) {
+        List<String> queued = QUEUED.get();
+        if (FakeRedisServer.startsWith(command, "MULTI")) {
+            QUEUED.set(new ArrayList<>());
+            return FakeRedisServer.ok();
+        }
+        if (queued != null && FakeRedisServer.startsWith(command, "EXEC")) {
+            QUEUED.remove();
+            return FakeRedisServer.array(queued.toArray(new String[0]));
+        }
+        String reply = answerGraphQueries(command);
+        if (queued != null) {
+            queued.add(reply);
+            return "+QUEUED\r\n";
+        }
+        return reply;
     }
 }
