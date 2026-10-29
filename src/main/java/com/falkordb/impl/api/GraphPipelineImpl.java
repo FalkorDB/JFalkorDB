@@ -276,8 +276,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      */
     @Override
     public Response<String> deleteGraph() {
-        Builder<String> builder = replies.delete();
-        return replies.deleteQueued(appendWithResponse(GraphCommand.DELETE, Arrays.asList(graphId), builder), builder);
+        return replies.deleteQueued(appendWithResponse(GraphCommand.DELETE, Arrays.asList(graphId), replies.delete()));
     }
 
     /**

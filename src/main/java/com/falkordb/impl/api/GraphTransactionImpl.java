@@ -286,10 +286,9 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     public Response<String> deleteGraph() {
         // GRAPH.DELETE replies with a bulk string, which Jedis hands to the builder as a byte[] — casting it to
         // String throws, so the builder decodes it, as the pipeline's does.
-        Builder<String> builder = replies.delete();
-        Response<String> reply = appendWithResponse(GraphCommand.DELETE, Arrays.asList(graphId), builder);
+        Response<String> reply = appendWithResponse(GraphCommand.DELETE, Arrays.asList(graphId), replies.delete());
         // after exec() or discard() Jedis runs a command at once instead of queuing it
-        return queuing ? replies.deleteQueued(reply, builder) : reply;
+        return queuing ? replies.deleteQueued(reply) : reply;
     }
 
     /**

@@ -48,51 +48,54 @@ final class QueuedReplies {
 
     /** The replies queued between two deletes, which share the cache they are decoded with. */
     private final class Segment {
-        /** The segment after the delete that ended this one; null while this is the current segment. */
-        @Nullable
-        Segment next;
         /** The copy taken when the delete that ends the segment was queued; null for the current segment. */
         @Nullable
         GraphCache frozen;
-        /** Set when the delete that ended the segment didn't run: the graph is still the one {@link #next} has. */
-        boolean reopened;
+        /**
+         * Set when the delete that ended the segment didn't run: the segment queued after it, whose graph is still the
+         * one this segment's replies came from. Only such a segment links to a later one, so a reply held from an
+         * early batch doesn't hold every later segment's copy.
+         */
+        @Nullable
+        Segment reopenedInto;
 
         GraphCache cache() {
             Segment segment = this;
-            while (segment.reopened && segment.next != null) {
-                segment = segment.next;
+            for (Segment next = segment.reopenedInto; next != null; next = segment.reopenedInto) {
+                segment = next;
             }
             GraphCache copy = segment.frozen;
             return copy != null ? copy : cache;
         }
     }
 
-    /** A queued {@code GRAPH.DELETE}: its reply, and the segment it ends. */
+    /** A queued {@code GRAPH.DELETE}: its reply, the segment it ends, and the segment queued after it. */
     private static final class QueuedDelete {
         final Response<String> reply;
         final Segment ended;
+        final Segment next;
 
-        QueuedDelete(Response<String> reply, Segment ended) {
+        QueuedDelete(Response<String> reply, Segment ended, Segment next) {
             this.reply = reply;
             this.ended = ended;
+            this.next = next;
+        }
+
+        /** The delete didn't run: the replies of the segment it ended come from the graph the next segment has. */
+        void didNotRun() {
+            ended.reopenedInto = next;
+            if (next.frozen == EMPTY) {
+                // The next segment got an empty copy because this delete was due to run before it.
+                next.frozen = ended.frozen;
+            }
         }
     }
 
     /** Builds a delete's reply: the delete ran, so it clears the live cache. */
     private final class DeleteBuilder extends Builder<String> {
-        /** Null for a delete that ran at once rather than being queued, as after {@code exec()}. */
-        @Nullable
-        Segment ended;
-
         @Override
         public String build(Object reply) {
             String statistics = BuilderFactory.STRING.build(reply);
-            Segment segment = ended;
-            if (segment != null) {
-                // Only a segment re-opened by a delete that didn't run follows the link, and this delete ran.
-                // Dropping it keeps a reply held from an early batch from holding every later segment's copy.
-                segment.next = null;
-            }
             cache.clear();
             return statistics;
         }
@@ -141,17 +144,14 @@ final class QueuedReplies {
     /**
      * Records a queued delete, which ends the current segment and freezes it. Not for a delete that ran at once.
      *
-     * @param reply   the response of a command queued with a {@link #delete()} builder
-     * @param builder that builder
+     * @param reply the response of a command queued with a {@link #delete()} builder
      * @return the response
      */
-    Response<String> deleteQueued(Response<String> reply, Builder<String> builder) {
+    Response<String> deleteQueued(Response<String> reply) {
         Segment ended = current;
         ended.frozen = deletes.isEmpty() ? cache.snapshot() : EMPTY;
         current = new Segment();
-        ended.next = current;
-        ((DeleteBuilder) builder).ended = ended;
-        deletes.add(new QueuedDelete(reply, ended));
+        deletes.add(new QueuedDelete(reply, ended, current));
         return reply;
     }
 
@@ -166,7 +166,7 @@ final class QueuedReplies {
             try {
                 delete.reply.get();
             } catch (JedisDataException failed) {
-                didNotRun(delete.ended);
+                delete.didNotRun();
             }
         }
         deletes.clear();
@@ -175,7 +175,7 @@ final class QueuedReplies {
     /** Called after a transaction was discarded or aborted: none of its deletes ran. */
     void discarded() {
         for (QueuedDelete delete : deletes) {
-            didNotRun(delete.ended);
+            delete.didNotRun();
         }
         deletes.clear();
     }
@@ -189,15 +189,5 @@ final class QueuedReplies {
             cache.clear();
         }
         deletes.clear();
-    }
-
-    /** The delete that ended {@code segment} didn't run: its replies come from the graph the next segment has. */
-    private static void didNotRun(Segment segment) {
-        segment.reopened = true;
-        Segment next = segment.next;
-        if (next != null && next.frozen == EMPTY) {
-            // The next segment got an empty copy because this delete was due to run before it.
-            next.frozen = segment.frozen;
-        }
     }
 }
