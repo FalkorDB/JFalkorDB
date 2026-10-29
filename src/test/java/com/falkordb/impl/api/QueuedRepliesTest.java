@@ -35,6 +35,8 @@ import java.util.function.Function;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import redis.clients.jedis.CommandArguments;
+import redis.clients.jedis.Connection;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -301,6 +303,32 @@ class QueuedRepliesTest {
             assertEquals("Wolf", label(after), "looked up through the graph the transaction was given");
         }
         assertEquals(0, lookups(server));
+    }
+
+    @Test
+    void aPipelineClearsTheCacheWhenSendingItsDeleteFails() {
+        // Jedis writes a command before it records its response, so a delete whose send failed may still have
+        // reached the server and run.
+        warmCache("Person");
+        try (Connection connection = new DeleteFailsToSend(server.port())) {
+            GraphPipelineImpl pipeline = new GraphPipelineImpl(connection, new LabelSource("Person"), cache, "g");
+
+            assertThrows(JedisConnectionException.class, pipeline::deleteGraph);
+        }
+        assertEquals(1, cache.clears, "the delete may have run");
+    }
+
+    @Test
+    void aTransactionClearsTheCacheWhenSendingItsDeleteFails() {
+        warmCache("Person");
+        try (Connection connection = new DeleteFailsToSend(server.port())) {
+            GraphTransactionImpl transaction =
+                    new GraphTransactionImpl(connection, new LabelSource("Person"), cache, "g");
+            transaction.multi();
+
+            assertThrows(JedisConnectionException.class, transaction::deleteGraph);
+        }
+        assertEquals(1, cache.clears, "the delete may have run");
     }
 
     // --- when deleteGraph clears the cache --------------------------------------------------------
@@ -873,6 +901,21 @@ class QueuedRepliesTest {
                 return scripted != null ? scripted : deleteReply;
             }
             return FakeRedisServer.ok();
+        }
+    }
+
+    /** A connection whose sending of {@code GRAPH.DELETE} fails, as a write to a broken socket does. */
+    private static final class DeleteFailsToSend extends Connection {
+        DeleteFailsToSend(int port) {
+            super("127.0.0.1", port);
+        }
+
+        @Override
+        public void sendCommand(CommandArguments args) {
+            if (args.getCommand() == GraphCommand.DELETE) {
+                throw new JedisConnectionException("Broken pipe (Write failed)");
+            }
+            super.sendCommand(args);
         }
     }
 

@@ -142,6 +142,14 @@ final class QueuedReplies {
     }
 
     /**
+     * Called when sending a {@code GRAPH.DELETE} failed. Jedis writes a command before it records its response, so the
+     * delete may have reached the server and run although it was never recorded: the live cache is cleared.
+     */
+    void deleteSendFailed() {
+        cache.clear();
+    }
+
+    /**
      * Records a queued delete, which ends the current segment and freezes it. Not for a delete that ran at once.
      *
      * @param reply the response of a command queued with a {@link #delete()} builder
