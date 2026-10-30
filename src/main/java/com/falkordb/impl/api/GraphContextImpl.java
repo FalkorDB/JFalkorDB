@@ -1,6 +1,7 @@
 package com.falkordb.impl.api;
 
 import com.falkordb.GraphContext;
+import com.falkordb.GraphContextGenerator;
 import com.falkordb.GraphPipeline;
 import com.falkordb.GraphTransaction;
 import com.falkordb.ResultSet;
@@ -10,7 +11,12 @@ import com.falkordb.impl.graph_cache.GraphCache;
 import com.falkordb.impl.resultset.ResultSetImpl;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.util.SafeEncoder;
@@ -24,6 +30,15 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     private final Jedis connection;
     private final String graphId;
     private GraphCache cache;
+    /** The graph that created this context, which borrows a connection per query; null if built directly. */
+    private final @Nullable GraphContextGenerator poolGraph;
+    /**
+     * The pipelines and transactions created on this context's connection. Held weakly, so the ones a caller
+     * drops don't accumulate.
+     */
+    private final Set<QueuedReplies> connectionUsers = Collections.newSetFromMap(new WeakHashMap<>());
+
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     /**
      * Generates a new instance with a specific Jedis connection
@@ -32,9 +47,60 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      * @param graphId graph id
      */
     public GraphContextImpl(Jedis connection, GraphCache cache, String graphId) {
+        this(connection, null, cache, graphId);
+    }
+
+    /**
+     * A context created by a graph that borrows a connection per query. Pipelines and transactions on this
+     * context fall back on that graph to decode their replies (see {@link #decodeQueued}).
+     */
+    GraphContextImpl(Jedis connection, @Nullable GraphContextGenerator poolGraph, GraphCache cache, String graphId) {
         this.connection = connection;
         this.graphId = graphId;
         this.cache = cache;
+        this.poolGraph = poolGraph;
+    }
+
+    /**
+     * Decodes a reply that a pipeline or transaction on this context read. Decoding may look up a label,
+     * property-key or relationship-type id the cache doesn't hold.
+     *
+     * <p>While this context is open and no pipeline or transaction on it awaits a reply, the lookup runs on
+     * this context's connection, which costs no extra connection. Otherwise a reply that needs a lookup is
+     * decoded with a context of its own, borrowed from the graph that created this one; one that needs none
+     * borrows nothing, so a context holding its pool's only connection can still read it. After {@link #close()} this
+     * context's connection may already be lent to another thread, and while replies are outstanding a lookup
+     * on it would read one of them instead of its own. That connection is borrowed before decoding starts,
+     * because decoding can refresh the cache under its lock, and a thread must not wait for the pool while it
+     * holds that lock: the threads that hold the pool's connections may be waiting for the lock.
+     *
+     * <p>Before {@link #close()}, replies are expected to be read on the thread that uses this context, like
+     * every other call on it.
+     */
+    ResultSet decodeQueued(List<Object> reply, GraphCache replyCache) {
+        GraphContextGenerator pool = poolGraph;
+        if (pool == null || !(closed.get() || connectionAwaitsReplies())) {
+            return new ResultSetImpl(reply, this, replyCache);
+        }
+        try {
+            // Most replies need no lookup, so try without one first: then only a reply that does borrows a
+            // connection. A context holding its pool's only connection can't borrow another.
+            return new ResultSetImpl(reply, NoLookups.GRAPH, replyCache);
+        } catch (NoLookups.Needed lookupNeeded) {
+            try (GraphContext own = pool.getContext()) {
+                return new ResultSetImpl(reply, own, replyCache);
+            }
+        }
+    }
+
+    /** Whether a pipeline or transaction opened on this context still awaits replies on the context's connection. */
+    private boolean connectionAwaitsReplies() {
+        for (QueuedReplies user : connectionUsers) {
+            if (user.awaitsReplies()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -151,8 +217,9 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     @Override
     public GraphTransaction multi() {
         GraphTransactionImpl transaction =
-                new GraphTransactionImpl(connection.getConnection(), this, this.cache, this.graphId);
+                new GraphTransactionImpl(connection.getConnection(), this::decodeQueued, this.cache, this.graphId);
         transaction.multi();
+        connectionUsers.add(transaction.replies());
         return transaction;
     }
 
@@ -162,7 +229,10 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public GraphPipeline pipelined() {
-        return new GraphPipelineImpl(connection.getConnection(), this, this.cache, this.graphId);
+        GraphPipelineImpl pipeline =
+                new GraphPipelineImpl(connection.getConnection(), this::decodeQueued, this.cache, this.graphId);
+        connectionUsers.add(pipeline.replies());
+        return pipeline;
     }
 
     /**
@@ -254,7 +324,10 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public void close() {
-        this.connection.close();
+        // Once only: a second close() would hand the connection to the pool again.
+        if (closed.compareAndSet(false, true)) {
+            this.connection.close();
+        }
     }
 
     @Override

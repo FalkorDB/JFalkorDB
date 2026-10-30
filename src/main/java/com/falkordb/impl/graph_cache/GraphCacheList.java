@@ -80,6 +80,11 @@ class GraphCacheList {
         data.addAll(newData);
     }
 
+    /** A copy of the entries cached now. */
+    List<String> snapshot() {
+        return new ArrayList<>(data);
+    }
+
     public void clear() {
         // Serialize with an in-flight refresh (both guard `data` via refreshLock) so a clear can't
         // interleave with getProcedureInfo()'s append and leave a half-refreshed cache.

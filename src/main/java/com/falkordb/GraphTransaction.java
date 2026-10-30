@@ -11,6 +11,20 @@ import redis.clients.jedis.commands.RedisModulePipelineCommands;
 
 /**
  * An interface which aligned to Jedis transactional interface
+ *
+ * <p>{@link #exec()} decodes every graph reply before it returns. {@link #deleteGraph()} clears the client's
+ * schema cache when {@code exec()} has run the delete: not when it is queued, and not at all if the
+ * transaction is discarded or aborted. Once the delete has run, a reply queued before it can't look an id up
+ * any more: the graph that sent the reply is gone, and a lookup would find whatever graph has the name by then.
+ * So the reply is decoded with what the cache held when the delete was queued, and an id the cache lacked is
+ * reported as a {@link com.falkordb.exceptions.GraphException}. A reply queued between two deletes comes from a
+ * graph that exists only in between, which the client has never read, so it can't be decoded if it names any
+ * label, property key or relationship type. {@code exec()} decodes the replies before it
+ * learns whether the delete succeeded, so it does the same for a delete that fails.
+ *
+ * <p>A {@link com.falkordb.exceptions.GraphException} while decoding a reply becomes that reply's element of
+ * the list {@code exec()} returns, like an error reply. Jedis does not keep it, so reading the same
+ * {@code Response} afterwards returns {@code null}.
  */
 public interface GraphTransaction
         extends PipelineCommands, PipelineBinaryCommands, RedisModulePipelineCommands, Closeable {
@@ -138,7 +152,8 @@ public interface GraphTransaction
     // Response<String> copyGraph(String destinationGraphId);
 
     /**
-     * Deletes the entire graph
+     * Deletes the entire graph. The client's schema cache is cleared when {@link #exec()} has run the delete;
+     * see the class documentation.
      * @return a response which builds the delete running time statistics
      */
     Response<String> deleteGraph();

@@ -1,8 +1,11 @@
 package com.falkordb;
 
+import com.falkordb.exceptions.GraphException;
 import com.falkordb.graph_entities.Node;
 import com.falkordb.graph_entities.Property;
 import com.falkordb.impl.resultset.ResultSetImpl;
+import java.io.IOException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -12,6 +15,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Response;
 
 public class TransactionIT {
@@ -115,6 +120,86 @@ public class TransactionIT {
             Assertions.assertFalse(iterator.hasNext());
             Assertions.assertEquals(Arrays.asList("label"), record.keys());
             Assertions.assertEquals("Person", record.getValue("label"));
+        }
+    }
+
+    @Test
+    public void testQueryFollowedByDeleteGraphInSameTransaction() {
+        api.query("CREATE (:Person {name:'a'})");
+        api.query("MATCH (n:Person) RETURN n"); // caches the label and the property key
+        try (GraphContext c = api.getContext()) {
+            GraphTransaction transaction = c.multi();
+            transaction.query("MATCH (n:Person) RETURN n");
+            transaction.deleteGraph();
+            List<Object> results = transaction.exec();
+
+            Node node = (Node) ((ResultSet) results.get(0)).iterator().next().getValue(0);
+            Assertions.assertEquals("Person", node.getLabel(0));
+            Assertions.assertEquals("a", node.getProperty("name").getValue());
+            // the delete ran: its statistics came back, and the graph is gone
+            Assertions.assertTrue(results.get(1) instanceof String, String.valueOf(results.get(1)));
+            Assertions.assertThrows(GraphException.class, () -> api.readOnlyQuery("MATCH (n) RETURN count(n)"));
+        }
+        api.query("CREATE (:Person)"); // for deleteGraph() in tearDown
+    }
+
+    @Test
+    public void testDiscardDeleteGraphDoesNotClearCache() {
+        api.query("CREATE (:Person {name:'a'})");
+        GraphContextGenerator graph = TestServer.graph("social"); // its own cache
+        try {
+            graph.query("MATCH (n:Person) RETURN n"); // caches the label and the property key
+            try (GraphContext c = graph.getContext()) {
+                GraphTransaction transaction = c.multi();
+                transaction.deleteGraph();
+                Assertions.assertEquals("OK", transaction.discard());
+
+                GraphPipeline pipeline = c.pipelined();
+                Response<ResultSet> reply = pipeline.query("MATCH (n:Person) RETURN n");
+                pipeline.sync();
+                // The reply is decoded when it is read, after another handle deleted the graph: nothing is left to
+                // look its names up in, so it decodes only if the cache still holds them.
+                api.deleteGraph();
+                Node node = (Node) reply.get().iterator().next().getValue(0);
+                Assertions.assertEquals("Person", node.getLabel(0));
+                Assertions.assertEquals("a", node.getProperty("name").getValue());
+            }
+        } finally {
+            graph.close();
+        }
+        api.query("CREATE (:Person)"); // for deleteGraph() in tearDown
+    }
+
+    @Test
+    public void testResponseGetAfterContextClosedInTransaction() throws IOException {
+        // exec() decodes every reply, so reading one after its context is closed sends nothing. By then the
+        // context's connection is back in the pool; lent out again and put in pipeline mode, it makes Jedis
+        // refuse any stray command sent on it.
+        try (Driver driver = FalkorDB.builder()
+                .host(TestServer.host())
+                .port(TestServer.port())
+                .poolMaxTotal(1)
+                .poolMaxIdle(1)
+                .poolMaxWait(Duration.ofMillis(100))
+                .build()) {
+            GraphContextGenerator graph = driver.graph("social"); // its own, empty cache
+            Response<ResultSet> reply;
+            try (GraphContext c = graph.getContext()) {
+                // The context holds the pool's only connection, so exec() looks the label and the property key
+                // up on that connection.
+                GraphTransaction transaction = c.multi();
+                reply = transaction.query("CREATE (n:TxLabel {k:'v'}) RETURN n");
+                transaction.exec();
+            }
+            try (Jedis lentOut = driver.getConnection()) { // the pool's only connection
+                Pipeline busy = lentOut.pipelined();
+                busy.get("transaction-it-busy");
+
+                Node node = (Node) reply.get().iterator().next().getValue(0);
+                Assertions.assertEquals("TxLabel", node.getLabel(0));
+                Assertions.assertEquals("v", node.getProperty("k").getValue());
+                busy.sync();
+            }
         }
     }
 

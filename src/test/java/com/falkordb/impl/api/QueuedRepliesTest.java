@@ -1,0 +1,1032 @@
+package com.falkordb.impl.api;
+
+import static com.falkordb.impl.api.FakeRedisServer.array;
+import static com.falkordb.impl.api.FakeRedisServer.bulk;
+import static com.falkordb.impl.api.FakeRedisServer.integer;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.falkordb.GraphContext;
+import com.falkordb.GraphPipeline;
+import com.falkordb.GraphTransaction;
+import com.falkordb.ResultSet;
+import com.falkordb.exceptions.GraphException;
+import com.falkordb.graph_entities.Node;
+import com.falkordb.impl.graph_cache.GraphCache;
+import com.falkordb.impl.resultset.ResultSetImpl;
+import java.io.IOException;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import redis.clients.jedis.CommandArguments;
+import redis.clients.jedis.Connection;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.Response;
+import redis.clients.jedis.exceptions.JedisConnectionException;
+import redis.clients.jedis.exceptions.JedisDataException;
+import redis.clients.jedis.util.SafeEncoder;
+
+/**
+ * How pipelines and transactions on a context decode their replies: which connection looks up a label the
+ * cache lacks, and which cache a reply queued before {@code deleteGraph()} is decoded with.
+ */
+class QueuedRepliesTest {
+
+    private static final String QUERY = "MATCH (n) RETURN n";
+    private static final Map<String, Object> PARAMS = Collections.singletonMap("x", 1);
+    /** {@link #QUERY} with {@link #PARAMS}, as the client sends it. */
+    private static final String PREPARED = "CYPHER `x`=1 MATCH (n) RETURN n";
+
+    private static final long TIMEOUT = 1000L;
+    /** The first line of the plan the fake server answers a profile with. */
+    private static final String PLAN_ROOT = "Results | Records produced: 1";
+
+    /** The commands {@link #queueEveryQuery} sends, in order. */
+    private static final List<List<String>> EVERY_QUERY_SENT = Arrays.asList(
+            Arrays.asList("GRAPH.QUERY", "g", QUERY, "--COMPACT"),
+            Arrays.asList("GRAPH.RO_QUERY", "g", QUERY, "--COMPACT"),
+            Arrays.asList("GRAPH.QUERY", "g", QUERY, "--COMPACT", "TIMEOUT", "1000"),
+            Arrays.asList("GRAPH.RO_QUERY", "g", QUERY, "--COMPACT", "TIMEOUT", "1000"),
+            Arrays.asList("GRAPH.QUERY", "g", PREPARED, "--COMPACT"),
+            Arrays.asList("GRAPH.RO_QUERY", "g", PREPARED, "--COMPACT"),
+            Arrays.asList("GRAPH.QUERY", "g", PREPARED, "--COMPACT", "TIMEOUT", "1000"),
+            Arrays.asList("GRAPH.RO_QUERY", "g", PREPARED, "--COMPACT", "TIMEOUT", "1000"));
+
+    private Server handler;
+    /** Serves the context's own connection. */
+    private FakeRedisServer server;
+    /** Serves the pool of the graph that created the context, which has a single connection. */
+    private FakeRedisServer poolServer;
+
+    private JedisPool pool;
+    private JedisPool graphPool;
+    private DriverImpl driver;
+    private CountingCache cache;
+    private GraphContextImpl context;
+
+    @BeforeEach
+    void setUp() {
+        handler = new Server();
+        server = new FakeRedisServer(handler);
+        poolServer = new FakeRedisServer(handler);
+        pool = new JedisPool("127.0.0.1", server.port());
+        JedisPoolConfig oneConnection = new JedisPoolConfig();
+        oneConnection.setMaxTotal(1);
+        oneConnection.setMaxWait(Duration.ofSeconds(30));
+        graphPool = new JedisPool(oneConnection, "127.0.0.1", poolServer.port());
+        driver = new DriverImpl(graphPool);
+        cache = new CountingCache();
+        context = new GraphContextImpl(pool.getResource(), driver.graph("g"), cache, "g");
+    }
+
+    @AfterEach
+    void tearDown() {
+        context.close();
+        pool.close();
+        driver.close();
+        server.close();
+        poolServer.close();
+    }
+
+    // --- which connection looks labels up ---------------------------------------------------------
+
+    @Test
+    void whileTheContextIsOpenAndIdleALookupUsesItsConnection() {
+        GraphPipeline pipeline = context.pipelined();
+        Response<ResultSet> reply = pipeline.query("MATCH (n) RETURN n");
+        pipeline.sync();
+
+        assertEquals("Person", label(reply));
+        assertEquals(1, server.count("GRAPH.RO_QUERY"), "looked up on the context's connection");
+        assertEquals(0, poolServer.received().size(), "borrowed no other connection");
+    }
+
+    @Test
+    void afterTheContextIsClosedALookupBorrowsFromThePool() {
+        GraphPipeline pipeline = context.pipelined();
+        Response<ResultSet> reply = pipeline.query("MATCH (n) RETURN n");
+        pipeline.sync();
+        context.close();
+
+        // The closed context's connection is back in its pool and may be lent to another thread.
+        assertEquals("Person", label(reply));
+        assertEquals(1, poolServer.count("GRAPH.RO_QUERY"));
+        assertEquals(0, server.count("GRAPH.RO_QUERY"));
+    }
+
+    @Test
+    void whileAnotherCommandAwaitsItsReplyALookupBorrowsFromThePool() {
+        // A lookup on the connection would read the reply of a command that is still outstanding.
+        GraphPipeline pipeline = context.pipelined();
+
+        Response<ResultSet> first = pipeline.query("MATCH (n) RETURN n");
+        pipeline.sync();
+        pipeline.set("k", "v");
+        assertEquals("Person", label(first));
+        assertEquals(1, poolServer.count("GRAPH.RO_QUERY"), "the same pipeline has a command queued");
+        pipeline.sync();
+
+        cache.clear();
+        Response<ResultSet> second = pipeline.query("MATCH (n) RETURN n");
+        pipeline.sync();
+        GraphPipeline other = context.pipelined();
+        other.set("k", "v");
+        assertEquals("Person", label(second));
+        assertEquals(2, poolServer.count("GRAPH.RO_QUERY"), "another pipeline on the connection has a command queued");
+        other.sync();
+
+        cache.clear();
+        Response<ResultSet> third = pipeline.query("MATCH (n) RETURN n");
+        pipeline.sync();
+        GraphTransaction transaction = context.multi();
+        transaction.set("k", "v");
+        assertEquals("Person", label(third));
+        assertEquals(3, poolServer.count("GRAPH.RO_QUERY"), "a transaction on the connection is inside MULTI");
+        transaction.discard();
+
+        assertEquals(0, server.count("GRAPH.RO_QUERY"), "nothing was looked up on the busy connection");
+    }
+
+    @Test
+    void aTransactionLooksUpThroughItsContextWhileExecDecodes() {
+        GraphTransaction transaction = context.multi();
+        Response<ResultSet> reply = transaction.query("MATCH (n) RETURN n");
+        transaction.exec();
+
+        assertEquals("Person", label(reply));
+        assertEquals(1, server.count("GRAPH.RO_QUERY"));
+        assertEquals(0, poolServer.received().size());
+    }
+
+    @Test
+    void aPipelineLooksUpThroughItsContextWhileSyncAndReturnAllDecodes() {
+        // syncAndReturnAll() reads every reply before it decodes the first. Jedis still holds the responses of
+        // the later commands while it does, but none of their replies is outstanding on the connection.
+        GraphPipeline pipeline = context.pipelined();
+        pipeline.query("MATCH (n) RETURN n");
+        pipeline.query("RETURN 1");
+        List<Object> results = pipeline.syncAndReturnAll();
+
+        assertEquals(
+                "Person", ((Node) ((ResultSet) results.get(0)).iterator().next().getValue(0)).getLabel(0));
+        assertEquals(1, server.count("GRAPH.RO_QUERY"), "looked up on the context's connection");
+        assertEquals(0, poolServer.received().size(), "borrowed no other connection");
+    }
+
+    @Test
+    void aDecodeWaitingForThePoolHoldsNoCacheLock() throws Exception {
+        // Decoding refreshes the cache under its lock. A decode that waited for the pool while holding that
+        // lock would block every thread that holds a pooled connection and needs the lock: a deadlock.
+        GraphPipeline pipeline = context.pipelined();
+        Response<ResultSet> reply = pipeline.query("MATCH (n) RETURN n");
+        pipeline.sync();
+        context.close();
+
+        ExecutorService decoding = Executors.newSingleThreadExecutor();
+        try {
+            Future<String> decoded;
+            try (Jedis held = graphPool.getResource()) { // the graph's only connection
+                decoded = decoding.submit(() -> label(reply));
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+                while (graphPool.getNumWaiters() == 0) {
+                    assertTrue(System.nanoTime() < deadline, "the decode never waited for the pool");
+                    Thread.sleep(5);
+                }
+                // The decode is waiting for a connection, and the lock of the label list is free.
+                assertEquals(
+                        "Person",
+                        assertTimeoutPreemptively(
+                                Duration.ofSeconds(5),
+                                () -> cache.getLabel(0, new LabelSource("Person")),
+                                "the cache's lock is held by the decode waiting for the pool"));
+            }
+            assertEquals("Person", decoded.get(10, TimeUnit.SECONDS));
+        } finally {
+            decoding.shutdownNow();
+        }
+    }
+
+    @Test
+    void aReplyThatNeedsNoLookupBorrowsNothing() {
+        // The context holds its pool's only connection and a command is still queued on it, so no other
+        // connection can be had. A scalar, or an entity whose label the cache knows, must still decode.
+        JedisPoolConfig oneConnection = new JedisPoolConfig();
+        oneConnection.setMaxTotal(1);
+        oneConnection.setMaxWait(Duration.ofSeconds(2));
+        try (JedisPool single = new JedisPool(oneConnection, "127.0.0.1", server.port());
+                DriverImpl singleDriver = new DriverImpl(single)) {
+            try (GraphContext own = singleDriver.graph("g").getContext()) {
+                own.query("MATCH (n) RETURN n"); // learns the label, on the context's connection
+                GraphPipeline pipeline = own.pipelined();
+                Response<ResultSet> scalar = pipeline.query("RETURN 1");
+                Response<ResultSet> node = pipeline.query("MATCH (n) RETURN n");
+                pipeline.sync();
+                pipeline.set("k", "v");
+
+                Long one = scalar.get().iterator().next().getValue(0);
+                assertEquals(1L, one.longValue());
+                assertEquals("Person", label(node));
+                pipeline.sync();
+            }
+        }
+    }
+
+    @Test
+    void aFinishedTransactionNoLongerKeepsLookupsOffItsContextsConnection() throws IOException {
+        // Once exec() or discard() has ended it, a transaction has no reply outstanding on the connection.
+        GraphTransaction executed = context.multi();
+        executed.set("k", "v");
+        executed.exec();
+        GraphTransaction discarded = context.multi();
+        discarded.set("k", "v");
+        discarded.discard();
+
+        GraphPipeline pipeline = context.pipelined();
+        Response<ResultSet> reply = pipeline.query(QUERY);
+        pipeline.sync();
+
+        assertEquals("Person", label(reply));
+        assertEquals(1, lookups(server), "looked up on the context's connection");
+        assertEquals(0, poolServer.received().size(), "borrowed no other connection");
+        executed.close();
+        discarded.close();
+    }
+
+    @Test
+    void aContextBuiltWithoutAGraphLooksLabelsUpOnItsOwnConnection() {
+        // The public constructor gives the context no graph to borrow another connection from.
+        try (GraphContextImpl plain = new GraphContextImpl(pool.getResource(), cache, "g")) {
+            GraphPipeline pipeline = plain.pipelined();
+            Response<ResultSet> reply = pipeline.query(QUERY);
+            pipeline.sync();
+
+            assertEquals("Person", label(reply));
+        }
+        assertEquals(1, lookups(server));
+        assertEquals(0, poolServer.received().size());
+    }
+
+    @Test
+    void aPipelineBuiltWithAGraphLooksLabelsUpThroughThatGraph() {
+        warmCache("Person");
+        try (Jedis own = pool.getResource()) {
+            GraphPipelineImpl pipeline =
+                    new GraphPipelineImpl(own.getConnection(), new LabelSource("Wolf"), cache, "g");
+            Response<ResultSet> before = pipeline.query(QUERY);
+            pipeline.deleteGraph();
+            Response<ResultSet> after = pipeline.query(QUERY);
+            pipeline.sync();
+
+            assertEquals("Person", label(before), "decoded with the copy taken when the delete was queued");
+            assertEquals("Wolf", label(after), "looked up through the graph the pipeline was given");
+        }
+        assertEquals(0, lookups(server));
+    }
+
+    @Test
+    void aTransactionBuiltWithAGraphLooksLabelsUpThroughThatGraph() {
+        warmCache("Person");
+        try (Jedis own = pool.getResource()) {
+            GraphTransactionImpl transaction =
+                    new GraphTransactionImpl(own.getConnection(), new LabelSource("Wolf"), cache, "g");
+            transaction.multi();
+            Response<ResultSet> before = transaction.query(QUERY);
+            transaction.deleteGraph();
+            Response<ResultSet> after = transaction.query(QUERY);
+            transaction.exec();
+
+            assertEquals("Person", label(before), "decoded with the copy taken when the delete was queued");
+            assertEquals("Wolf", label(after), "looked up through the graph the transaction was given");
+        }
+        assertEquals(0, lookups(server));
+    }
+
+    @Test
+    void aPipelineClearsTheCacheWhenSendingItsDeleteFails() {
+        // Jedis writes a command before it records its response, so a delete whose send failed may still have
+        // reached the server and run.
+        warmCache("Person");
+        try (Connection connection = new DeleteFailsToSend(server.port())) {
+            GraphPipelineImpl pipeline = new GraphPipelineImpl(connection, new LabelSource("Person"), cache, "g");
+
+            assertThrows(JedisConnectionException.class, pipeline::deleteGraph);
+        }
+        assertEquals(1, cache.clears, "the delete may have run");
+    }
+
+    @Test
+    void aTransactionClearsTheCacheWhenSendingItsDeleteFails() {
+        warmCache("Person");
+        try (Connection connection = new DeleteFailsToSend(server.port())) {
+            GraphTransactionImpl transaction =
+                    new GraphTransactionImpl(connection, new LabelSource("Person"), cache, "g");
+            transaction.multi();
+
+            assertThrows(JedisConnectionException.class, transaction::deleteGraph);
+        }
+        assertEquals(1, cache.clears, "the delete may have run");
+    }
+
+    @Test
+    void aReplyReadBeforeADeleteWhoseSendFailedIsDecodedWithTheCopyTakenBeforeIt() {
+        // The delete may have reached the server and run, and the graph been recreated, before this reply is built.
+        warmCache("Person");
+        try (Connection connection = new DeleteFailsToSend(server.port())) {
+            GraphPipelineImpl pipeline = new GraphPipelineImpl(connection, new LabelSource("Animal"), cache, "g");
+            Response<ResultSet> before = pipeline.query(QUERY);
+            pipeline.sync(); // read, but not built
+
+            assertThrows(JedisConnectionException.class, pipeline::deleteGraph);
+
+            assertEquals("Person", label(before), "decoded with the copy taken before the delete was sent");
+        }
+        assertEquals(1, cache.clears, "the delete may have run");
+    }
+
+    // --- when deleteGraph clears the cache --------------------------------------------------------
+
+    @Test
+    void aPipelineClearsTheCacheWhenTheDeleteRunsNotWhenItIsQueued() {
+        GraphPipeline pipeline = context.pipelined();
+        pipeline.deleteGraph();
+        assertEquals(0, cache.clears, "queued, not run");
+
+        pipeline.sync();
+        assertEquals(1, cache.clears, "ran, although its reply was never read");
+    }
+
+    @Test
+    void closingAPipelineRunsItsDelete() throws IOException {
+        GraphPipeline pipeline = context.pipelined();
+        pipeline.deleteGraph();
+        pipeline.close();
+
+        assertEquals(1, cache.clears);
+    }
+
+    @Test
+    void aTransactionClearsTheCacheOnlyWhenExecRunsTheDelete() {
+        GraphTransaction discarded = context.multi();
+        discarded.deleteGraph();
+        discarded.discard();
+        assertEquals(0, cache.clears, "a discarded delete never ran");
+
+        handler.abortExec = true;
+        GraphTransaction aborted = context.multi();
+        aborted.deleteGraph();
+        assertNull(aborted.exec(), "a watched key changed");
+        assertEquals(0, cache.clears, "an aborted delete never ran");
+        handler.abortExec = false;
+
+        handler.deleteReply = FakeRedisServer.error("ERR Invalid graph operation on empty key");
+        GraphTransaction failed = context.multi();
+        failed.deleteGraph();
+        failed.exec();
+        assertEquals(0, cache.clears, "a failed delete deleted nothing");
+
+        handler.deleteReply = bulk("Graph removed");
+        GraphTransaction executed = context.multi();
+        executed.deleteGraph();
+        executed.exec();
+        assertEquals(1, cache.clears);
+
+        // After exec() Jedis runs a command at once: the delete runs, and clears the cache, right away.
+        executed.deleteGraph();
+        assertEquals(2, cache.clears);
+    }
+
+    @Test
+    void aDeleteTheServerRejectsAfterTheTransactionEndedLeavesTheCacheAlone() throws IOException {
+        // After exec() or discard() Jedis runs a command at once, and keeps an error reply in the response
+        // instead of throwing it. The delete's builder never runs, and nothing clears the cache.
+        handler.deleteReply = FakeRedisServer.error("ERR Invalid graph operation on empty key");
+        GraphTransaction executed = context.multi();
+        executed.set("k", "v");
+        executed.exec();
+        GraphTransaction discarded = context.multi();
+        discarded.set("k", "v");
+        discarded.discard();
+
+        for (GraphTransaction ended : Arrays.asList(executed, discarded)) {
+            Response<String> rejected = ended.deleteGraph();
+            JedisDataException error = assertThrows(JedisDataException.class, rejected::get);
+            assertEquals("ERR Invalid graph operation on empty key", error.getMessage());
+        }
+        assertEquals(0, cache.clears, "a rejected delete deleted nothing");
+        executed.close();
+        discarded.close();
+    }
+
+    @Test
+    void aSyncThatFailsPartWayClearsTheCacheOnlyIfADeleteWasQueued() {
+        assertAFailedReadClearsTheCacheOnlyIfADeleteWasQueued(GraphPipeline::sync);
+    }
+
+    @Test
+    void aSyncAndReturnAllThatFailsPartWayClearsTheCacheOnlyIfADeleteWasQueued() {
+        assertAFailedReadClearsTheCacheOnlyIfADeleteWasQueued(GraphPipeline::syncAndReturnAll);
+    }
+
+    /** The connection breaks while {@code read} reads the replies, so whether a queued delete ran is unknown. */
+    private void assertAFailedReadClearsTheCacheOnlyIfADeleteWasQueued(Consumer<GraphPipeline> read) {
+        warmCache("Person");
+        handler.breakOn = "GRAPH.QUERY";
+        GraphPipeline noDelete = context.pipelined();
+        noDelete.query(QUERY);
+        assertThrows(JedisConnectionException.class, () -> read.accept(noDelete));
+        assertEquals(0, cache.clears, "nothing queued could have changed the graph");
+
+        handler.breakOn = "GRAPH.DELETE";
+        try (GraphContext fresh = new GraphContextImpl(pool.getResource(), driver.graph("g"), cache, "g")) {
+            GraphPipeline withDelete = fresh.pipelined();
+            withDelete.query(QUERY);
+            withDelete.deleteGraph();
+            assertThrows(JedisConnectionException.class, () -> read.accept(withDelete));
+        }
+        assertEquals(1, cache.clears, "the delete may have run before the connection broke");
+    }
+
+    // --- which cache decodes a reply queued before a delete ----------------------------------------
+
+    @Test
+    void aReplyQueuedBeforeADeleteIsDecodedWithTheCacheAsItWasWhenTheDeleteRan() {
+        warmCache("Person");
+        handler.labels = Collections.singletonList("Animal"); // the graph as the pipeline recreates it
+
+        GraphPipeline pipeline = context.pipelined();
+        Response<ResultSet> before = pipeline.query("MATCH (n) RETURN n");
+        pipeline.deleteGraph();
+        Response<ResultSet> after = pipeline.query("CREATE (n:Animal) RETURN n");
+        pipeline.sync();
+
+        assertEquals("Person", label(before), "decoded with the deleted graph's labels");
+        assertEquals("Animal", label(after), "decoded with the recreated graph's labels");
+    }
+
+    @Test
+    void aReplyFromAnEarlierBatchIsDecodedWithTheCacheOfTheGraphThatSentIt() {
+        warmCache("Person");
+        handler.labels = Collections.singletonList("Animal");
+
+        GraphPipeline pipeline = context.pipelined();
+        Response<ResultSet> earlier = pipeline.query("MATCH (n) RETURN n");
+        pipeline.sync();
+        pipeline.deleteGraph();
+        Response<ResultSet> later = pipeline.query("CREATE (n:Animal) RETURN n");
+        pipeline.sync();
+
+        assertEquals("Person", label(earlier));
+        assertEquals("Animal", label(later));
+    }
+
+    @Test
+    void aReplyBetweenTwoDeletesCanOnlyUseWhatWasCached() {
+        // The graph between the deletes existed only while the batch ran, and the client cached none of it.
+        warmCache("Person");
+        handler.labels = Collections.singletonList("Animal");
+
+        GraphPipeline pipeline = context.pipelined();
+        Response<ResultSet> before = pipeline.query("MATCH (n) RETURN n");
+        pipeline.deleteGraph();
+        Response<ResultSet> between = pipeline.query("CREATE (n:B) RETURN n");
+        pipeline.deleteGraph();
+        Response<ResultSet> after = pipeline.query("CREATE (n:Animal) RETURN n");
+        pipeline.sync();
+
+        assertEquals("Person", label(before));
+        GraphException e = assertThrows(GraphException.class, between::get);
+        assertTrue(e.getMessage().contains("label id 0"), e.getMessage());
+        assertEquals("Animal", label(after));
+    }
+
+    @Test
+    void aLabelTheCacheLackedIsReportedRatherThanLookedUpInAnotherGraph() {
+        // Nothing cached: the reply queued before the delete can't be decoded, and looking its id up would
+        // find the recreated graph's label instead.
+        handler.labels = Collections.singletonList("Animal");
+
+        GraphPipeline pipeline = context.pipelined();
+        pipeline.query("MATCH (n) RETURN n");
+        pipeline.deleteGraph();
+        pipeline.query("CREATE (n:B) RETURN n");
+        pipeline.deleteGraph();
+        pipeline.query("CREATE (n:Animal) RETURN n");
+        List<Object> results = pipeline.syncAndReturnAll();
+
+        assertTrue(results.get(0) instanceof GraphException, String.valueOf(results.get(0)));
+        assertTrue(((GraphException) results.get(0)).getMessage().contains("label id 0"));
+        assertTrue(results.get(2) instanceof GraphException, "the graph between the deletes existed only briefly");
+        assertEquals(
+                "Animal", ((Node) ((ResultSet) results.get(4)).iterator().next().getValue(0)).getLabel(0));
+        assertEquals(1, server.count("GRAPH.RO_QUERY"), "only the reply after the last delete looked up");
+    }
+
+    @Test
+    void aReplyReadWhileADeleteIsQueuedLooksNothingUp() throws InterruptedException {
+        // A reply from an earlier batch, read after deleteGraph() and a recreate were queued but before they are
+        // synced. Jedis may have flushed them to the server already, so the graph may be the new one by then.
+        handler.labelsAfterDelete = Collections.singletonList("Animal");
+        GraphPipeline pipeline = context.pipelined();
+        Response<ResultSet> earlier = pipeline.query("MATCH (n) RETURN n");
+        pipeline.sync();
+        pipeline.deleteGraph();
+        // larger than Jedis' output buffer, so the delete before it is flushed to the server
+        String padding = String.join("", Collections.nCopies(10_000, "x"));
+        pipeline.query("CREATE (n:Animal {padding:'" + padding + "'}) RETURN n");
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        while (server.count("GRAPH.DELETE") == 0) {
+            assertTrue(System.nanoTime() < deadline, "the delete never reached the server");
+            Thread.sleep(5);
+        }
+
+        GraphException e = assertThrows(GraphException.class, () -> label(earlier));
+        assertTrue(e.getMessage().contains("label id 0"), e.getMessage());
+        pipeline.sync();
+    }
+
+    @Test
+    void aReplyIsNotDecodedWithNamesTheCacheLearnedAfterItsDeleteWasQueued() throws InterruptedException {
+        // The delete and a recreate reach the server, and another context of the same graph then reads the new
+        // graph, teaching the shared cache its labels. The reply queued before the delete still must not use them.
+        handler.labelsAfterDelete = Collections.singletonList("Animal");
+        GraphPipeline pipeline = context.pipelined();
+        Response<ResultSet> earlier = pipeline.query("MATCH (n) RETURN n");
+        pipeline.sync();
+        pipeline.deleteGraph();
+        String padding = String.join("", Collections.nCopies(10_000, "x"));
+        pipeline.query("CREATE (n:Animal {padding:'" + padding + "'}) RETURN n");
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        // The server records a command before it handles it, so wait for the handler to have run the delete.
+        while (!handler.labels.equals(Collections.singletonList("Animal"))) {
+            assertTrue(System.nanoTime() < deadline, "the delete never ran on the server");
+            Thread.sleep(5);
+        }
+        try (Jedis other = pool.getResource()) {
+            GraphContextImpl second = new GraphContextImpl(other, cache, "g");
+            assertEquals(
+                    "Animal",
+                    ((Node) second.query("MATCH (n) RETURN n").iterator().next().getValue(0)).getLabel(0));
+        }
+
+        GraphException e = assertThrows(GraphException.class, () -> label(earlier));
+        assertTrue(e.getMessage().contains("label id 0"), e.getMessage());
+        pipeline.sync();
+    }
+
+    @Test
+    void anExecTheServerRefusesLeavesTheCacheAlone() {
+        // EXECABORT: a command failed to queue, so the server ran none of them.
+        handler.refuseExec = true;
+        GraphTransaction transaction = context.multi();
+        transaction.deleteGraph();
+        JedisDataException e = assertThrows(JedisDataException.class, transaction::exec);
+        assertTrue(e.getMessage().startsWith("EXECABORT"), e.getMessage());
+        assertEquals(0, cache.clears);
+    }
+
+    @Test
+    void anExecAfterARefusedMultiClearsTheCache() {
+        // The server refused MULTI, so every command after it ran as it was sent, the delete included, and EXEC
+        // then finds no transaction. Only EXECABORT says that nothing ran.
+        handler.refuseMulti = true;
+        GraphTransaction transaction = context.multi();
+        transaction.deleteGraph();
+
+        JedisDataException e = assertThrows(JedisDataException.class, transaction::exec);
+
+        assertEquals("ERR EXEC without MULTI", e.getMessage());
+        assertEquals(1, cache.clears, "the delete may have run");
+    }
+
+    @Test
+    void aDiscardAfterARefusedMultiClearsTheCache() {
+        // As above: DISCARD finds no transaction to drop, because the commands already ran.
+        handler.refuseMulti = true;
+        GraphTransaction transaction = context.multi();
+        transaction.deleteGraph();
+
+        JedisDataException e = assertThrows(JedisDataException.class, transaction::discard);
+
+        assertEquals("ERR DISCARD without MULTI", e.getMessage());
+        assertEquals(1, cache.clears, "the delete may have run");
+    }
+
+    @Test
+    void anExecThatFailsPartWayClearsTheCache() {
+        // The connection broke while EXEC was answered, so the delete may have run.
+        warmCache("Person");
+        handler.breakExec = true;
+        GraphTransaction transaction = context.multi();
+        transaction.deleteGraph();
+        assertThrows(JedisConnectionException.class, transaction::exec);
+        assertEquals(1, cache.clears);
+    }
+
+    @Test
+    void afterSyncARepliesQueuedBeforeAFailedDeleteIsDecodedAsUsual() {
+        // The graph was not deleted, so its labels can still be looked up.
+        handler.deleteReply =
+                FakeRedisServer.error("NOPERM this user has no permissions to run the 'graph.DELETE' command");
+
+        GraphPipeline pipeline = context.pipelined();
+        Response<ResultSet> before = pipeline.query("MATCH (n) RETURN n");
+        Response<String> delete = pipeline.deleteGraph();
+        pipeline.sync();
+
+        assertThrows(JedisDataException.class, delete::get);
+        assertEquals("Person", label(before));
+        assertEquals(0, cache.clears);
+    }
+
+    @Test
+    void afterSyncARepliesQueuedBeforeTwoFailedDeletesIsDecodedAsUsual() {
+        // Neither delete ran, so a reply queued before both still comes from the graph the client can look up.
+        handler.deleteReply =
+                FakeRedisServer.error("NOPERM this user has no permissions to run the 'graph.DELETE' command");
+
+        GraphPipeline pipeline = context.pipelined();
+        Response<ResultSet> before = pipeline.query("MATCH (n) RETURN n");
+        pipeline.deleteGraph();
+        Response<ResultSet> between = pipeline.query("MATCH (n) RETURN n");
+        pipeline.deleteGraph();
+        pipeline.sync();
+
+        assertEquals("Person", label(before));
+        assertEquals("Person", label(between));
+        assertEquals(0, cache.clears);
+    }
+
+    @Test
+    void aReplyBetweenAFailedDeleteAndOneThatRanIsDecodedWithTheCopyTakenBeforeBoth() {
+        // The first delete was refused, so the graph between the two deletes is the one the client had cached.
+        warmCache("Person");
+        handler.labels = Collections.singletonList("Animal"); // the graph as the pipeline recreates it
+        handler.deleteReplies.add(
+                FakeRedisServer.error("NOPERM this user has no permissions to run the 'graph.DELETE' command"));
+
+        GraphPipeline pipeline = context.pipelined();
+        Response<ResultSet> before = pipeline.query(QUERY);
+        Response<String> refused = pipeline.deleteGraph();
+        Response<ResultSet> between = pipeline.query(QUERY);
+        pipeline.deleteGraph();
+        Response<ResultSet> after = pipeline.query("CREATE (n:Animal) RETURN n");
+        pipeline.sync();
+
+        assertThrows(JedisDataException.class, refused::get);
+        assertEquals("Person", label(before));
+        assertEquals("Person", label(between));
+        assertEquals("Animal", label(after));
+        assertEquals(1, cache.clears, "only the second delete ran");
+    }
+
+    @Test
+    void aTransactionDecodesTheRepliesQueuedBeforeItsDeleteWithTheCacheAsItWasWhenTheDeleteWasQueued() {
+        warmCache("Person");
+        handler.labels = Collections.singletonList("Animal");
+
+        GraphTransaction transaction = context.multi();
+        Response<ResultSet> before = transaction.query("MATCH (n) RETURN n");
+        transaction.deleteGraph();
+        Response<ResultSet> after = transaction.query("CREATE (n:Animal) RETURN n");
+        transaction.exec();
+
+        assertEquals("Person", label(before));
+        assertEquals("Animal", label(after));
+    }
+
+    // --- every overload -----------------------------------------------------------------------------
+
+    @Test
+    void everyQueryOverloadOfAPipelineDecodesWithTheCacheOfItsSegment() {
+        warmCache("Person");
+        handler.labels = Collections.singletonList("Animal"); // the graph as the pipeline recreates it
+
+        GraphPipeline pipeline = context.pipelined();
+        List<Response<ResultSet>> before = queueEveryQuery(pipeline);
+        pipeline.deleteGraph();
+        List<Response<ResultSet>> after = queueEveryQuery(pipeline);
+        pipeline.sync();
+
+        for (Response<ResultSet> reply : before) {
+            assertEquals("Person", label(reply), "decoded with the copy taken when the delete was queued");
+        }
+        for (Response<ResultSet> reply : after) {
+            assertEquals("Animal", label(reply), "decoded with the live cache, which the delete cleared");
+        }
+        assertEquals(twice(EVERY_QUERY_SENT), sent(server, "GRAPH.QUERY", "GRAPH.RO_QUERY"));
+    }
+
+    @Test
+    void everyQueryOverloadOfATransactionDecodesWithTheCacheOfItsSegment() {
+        warmCache("Person");
+        handler.labels = Collections.singletonList("Animal"); // the graph as the transaction recreates it
+
+        GraphTransaction transaction = context.multi();
+        List<Response<ResultSet>> before = queueEveryQuery(transaction);
+        transaction.deleteGraph();
+        List<Response<ResultSet>> after = queueEveryQuery(transaction);
+        transaction.exec();
+
+        for (Response<ResultSet> reply : before) {
+            assertEquals("Person", label(reply), "decoded with the copy taken when the delete was queued");
+        }
+        for (Response<ResultSet> reply : after) {
+            assertEquals("Animal", label(reply), "decoded with the live cache, which the delete cleared");
+        }
+        assertEquals(twice(EVERY_QUERY_SENT), sent(server, "GRAPH.QUERY", "GRAPH.RO_QUERY"));
+    }
+
+    @Test
+    void theProfileOverloadsOfAPipelineAndATransactionSendTheirQueries() {
+        GraphPipeline pipeline = context.pipelined();
+        List<Response<ResultSet>> profiles = new ArrayList<>();
+        profiles.add(pipeline.profile(QUERY));
+        profiles.add(pipeline.profile(QUERY, PARAMS));
+        pipeline.sync();
+        GraphTransaction transaction = context.multi();
+        profiles.add(transaction.profile(QUERY));
+        profiles.add(transaction.profile(QUERY, PARAMS));
+        transaction.exec();
+
+        for (Response<ResultSet> profile : profiles) {
+            assertEquals(PLAN_ROOT, profile.get().iterator().next().getString(0));
+        }
+        List<String> plain = Arrays.asList("GRAPH.PROFILE", "g", QUERY, "--COMPACT");
+        List<String> withParams = Arrays.asList("GRAPH.PROFILE", "g", PREPARED, "--COMPACT");
+        assertEquals(Arrays.asList(plain, withParams, plain, withParams), sent(server, "GRAPH.PROFILE"));
+    }
+
+    // --- helpers ----------------------------------------------------------------------------------
+
+    private static <T> List<T> twice(List<T> items) {
+        List<T> twice = new ArrayList<>(items);
+        twice.addAll(items);
+        return twice;
+    }
+
+    private void warmCache(String label) {
+        assertEquals(label, cache.getLabel(0, new LabelSource(label)));
+    }
+
+    private static String label(Response<ResultSet> reply) {
+        return ((Node) reply.get().iterator().next().getValue(0)).getLabel(0);
+    }
+
+    /** Whether a command is the lookup that fills the label cache. */
+    private static boolean isLookup(List<String> command) {
+        return FakeRedisServer.startsWith(command, "GRAPH.RO_QUERY")
+                && command.get(2).equals("CALL db.labels()");
+    }
+
+    /** How many label lookups {@code server} received. */
+    private static long lookups(FakeRedisServer server) {
+        return server.received().stream().filter(QueuedRepliesTest::isLookup).count();
+    }
+
+    /** The commands {@code server} received whose name is one of {@code names}, each name in upper case. */
+    private static List<List<String>> sent(FakeRedisServer server, String... names) {
+        List<List<String>> sent = new ArrayList<>();
+        for (List<String> command : server.received()) {
+            for (String name : names) {
+                if (FakeRedisServer.startsWith(command, name) && !isLookup(command)) {
+                    List<String> normalized = new ArrayList<>(command);
+                    normalized.set(0, name);
+                    sent.add(normalized);
+                }
+            }
+        }
+        return sent;
+    }
+
+    /** Queues every query overload of {@code pipeline}, in the order of {@link #EVERY_QUERY_SENT}. */
+    private static List<Response<ResultSet>> queueEveryQuery(GraphPipeline pipeline) {
+        return Arrays.asList(
+                pipeline.query(QUERY),
+                pipeline.readOnlyQuery(QUERY),
+                pipeline.query(QUERY, TIMEOUT),
+                pipeline.readOnlyQuery(QUERY, TIMEOUT),
+                pipeline.query(QUERY, PARAMS),
+                pipeline.readOnlyQuery(QUERY, PARAMS),
+                pipeline.query(QUERY, PARAMS, TIMEOUT),
+                pipeline.readOnlyQuery(QUERY, PARAMS, TIMEOUT));
+    }
+
+    /** Queues every query overload of {@code transaction}, in the order of {@link #EVERY_QUERY_SENT}. */
+    private static List<Response<ResultSet>> queueEveryQuery(GraphTransaction transaction) {
+        return Arrays.asList(
+                transaction.query(QUERY),
+                transaction.readOnlyQuery(QUERY),
+                transaction.query(QUERY, TIMEOUT),
+                transaction.readOnlyQuery(QUERY, TIMEOUT),
+                transaction.query(QUERY, PARAMS),
+                transaction.readOnlyQuery(QUERY, PARAMS),
+                transaction.query(QUERY, PARAMS, TIMEOUT),
+                transaction.readOnlyQuery(QUERY, PARAMS, TIMEOUT));
+    }
+
+    /** A {@link GraphCache} that counts how often it is cleared. */
+    private static final class CountingCache extends GraphCache {
+        int clears;
+
+        @Override
+        public void clear() {
+            clears++;
+            super.clear();
+        }
+    }
+
+    /**
+     * Answers like FalkorDB: a node labeled with id 0 for any query, the {@link #labels} for {@code CALL
+     * db.labels()}, plan lines for a profile, and {@code QUEUED} inside {@code MULTI} until {@code EXEC} returns
+     * the replies. Each client connection is served on its own thread, hence the thread-local transaction.
+     */
+    private static final class Server implements Function<List<String>, String> {
+        volatile List<String> labels = Collections.singletonList("Person");
+        volatile String deleteReply = bulk("Graph removed");
+        /** Replies for the next deletes, in order; {@link #deleteReply} once they run out. */
+        final Queue<String> deleteReplies = new ConcurrentLinkedQueue<>();
+        /** A command this server answers with something that isn't RESP, which breaks the connection. */
+        volatile String breakOn;
+        /** Answer {@code EXEC} as when a watched key changed. */
+        volatile boolean abortExec;
+        /** The {@link #labels} once a delete has run, standing for a graph recreated right after it. */
+        volatile List<String> labelsAfterDelete;
+        /** Answer {@code EXEC} with something that isn't RESP, which breaks the connection. */
+        volatile boolean breakExec;
+        /** Answer {@code EXEC} with {@code EXECABORT}, as after a command that failed to queue. */
+        volatile boolean refuseExec;
+        /** Refuse {@code MULTI}, as an ACL that denies it does: the commands after it then run as they are sent. */
+        volatile boolean refuseMulti;
+
+        private final ThreadLocal<List<String>> transaction = new ThreadLocal<>();
+
+        @Override
+        public String apply(List<String> command) {
+            if (FakeRedisServer.startsWith(command, "MULTI")) {
+                if (refuseMulti) {
+                    return FakeRedisServer.error("NOPERM this user has no permissions to run the 'multi' command");
+                }
+                transaction.set(new ArrayList<>());
+                return FakeRedisServer.ok();
+            }
+            if (FakeRedisServer.startsWith(command, "EXEC")) {
+                List<String> replies = transaction.get();
+                if (replies == null) {
+                    return FakeRedisServer.error("ERR EXEC without MULTI");
+                }
+                transaction.remove();
+                if (breakExec) {
+                    return "?\r\n";
+                }
+                if (refuseExec) {
+                    return FakeRedisServer.error("EXECABORT Transaction discarded because of previous errors.");
+                }
+                return abortExec ? "*-1\r\n" : array(replies.toArray(new String[0]));
+            }
+            if (FakeRedisServer.startsWith(command, "DISCARD")) {
+                if (transaction.get() == null) {
+                    return FakeRedisServer.error("ERR DISCARD without MULTI");
+                }
+                transaction.remove();
+                return FakeRedisServer.ok();
+            }
+            String reply = reply(command);
+            List<String> queued = transaction.get();
+            if (queued != null) {
+                queued.add(reply);
+                return "+QUEUED\r\n";
+            }
+            return reply;
+        }
+
+        private String reply(List<String> command) {
+            String broken = breakOn;
+            if (broken != null && FakeRedisServer.startsWith(command, broken)) {
+                return "?\r\n";
+            }
+            if (FakeRedisServer.startsWith(command, "GRAPH.QUERY")
+                    && command.get(2).equals("RETURN 1")) {
+                String header = array(array(integer(1), bulk("1")));
+                String one = array(integer(3), integer(1)); // VALUE_INTEGER
+                return array(header, array(array(one)), array(bulk("Cached execution: 0")));
+            }
+            if (isLookup(command)) {
+                List<String> rows = new ArrayList<>();
+                for (String label : labels) {
+                    rows.add(array(array(integer(2), bulk(label)))); // VALUE_STRING
+                }
+                String header = array(array(integer(1), bulk("label")));
+                return array(header, array(rows.toArray(new String[0])), array(bulk("Cached execution: 0")));
+            }
+            if (FakeRedisServer.startsWith(command, "GRAPH.QUERY")
+                    || FakeRedisServer.startsWith(command, "GRAPH.RO_QUERY")) {
+                String header = array(array(integer(1), bulk("n")));
+                String node = array(integer(8), array(integer(7), array(integer(0)), array())); // VALUE_NODE, label 0
+                return array(header, array(array(node)), array(bulk("Cached execution: 0")));
+            }
+            if (FakeRedisServer.startsWith(command, "GRAPH.PROFILE")) {
+                return array(bulk(PLAN_ROOT), bulk("    Project | Records produced: 1"));
+            }
+            if (FakeRedisServer.startsWith(command, "GRAPH.DELETE")) {
+                if (labelsAfterDelete != null) {
+                    labels = labelsAfterDelete;
+                }
+                String scripted = deleteReplies.poll();
+                return scripted != null ? scripted : deleteReply;
+            }
+            return FakeRedisServer.ok();
+        }
+    }
+
+    /** A connection whose sending of {@code GRAPH.DELETE} fails, as a write to a broken socket does. */
+    private static final class DeleteFailsToSend extends Connection {
+        DeleteFailsToSend(int port) {
+            super("127.0.0.1", port);
+        }
+
+        @Override
+        public void sendCommand(CommandArguments args) {
+            if (args.getCommand() == GraphCommand.DELETE) {
+                throw new JedisConnectionException("Broken pipe (Write failed)");
+            }
+            super.sendCommand(args);
+        }
+    }
+
+    /** A graph that answers {@code CALL db.labels()} without a server, to fill the cache. */
+    private static final class LabelSource extends AbstractGraph {
+        private final List<String> labels;
+
+        LabelSource(String... labels) {
+            this.labels = Arrays.asList(labels);
+        }
+
+        @Override
+        protected ResultSet sendReadOnlyQuery(String preparedQuery) {
+            assertEquals("CALL db.labels()", preparedQuery);
+            List<List<Object>> rows = new ArrayList<>();
+            for (String label : labels) {
+                rows.add(Collections.singletonList(Arrays.asList(2L, SafeEncoder.encode(label))));
+            }
+            List<Object> header = Collections.singletonList(Arrays.asList(1L, SafeEncoder.encode("label")));
+            return new ResultSetImpl(Arrays.asList(header, rows, new ArrayList<>()), this, new GraphCache());
+        }
+
+        @Override
+        protected ResultSet sendQuery(String preparedQuery) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected ResultSet sendQuery(String preparedQuery, long timeout) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected ResultSet sendReadOnlyQuery(String preparedQuery, long timeout) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected ResultSet sendProfile(String preparedQuery) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected List<String> sendExplain(String preparedQuery) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String copyGraph(String destinationGraphId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String deleteGraph() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void close() {}
+    }
+}

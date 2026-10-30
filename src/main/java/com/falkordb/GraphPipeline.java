@@ -10,6 +10,31 @@ import redis.clients.jedis.commands.RedisModulePipelineCommands;
 
 /**
  * An interface which aligned to Jedis Pipeline interface
+ *
+ * <p>A graph reply is decoded when it is read: by {@link #syncAndReturnAll()}, or by {@code Response.get()}
+ * after {@link #sync()}, which may be after the context that created the pipeline is closed. Decoding can
+ * need a label, property key or relationship type the client hasn't seen yet. That lookup runs on the
+ * context's connection while the context is open and no pipeline or transaction on it awaits a reply;
+ * otherwise it borrows a connection from the driver's pool, so reading a reply while more commands are
+ * queued can wait for a free connection.
+ *
+ * <p>{@link #deleteGraph()} clears the client's schema cache once the delete has run, not when it is queued.
+ * Once it has run, a reply queued before it can't look an id up any more: the graph that sent the reply is
+ * gone, and a lookup would find whatever graph has the name by then. So the reply is decoded with what the
+ * cache held when the delete was queued, and an id the cache lacked is reported as a
+ * {@link com.falkordb.exceptions.GraphException}. A reply queued between two deletes that are both still to run
+ * comes from a graph that exists only in between, which the client has never read, so it can't be decoded if it
+ * names any label, property key or relationship type.
+ * {@link #syncAndReturnAll()} decodes every reply before it learns whether the delete succeeded, so it does the
+ * same for a delete that fails; after {@link #sync()}, the replies before a delete that failed are decoded as
+ * usual.
+ *
+ * <p>Like the context that created it, a pipeline is meant for one thread: until that context is closed,
+ * read the replies on the thread that uses the context.
+ *
+ * <p>A {@link com.falkordb.exceptions.GraphException} while decoding a reply in {@link #syncAndReturnAll()}
+ * becomes that reply's element of the returned list, like an error reply. Jedis does not keep it, so reading
+ * the same {@code Response} again returns {@code null}.
  */
 public interface GraphPipeline
         extends PipelineCommands, PipelineBinaryCommands, RedisModulePipelineCommands, Closeable {
@@ -137,7 +162,8 @@ public interface GraphPipeline
     Response<String> copyGraph(String destinationGraphId);
 
     /**
-     * Deletes the entire graph
+     * Deletes the entire graph. The client's schema cache is cleared once the delete has run; see the class
+     * documentation for how replies queued before it are decoded.
      * @return a response which builds the delete running time statistics
      */
     Response<String> deleteGraph();
@@ -158,17 +184,17 @@ public interface GraphPipeline
     Response<List<String>> explain(String query, Map<String, Object> params);
 
     /**
-     * Synchronize pipeline by reading all responses. This operation close the pipeline. Whenever
-     * possible try to avoid using this version and use Pipeline.sync() as it won't go through all the
+     * Synchronize pipeline by reading and decoding all responses. The pipeline can be used again afterwards.
+     * Whenever possible try to avoid using this version and use Pipeline.sync() as it won't go through all the
      * responses and generate the right response type (usually it is a waste of time).
      * @return A list of all the responses in the order you executed them.
      */
     List<Object> syncAndReturnAll();
 
     /**
-     * Synchronize pipeline by reading all responses. This operation close the pipeline. In order to
+     * Synchronize pipeline by reading all responses. The pipeline can be used again afterwards. In order to
      * get return values from pipelined commands, capture the different Response&lt;?&gt; of the
-     * commands you execute.
+     * commands you execute; each is decoded when it is read.
      */
     void sync();
 

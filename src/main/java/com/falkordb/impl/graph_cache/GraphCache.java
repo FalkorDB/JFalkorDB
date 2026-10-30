@@ -57,6 +57,19 @@ public class GraphCache {
     }
 
     /**
+     * Returns a copy of what this cache holds now, which never asks the server: an id the copy lacks is
+     * reported as a {@link com.falkordb.exceptions.GraphException} instead of being looked up. A pipeline or
+     * transaction decodes the replies it queued before {@code deleteGraph()} with such a copy, because by the
+     * time they are read the graph is gone, or is a new graph with other ids. A copy of an empty cache knows
+     * no ids at all.
+     *
+     * @return the copy
+     */
+    public GraphCache snapshot() {
+        return new FrozenGraphCache(labels.snapshot(), propertyNames.snapshot(), relationshipTypes.snapshot());
+    }
+
+    /**
      * Clears the cache
      */
     public void clear() {

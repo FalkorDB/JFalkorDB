@@ -199,7 +199,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
 
     /** A context on a connection to the node that serves this graph (any node outside a cluster). */
     private GraphContext newContext() {
-        return new GraphContextImpl(driver.getConnection(this.graphId), this.cache, this.graphId);
+        return new GraphContextImpl(driver.getConnection(this.graphId), this, this.cache, this.graphId);
     }
 
     @Override

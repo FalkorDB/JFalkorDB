@@ -10,32 +10,28 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.*;
 import redis.clients.jedis.commands.ProtocolCommand;
+import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.util.SafeEncoder;
 
 /**
  * This class is extending Jedis Transaction
+ *
+ * <p>A transaction is used once: {@code GraphContext.multi()} starts it, and {@link #exec()} or
+ * {@link #discard()} ends it. Starting it again with {@code multi()} is not supported.
  */
 public class GraphTransactionImpl extends Transaction implements com.falkordb.GraphTransaction {
 
-    private final Graph graph;
     private final String graphId;
-    private GraphCache cache;
-
-    /**
-     * Builds a {@link ResultSet} from a raw graph reply. One shared instance replaces the eight
-     * byte-identical anonymous builders this class used to declare, so a fix to the response shape
-     * lands in one place. Jedis {@code Builder} is an abstract class, not a functional interface, so
-     * this cannot be a lambda. {@code graph}/{@code cache} are read at build time, not captured.
-     */
-    private final Builder<ResultSet> resultSetBuilder = new Builder<ResultSet>() {
-        @SuppressWarnings("unchecked")
-        @Override
-        public ResultSet build(Object o) {
-            return new ResultSetImpl((List<Object>) o, graph, cache);
-        }
-    };
+    private final QueuedReplies replies;
+    /** True until exec() or discard(): the context sends MULTI as soon as it creates the transaction. */
+    private boolean queuing = true;
+    /** True while exec() reads and decodes the replies, so none is outstanding on the connection. */
+    private boolean draining;
 
     /**
      * Creates a new transaction for a given graph.
@@ -45,11 +41,26 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      * @param graphId the graph ID to use
      */
     public GraphTransactionImpl(Connection connection, Graph graph, GraphCache cache, String graphId) {
+        this(connection, (reply, replyCache) -> new ResultSetImpl(reply, graph, replyCache), cache, graphId);
+    }
+
+    /**
+     * Creates a new transaction whose replies {@code decoder} decodes, given the cache each one is decoded with.
+     */
+    GraphTransactionImpl(
+            Connection connection,
+            BiFunction<List<Object>, GraphCache, ResultSet> decoder,
+            GraphCache cache,
+            String graphId) {
         // init as in Jedis
         super(connection, false);
-        this.graph = graph;
         this.graphId = graphId;
-        this.cache = cache;
+        this.replies = new QueuedReplies(decoder, cache, () -> queuing && !draining);
+    }
+
+    /** How this transaction decodes its replies; the context that created it watches it through this. */
+    QueuedReplies replies() {
+        return replies;
     }
 
     /**
@@ -75,7 +86,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     @Override
     public Response<ResultSet> query(String query) {
         return appendWithResponse(
-                GraphCommand.QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), resultSetBuilder);
+                GraphCommand.QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), replies.resultSet());
     }
 
     /**
@@ -86,7 +97,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     @Override
     public Response<ResultSet> readOnlyQuery(String query) {
         return appendWithResponse(
-                GraphCommand.RO_QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), resultSetBuilder);
+                GraphCommand.RO_QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), replies.resultSet());
     }
 
     /**
@@ -102,7 +113,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
         return appendWithResponse(
                 GraphCommand.QUERY,
                 Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout)),
-                resultSetBuilder);
+                replies.resultSet());
     }
 
     /**
@@ -118,7 +129,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
         return appendWithResponse(
                 GraphCommand.RO_QUERY,
                 Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout)),
-                resultSetBuilder);
+                replies.resultSet());
     }
 
     /**
@@ -132,7 +143,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
         return appendWithResponse(
                 GraphCommand.QUERY,
                 Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING),
-                resultSetBuilder);
+                replies.resultSet());
     }
 
     /**
@@ -146,7 +157,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
         return appendWithResponse(
                 GraphCommand.RO_QUERY,
                 Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING),
-                resultSetBuilder);
+                replies.resultSet());
     }
 
     /**
@@ -168,7 +179,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
                         Utils.COMPACT_STRING,
                         Utils.TIMEOUT_STRING,
                         Long.toString(timeout)),
-                resultSetBuilder);
+                replies.resultSet());
     }
 
     /**
@@ -190,7 +201,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
                         Utils.COMPACT_STRING,
                         Utils.TIMEOUT_STRING,
                         Long.toString(timeout)),
-                resultSetBuilder);
+                replies.resultSet());
     }
 
     /**
@@ -236,12 +247,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     @Override
     public Response<ResultSet> profile(String query) {
         return appendWithResponse(
-                GraphCommand.PROFILE, Arrays.asList(graphId, query, Utils.COMPACT_STRING), new Builder<ResultSet>() {
-                    @Override
-                    public ResultSet build(Object data) {
-                        return new ResultSetImpl((List<Object>) data, graph, cache);
-                    }
-                });
+                GraphCommand.PROFILE, Arrays.asList(graphId, query, Utils.COMPACT_STRING), replies.resultSet());
     }
 
     /**
@@ -256,12 +262,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
         return appendWithResponse(
                 GraphCommand.PROFILE,
                 Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING),
-                new Builder<ResultSet>() {
-                    @Override
-                    public ResultSet build(Object data) {
-                        return new ResultSetImpl((List<Object>) data, graph, cache);
-                    }
-                });
+                replies.resultSet());
     }
 
     // Disabled due to bug in FalkorDB caused by using transactions in conjunction with graph copy
@@ -277,17 +278,74 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     } */
 
     /**
-     * Deletes the entire graph, in multi/exec context
+     * Deletes the entire graph, in multi/exec context. The client's schema cache is cleared when {@link #exec()}
+     * has run the delete, not when it is queued, and not at all if the transaction is discarded or aborted.
+     * Replies queued before it are decoded with the cache as it was when the delete was queued.
      * @return response with the deletion running time statistics
      */
     @Override
     public Response<String> deleteGraph() {
+        // GRAPH.DELETE replies with a bulk string, which Jedis hands to the builder as a byte[] — casting it to
+        // String throws, so the builder decodes it, as the pipeline's does.
+        Function<Builder<String>, Response<String>> send =
+                builder -> appendWithResponse(GraphCommand.DELETE, Arrays.asList(graphId), builder);
+        // after exec() or discard() Jedis runs a command at once instead of queuing it
+        return queuing ? replies.queueDelete(send) : replies.runDelete(send);
+    }
+
+    /**
+     * Runs the transaction, then reads and decodes every reply, in order.
+     * @return the decoded replies, an error in place of each command that failed, or {@code null} if the
+     *     transaction was aborted because a watched key changed
+     */
+    @Override
+    public @Nullable List<Object> exec() {
+        draining = true;
+        boolean ran = false;
+        boolean refused = false;
+        List<Object> results = null;
         try {
-            // GRAPH.DELETE replies with a bulk string, which Jedis hands to the builder as a byte[] —
-            // casting it to String throws. BuilderFactory.STRING decodes it, as the pipeline does.
-            return appendWithResponse(GraphCommand.DELETE, Arrays.asList(graphId), BuilderFactory.STRING);
+            results = super.exec();
+            ran = true;
+            return results;
+        } catch (JedisDataException e) {
+            // EXECABORT: a command failed to queue, so the server ran none of them. Any other error, such as EXEC
+            // without MULTI after the server refused MULTI, can follow commands that ran as they were sent.
+            refused = String.valueOf(e.getMessage()).startsWith("EXECABORT");
+            throw e;
         } finally {
-            cache.clear();
+            draining = false;
+            queuing = false;
+            if (refused || (ran && results == null)) {
+                replies.discarded(); // refused, or aborted because a watched key changed: nothing ran
+            } else if (ran) {
+                replies.read();
+            } else {
+                replies.unknown(); // EXEC may have run before the connection failed
+            }
+        }
+    }
+
+    /**
+     * Drops the queued commands without running them; a queued {@link #deleteGraph()} then leaves the schema
+     * cache alone. If {@code DISCARD} fails, as when the server refused {@code MULTI} and ran each command as it
+     * was sent, the cache is cleared in case a delete ran.
+     * @return "OK"
+     */
+    @Override
+    public String discard() {
+        boolean dropped = false;
+        try {
+            String reply = super.discard();
+            dropped = true;
+            return reply;
+        } finally {
+            queuing = false;
+            if (dropped) {
+                replies.discarded();
+            } else {
+                replies.unknown();
+            }
         }
     }
 
