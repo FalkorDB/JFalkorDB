@@ -178,6 +178,21 @@ class QueuedRepliesTest {
     }
 
     @Test
+    void aPipelineLooksUpThroughItsContextWhileSyncAndReturnAllDecodes() {
+        // syncAndReturnAll() reads every reply before it decodes the first. Jedis still holds the responses of
+        // the later commands while it does, but none of their replies is outstanding on the connection.
+        GraphPipeline pipeline = context.pipelined();
+        pipeline.query("MATCH (n) RETURN n");
+        pipeline.query("RETURN 1");
+        List<Object> results = pipeline.syncAndReturnAll();
+
+        assertEquals(
+                "Person", ((Node) ((ResultSet) results.get(0)).iterator().next().getValue(0)).getLabel(0));
+        assertEquals(1, server.count("GRAPH.RO_QUERY"), "looked up on the context's connection");
+        assertEquals(0, poolServer.received().size(), "borrowed no other connection");
+    }
+
+    @Test
     void aDecodeWaitingForThePoolHoldsNoCacheLock() throws Exception {
         // Decoding refreshes the cache under its lock. A decode that waited for the pool while holding that
         // lock would block every thread that holds a pooled connection and needs the lock: a deadlock.
