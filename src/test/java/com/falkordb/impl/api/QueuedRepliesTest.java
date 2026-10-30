@@ -415,6 +415,28 @@ class QueuedRepliesTest {
     }
 
     @Test
+    void aDeleteTheServerRejectsAfterTheTransactionEndedLeavesTheCacheAlone() throws IOException {
+        // After exec() or discard() Jedis runs a command at once, and keeps an error reply in the response
+        // instead of throwing it. The delete's builder never runs, and nothing clears the cache.
+        handler.deleteReply = FakeRedisServer.error("ERR Invalid graph operation on empty key");
+        GraphTransaction executed = context.multi();
+        executed.set("k", "v");
+        executed.exec();
+        GraphTransaction discarded = context.multi();
+        discarded.set("k", "v");
+        discarded.discard();
+
+        for (GraphTransaction ended : Arrays.asList(executed, discarded)) {
+            Response<String> rejected = ended.deleteGraph();
+            JedisDataException error = assertThrows(JedisDataException.class, rejected::get);
+            assertEquals("ERR Invalid graph operation on empty key", error.getMessage());
+        }
+        assertEquals(0, cache.clears, "a rejected delete deleted nothing");
+        executed.close();
+        discarded.close();
+    }
+
+    @Test
     void aSyncThatFailsPartWayClearsTheCacheOnlyIfADeleteWasQueued() {
         assertAFailedReadClearsTheCacheOnlyIfADeleteWasQueued(GraphPipeline::sync);
     }

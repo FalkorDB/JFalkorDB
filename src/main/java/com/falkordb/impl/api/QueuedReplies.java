@@ -163,7 +163,8 @@ final class QueuedReplies {
 
     /**
      * Sends a {@code GRAPH.DELETE} that isn't queued, as a transaction does after {@code exec()}: its builder clears
-     * the live cache once it ran. So does a failed send, after which the delete may have run.
+     * the live cache once it ran. So does a failed send, after which the delete may have run. A delete the server
+     * rejects clears nothing: Jedis keeps the error in the response without building it.
      *
      * @param send sends the delete with the builder it is given, and returns its response
      * @return the response
