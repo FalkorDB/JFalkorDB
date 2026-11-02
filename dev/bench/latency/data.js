@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793161537290,
+  "lastUpdate": 1793588517877,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -16898,6 +16898,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 76018.733,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0116aadf10c62309a0daa6935852c709ab966789",
+          "message": "chore(deps): bump org.jacoco:jacoco-maven-plugin from 0.8.15 to 0.8.16\n\nReviewed dependency update.\n\nCo-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-11-02T04:59:21+02:00",
+          "tree_id": "635be422136fd29d7e3573eacb1e545f09554fd3",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/0116aadf10c62309a0daa6935852c709ab966789"
+        },
+        "date": 1793588516621,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 126.785,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 167.974,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 204.171,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 151.99,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 182.372,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 206.486,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 201.175,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 323.196,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 406.396,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 330.039,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 542.814,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 664.649,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 384.923,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 3521.308,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 7176.234,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 385.068,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 9945.992,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 20354.48,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 389.142,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 23376.484,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 48017.83,
             "unit": "us"
           }
         ]
