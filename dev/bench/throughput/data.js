@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793161538887,
+  "lastUpdate": 1793588519968,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -7728,6 +7728,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 10961,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0116aadf10c62309a0daa6935852c709ab966789",
+          "message": "chore(deps): bump org.jacoco:jacoco-maven-plugin from 0.8.15 to 0.8.16\n\nReviewed dependency update.\n\nCo-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-11-02T04:59:21+02:00",
+          "tree_id": "635be422136fd29d7e3573eacb1e545f09554fd3",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/0116aadf10c62309a0daa6935852c709ab966789"
+        },
+        "date": 1793588519938,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 5177,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 8912.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 13403.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 17861,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 17109.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 16948.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 16754.667,
             "unit": "ops/s"
           }
         ]
