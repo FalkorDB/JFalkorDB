@@ -36,8 +36,8 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendQuery(String preparedQuery) {
-        return driver.routed(() -> {
-            try (GraphContext contextedGraph = newContext()) {
+        return driver.routed(graphId, route -> {
+            try (GraphContext contextedGraph = newContext(route)) {
                 return contextedGraph.query(preparedQuery);
             }
         });
@@ -53,8 +53,8 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendReadOnlyQuery(String preparedQuery) {
-        return driver.routed(() -> {
-            try (GraphContext contextedGraph = newContext()) {
+        return driver.routed(graphId, route -> {
+            try (GraphContext contextedGraph = newContext(route)) {
                 return contextedGraph.readOnlyQuery(preparedQuery);
             }
         });
@@ -71,8 +71,8 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendQuery(String preparedQuery, long timeout) {
-        return driver.routed(() -> {
-            try (GraphContext contextedGraph = newContext()) {
+        return driver.routed(graphId, route -> {
+            try (GraphContext contextedGraph = newContext(route)) {
                 return contextedGraph.query(preparedQuery, timeout);
             }
         });
@@ -89,8 +89,8 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendReadOnlyQuery(String preparedQuery, long timeout) {
-        return driver.routed(() -> {
-            try (GraphContext contextedGraph = newContext()) {
+        return driver.routed(graphId, route -> {
+            try (GraphContext contextedGraph = newContext(route)) {
                 return contextedGraph.readOnlyQuery(preparedQuery, timeout);
             }
         });
@@ -106,8 +106,8 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendProfile(String preparedQuery) {
-        return driver.routed(() -> {
-            try (GraphContext contextedGraph = newContext()) {
+        return driver.routed(graphId, route -> {
+            try (GraphContext contextedGraph = newContext(route)) {
                 return contextedGraph.profile(preparedQuery);
             }
         });
@@ -121,8 +121,8 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     public String copyGraph(String destinationGraphId) {
-        return driver.routed(() -> {
-            try (GraphContext contextedGraph = newContext()) {
+        return driver.routed(graphId, route -> {
+            try (GraphContext contextedGraph = newContext(route)) {
                 return contextedGraph.copyGraph(destinationGraphId);
             }
         });
@@ -135,8 +135,8 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     public String deleteGraph() {
-        return driver.routed(() -> {
-            try (GraphContext contextedGraph = newContext()) {
+        return driver.routed(graphId, route -> {
+            try (GraphContext contextedGraph = newContext(route)) {
                 // the context shares this graph's cache, and clears it once the delete succeeds
                 return contextedGraph.deleteGraph();
             }
@@ -152,8 +152,8 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected List<String> sendExplain(String preparedQuery) {
-        return driver.routed(() -> {
-            try (GraphContext contextedGraph = newContext()) {
+        return driver.routed(graphId, route -> {
+            try (GraphContext contextedGraph = newContext(route)) {
                 // explain(String) sends the query as it is, so it isn't prepared a second time
                 return contextedGraph.explain(preparedQuery);
             }
@@ -177,6 +177,15 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
     /** A context on a connection to the node that serves this graph (any node outside a cluster). */
     private GraphContext newContext() {
         return new GraphContextImpl(driver.getConnection(this.graphId), this, this.cache, this.graphId);
+    }
+
+    /** A context for one attempt of a routed command, on the node the attempt goes to. */
+    private GraphContext newContext(DriverImpl.Route route) {
+        GraphContextImpl context = new GraphContextImpl(route.connection(), this, this.cache, this.graphId);
+        if (route.asking()) {
+            context.askBeforeEachCommand();
+        }
+        return context;
     }
 
     @Override

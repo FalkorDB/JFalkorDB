@@ -6,10 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.falkordb.exceptions.GraphException;
+import com.falkordb.graph_entities.Node;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -241,6 +244,135 @@ public class ClusterIT {
         } finally {
             driver.udfFlush();
         }
+    }
+
+    @Test
+    public void aGraphInTheMiddleOfAMigrationIsFollowedThroughAsk() {
+        // A real slot migration, stopped halfway: the graph has moved to the importing node, but the slot still
+        // belongs to the node it is leaving, which answers ASK. Decoding the reply looks labels up, and those
+        // lookups need ASKING on the importing node too.
+        String graph = "{" + PREFIX + "migrating}";
+        int slot = JedisClusterCRC16.getSlot(graph);
+        for (int i = 0; i < GRAPHS; i++) {
+            assertTrue(
+                    JedisClusterCRC16.getSlot(PREFIX + i) != slot,
+                    "the migrated slot must not move other tests' graphs");
+        }
+        // The primaries as the cluster reports them, so the target is told apart from the source by node id
+        // whatever addresses FALKORDB_CLUSTER_NODES lists, and every primary is settled afterwards.
+        List<Primary> primaries = primaries();
+        Primary source = null;
+        for (Primary primary : primaries) {
+            if (primary.owns(slot)) {
+                source = primary;
+            }
+        }
+        assertNotNull(source, "no primary owns slot " + slot);
+        Primary target = null;
+        for (Primary primary : primaries) {
+            if (!primary.id.equals(source.id)) {
+                target = primary;
+                break;
+            }
+        }
+        assertNotNull(target, "the migration needs a second primary");
+        try (Jedis owner = new Jedis(source.address)) {
+            // The graph must be the slot's only key. The source refuses to give the slot away while it holds
+            // another key in it, which would leave the cluster half migrated for the other tests.
+            assertEquals(
+                    0L,
+                    owner.clusterCountKeysInSlot(slot),
+                    "slot " + slot + " must be empty before this test migrates it");
+        }
+
+        try (Jedis from = new Jedis(source.address);
+                Jedis to = new Jedis(target.address)) {
+            boolean created = false;
+            boolean migrated = false;
+            try {
+                driver.graph(graph).query("CREATE (:Person {name:'a'})");
+                created = true;
+                to.clusterSetSlotImporting(slot, source.id);
+                from.clusterSetSlotMigrating(slot, target.id);
+                assertEquals("OK", from.migrate(target.address.getHost(), target.address.getPort(), graph, 0, 5000));
+                migrated = true;
+
+                GraphContextGenerator fresh = driver.graph(graph); // its own, empty cache
+                Node node = (Node)
+                        fresh.query("MATCH (n) RETURN n").iterator().next().getValue(0);
+                assertEquals("Person", node.getLabel(0));
+                assertEquals("a", node.getProperty("name").getValue());
+
+                fresh.query("CREATE (:Person {name:'b'})");
+                Long nodes = fresh.readOnlyQuery("MATCH (n) RETURN count(n)")
+                        .iterator()
+                        .next()
+                        .getValue(0);
+                assertEquals(2L, nodes.longValue());
+            } finally {
+                // Leave a settled cluster for the other tests, however far the migration got.
+                if (migrated) {
+                    // the graph is on the target: give it the slot on every primary, the two involved first
+                    to.clusterSetSlotNode(slot, target.id);
+                    from.clusterSetSlotNode(slot, target.id);
+                    for (Primary other : primaries) {
+                        if (!other.id.equals(source.id) && !other.id.equals(target.id)) {
+                            try (Jedis node = new Jedis(other.address)) {
+                                node.clusterSetSlotNode(slot, target.id);
+                            }
+                        }
+                    }
+                } else {
+                    // the graph never left the source: call the migration off
+                    to.clusterSetSlotStable(slot);
+                    from.clusterSetSlotStable(slot);
+                }
+                if (created) {
+                    driver.graph(graph).deleteGraph();
+                }
+            }
+        }
+    }
+
+    /** A primary as {@code CLUSTER SLOTS} reports it, with the slot ranges it owns. */
+    private static final class Primary {
+        final String id;
+        final HostAndPort address;
+        final List<long[]> ranges = new ArrayList<>();
+
+        Primary(String id, HostAndPort address) {
+            this.id = id;
+            this.address = address;
+        }
+
+        boolean owns(int slot) {
+            for (long[] range : ranges) {
+                if (slot >= range[0] && slot <= range[1]) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    /** Every primary of the cluster, as the seed reports the topology. */
+    private static List<Primary> primaries() {
+        Map<String, Primary> byId = new LinkedHashMap<>();
+        try (Jedis node = new Jedis(ClusterTestServer.seedHost(), ClusterTestServer.seedPort())) {
+            for (Object range : node.clusterSlots()) {
+                List<?> entry = (List<?>) range;
+                List<?> owner = (List<?>) entry.get(2);
+                String id = text(owner.get(2));
+                Primary primary = byId.computeIfAbsent(
+                        id, k -> new Primary(k, new HostAndPort(text(owner.get(0)), ((Long) owner.get(1)).intValue())));
+                primary.ranges.add(new long[] {(Long) entry.get(0), (Long) entry.get(1)});
+            }
+        }
+        return new ArrayList<>(byId.values());
+    }
+
+    private static String text(Object reply) {
+        return reply instanceof byte[] ? SafeEncoder.encode((byte[]) reply) : String.valueOf(reply);
     }
 
     @Test

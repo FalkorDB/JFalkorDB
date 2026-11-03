@@ -171,6 +171,23 @@ final class Clusters {
         return new HostAndPort(hostOf(fields.get(0), answerer), (int) port);
     }
 
+    /**
+     * Resolves the node a redirect names. A node configured with {@code cluster-preferred-endpoint-type
+     * unknown-endpoint} announces no host, and a {@code hostname} one without a hostname announces {@code ?};
+     * either means "the host you are already talking to", as in {@code CLUSTER SLOTS}.
+     *
+     * @param target   the node the redirect names
+     * @param answerer the node that answered with the redirect, or {@code null} if unknown
+     * @return the node to go to
+     */
+    static HostAndPort redirectTarget(HostAndPort target, @Nullable HostAndPort answerer) {
+        String host = target.getHost();
+        if (answerer != null && (host == null || host.isEmpty() || UNKNOWN_ENDPOINT.equals(host))) {
+            return new HostAndPort(answerer.getHost(), target.getPort());
+        }
+        return target;
+    }
+
     private static String hostOf(@Nullable Object field, HostAndPort answerer) {
         String host = null;
         if (field instanceof byte[]) {

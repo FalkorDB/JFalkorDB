@@ -98,12 +98,14 @@ final class ClusterTestServer {
                 .append(FIRST_PORT)
                 .append(" --cluster create")
                 .append(members)
-                .append(" --cluster-yes; ")
-                .append("until redis-cli -p ")
-                .append(FIRST_PORT)
-                .append(" cluster info | grep -q cluster_state:ok; do sleep 1; done; echo ")
-                .append(READY)
-                .append("; tail -f /dev/null");
+                .append(" --cluster-yes; ");
+        // Every node has to see the cluster as up: one that is still converging answers CLUSTERDOWN.
+        for (int i = 0; i < NODES; i++) {
+            script.append("until redis-cli -p ")
+                    .append(FIRST_PORT + i)
+                    .append(" cluster info | grep -q cluster_state:ok; do sleep 1; done; ");
+        }
+        script.append("echo ").append(READY).append("; tail -f /dev/null");
         return script.toString();
     }
 }

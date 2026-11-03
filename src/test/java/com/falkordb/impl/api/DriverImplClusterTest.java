@@ -503,7 +503,7 @@ class DriverImplClusterTest {
 
         assertThrows(
                 GraphException.class,
-                () -> driverImpl.routed(() -> {
+                () -> driverImpl.routed("g", route -> {
                     calls.incrementAndGet();
                     throw moved();
                 }));
@@ -518,7 +518,7 @@ class DriverImplClusterTest {
         DriverImpl driverImpl = new DriverImpl(connections);
         AtomicInteger calls = new AtomicInteger();
 
-        String result = driverImpl.routed(() -> {
+        String result = driverImpl.routed("g", route -> {
             if (calls.incrementAndGet() < 3) {
                 throw moved();
             }
@@ -536,7 +536,7 @@ class DriverImplClusterTest {
         DriverImpl driverImpl = new DriverImpl(connections);
         AtomicInteger calls = new AtomicInteger();
 
-        driverImpl.routed(() -> {
+        driverImpl.routed("g", route -> {
             if (calls.incrementAndGet() == 1) {
                 throw new JedisMovedDataException("MOVED", new HostAndPort("h", 1), 1);
             }
@@ -555,7 +555,7 @@ class DriverImplClusterTest {
 
         GraphException thrown = assertThrows(
                 GraphException.class,
-                () -> driverImpl.routed(() -> {
+                () -> driverImpl.routed("g", route -> {
                     calls.incrementAndGet();
                     throw failure;
                 }));
@@ -574,7 +574,7 @@ class DriverImplClusterTest {
 
         assertThrows(
                 JedisConnectionException.class,
-                () -> driverImpl.routed(() -> {
+                () -> driverImpl.routed("g", route -> {
                     calls.incrementAndGet();
                     throw new JedisConnectionException("node down");
                 }));
@@ -590,7 +590,7 @@ class DriverImplClusterTest {
 
         assertThrows(
                 JedisDataException.class,
-                () -> driverImpl.routed(() -> {
+                () -> driverImpl.routed("g", route -> {
                     throw new JedisDataException("ERR");
                 }));
 

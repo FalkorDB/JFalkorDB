@@ -183,6 +183,30 @@ class ClustersTest {
                 Clusters.primaries(Clusters.parseSlots(reply, ANSWERER)));
     }
 
+    // --- redirectTarget --------------------------------------------------------------------------
+
+    @Test
+    void aRedirectToANamedHostGoesThere() {
+        HostAndPort target = new HostAndPort("node.example", 7001);
+        assertEquals(target, Clusters.redirectTarget(target, ANSWERER));
+    }
+
+    @Test
+    void aRedirectWithoutAHostGoesToTheHostThatAnswered() {
+        for (String missing : Arrays.asList("", "?", null)) {
+            assertEquals(
+                    new HostAndPort("seed.example", 7001),
+                    Clusters.redirectTarget(new HostAndPort(missing, 7001), ANSWERER),
+                    String.valueOf(missing));
+        }
+    }
+
+    @Test
+    void aRedirectWithoutAHostIsKeptWhenNoNodeIsKnownToHaveAnswered() {
+        HostAndPort target = new HostAndPort("", 7001);
+        assertEquals(target, Clusters.redirectTarget(target, null));
+    }
+
     // --- detect ----------------------------------------------------------------------------------
 
     private static DefaultJedisClientConfig probe() {

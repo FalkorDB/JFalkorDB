@@ -5,11 +5,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
@@ -42,30 +43,80 @@ import redis.clients.jedis.util.JedisClusterCRC16;
 final class ClusterConnections implements Connections {
 
     private final Set<HostAndPort> startupNodes;
-    private final GenericObjectPoolConfig<Jedis> poolConfig;
-    private final DefaultJedisClientConfig nodeConfig;
-    /** Like {@link #nodeConfig} but with a read deadline, so a silent node cannot hold the refresh lock forever. */
+    /** Like the node config but with a read deadline, so a silent node cannot hold the refresh lock forever. */
     private final DefaultJedisClientConfig refreshConfig;
+    /** Makes the connection pool for a node. */
+    private final Function<HostAndPort, JedisPool> newPool;
 
-    private final ConcurrentMap<HostAndPort, JedisPool> pools = new ConcurrentHashMap<>();
+    private final ConcurrentMap<HostAndPort, NodePool> pools = new ConcurrentHashMap<>();
     private final ReentrantLock refreshLock = new ReentrantLock();
 
     /** The slot table and primaries, replaced wholesale on refresh; {@code null} until the first succeeds. */
     private volatile @Nullable Topology topology;
 
-    /** One consistent view of the cluster, so readers never see a slot table and primaries from different refreshes. */
+    /**
+     * One consistent view of the cluster, so readers never see a slot table and primaries from different refreshes.
+     * It carries its own generation, so a caller that read it knows which refresh it came from without a second
+     * read that a concurrent refresh could slip between.
+     */
     private static final class Topology {
         final HostAndPort[] slotOwners;
         final List<HostAndPort> primaries;
+        /** 1 for the first topology learned, one more for each refresh after it. */
+        final long generation;
 
-        Topology(HostAndPort[] slotOwners, List<HostAndPort> primaries) {
+        Topology(HostAndPort[] slotOwners, List<HostAndPort> primaries, long generation) {
             this.slotOwners = slotOwners;
             this.primaries = primaries;
+            this.generation = generation;
         }
     }
 
-    /** Bumped by every successful refresh, so concurrent callers can tell theirs is already done. */
-    private final AtomicLong generation = new AtomicLong();
+    /**
+     * A node's pool, and the borrows in progress from it. A refresh closes the pool of a node that serves no slot only
+     * while no borrow from it is in progress and none of its connections is out, and no borrow can start on it after
+     * that. Otherwise a borrow that finished between the refresh's check and the close would leave a connection out of
+     * a closed pool, and the next borrow would open a second pool to the node, past its limit.
+     *
+     * <p>The monitor guards these counters and the pool's removal from the map; it is never held across I/O or a
+     * wait for the pool.
+     */
+    private static final class NodePool {
+        final JedisPool pool;
+        private int borrowing;
+        private boolean retired;
+
+        NodePool(JedisPool pool) {
+            this.pool = pool;
+        }
+
+        /** Starts a borrow, unless a refresh has retired this pool. */
+        synchronized boolean enter() {
+            if (retired) {
+                return false;
+            }
+            borrowing++;
+            return true;
+        }
+
+        /** Ends a borrow {@link #enter()} started. */
+        synchronized void leave() {
+            borrowing--;
+        }
+
+        /**
+         * Retires this pool and removes it from {@code pools} if nothing is borrowing from it and none of its
+         * connections is out; the caller then closes it.
+         */
+        synchronized boolean retireIfIdle(HostAndPort node, ConcurrentMap<HostAndPort, NodePool> pools) {
+            if (borrowing > 0 || pool.getNumActive() > 0) {
+                return false;
+            }
+            retired = true;
+            pools.remove(node, this);
+            return true;
+        }
+    }
 
     /** Rotates through the primaries for commands that name no graph. */
     private final AtomicInteger nextPrimary = new AtomicInteger();
@@ -84,10 +135,24 @@ final class ClusterConnections implements Connections {
             Set<HostAndPort> startupNodes,
             GenericObjectPoolConfig<Jedis> poolConfig,
             DefaultJedisClientConfig nodeConfig) {
+        this(startupNodes, nodeConfig, node -> new JedisPool(poolConfig, node, nodeConfig));
+    }
+
+    /**
+     * Creates the connection source with its own way of making a node's pool, so that a test can act between a
+     * pool being looked up and being borrowed from. No I/O happens until the first connection is requested.
+     *
+     * @param startupNodes where to learn the topology from; at least one
+     * @param nodeConfig   client config the topology is learned with; must not select a database
+     * @param newPool      makes the connection pool for a node
+     */
+    ClusterConnections(
+            Set<HostAndPort> startupNodes,
+            DefaultJedisClientConfig nodeConfig,
+            Function<HostAndPort, JedisPool> newPool) {
         this.startupNodes = startupNodes;
-        this.poolConfig = poolConfig;
-        this.nodeConfig = nodeConfig;
         this.refreshConfig = DriverImpl.clusterProbeConfig(nodeConfig);
+        this.newPool = newPool;
     }
 
     @Override
@@ -97,24 +162,23 @@ final class ClusterConnections implements Connections {
 
     @Override
     public Jedis get(@Nullable String routingKey) {
-        return poolFor(routingKey == null ? anyPrimary() : ownerOf(routingKey)).getResource();
+        return borrow(routingKey == null ? anyPrimary() : ownerOf(routingKey));
     }
 
     @Override
     public <T> List<T> onEachPrimary(Function<Jedis, T> operation) {
         Topology view = ensureTopology();
-        long seen = generation.get();
         List<T> results = new ArrayList<>();
         try {
             for (HostAndPort node : view.primaries) {
-                try (Jedis connection = poolFor(node).getResource()) {
+                try (Jedis connection = borrow(node)) {
                     results.add(operation.apply(connection));
                 }
             }
         } catch (JedisConnectionException e) {
             // A dead primary may have been replaced; relearn so the next call does not hit the stale list.
             try {
-                refresh(seen);
+                refresh(view.generation);
             } catch (JedisClusterOperationException refreshFailure) {
                 e.addSuppressed(refreshFailure);
             }
@@ -125,12 +189,109 @@ final class ClusterConnections implements Connections {
 
     @Override
     public void topologyChanged() {
-        refresh(generation.get());
+        refresh(generation());
+    }
+
+    /**
+     * Tries the primaries in turn, starting with the next one in round-robin order, until one answers. When
+     * one can't be reached, its pool's idle connections are dropped, since a node that broke one has likely
+     * broken them all, and the topology is relearned once, so a primary that failed over is replaced. The read
+     * then moves on to a primary it hasn't tried yet. If the relearning succeeded and every primary has been
+     * tried, each one in the relearned topology gets one more try, after its idle connections were dropped: a
+     * primary that restarted answers again although every connection its pool held is gone. If the relearning
+     * fails, the read still tries the other primaries it already knew, without relearning again: a primary that
+     * refuses new connections may still answer on one its pool already holds. The read fails only when no primary
+     * answers, with the first failure and the others, the failed relearning included, suppressed in it.
+     *
+     * <p>A primary that is slow rather than down counts as failed when its socket times out, so a read can wait
+     * for up to two timeouts per primary before it fails.
+     */
+    @Override
+    public <T> T onAnyPrimary(Function<Jedis, T> read) {
+        Topology view = ensureTopology();
+        int start = nextPrimary.getAndIncrement();
+        Set<HostAndPort> tried = new HashSet<>();
+        JedisConnectionException failure = null;
+        boolean relearned = false;
+        boolean secondPass = false;
+        while (true) {
+            HostAndPort node = untried(view.primaries, start, tried);
+            if (node == null) {
+                if (secondPass) {
+                    // Every primary was tried and failed: a topology always has one, and each failure was kept.
+                    throw Objects.requireNonNull(failure);
+                }
+                // Only a relearning that succeeded allows this, and it happens once.
+                secondPass = true;
+                tried.clear();
+                continue;
+            }
+            tried.add(node);
+            try (Jedis connection = borrow(node)) {
+                return read.apply(connection);
+            } catch (JedisConnectionException e) {
+                if (failure == null) {
+                    failure = e;
+                } else {
+                    failure.addSuppressed(e);
+                }
+                dropIdleConnections(node);
+                if (!relearned) {
+                    relearned = true;
+                    try {
+                        view = refresh(view.generation);
+                    } catch (JedisClusterOperationException refreshFailure) {
+                        failure.addSuppressed(refreshFailure);
+                        secondPass = true; // the primaries tried are not retried
+                    }
+                }
+            }
+        }
+    }
+
+    /** Closes the idle connections of {@code node}'s pool, if it has one. Connections that are out stay. */
+    private void dropIdleConnections(HostAndPort node) {
+        NodePool nodePool = pools.get(node);
+        if (nodePool != null) {
+            nodePool.pool.clear();
+        }
+    }
+
+    /** The first primary not in {@code tried}, going round from position {@code start}. */
+    static @Nullable HostAndPort untried(List<HostAndPort> primaries, int start, Set<HostAndPort> tried) {
+        for (int i = 0; i < primaries.size(); i++) {
+            // in long: start + i could wrap past Integer.MAX_VALUE and visit one primary twice, another never
+            HostAndPort node = primaries.get((int) Math.floorMod((long) start + i, (long) primaries.size()));
+            if (!tried.contains(node)) {
+                return node;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public HostAndPort nodeOf(String routingKey) {
+        return ownerOf(routingKey);
+    }
+
+    @Override
+    public Jedis connectionTo(HostAndPort node, boolean asking) {
+        Jedis connection = borrow(node);
+        if (asking) {
+            try {
+                connection.asking();
+            } catch (RuntimeException e) {
+                connection.close();
+                throw e;
+            }
+        }
+        return connection;
     }
 
     /** The number of topologies learned so far; pass it to {@link #topologyChanged(long)}. */
     long generation() {
-        return generation.get();
+        Topology current = topology;
+        return current == null ? 0 : current.generation;
     }
 
     /** Relearns the topology unless another caller has already done so since {@code seenGeneration}. */
@@ -141,18 +302,40 @@ final class ClusterConnections implements Connections {
     @Override
     public void close() {
         closed = true;
-        for (JedisPool pool : pools.values()) {
-            pool.close();
+        for (NodePool nodePool : pools.values()) {
+            nodePool.pool.close();
         }
         pools.clear();
     }
 
+    /**
+     * Borrows a connection to {@code node}. A refresh closes the idle pools of nodes that serve no slot: a primary
+     * that was replaced, or an empty node importing its first slot, the target of an {@code ASK}. If a refresh retired
+     * the pool between looking it up and starting the borrow, the borrow moves on to a new pool; once it has started,
+     * no refresh closes that pool (see {@link NodePool}). Each move needs a whole refresh to retire the new pool in
+     * the same window, so this doesn't spin.
+     */
+    private Jedis borrow(HostAndPort node) {
+        while (true) {
+            NodePool nodePool = poolFor(node);
+            if (!nodePool.enter()) {
+                continue; // already removed from pools, so the lookup makes a new one
+            }
+            try {
+                return nodePool.pool.getResource();
+            } finally {
+                nodePool.leave();
+            }
+        }
+    }
+
     private HostAndPort ownerOf(String graphId) {
         int slot = JedisClusterCRC16.getSlot(graphId);
-        HostAndPort owner = ensureTopology().slotOwners[slot];
+        Topology view = ensureTopology();
+        HostAndPort owner = view.slotOwners[slot];
         if (owner == null) {
             // The slot was unassigned when we looked, which also happens mid-migration; look once more.
-            owner = refresh(generation.get()).slotOwners[slot];
+            owner = refresh(view.generation).slotOwners[slot];
         }
         if (owner == null) {
             throw new JedisClusterOperationException(
@@ -169,21 +352,26 @@ final class ClusterConnections implements Connections {
 
     private Topology ensureTopology() {
         Topology current = topology;
-        return current != null ? current : refresh(generation.get());
+        return current != null ? current : refresh(0);
     }
 
-    private JedisPool poolFor(HostAndPort node) {
+    /**
+     * Returns the pool of {@code node}, creating it on first use.
+     *
+     * @throws IllegalStateException if the driver is closed
+     */
+    private NodePool poolFor(HostAndPort node) {
         if (closed) {
             throw new IllegalStateException("the driver is closed");
         }
-        JedisPool pool = pools.computeIfAbsent(node, n -> new JedisPool(poolConfig, n, nodeConfig));
+        NodePool nodePool = pools.computeIfAbsent(node, address -> new NodePool(newPool.apply(address)));
         if (closed) {
             // close() may have swept the map before this pool was added; do not leak it.
-            pools.remove(node, pool);
-            pool.close();
+            pools.remove(node, nodePool);
+            nodePool.pool.close();
             throw new IllegalStateException("the driver is closed");
         }
-        return pool;
+        return nodePool;
     }
 
     /**
@@ -198,7 +386,7 @@ final class ClusterConnections implements Connections {
         refreshLock.lock();
         try {
             Topology current = topology;
-            if (current != null && generation.get() != seenGeneration) {
+            if (current != null && current.generation != seenGeneration) {
                 return current;
             }
             JedisException lastFailure = null;
@@ -221,17 +409,21 @@ final class ClusterConnections implements Connections {
         }
     }
 
+    /**
+     * Makes a slot table just learned the current topology, as a new {@linkplain #generation() generation}, and
+     * closes the pools of nodes that own no slot in it, unless they are in use. Runs under the refresh lock.
+     */
     private Topology publish(HostAndPort[] table, List<HostAndPort> owners) {
-        Topology fresh = new Topology(table, owners);
+        Topology fresh = new Topology(table, owners, generation() + 1);
         topology = fresh;
-        generation.incrementAndGet();
         Set<HostAndPort> live = new HashSet<>(owners);
-        for (HostAndPort node : new ArrayList<>(pools.keySet())) {
-            if (!live.contains(node)) {
-                JedisPool gone = pools.remove(node);
-                if (gone != null) {
-                    gone.close();
-                }
+        for (Map.Entry<HostAndPort, NodePool> entry : pools.entrySet()) {
+            NodePool nodePool = entry.getValue();
+            // A node that serves no slot can still be in use: an empty node importing its first slot is the target
+            // of every ASK for it. Its pool stays while it is in use, so its connections and the next ones share
+            // its limit, and goes at a later refresh once it is idle.
+            if (!live.contains(entry.getKey()) && nodePool.retireIfIdle(entry.getKey(), pools)) {
+                nodePool.pool.close();
             }
         }
         return fresh;
