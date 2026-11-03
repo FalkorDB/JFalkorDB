@@ -1,6 +1,8 @@
 package com.falkordb;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,5 +56,28 @@ public class ConfigIT {
         Assertions.assertThrows(JedisDataException.class, () -> {
             driver.configGet("INVALID_CONFIG_PARAM_XYZ");
         });
+    }
+
+    @Test
+    public void testConfigGetRejectsTheWildcard() {
+        // "*" names every parameter, which is what configGetAll() is for. configGet used to return a
+        // garbled string for it, such as "[[B@3f99bd52, 0]".
+        IllegalArgumentException e =
+                Assertions.assertThrows(IllegalArgumentException.class, () -> driver.configGet("*"));
+        Assertions.assertTrue(e.getMessage().contains("configGetAll()"), e.getMessage());
+    }
+
+    @Test
+    public void testConfigGetAll() {
+        Map<String, String> config = driver.configGetAll();
+
+        Assertions.assertTrue(config.size() > 1, "GRAPH.CONFIG GET * lists every parameter: " + config);
+        Assertions.assertTrue(config.containsKey("RESULTSET_SIZE"), config.toString());
+        // These can only be set when the module loads, so nothing changes them between the two reads.
+        // IMPORT_FOLDER is a string; the other two are integers.
+        for (String name : Arrays.asList("THREAD_COUNT", "CACHE_SIZE", "IMPORT_FOLDER")) {
+            Assertions.assertEquals(driver.configGet(name), config.get(name), name);
+        }
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> config.put("RESULTSET_SIZE", "1"));
     }
 }
