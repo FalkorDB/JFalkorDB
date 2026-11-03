@@ -32,6 +32,10 @@ import redis.clients.jedis.commands.RedisModulePipelineCommands;
  * <p>Like the context that created it, a pipeline is meant for one thread: until that context is closed,
  * read the replies on the thread that uses the context.
  *
+ * <p>Call {@link #sync()}, {@link #syncAndReturnAll()} or {@link #close()} before dropping a pipeline that has
+ * queued commands. Their replies stay unread on the context's connection, and the next command sent on it, by the
+ * context or by a schema lookup, reads one of them as its own.
+ *
  * <p>A {@link com.falkordb.exceptions.GraphException} while decoding a reply in {@link #syncAndReturnAll()}
  * becomes that reply's element of the returned list, like an error reply. Jedis does not keep it, so reading
  * the same {@code Response} again returns {@code null}.
