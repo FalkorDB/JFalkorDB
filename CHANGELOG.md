@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.15.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.14.0...v0.15.0) (2026-11-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* a query or profile whose reply can't be decoded because a schema lookup was redirected now fails with a GraphException saying the command ran, instead of being run again.
+* a reply queued before deleteGraph() in the same pipeline or transaction, needing an id the client hadn't cached, now fails with GraphException instead of being looked up after the delete, where it either failed or silently got a recreated graph's names. syncAndReturnAll() and exec() decode before they learn whether the delete succeeded, so this also applies to a delete that fails there.
+* explain(), copyGraph() and deleteGraph() on a Graph, and copyGraph() and deleteGraph() on a GraphContext, throw GraphException for a server error instead of the JedisDataException Jedis raised. GraphException extends JedisDataException, so catch (JedisDataException) still matches, but a catch of a Jedis subclass such as JedisAccessControlException (NOPERM) no longer does: look at getCause(). The message now starts with the cause's class name, as for the other wrapped commands.
+* a query sent with a timeout now also obeys the connection's socket timeout. With the drivers FalkorDB.builder() builds nothing changes unless socketTimeout is set, but a pool passed to DriverImpl(Pool) gets Jedis' 2000 ms default, so on such a pool query(q, 30_000) now fails with a read timeout after 2 s while the server may still run it. Set the socket timeout above your longest query timeout, or to 0. A negative timeout throws IllegalArgumentException instead of running with the server's default.
+* callProcedure rejects with IllegalArgumentException what it used to send: a backtick-quoted procedure name, a YIELD column with an AS alias or holding several columns ("node, score"), and anything that isn't identifiers. A null procedure, args, kwargs, argument or column throws IllegalArgumentException instead of NullPointerException or sending "null". Pass one column per list element, without aliases, and read results by those names.
+* a reply that names a label, relationship type or property key the graph doesn't list now fails with GraphException instead of IndexOutOfBoundsException, and an id beyond the int range fails instead of wrapping to another entry. GraphException is a JedisDataException, so GraphPipeline.syncAndReturnAll() and GraphTransaction.exec() now return it as that command's result instead of throwing it.
+* configGet("*") now throws IllegalArgumentException instead of returning a meaningless string. Use configGetAll() to read every parameter. Closes #489 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+### Features
+
+* add configGetAll() and make configGet() reject the "*" wildcard ([#495](https://github.com/FalkorDB/JFalkorDB/issues/495)) ([06327d4](https://github.com/FalkorDB/JFalkorDB/commit/06327d476e038c80bc087bd4b0989693922bd32b))
+
+
+### Bug Fixes
+
+* clear the schema cache when deleteGraph runs, and decode queued replies safely ([#500](https://github.com/FalkorDB/JFalkorDB/issues/500)) ([a5a1448](https://github.com/FalkorDB/JFalkorDB/commit/a5a14483d3d4ef2a10171c3b1b51d3efd30e1095))
+* **deps:** bump com.google.errorprone:error_prone_core ([#480](https://github.com/FalkorDB/JFalkorDB/issues/480)) ([7ee2556](https://github.com/FalkorDB/JFalkorDB/commit/7ee2556cfe907489a43807e874ade94b1c42417c))
+* do not close the borrowed connection in GraphContext.deleteGraph() on error ([#493](https://github.com/FalkorDB/JFalkorDB/issues/493)) ([a777901](https://github.com/FalkorDB/JFalkorDB/commit/a777901f513125b2378adfa5652073f334a0cc7e))
+* follow ASK redirects, and move single-primary reads off a dead primary ([#501](https://github.com/FalkorDB/JFalkorDB/issues/501)) ([142a846](https://github.com/FalkorDB/JFalkorDB/commit/142a846e6ea7a169e4de9cbbfe369d909bf4c038))
+* keep the socket timeout for queries sent with a timeout, and reject negative timeouts ([#498](https://github.com/FalkorDB/JFalkorDB/issues/498)) ([ce47943](https://github.com/FalkorDB/JFalkorDB/commit/ce4794354bc2724247c54d7f71652abe35935203))
+* replace stale entries and reject unknown ids in the graph schema cache ([#496](https://github.com/FalkorDB/JFalkorDB/issues/496)) ([2608edb](https://github.com/FalkorDB/JFalkorDB/commit/2608edb35cf1c0a337933744227812b1ecfe5895))
+* report explain, copyGraph and deleteGraph errors as GraphException ([#499](https://github.com/FalkorDB/JFalkorDB/issues/499)) ([259ba54](https://github.com/FalkorDB/JFalkorDB/commit/259ba54f21d841da7101c71173805c3232823585))
+* validate procedure names and YIELD columns in callProcedure ([#497](https://github.com/FalkorDB/JFalkorDB/issues/497)) ([7bbce00](https://github.com/FalkorDB/JFalkorDB/commit/7bbce00f1f0536fca0aedd36a18fba7e6e284485))
+
+
+### Documentation
+
+* import the engineering conventions into CLAUDE.md ([#494](https://github.com/FalkorDB/JFalkorDB/issues/494)) ([c8fe919](https://github.com/FalkorDB/JFalkorDB/commit/c8fe919b2ca6a0a45c7b95ec7e299ea054267bcf))
+
 ## [0.14.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.13.1...v0.14.0) (2026-10-18)
 
 
