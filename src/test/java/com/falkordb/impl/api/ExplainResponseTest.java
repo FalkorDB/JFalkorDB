@@ -212,6 +212,9 @@ class ExplainResponseTest {
                 return FakeRedisServer.ok();
             }
             if (FakeRedisServer.startsWith(command, "EXEC")) {
+                if (queued == null) {
+                    return FakeRedisServer.error("ERR EXEC without MULTI");
+                }
                 String reply = FakeRedisServer.array(queued.toArray(new String[0]));
                 queued = null;
                 return reply;
