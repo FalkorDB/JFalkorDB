@@ -1,17 +1,24 @@
 package com.falkordb.exceptions;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.falkordb.Driver;
+import com.falkordb.FalkorDB;
 import com.falkordb.GraphContext;
 import com.falkordb.GraphContextGenerator;
 import com.falkordb.TestServer;
+import java.io.IOException;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.exceptions.JedisException;
 
 public class GraphErrorIT {
 
@@ -75,10 +82,10 @@ public class GraphErrorIT {
 
     @Test
     public void testContextSyntaxErrorReporting() {
-        GraphContext c = api.getContext();
-
-        GraphException exception = assertThrows(GraphException.class, () -> c.query("RETURN toUpper(5)"));
-        assertTrue(exception.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
+        try (GraphContext c = api.getContext()) {
+            GraphException exception = assertThrows(GraphException.class, () -> c.query("RETURN toUpper(5)"));
+            assertTrue(exception.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
+        }
     }
 
     @Test
@@ -104,32 +111,69 @@ public class GraphErrorIT {
 
     @Test
     public void testContextRuntimeErrorReporting() {
-        GraphContext c = api.getContext();
-
-        GraphException exception =
-                assertThrows(GraphException.class, () -> c.query("MATCH (p:person) RETURN toUpper(p.mixed_prop)"));
-        assertTrue(exception.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
+        try (GraphContext c = api.getContext()) {
+            GraphException exception =
+                    assertThrows(GraphException.class, () -> c.query("MATCH (p:person) RETURN toUpper(p.mixed_prop)"));
+            assertTrue(exception.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
+        }
     }
 
     @Test
     public void testContextExceptionFlow() {
 
-        GraphContext c = api.getContext();
-        try {
-            // Issue a query that causes a compile-time error
-            c.query("RETURN toUpper(5)");
-        } catch (Exception e) {
-            Assertions.assertEquals(GraphException.class, e.getClass());
-            Assertions.assertTrue(e.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
-        }
+        try (GraphContext c = api.getContext()) {
+            try {
+                // Issue a query that causes a compile-time error
+                c.query("RETURN toUpper(5)");
+            } catch (Exception e) {
+                Assertions.assertEquals(GraphException.class, e.getClass());
+                Assertions.assertTrue(
+                        e.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
+            }
 
-        // On contexted api usage, connection should stay open
-        try {
-            // Issue a query that causes a compile-time error
-            c.query("MATCH (p:person) RETURN toUpper(p.mixed_prop)");
-        } catch (Exception e) {
-            Assertions.assertEquals(GraphException.class, e.getClass());
-            Assertions.assertTrue(e.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
+            // On contexted api usage, connection should stay open
+            try {
+                // Issue a query that causes a compile-time error
+                c.query("MATCH (p:person) RETURN toUpper(p.mixed_prop)");
+            } catch (Exception e) {
+                Assertions.assertEquals(GraphException.class, e.getClass());
+                Assertions.assertTrue(
+                        e.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
+            }
+        }
+    }
+
+    @Test
+    public void testContextRemainsUsableAfterFailedDeleteGraph() throws IOException {
+        // A single-connection pool: the context holds the only connection, so whether it is returned to
+        // the pool early, or more than once, shows in what the pool lends out next.
+        try (Driver driver = FalkorDB.builder()
+                .host(TestServer.host())
+                .port(TestServer.port())
+                .poolMaxTotal(1)
+                .poolMaxIdle(1)
+                .poolMaxWait(Duration.ZERO)
+                .build()) {
+            long connectionId;
+            try (Jedis connection = driver.getConnection()) {
+                connectionId = connection.clientId();
+            }
+
+            try (GraphContext c = driver.graph("graph-error-it-missing").getContext()) {
+                GraphException exception = assertThrows(GraphException.class, c::deleteGraph);
+                assertTrue(exception.getMessage().contains("empty key"), exception.getMessage());
+                // the failed delete must leave the connection with the context, not back in the pool
+                assertThrows(JedisException.class, driver::getConnection);
+
+                assertEquals(1, c.query("CREATE (:Person)").getStatistics().nodesCreated());
+                c.deleteGraph();
+            }
+
+            // closing the context returned the connection once and intact: returning it a second time
+            // would have disconnected it, and the pool would lend out a new connection instead
+            try (Jedis connection = driver.getConnection()) {
+                assertEquals(connectionId, connection.clientId());
+            }
         }
     }
 

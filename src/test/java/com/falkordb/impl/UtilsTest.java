@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -51,6 +52,136 @@ public class UtilsTest {
     public void testPrepareProcedureEscapesArgs() {
         // A backslash-terminated arg must be escaped so it can't break out of the quoted argument.
         assertEquals("CALL prc(\"a\\\\\")", Utils.prepareProcedure("prc", Arrays.asList("a\\"), new HashMap<>()));
+    }
+
+    @Test
+    public void testPrepareProcedureAcceptsDottedNamesAndYieldColumns() {
+        for (String name :
+                new String[] {"prc", "A", "db.labels", "db.idx.fulltext.queryNodes", "algo.SPpaths", "_a1.b_2"}) {
+            assertEquals("CALL " + name + "()", Utils.prepareProcedure(name, Collections.emptyList(), new HashMap<>()));
+        }
+        Map<String, List<String>> kwargs = new HashMap<>();
+        kwargs.put("y", Arrays.asList("node", "score", "_x1"));
+        assertEquals(
+                "CALL db.idx.fulltext.queryNodes(\"L\",\"q\") YIELD node,score,_x1",
+                Utils.prepareProcedure("db.idx.fulltext.queryNodes", Arrays.asList("L", "q"), kwargs));
+    }
+
+    @Test
+    public void testPrepareProcedureRejectsInvalidProcedureNames() {
+        // The name is written into the query as it is, so anything but dotted identifiers could add
+        // clauses: the server runs the first payload's DETACH DELETE before reporting any error.
+        String[] invalid = {
+            "",
+            " ",
+            ".",
+            "..",
+            "1proc",
+            "db..labels",
+            ".db.labels",
+            "db.labels.",
+            "db labels",
+            " db.labels",
+            "db.labels ",
+            "db.labels\n",
+            "`db.labels`",
+            "db-labels",
+            "db.labels()",
+            "d\u00e9.labels",
+            "db.\u212Aey",
+            "db.labels\u0000",
+            "db.\ud800labels",
+            "db.labels() YIELD label MATCH (n) DETACH DELETE n //",
+            "db.labels; MATCH (n) DELETE n"
+        };
+        for (String name : invalid) {
+            IllegalArgumentException e = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> Utils.prepareProcedure(name, Collections.emptyList(), new HashMap<>()),
+                    name);
+            assertTrue(e.getMessage().startsWith("Invalid procedure name: "), e.getMessage());
+        }
+        IllegalArgumentException e = assertThrows(
+                IllegalArgumentException.class,
+                () -> Utils.prepareProcedure(null, Collections.emptyList(), new HashMap<>()));
+        assertEquals(
+                "Invalid procedure name: null (must be Cypher identifiers joined by dots, such as db.labels)",
+                e.getMessage());
+    }
+
+    @Test
+    public void testPrepareProcedureRejectsInvalidYieldColumns() {
+        String[] invalid = {
+            "",
+            " ",
+            "a b",
+            "label, other",
+            "label RETURN 1",
+            "1col",
+            "a`b",
+            "label AS l",
+            "a.b",
+            "\u00e9",
+            "label MATCH (n) DETACH DELETE n"
+        };
+        for (String column : invalid) {
+            Map<String, List<String>> kwargs = new HashMap<>();
+            kwargs.put("y", Arrays.asList("label", column));
+            IllegalArgumentException e = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> Utils.prepareProcedure("db.labels", Collections.emptyList(), kwargs),
+                    column);
+            assertTrue(e.getMessage().startsWith("Invalid YIELD column: "), e.getMessage());
+        }
+        Map<String, List<String>> withNull = new HashMap<>();
+        withNull.put("y", Arrays.asList("label", null));
+        IllegalArgumentException e = assertThrows(
+                IllegalArgumentException.class,
+                () -> Utils.prepareProcedure("db.labels", Collections.emptyList(), withNull));
+        assertEquals("Invalid YIELD column: null (must match [A-Za-z_][A-Za-z0-9_]*)", e.getMessage());
+    }
+
+    @Test
+    public void testPrepareProcedureRejectsNullArguments() {
+        IllegalArgumentException e = assertThrows(
+                IllegalArgumentException.class, () -> Utils.prepareProcedure("db.labels", null, new HashMap<>()));
+        assertEquals("args must not be null", e.getMessage());
+
+        e = assertThrows(
+                IllegalArgumentException.class,
+                () -> Utils.prepareProcedure("db.labels", Collections.emptyList(), null));
+        assertEquals("kwargs must not be null", e.getMessage());
+
+        e = assertThrows(
+                IllegalArgumentException.class,
+                () -> Utils.prepareProcedure("prc", Arrays.asList("ok", null), new HashMap<>()));
+        assertEquals("Procedure argument at index 1 must not be null", e.getMessage());
+    }
+
+    @Test
+    public void testPrepareProcedureMessagesAreSafeToLog() {
+        IllegalArgumentException e = assertThrows(
+                IllegalArgumentException.class,
+                () -> Utils.prepareProcedure("db.labels\u0000\nforged", Collections.emptyList(), new HashMap<>()));
+        assertTrue(e.getMessage().contains("db.labels\\u0000\\u000aforged"), e.getMessage());
+        assertFalse(e.getMessage().contains("\n"), e.getMessage());
+
+        String huge = String.join("", Collections.nCopies(10_000, "x")) + " ";
+        e = assertThrows(
+                IllegalArgumentException.class,
+                () -> Utils.prepareProcedure(huge, Collections.emptyList(), new HashMap<>()));
+        assertTrue(e.getMessage().length() < 200, e.getMessage());
+    }
+
+    @Test
+    public void testPrepareProcedureChecksALongNameWithoutOverflowingTheStack() {
+        // Java matches a repeated regex group recursively, so checking the name with the obvious regex
+        // overflowed the stack at about 5,000 segments: StackOverflowError instead of a checked name.
+        String name = String.join(".", Collections.nCopies(50_000, "a"));
+        assertEquals("CALL " + name + "()", Utils.prepareProcedure(name, Collections.emptyList(), new HashMap<>()));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> Utils.prepareProcedure(name + " x", Collections.emptyList(), new HashMap<>()));
     }
 
     @Test

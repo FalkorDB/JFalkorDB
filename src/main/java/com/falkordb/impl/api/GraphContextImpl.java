@@ -15,7 +15,10 @@ import redis.clients.jedis.util.SafeEncoder;
 
 /**
  * An implementation of GraphContext. Allows sending Graph and some Redis commands,
- * within a specific connection context
+ * within a specific connection context.
+ *
+ * <p>The context owns its connection for its whole lifetime: the connection stays bound to it even
+ * after a command fails, and only {@link #close()} releases it.
  */
 public class GraphContextImpl extends AbstractGraph implements GraphContext {
 
@@ -83,7 +86,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     protected ResultSet sendQuery(String preparedQuery, long timeout) {
         try {
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>) connection.sendBlockingCommand(
+            List<Object> rawResponse = (List<Object>) connection.sendCommand(
                     GraphCommand.QUERY,
                     graphId,
                     preparedQuery,
@@ -108,7 +111,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     protected ResultSet sendReadOnlyQuery(String preparedQuery, long timeout) {
         try {
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>) connection.sendBlockingCommand(
+            List<Object> rawResponse = (List<Object>) connection.sendCommand(
                     GraphCommand.RO_QUERY,
                     graphId,
                     preparedQuery,
@@ -240,7 +243,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     }
 
     /**
-     * closes the Jedis connection
+     * Releases the context's connection, returning it to its pool when it was borrowed from one.
+     * This is the only method that releases the connection.
      */
     @Override
     public void close() {

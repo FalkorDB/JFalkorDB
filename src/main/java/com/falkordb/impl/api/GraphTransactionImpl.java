@@ -97,6 +97,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> query(String query, long timeout) {
+        Utils.checkTimeout(timeout);
         return appendWithResponse(
                 GraphCommand.QUERY,
                 Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout)),
@@ -113,6 +114,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> readOnlyQuery(String query, long timeout) {
+        Utils.checkTimeout(timeout);
         return appendWithResponse(
                 GraphCommand.RO_QUERY,
                 Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout)),
@@ -158,6 +160,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> query(String query, Map<String, Object> params, long timeout) {
+        Utils.checkTimeout(timeout);
         return appendWithResponse(
                 GraphCommand.QUERY,
                 Arrays.asList(
@@ -180,6 +183,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params, long timeout) {
+        Utils.checkTimeout(timeout);
         return appendWithResponse(
                 GraphCommand.RO_QUERY,
                 Arrays.asList(
