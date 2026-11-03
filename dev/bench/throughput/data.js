@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793692182798,
+  "lastUpdate": 1793695998807,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -8141,6 +8141,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 16302.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "259ba54f21d841da7101c71173805c3232823585",
+          "message": "fix!: report explain, copyGraph and deleteGraph errors as GraphException (#499)\n\n* fix!: report explain, copyGraph and deleteGraph errors as GraphException\n\nGraph.explain() threw Jedis' raw JedisDataException when the server rejected\nthe query, while GraphContext.explain() wrapped it in GraphException, as\nevery query method does. copyGraph() and deleteGraph() wrapped nothing on\neither.\n\nGraphImpl now runs explain, copyGraph and deleteGraph through a short-lived\ncontext, as it already did for queries and profiles, and GraphContextImpl\nwraps copyGraph and deleteGraph errors like its other commands. deleteGraph\nno longer closes the context's connection when the server rejects it, which\nis the change open PR #493 makes for #485, byte for byte: with the\ndelegation, the old close would have returned the connection to the pool\ntwice. The GRAPH.EXPLAIN reply parser, copied into four classes (and into\nfour test helpers), is now one, ExplainPlans, which throws an error element\ninstead of turning it into a plan line.\n\nBREAKING CHANGE: explain(), copyGraph() and deleteGraph() on a Graph, and\ncopyGraph() and deleteGraph() on a GraphContext, throw GraphException for a\nserver error instead of the JedisDataException Jedis raised. GraphException\nextends JedisDataException, so catch (JedisDataException) still matches, but\na catch of a Jedis subclass such as JedisAccessControlException (NOPERM) no\nlonger does: look at getCause(). The message now starts with the cause's\nclass name, as for the other wrapped commands.\n\nCloses #488\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: check failed commands return their connection, and the message's cause prefix\n\nAlso narrow GraphException's Javadoc to the replies that really are reported\nas one.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: a GraphException from the connection isn't wrapped again\n\nGraphException is a JedisDataException, so copyGraph() and deleteGraph()\nrethrow one before wrapping the rest. No test reached that catch.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: add Javadoc to the helper this PR touches that had none\n\nCodeRabbit's Docstring Coverage check counts the functions a PR touches.\nExplainPlans.line had no Javadoc. The touched functions still without\none are test methods, which this repo names rather than documents.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: make every get() of a failed pipelined or transacted plan throw\n\nJedis builds a Response once and forgets an exception its builder\nthrew: later get() calls return null. syncAndReturnAll() and exec() call\nget() themselves, so the caller of a pipelined or transacted explain\nwhose plan held an error got null instead of the GraphException.\n\nExplainPlans.queue() now returns a response that keeps the failure and\nthrows it on every get(). The tests run real pipelines and transactions\nagainst a fake server.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: follow a redirect to the new owner for explain, copy and delete\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: answer EXEC without MULTI with an error in the explain fake server\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-03T10:51:30+02:00",
+          "tree_id": "e244631178d83f523e8fd8a627e98348705047a7",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/259ba54f21d841da7101c71173805c3232823585"
+        },
+        "date": 1793695998780,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 8892.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 15064.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 19776.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 24381,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 23409.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 22248,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 22908.333,
             "unit": "ops/s"
           }
         ]
