@@ -117,6 +117,8 @@ jobs:
         cache: maven
     - name: Install just
       uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+    - name: Warm Maven cache (via just)
+      run: just fetch-deps -Pquality
     - name: Check formatting (via just)
       run: just fmt-check
 
@@ -136,6 +138,8 @@ jobs:
         cache: maven
     - name: Install just
       uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+    - name: Warm Maven cache (via just)
+      run: just fetch-deps -Pquality
     - name: Static analysis — SpotBugs/FindSecBugs + Error Prone (via just)
       run: just lint
 
@@ -155,6 +159,8 @@ jobs:
         cache: maven
     - name: Install just
       uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+    - name: Warm Maven cache (via just)
+      run: just fetch-deps -Pquality
     - name: Javadoc gate — strict doclint on the public API (via just)
       run: just javadoc
 
@@ -176,6 +182,8 @@ jobs:
         cache: maven
     - name: Install just
       uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+    - name: Warm Maven cache (via just)
+      run: just fetch-deps
     - name: Compile the runnable examples (via just)
       run: just examples
 
@@ -205,6 +213,8 @@ jobs:
         cache: maven
     - name: Install just
       uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+    - name: Warm Maven cache (via just)
+      run: just fetch-deps
     - name: Build on JDK 21, run the packaged-artifact smoke on JDK 8 (via just)
       run: just verify-jdk8 "$JAVA_HOME_8_X64"
 
@@ -242,5 +252,7 @@ jobs:
         cache: maven
     - name: Install just
       uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+    - name: Warm Maven cache (via just)
+      run: just fetch-deps
     - name: Build on JDK 21, run the packaged-artifact smoke on JDK ${{ matrix.jdk }} (via just)
       run: just verify-jdk "$JAVA_HOME_${{ matrix.jdk }}_X64"
