@@ -306,7 +306,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      */
     @Override
     public Response<List<String>> explain(String query, Map<String, Object> params) {
-        return appendWithResponse(
-                GraphCommand.EXPLAIN, Arrays.asList(graphId, Utils.prepareQuery(query, params)), ExplainPlans.BUILDER);
+        List<Object> args = Arrays.asList(graphId, Utils.prepareQuery(query, params));
+        return ExplainPlans.queue(builder -> appendWithResponse(GraphCommand.EXPLAIN, args, builder));
     }
 }

@@ -191,18 +191,21 @@ public class GraphExplainBuilderUnitTest {
         Assertions.assertSame(error, e.getCause());
     }
 
-    /** Runs the builder that GraphPipelineImpl and GraphTransactionImpl attach to an explain command. */
+    /**
+     * Parses the reply as the builder that GraphPipelineImpl and GraphTransactionImpl attach to an explain
+     * command does. ExplainResponseTest runs that builder through real pipelines and transactions.
+     */
     private static List<String> buildExplainResponse(Object o) {
-        return ExplainPlans.BUILDER.build(o);
+        return ExplainPlans.lines(o);
     }
 
-    /** The same builder: a null line is converted with {@code String.valueOf}, like any other non-text line. */
+    /** The same parser: a null line is converted with {@code String.valueOf}, like any other non-text line. */
     private static List<String> buildExplainResponseSafely(Object o) {
-        return ExplainPlans.BUILDER.build(o);
+        return ExplainPlans.lines(o);
     }
 
-    /** The same builder, given a reply that is not an array. */
+    /** The same parser, given a reply that is not an array. */
     private static List<String> buildExplainResponseFallback(Object o) {
-        return ExplainPlans.BUILDER.build(o);
+        return ExplainPlans.lines(o);
     }
 }
