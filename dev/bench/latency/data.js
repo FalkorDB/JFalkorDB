@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793691508066,
+  "lastUpdate": 1793691871061,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -17543,6 +17543,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 36456.485,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7bbce00f1f0536fca0aedd36a18fba7e6e284485",
+          "message": "fix!: validate procedure names and YIELD columns in callProcedure (#497)\n\n* fix!: validate procedure names and YIELD columns in callProcedure\n\nUtils.prepareProcedure quoted the procedure's arguments but wrote the\nprocedure name and each YIELD column into the query as they were, so either\ncould add clauses: callProcedure(\"db.labels() YIELD label MATCH (n) DETACH\nDELETE n //\") deleted every node. A null name or column was written as\n\"null\", and a null args, kwargs or argument threw NullPointerException.\n\nThe name must now be Cypher identifiers joined by dots, such as db.labels or\ndb.idx.fulltext.queryNodes, and each YIELD column a single identifier.\nAnything else, or a null input, throws IllegalArgumentException before\nanything is sent or queued. Every procedure the server lists fits the rule.\nThe name is checked with a loop rather than a regex: Java matches a repeated\nregex group recursively, so a long dotted name would overflow the stack.\n\nBREAKING CHANGE: callProcedure rejects with IllegalArgumentException what it\nused to send: a backtick-quoted procedure name, a YIELD column with an AS\nalias or holding several columns (\"node, score\"), and anything that isn't\nidentifiers. A null procedure, args, kwargs, argument or column throws\nIllegalArgumentException instead of NullPointerException or sending \"null\".\nPass one column per list element, without aliases, and read results by\nthose names.\n\nCloses #487\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: spell out the identifier grammar callProcedure enforces\n\nName the ASCII rule, [A-Za-z_][A-Za-z0-9_]*, wherever callProcedure's checks\nare described, reword the llms.txt sentence, and wait for the async test's\nfuture with a timeout instead of an unbounded join().\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: say an async callProcedure fails with IllegalArgumentException when its task runs\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: say callProcedure checks a name's form, not which procedure runs\n\nA well-formed name can still call a procedure that changes the graph,\nsuch as db.idx.fulltext.drop. The README, llms.txt and the Javadoc of\nGraph.query(String, Map) now say so, and that names from untrusted input\nneed an allowlist.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-03T09:42:26+02:00",
+          "tree_id": "cd383177a1b58c52662640b2e4ffa6fcbeb175c1",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/7bbce00f1f0536fca0aedd36a18fba7e6e284485"
+        },
+        "date": 1793691869977,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 144.832,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 185.904,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 287.573,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 191.031,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 246.283,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 307.252,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 256.467,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 389.608,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 471.714,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 430.974,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 714.11,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 887.626,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 502.86,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 4645.702,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 9843.546,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 512.784,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 13152.895,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 28175.147,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 514.778,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 30293.625,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 65702.655,
             "unit": "us"
           }
         ]
