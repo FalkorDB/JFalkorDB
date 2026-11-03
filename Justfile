@@ -180,18 +180,28 @@ bench-compare base_ref threshold="1.25" loads="1,2,4,8,16,32,64":
 # --- Publish (run by the snapshot/release CI workflows; not for day-to-day local use) ---
 
 # Pre-fetch every plugin and dependency (the CI warm-up), so a transient Maven Central error fails here
-# rather than midway through a build. The retries in .mvn/maven.config cover I/O errors, but not a 404
-# from a Central mirror that briefly lacks files, so the whole resolution is retried. A retry passes -U:
-# without it Maven trusts the "not found" it just recorded and doesn't ask Central again. Extra
-# arguments go to Maven as given, e.g. `just fetch-deps -Pquality` for the lint plugins.
+# rather than midway through a build. That covers the root build, the help plugin the recipes read the
+# version with, and the plugins smoke-test/ and examples/ pin; their dependency on the jar this build
+# installs isn't fetched, since it may not be on Central yet. The retries in .mvn/maven.config cover I/O
+# errors, but not a 404 from a Central mirror that briefly lacks files, so the whole warm-up is retried.
+# A retry passes -U: without it Maven trusts the "not found" it just recorded and doesn't ask Central
+# again. Arguments go to the root build as given, e.g. `just fetch-deps -Pquality` for the lint plugins.
 [positional-arguments]
 fetch-deps *args:
     #!/usr/bin/env bash
     set -euo pipefail
+    warm() {
+        ./mvnw -B -q "$@" dependency:go-offline ${maven_args[@]+"${maven_args[@]}"} || return 1
+        ./mvnw -B -q "$@" -DforceStdout help:evaluate -Dexpression=project.version >/dev/null || return 1
+        for pom in smoke-test/pom.xml examples/pom.xml; do
+            ./mvnw -B -q "$@" -f "$pom" dependency:resolve-plugins || return 1
+        done
+    }
+    maven_args=("$@")
     for attempt in 1 2 3; do
-        force=""
-        if [ "$attempt" -gt 1 ]; then force="-U"; fi
-        if ./mvnw -B -q $force dependency:go-offline "$@"; then
+        if [ "$attempt" -eq 1 ]; then
+            if warm; then exit 0; fi
+        elif warm -U; then
             exit 0
         fi
         if [ "$attempt" -lt 3 ]; then
