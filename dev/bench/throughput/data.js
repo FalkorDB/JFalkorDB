@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793689138948,
+  "lastUpdate": 1793689642831,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -7846,6 +7846,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 20865.333,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "198982749+Copilot@users.noreply.github.com",
+            "name": "Copilot",
+            "username": "Copilot"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a777901f513125b2378adfa5652073f334a0cc7e",
+          "message": "fix: do not close the borrowed connection in GraphContext.deleteGraph() on error (#493)\n\n* Initial plan\n\n* fix: keep the borrowed connection bound to GraphContext when deleteGraph fails\n\nCo-authored-by: barakb <1074551+barakb@users.noreply.github.com>\n\n* docs: keep the GraphContext error-reporting note accurate for all commands\n\nCo-authored-by: barakb <1074551+barakb@users.noreply.github.com>\n\n---------\n\nCo-authored-by: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>\nCo-authored-by: barakb <1074551+barakb@users.noreply.github.com>\nCo-authored-by: Barak Bar Orion <barak.bar@gmail.com>",
+          "timestamp": "2026-11-03T09:05:04+02:00",
+          "tree_id": "1a96a50a0b35bcfd0acffab309a65d7e3d3e0b68",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/a777901f513125b2378adfa5652073f334a0cc7e"
+        },
+        "date": 1793689642801,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 6235.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 9687.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 14235.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 18218.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 16641.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 16562,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 16503.667,
             "unit": "ops/s"
           }
         ]
