@@ -183,14 +183,15 @@ bench-compare base_ref threshold="1.25" loads="1,2,4,8,16,32,64":
 # rather than midway through a build. The retries in .mvn/maven.config cover I/O errors, but not a 404
 # from a Central mirror that briefly lacks files, so the whole resolution is retried. A retry passes -U:
 # without it Maven trusts the "not found" it just recorded and doesn't ask Central again. Extra
-# arguments go to Maven, e.g. `just fetch-deps -Pquality` for the lint plugins.
+# arguments go to Maven as given, e.g. `just fetch-deps -Pquality` for the lint plugins.
+[positional-arguments]
 fetch-deps *args:
     #!/usr/bin/env bash
     set -euo pipefail
     for attempt in 1 2 3; do
         force=""
         if [ "$attempt" -gt 1 ]; then force="-U"; fi
-        if ./mvnw -B -q $force dependency:go-offline {{args}}; then
+        if ./mvnw -B -q $force dependency:go-offline "$@"; then
             exit 0
         fi
         if [ "$attempt" -lt 3 ]; then
