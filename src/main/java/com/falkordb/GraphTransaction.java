@@ -31,17 +31,25 @@ public interface GraphTransaction
 
     /**
      * Execute a Cypher query with timeout.
+     *
+     * <p>The timeout is sent with the query and limits how long the server runs it; {@code 0} sets none, so
+     * the server's default ({@code TIMEOUT_DEFAULT}) applies. It doesn't change how long the client waits
+     * for the replies in {@link #exec()}, which a socket (read) timeout on the connection can still end: see
+     * {@link Graph#query(String, long)}.
+     *
      * @param query Cypher query
-     * @param timeout timeout in milliseconds
+     * @param timeout timeout in milliseconds; not negative
      * @return a response which builds the result set with the query answer.
+     * @throws IllegalArgumentException if {@code timeout} is negative; nothing is queued then
      */
     Response<ResultSet> query(String query, long timeout);
 
     /**
-     * Execute a Cypher read-only query with timeout.
+     * Execute a Cypher read-only query with timeout. The timeout works as for {@link #query(String, long)}.
      * @param query Cypher query
-     * @param timeout timeout in milliseconds
+     * @param timeout timeout in milliseconds; not negative
      * @return a response which builds the result set with the query answer.
+     * @throws IllegalArgumentException if {@code timeout} is negative; nothing is queued then
      */
     Response<ResultSet> readOnlyQuery(String query, long timeout);
 
@@ -71,20 +79,24 @@ public interface GraphTransaction
     Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params);
 
     /**
-     * Executes a cypher query with parameters and timeout.
+     * Executes a cypher query with parameters and timeout. The timeout works as for {@link #query(String,
+     * long)}.
      * @param query Cypher query.
      * @param params parameters map.
-     * @param timeout timeout in milliseconds
+     * @param timeout timeout in milliseconds; not negative
      * @return  a response which builds the result set with the query answer.
+     * @throws IllegalArgumentException if {@code timeout} is negative; nothing is queued then
      */
     Response<ResultSet> query(String query, Map<String, Object> params, long timeout);
 
     /**
-     * Executes a cypher read-only query with parameters and timeout.
+     * Executes a cypher read-only query with parameters and timeout. The timeout works as for {@link
+     * #query(String, long)}.
      * @param query Cypher query.
      * @param params parameters map.
-     * @param timeout timeout in milliseconds
+     * @param timeout timeout in milliseconds; not negative
      * @return  a response which builds the result set with the query answer.
+     * @throws IllegalArgumentException if {@code timeout} is negative; nothing is queued then
      */
     Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params, long timeout);
 

@@ -98,6 +98,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      */
     @Override
     public Response<ResultSet> query(String query, long timeout) {
+        Utils.checkTimeout(timeout);
         return appendWithResponse(
                 GraphCommand.QUERY,
                 Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout)),
@@ -114,6 +115,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      */
     @Override
     public Response<ResultSet> readOnlyQuery(String query, long timeout) {
+        Utils.checkTimeout(timeout);
         return appendWithResponse(
                 GraphCommand.RO_QUERY,
                 Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout)),
@@ -152,7 +154,6 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      * Executes a cypher query with parameters and timeout.
      *
      * NOTE: timeout is simply sent to DB. Socket timeout will not be changed.
-     * timeout.
      * @param query Cypher query.
      * @param params parameters map.
      * @param timeout timeout in milliseconds
@@ -160,6 +161,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      */
     @Override
     public Response<ResultSet> query(String query, Map<String, Object> params, long timeout) {
+        Utils.checkTimeout(timeout);
         return appendWithResponse(
                 GraphCommand.QUERY,
                 Arrays.asList(
@@ -175,7 +177,6 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      * Executes a cypher read-only query with parameters and timeout.
      *
      * NOTE: timeout is simply sent to DB. Socket timeout will not be changed.
-     * timeout.
      * @param query Cypher query.
      * @param params parameters map.
      * @param timeout timeout in milliseconds
@@ -183,6 +184,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      */
     @Override
     public Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params, long timeout) {
+        Utils.checkTimeout(timeout);
         return appendWithResponse(
                 GraphCommand.RO_QUERY,
                 Arrays.asList(

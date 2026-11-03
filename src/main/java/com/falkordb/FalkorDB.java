@@ -266,6 +266,12 @@ public final class FalkorDB {
          * Sets the socket (read) timeout (default {@link Duration#ZERO} = no read deadline, so a
          * long-running server query is never cut off client-side).
          *
+         * <p>It limits how long each read of a reply waits for data, including the reply to a query sent with
+         * a timeout, such as {@link Graph#query(String, long)}: that timeout limits how long the server runs
+         * the query, not how long the client waits. The server sends nothing until a query has finished, so a
+         * socket timeout shorter than the query's ends the wait first, though the server may still run the
+         * query to the end.
+         *
          * @param socketTimeout read timeout; must not be negative
          * @return this builder
          */

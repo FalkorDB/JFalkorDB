@@ -43,6 +43,19 @@ public class Utils {
     private Utils() {}
 
     /**
+     * Rejects a negative query timeout. The server would otherwise accept it and silently apply its
+     * default timeout instead.
+     *
+     * @param timeout the query timeout in milliseconds; {@code 0} sets none, so the server's default applies
+     * @throws IllegalArgumentException if {@code timeout} is negative
+     */
+    public static void checkTimeout(long timeout) {
+        if (timeout < 0) {
+            throw new IllegalArgumentException("timeout must not be negative, but was " + timeout);
+        }
+    }
+
+    /**
      * Encodes a string as a double-quoted Cypher string literal, escaping backslash and double quote
      * (and the whitespace/control escapes FalkorDB decodes) so the value cannot terminate the literal.
      *
