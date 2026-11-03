@@ -140,7 +140,13 @@ public class TransactionIT {
             Assertions.assertTrue(results.get(1) instanceof String, String.valueOf(results.get(1)));
             Assertions.assertThrows(GraphException.class, () -> api.readOnlyQuery("MATCH (n) RETURN count(n)"));
         }
-        api.query("CREATE (:Person)"); // for deleteGraph() in tearDown
+        // the delete cleared the cache, so a recreated graph decodes with its own names, not the old ones
+        Node recreated = (Node) api.query("CREATE (n:Animal {title:'b'}) RETURN n")
+                .iterator()
+                .next()
+                .getValue(0);
+        Assertions.assertEquals("Animal", recreated.getLabel(0));
+        Assertions.assertEquals("b", recreated.getProperty("title").getValue());
     }
 
     @Test
