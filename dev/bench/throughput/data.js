@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793704079612,
+  "lastUpdate": 1793705722069,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -8377,6 +8377,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11339.333,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7c25866c1cbed139a26f534ba52eed7b4f5c85a2",
+          "message": "test: read an unknown cluster host as the seed in ClusterIT (#507)\n\nThe migration test connected to each primary at the host CLUSTER SLOTS\nreports. A cluster that doesn't know a node's endpoint, such as one with\ncluster-preferred-endpoint-type unknown-endpoint, reports it as null,\nempty or ?, which the driver reads as the node that answered. The test\ntried to connect to it and failed with UnknownHostException. It now\nfalls back to the seed host the same way.\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-03T13:32:56+02:00",
+          "tree_id": "fcd5a28b8a2945ec7af969180d9af20f79e69ec6",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/7c25866c1cbed139a26f534ba52eed7b4f5c85a2"
+        },
+        "date": 1793705722035,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 6246.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 10222.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 14015.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 17486,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 16951.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 16503,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 16230.333,
             "unit": "ops/s"
           }
         ]
