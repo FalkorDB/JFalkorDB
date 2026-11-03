@@ -364,11 +364,20 @@ public class ClusterIT {
                 List<?> owner = (List<?>) entry.get(2);
                 String id = text(owner.get(2));
                 Primary primary = byId.computeIfAbsent(
-                        id, k -> new Primary(k, new HostAndPort(text(owner.get(0)), ((Long) owner.get(1)).intValue())));
+                        id, k -> new Primary(k, new HostAndPort(host(owner.get(0)), ((Long) owner.get(1)).intValue())));
                 primary.ranges.add(new long[] {(Long) entry.get(0), (Long) entry.get(1)});
             }
         }
         return new ArrayList<>(byId.values());
+    }
+
+    /**
+     * A primary's host as {@code CLUSTER SLOTS} reports it. A cluster that doesn't know a node's endpoint reports
+     * it as null, empty or {@code ?}, and means the node that answered: the seed, as the driver reads it too.
+     */
+    private static String host(Object reply) {
+        String host = reply == null ? "" : text(reply);
+        return host.isEmpty() || "?".equals(host) ? ClusterTestServer.seedHost() : host;
     }
 
     private static String text(Object reply) {
