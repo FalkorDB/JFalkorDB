@@ -93,7 +93,36 @@ loadScripts(document, 'script');</script>
 <hr>
 <div class="type-signature"><span class="modifiers">public interface </span><span class="element-name type-name-label">GraphPipeline</span><span class="extends-implements">
 extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.commands.PipelineBinaryCommands, redis.clients.jedis.commands.RedisModulePipelineCommands, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Closeable.html" title="class or interface in java.io" class="external-link">Closeable</a></span></div>
-<div class="block">An interface which aligned to Jedis Pipeline interface</div>
+<div class="block">An interface which aligned to Jedis Pipeline interface
+
+ <p>A graph reply is decoded when it is read: by <a href="#syncAndReturnAll()"><code>syncAndReturnAll()</code></a>, or by <code>Response.get()</code>
+ after <a href="#sync()"><code>sync()</code></a>, which may be after the context that created the pipeline is closed. Decoding can
+ need a label, property key or relationship type the client hasn't seen yet. That lookup runs on the
+ context's connection while the context is open and no pipeline or transaction on it awaits a reply;
+ otherwise it borrows a connection from the driver's pool, so reading a reply while more commands are
+ queued can wait for a free connection.
+
+ <p><a href="#deleteGraph()"><code>deleteGraph()</code></a> clears the client's schema cache once the delete has run, not when it is queued.
+ Once it has run, a reply queued before it can't look an id up any more: the graph that sent the reply is
+ gone, and a lookup would find whatever graph has the name by then. So the reply is decoded with what the
+ cache held when the delete was queued, and an id the cache lacked is reported as a
+ <a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a>. A reply queued between two deletes that are both still to run
+ comes from a graph that exists only in between, which the client has never read, so it can't be decoded if it
+ names any label, property key or relationship type.
+ <a href="#syncAndReturnAll()"><code>syncAndReturnAll()</code></a> decodes every reply before it learns whether the delete succeeded, so it does the
+ same for a delete that fails; after <a href="#sync()"><code>sync()</code></a>, the replies before a delete that failed are decoded as
+ usual.
+
+ <p>Like the context that created it, a pipeline is meant for one thread: until that context is closed,
+ read the replies on the thread that uses the context.
+
+ <p>Call <a href="#sync()"><code>sync()</code></a>, <a href="#syncAndReturnAll()"><code>syncAndReturnAll()</code></a> or <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Closeable.html#close()" title="class or interface in java.io" class="external-link"><code>Closeable.close()</code></a> before dropping a pipeline that has
+ queued commands. Their replies stay unread on the context's connection, and the next command sent on it, by the
+ context or by a schema lookup, reads one of them as its own.
+
+ <p>A <a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a> while decoding a reply in <a href="#syncAndReturnAll()"><code>syncAndReturnAll()</code></a>
+ becomes that reply's element of the returned list, like an error reply. Jedis does not keep it, so reading
+ the same <code>Response</code> again returns <code>null</code>.</div>
 </section>
 <section class="summary">
 <ul class="summary-list">
@@ -134,7 +163,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#deleteGraph()" class="member-name-link">deleteGraph</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
-<div class="block">Deletes the entire graph</div>
+<div class="block">Deletes the entire graph.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#explain(java.lang.String)" class="member-name-link">explain</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query)</code></div>
@@ -216,7 +245,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#syncAndReturnAll()" class="member-name-link">syncAndReturnAll</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
-<div class="block">Synchronize pipeline by reading all responses.</div>
+<div class="block">Synchronize pipeline by reading and decoding all responses.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html" title="class or interface in java.lang" class="external-link">Long</a>&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#waitReplicas(int,long)" class="member-name-link">waitReplicas</a><wbr>(int&nbsp;replicas,
@@ -612,7 +641,8 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <section class="detail" id="deleteGraph()">
 <h3>deleteGraph</h3>
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">deleteGraph</span>()</div>
-<div class="block">Deletes the entire graph</div>
+<div class="block">Deletes the entire graph. The client's schema cache is cleared once the delete has run; see the class
+ documentation for how replies queued before it are decoded.</div>
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>a response which builds the delete running time statistics</dd>
@@ -655,8 +685,8 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <section class="detail" id="syncAndReturnAll()">
 <h3>syncAndReturnAll</h3>
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;</span>&nbsp;<span class="element-name">syncAndReturnAll</span>()</div>
-<div class="block">Synchronize pipeline by reading all responses. This operation close the pipeline. Whenever
- possible try to avoid using this version and use Pipeline.sync() as it won't go through all the
+<div class="block">Synchronize pipeline by reading and decoding all responses. The pipeline can be used again afterwards.
+ Whenever possible try to avoid using this version and use Pipeline.sync() as it won't go through all the
  responses and generate the right response type (usually it is a waste of time).</div>
 <dl class="notes">
 <dt>Returns:</dt>
@@ -668,9 +698,9 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <section class="detail" id="sync()">
 <h3>sync</h3>
 <div class="member-signature"><span class="return-type">void</span>&nbsp;<span class="element-name">sync</span>()</div>
-<div class="block">Synchronize pipeline by reading all responses. This operation close the pipeline. In order to
+<div class="block">Synchronize pipeline by reading all responses. The pipeline can be used again afterwards. In order to
  get return values from pipelined commands, capture the different Response&lt;?&gt; of the
- commands you execute.</div>
+ commands you execute; each is decoded when it is read.</div>
 </section>
 </li>
 <li>
