@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793695997058,
+  "lastUpdate": 1793699139564,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -17930,6 +17930,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 35496.265,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a5a14483d3d4ef2a10171c3b1b51d3efd30e1095",
+          "message": "fix!: clear the schema cache when deleteGraph runs, and decode queued replies safely (#500)\n\n* fix!: clear the schema cache when deleteGraph runs, and decode queued replies safely\n\nPipelines and transactions build a graph reply only when it is read, which\ncan be long after the command ran. deleteGraph() cleared the schema cache\nwhen it was queued, so a reply queued before it was decoded with an empty\ncache and looked its ids up in whatever graph existed later, or failed. A\ndiscarded or aborted delete cleared it too. Lookups also always ran on the\ncontext's connection: after close() that connection may be lent to another\nthread, and while commands were in flight a lookup read one of their replies.\n\nThe delete's reply now clears the cache, so only a delete that ran does.\nEach deleteGraph() ends a segment of the queue; once the delete has run, the\nreplies before it are decoded with a frozen copy of the cache, and an id the\ncopy lacks is reported instead of looked up in another graph. After sync() a\nfailed delete re-opens its segment. Lookups run on the context's connection\nwhile it is open and idle, and otherwise on a connection borrowed from the\ngraph that created the context, borrowed before decoding so no thread waits\nfor the pool while holding the cache's lock. GraphContextImpl.close() is now\nidempotent.\n\nBREAKING CHANGE: a reply queued before deleteGraph() in the same pipeline or\ntransaction, needing an id the client hadn't cached, now fails with\nGraphException instead of being looked up after the delete, where it either\nfailed or silently got a recreated graph's names. syncAndReturnAll() and\nexec() decode before they learn whether the delete succeeded, so this also\napplies to a delete that fails there.\n\nCloses #486\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: borrow for a queued reply only when it needs a lookup\n\nWith a context holding its pool's only connection and a command still in\nflight, reading a reply borrowed a second connection before decoding,\neven for a scalar or a reply whose ids the cache knew, and waited forever.\nThe reply is now decoded first with a graph that refuses lookups, and only\na reply that needs one borrows, still before any cache lock is taken.\n\nAlso: GraphContextImpl.close() uses an atomic flag; a frozen cache is its\nown snapshot; a delete that ran drops its segment's forwarding link, so a\nreply held from an early batch doesn't keep later copies of the cache\nalive; the pipeline and transaction docs say what happens to replies before\na delete that fails; and the transaction IT checks the delete ran.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: look nothing up for a reply read while a delete after it is queued\n\nA reply from an earlier batch, read after deleteGraph() was queued but\nbefore it was synced, still looked its ids up. Jedis may already have\nflushed the delete, and a recreate after it, to the server, so the lookup\ncould find the new graph and silently return its names. While a segment's\ndelete is pending, its replies are now decoded with a copy of the cache. A\ndiscarded or aborted transaction re-opens the segments of its deletes,\nwhich never ran.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: freeze a queued reply's cache when its delete is queued\n\nThe copy of the cache that replies queued before a delete decode with was\ntaken when the delete ran, or at the first read while it was pending. By\nthen the shared cache may already hold a recreated graph's names: Jedis\ncan flush the delete and a recreate long before the replies are read, and\nany other context of the graph can look the new graph up meanwhile. The\ncopy is now taken when the delete is queued, the last moment it surely\nhasn't run. When the replies are read, a delete that failed, or a\ntransaction that was discarded or aborted, re-opens its segment; if\nreading them fails part way, so a delete may have run, the live cache is\ncleared.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: treat EXECABORT as a transaction that didn't run\n\nEXEC answered with an error (EXECABORT, after a command failed to queue)\nmeans the server ran none of the commands, so the transaction's deletes\nre-open their segments and the cache is kept; only a connection failure\nleaves it unknown whether they ran. Also document that a reply queued\nbetween two deletes still to run can't be decoded if it names any schema\nentry, and make the shared-cache test wait for the delete to have run, not\njust to have arrived.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: date the cache copy from when deleteGraph() is queued\n\nThe deleteGraph() Javadocs of GraphPipelineImpl and GraphTransactionImpl\nsaid the replies queued before the delete are decoded with the cache as\nit was when the batch was sent, or when exec() was called. The copy is\ntaken when the delete is queued (QueuedReplies.deleteQueued), as the\nGraphPipeline and GraphTransaction class docs say.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: cover every path the pipeline and transaction changes take\n\nJaCoCo showed 30 changed lines no test ran. New tests cover:\n- the public pipeline and transaction constructors that take a Graph;\n- all eight query overloads and both profile overloads of a pipeline and\n  of a transaction, before and after a deleteGraph();\n- sync() and syncAndReturnAll() failing part way, with and without a\n  delete queued;\n- a failed delete followed by one that ran, and two failed deletes;\n- a transaction that has ended no longer keeping lookups off its\n  context's connection, and a context made without a graph;\n- NoLookups, which only ever reports that a lookup is needed, and\n  FrozenGraphCache, which never changes.\n\nEach test fails when the line it covers is broken.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* refactor: link a segment forward only when its delete didn't run\n\nA segment kept a link to the next one from the moment its delete was\nqueued, and the delete's builder cut it once the delete ran. Only a\nsegment whose delete didn't run ever follows the link, so the queued\ndelete now remembers the next segment, and the segment points to it only\nthen. That drops the cast in deleteQueued(), its builder parameter, and\ntwo null checks that could never fail.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: clear the cache when EXEC or DISCARD fails after a refused MULTI\n\nCopilot found this in its review of b724af5. If the server refuses MULTI,\nas an ACL that denies it does, every command after it runs as it is\nsent, the delete included. EXEC then fails with \"EXEC without MULTI\" and\nDISCARD with \"DISCARD without MULTI\", and both were taken to mean that\nnothing ran, so the cache kept the deleted graph's names.\n\nOnly EXECABORT, or a DISCARD that succeeds, shows that nothing ran. Any\nother failure now counts as unknown: the live cache is cleared in case a\ndelete ran. The test server can now refuse MULTI.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: clear the cache when sending a deleteGraph() fails\n\nCodeRabbit found this in its review of 217c716. Jedis writes a command\nto the connection before it records its response. A failed send of\nGRAPH.DELETE made deleteGraph() throw before the delete was recorded, so\nneither sync() nor exec() could clear the cache, although the delete may\nhave reached the server and run. The pipeline and the transaction now\nclear the live cache when the send fails, as master did by clearing it\nwhenever a delete was queued.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: freeze a segment before its deleteGraph() is sent\n\nCodeRabbit and Copilot found this in their reviews of ad75124. A delete\nwhose send failed cleared the live cache but left its segment unfrozen.\nA pipeline reply that an earlier sync() had read but not built then\ndecoded with the live cache. If the delete had run and the graph was\nrecreated, the reply looked its ids up in the new graph.\n\nQueuedReplies now sends the delete itself: queueDelete() freezes the\nsegment first, the last moment the delete is sure not to have run, and\nthe segment stays frozen if the send fails. runDelete() does the same\nfor a delete that isn't queued, after exec(). A failed send still\nclears the live cache.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: add the two TransactionIT tests that issue #486 lists\n\ntestDiscardDeleteGraphDoesNotClearCache discards a queued deleteGraph(),\nthen reads a pipeline reply after another handle has deleted the graph,\nso the reply decodes only from names still cached. Master fails it with\n\"Invalid graph operation on empty key\": the discarded delete had cleared\nthe cache.\n\ntestResponseGetAfterContextClosedInTransaction reads a transaction's\nreply after its context is closed, while the context's connection is\nlent out again in pipeline mode, from a pool of one connection. Master\npasses it too, since exec() decodes every reply before it returns; it\nfails if exec()'s decode borrows a connection from the pool.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: add Javadoc to the helpers this PR touches that had none\n\nCodeRabbit's Docstring Coverage check counts the functions a PR touches.\nThese main-code helpers had no Javadoc. The touched functions still\nwithout one are test methods, which this repo names rather than\ndocuments.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: cover a pipeline decoding inside syncAndReturnAll on its context's connection\n\nCopilot asked whether a context can misjudge whether its connection has\nreplies outstanding. Each part of that check was mutated in turn. Every\nmutation that would treat a busy connection as idle fails an existing\ntest. Only the pipeline's !draining went uncaught. Without it, decoding\ninside syncAndReturnAll() borrows a second connection for a lookup,\nbecause Jedis still holds the later commands' responses. The new test\nfails without it.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: a delete the server rejects after the transaction ended leaves the cache alone\n\nCopilot asked whether a rejected deleteGraph() after exec() or\ndiscard() clears the shared schema cache. It doesn't. Outside MULTI,\nJedis 8.0.2's Transaction runs the command at once and keeps an error\nreply in the response instead of throwing it. So neither the delete's\nbuilder nor runDelete's catch runs. No test pinned that. The new one\nfails if such a delete throws its error at once. runDelete's Javadoc\nnow says so.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: say to sync or close a pipeline before dropping it\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: report a lookup a context without a pool can't run, instead of sending it\n\nA context built with the public constructor has no graph to borrow a\nconnection from. After close(), or while a pipeline or transaction on it\nawaits replies, a reply that needed a schema lookup still sent it on the\ncontext's connection: one already back in its pool, or one whose next\nreply belongs to a queued command. It now fails with a GraphException\ninstead; a reply that needs no lookup still decodes.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: decode a recreated node after a transaction deletes the graph\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-03T11:42:59+02:00",
+          "tree_id": "7128aba80ecc222c4613ac1aa4cb36c3609b1b57",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/a5a14483d3d4ef2a10171c3b1b51d3efd30e1095"
+        },
+        "date": 1793699138287,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 175.759,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 231.192,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 522.245,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 205.224,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 250.338,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 274.849,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 295.022,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 449.099,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 537.855,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 505.073,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 835.417,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1022.921,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 590.564,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5298.504,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 10772.185,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 598.415,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 14932.518,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 30656.416,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 596.805,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 34524.53,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 72887.372,
             "unit": "us"
           }
         ]
