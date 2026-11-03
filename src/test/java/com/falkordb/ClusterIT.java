@@ -10,7 +10,9 @@ import com.falkordb.graph_entities.Node;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -256,8 +258,25 @@ public class ClusterIT {
                     JedisClusterCRC16.getSlot(PREFIX + i) != slot,
                     "the migrated slot must not move other tests' graphs");
         }
-        HostAndPort source = ownerOf(slot);
-        try (Jedis owner = new Jedis(source)) {
+        // The primaries as the cluster reports them, so the target is told apart from the source by node id
+        // whatever addresses FALKORDB_CLUSTER_NODES lists, and every primary is settled afterwards.
+        List<Primary> primaries = primaries();
+        Primary source = null;
+        for (Primary primary : primaries) {
+            if (primary.owns(slot)) {
+                source = primary;
+            }
+        }
+        assertNotNull(source, "no primary owns slot " + slot);
+        Primary target = null;
+        for (Primary primary : primaries) {
+            if (!primary.id.equals(source.id)) {
+                target = primary;
+                break;
+            }
+        }
+        assertNotNull(target, "the migration needs a second primary");
+        try (Jedis owner = new Jedis(source.address)) {
             // The graph must be the slot's only key. The source refuses to give the slot away while it holds
             // another key in it, which would leave the cluster half migrated for the other tests.
             assertEquals(
@@ -265,26 +284,17 @@ public class ClusterIT {
                     owner.clusterCountKeysInSlot(slot),
                     "slot " + slot + " must be empty before this test migrates it");
         }
-        driver.graph(graph).query("CREATE (:Person {name:'a'})");
-        HostAndPort target = null;
-        for (String address : ClusterTestServer.nodes()) {
-            HostAndPort node = HostAndPort.from(address);
-            if (!node.equals(source)) {
-                target = node;
-                break;
-            }
-        }
-        assertNotNull(target);
 
-        try (Jedis from = new Jedis(source);
-                Jedis to = new Jedis(target)) {
-            String sourceId = from.clusterMyId();
-            String targetId = to.clusterMyId();
+        try (Jedis from = new Jedis(source.address);
+                Jedis to = new Jedis(target.address)) {
+            boolean created = false;
             boolean migrated = false;
             try {
-                to.clusterSetSlotImporting(slot, sourceId);
-                from.clusterSetSlotMigrating(slot, targetId);
-                assertEquals("OK", from.migrate(target.getHost(), target.getPort(), graph, 0, 5000));
+                driver.graph(graph).query("CREATE (:Person {name:'a'})");
+                created = true;
+                to.clusterSetSlotImporting(slot, source.id);
+                from.clusterSetSlotMigrating(slot, target.id);
+                assertEquals("OK", from.migrate(target.address.getHost(), target.address.getPort(), graph, 0, 5000));
                 migrated = true;
 
                 GraphContextGenerator fresh = driver.graph(graph); // its own, empty cache
@@ -302,14 +312,13 @@ public class ClusterIT {
             } finally {
                 // Leave a settled cluster for the other tests, however far the migration got.
                 if (migrated) {
-                    // the graph is on the target: give it the slot everywhere
-                    to.clusterSetSlotNode(slot, targetId);
-                    from.clusterSetSlotNode(slot, targetId);
-                    for (String address : ClusterTestServer.nodes()) {
-                        HostAndPort other = HostAndPort.from(address);
-                        if (!other.equals(source) && !other.equals(target)) {
-                            try (Jedis node = new Jedis(other)) {
-                                node.clusterSetSlotNode(slot, targetId);
+                    // the graph is on the target: give it the slot on every primary, the two involved first
+                    to.clusterSetSlotNode(slot, target.id);
+                    from.clusterSetSlotNode(slot, target.id);
+                    for (Primary other : primaries) {
+                        if (!other.id.equals(source.id) && !other.id.equals(target.id)) {
+                            try (Jedis node = new Jedis(other.address)) {
+                                node.clusterSetSlotNode(slot, target.id);
                             }
                         }
                     }
@@ -318,25 +327,52 @@ public class ClusterIT {
                     to.clusterSetSlotStable(slot);
                     from.clusterSetSlotStable(slot);
                 }
-                driver.graph(graph).deleteGraph();
+                if (created) {
+                    driver.graph(graph).deleteGraph();
+                }
             }
         }
     }
 
-    /** The primary that owns {@code slot}, as the cluster reports it. */
-    private static HostAndPort ownerOf(int slot) {
+    /** A primary as {@code CLUSTER SLOTS} reports it, with the slot ranges it owns. */
+    private static final class Primary {
+        final String id;
+        final HostAndPort address;
+        final List<long[]> ranges = new ArrayList<>();
+
+        Primary(String id, HostAndPort address) {
+            this.id = id;
+            this.address = address;
+        }
+
+        boolean owns(int slot) {
+            for (long[] range : ranges) {
+                if (slot >= range[0] && slot <= range[1]) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    /** Every primary of the cluster, as the seed reports the topology. */
+    private static List<Primary> primaries() {
+        Map<String, Primary> byId = new LinkedHashMap<>();
         try (Jedis node = new Jedis(ClusterTestServer.seedHost(), ClusterTestServer.seedPort())) {
             for (Object range : node.clusterSlots()) {
                 List<?> entry = (List<?>) range;
-                if (slot >= (Long) entry.get(0) && slot <= (Long) entry.get(1)) {
-                    List<?> primary = (List<?>) entry.get(2);
-                    Object host = primary.get(0);
-                    String name = host instanceof byte[] ? SafeEncoder.encode((byte[]) host) : String.valueOf(host);
-                    return new HostAndPort(name, ((Long) primary.get(1)).intValue());
-                }
+                List<?> owner = (List<?>) entry.get(2);
+                String id = text(owner.get(2));
+                Primary primary = byId.computeIfAbsent(
+                        id, k -> new Primary(k, new HostAndPort(text(owner.get(0)), ((Long) owner.get(1)).intValue())));
+                primary.ranges.add(new long[] {(Long) entry.get(0), (Long) entry.get(1)});
             }
         }
-        throw new AssertionError("no node owns slot " + slot);
+        return new ArrayList<>(byId.values());
+    }
+
+    private static String text(Object reply) {
+        return reply instanceof byte[] ? SafeEncoder.encode((byte[]) reply) : String.valueOf(reply);
     }
 
     @Test
