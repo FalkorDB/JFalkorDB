@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793689136981,
+  "lastUpdate": 1793689641451,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -17156,6 +17156,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 43247.536,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "198982749+Copilot@users.noreply.github.com",
+            "name": "Copilot",
+            "username": "Copilot"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a777901f513125b2378adfa5652073f334a0cc7e",
+          "message": "fix: do not close the borrowed connection in GraphContext.deleteGraph() on error (#493)\n\n* Initial plan\n\n* fix: keep the borrowed connection bound to GraphContext when deleteGraph fails\n\nCo-authored-by: barakb <1074551+barakb@users.noreply.github.com>\n\n* docs: keep the GraphContext error-reporting note accurate for all commands\n\nCo-authored-by: barakb <1074551+barakb@users.noreply.github.com>\n\n---------\n\nCo-authored-by: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>\nCo-authored-by: barakb <1074551+barakb@users.noreply.github.com>\nCo-authored-by: Barak Bar Orion <barak.bar@gmail.com>",
+          "timestamp": "2026-11-03T09:05:04+02:00",
+          "tree_id": "1a96a50a0b35bcfd0acffab309a65d7e3d3e0b68",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/a777901f513125b2378adfa5652073f334a0cc7e"
+        },
+        "date": 1793689640921,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 106.649,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 129.171,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 141.739,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 142.876,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 175.99,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 204.233,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 200.798,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 305.351,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 372.181,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 334.875,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 560.058,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 687.918,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 409.295,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 3526.728,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 8095.782,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 415.354,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 9510.163,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 21261.058,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 415.535,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 21552.093,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 49194.043,
             "unit": "us"
           }
         ]
