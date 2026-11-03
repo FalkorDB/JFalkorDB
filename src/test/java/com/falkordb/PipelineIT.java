@@ -111,6 +111,25 @@ public class PipelineIT {
     }
 
     @Test
+    public void testAnInvalidProcedureCallQueuesNothing() {
+        api.query("CREATE (:Person)");
+        try (GraphContext c = api.getContext()) {
+            GraphPipeline pipeline = c.pipelined();
+            pipeline.callProcedure("db.labels");
+            Assertions.assertThrows(
+                    IllegalArgumentException.class, () -> pipeline.callProcedure("db.labels; MATCH (n) DELETE n"));
+            pipeline.query("MATCH (n) RETURN count(n)");
+
+            List<Object> results = pipeline.syncAndReturnAll();
+            Assertions.assertEquals(2, results.size());
+            Assertions.assertEquals(
+                    "Person", ((ResultSet) results.get(0)).iterator().next().getString(0));
+            Long nodes = ((ResultSet) results.get(1)).iterator().next().getValue(0);
+            Assertions.assertEquals(1L, nodes.longValue());
+        }
+    }
+
+    @Test
     public void testReadOnlyQueries() {
         try (GraphContext c = api.getContext()) {
             GraphPipeline pipeline = c.pipelined();

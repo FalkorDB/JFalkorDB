@@ -321,8 +321,18 @@ floating-point number, a `BigInteger` within signed 64-bit range, or an array/`L
 values, where every `Map` key is a `String`); unsupported types (including `BigDecimal`), out-of-range
 integers, non-finite floating-point values, cyclic containers, non-String map keys, and invalid
 parameter names are rejected with `IllegalArgumentException`.
-This safety covers parameter **values** only — it does not extend to the query text, dynamic
-labels/identifiers, or procedure names, so never build those from untrusted input.
+This safety covers parameter **values** only — it does not extend to the query text or to dynamic
+labels/identifiers, so never build those from untrusted input.
+
+`callProcedure` checks the names it writes into the query itself. The procedure name must be
+identifiers joined by dots, such as `db.labels` or `db.idx.fulltext.queryNodes`, and each `YIELD`
+column a single identifier, where an identifier is ASCII letters, digits and underscores, not starting
+with a digit (`[A-Za-z_][A-Za-z0-9_]*`). Quoted names and `AS` aliases are not accepted. Anything else,
+or a `null` argument, is rejected with `IllegalArgumentException` before anything is sent. The
+procedure's arguments are encoded as string literals, like parameter values.
+The check is about form only: it doesn't limit which procedure runs, and some change the graph, such
+as `db.idx.fulltext.drop`. If the procedure name comes from untrusted input, check it against a list
+of the procedures you allow.
 
 ## Configuring Connection Pool
 
