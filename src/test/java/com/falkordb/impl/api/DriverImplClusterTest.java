@@ -11,13 +11,18 @@ import com.falkordb.exceptions.GraphException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.exceptions.JedisAskDataException;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.exceptions.JedisMovedDataException;
@@ -393,6 +398,69 @@ class DriverImplClusterTest {
         assertEquals(4, cluster.node(0).count("GRAPH.COPY") + cluster.node(0).count("GRAPH.DELETE"));
     }
 
+    @Test
+    void explainCopyAndDeleteThatKeepRedirectingEndInAGraphException() {
+        // The redirect is still recognised inside the GraphException, so each command is retried before
+        // the last redirect is reported.
+        cluster = new FakeCluster(2, (node, command) -> {
+            if (FakeRedisServer.startsWith(command, "GRAPH.EXPLAIN")
+                    || FakeRedisServer.startsWith(command, "GRAPH.COPY")
+                    || FakeRedisServer.startsWith(command, "GRAPH.DELETE")) {
+                return FakeRedisServer.error("MOVED 100 " + cluster.node(0).address());
+            }
+            return null;
+        });
+        connectToSeed(cluster.node(0), ClusterOptions.autoDetect());
+        String graph = FakeCluster.lowGraph();
+
+        Map<String, Runnable> commands = new LinkedHashMap<>();
+        commands.put("GRAPH.EXPLAIN", () -> driver.graph(graph).explain("RETURN 1"));
+        commands.put("GRAPH.COPY", () -> driver.graph(graph).copyGraph("copy"));
+        commands.put("GRAPH.DELETE", () -> driver.graph(graph).deleteGraph());
+        for (Map.Entry<String, Runnable> command : commands.entrySet()) {
+            GraphException e = assertThrows(GraphException.class, command.getValue()::run);
+            assertTrue(e.getCause() instanceof JedisMovedDataException, String.valueOf(e.getCause()));
+            assertEquals(
+                    DriverImpl.CLUSTER_REDIRECT_ATTEMPTS, cluster.node(0).count(command.getKey()), command.getKey());
+        }
+    }
+
+    @Test
+    void explainCopyAndDeleteFollowARedirectToTheNewOwner() {
+        // Each command finds the graph just moved to the other node, so each one's retry must relearn the
+        // topology and run on the new owner.
+        Map<String, AtomicInteger> asked = new ConcurrentHashMap<>();
+        cluster = new FakeCluster(2, (node, command) -> {
+            String name = command.get(0).toUpperCase(Locale.ROOT);
+            if (!name.equals("GRAPH.EXPLAIN") && !name.equals("GRAPH.COPY") && !name.equals("GRAPH.DELETE")) {
+                return null;
+            }
+            if (asked.computeIfAbsent(name, k -> new AtomicInteger()).getAndIncrement() == 0) {
+                int newOwner = 1 - node;
+                cluster.assign(newOwner, 1);
+                return FakeRedisServer.error(
+                        "MOVED 100 " + cluster.node(newOwner).address());
+            }
+            return name.equals("GRAPH.EXPLAIN")
+                    ? FakeRedisServer.array(FakeRedisServer.bulk("Results"))
+                    : FakeRedisServer.bulk("OK");
+        });
+        connectToSeed(cluster.node(0), ClusterOptions.autoDetect());
+        String graph = FakeCluster.lowGraph();
+
+        assertEquals(Arrays.asList("Results"), driver.graph(graph).explain("RETURN 1"));
+        assertEquals(1, cluster.node(0).count("GRAPH.EXPLAIN"), "explain tried the old owner once");
+        assertEquals(1, cluster.node(1).count("GRAPH.EXPLAIN"), "then followed the redirect");
+
+        driver.graph(graph).copyGraph("copy");
+        assertEquals(1, cluster.node(1).count("GRAPH.COPY"), "copy tried the old owner once");
+        assertEquals(1, cluster.node(0).count("GRAPH.COPY"), "then followed the redirect");
+
+        driver.graph(graph).deleteGraph();
+        assertEquals(1, cluster.node(0).count("GRAPH.DELETE"), "delete tried the old owner once");
+        assertEquals(1, cluster.node(1).count("GRAPH.DELETE"), "then followed the redirect");
+    }
+
     // --- routed() --------------------------------------------------------------------------------
 
     /** A cluster {@link Connections} that records how it was told about topology changes. */
@@ -535,6 +603,8 @@ class DriverImplClusterTest {
         assertTrue(DriverImpl.isRedirect(moved));
         assertTrue(DriverImpl.isRedirect(new GraphException(moved)));
         assertTrue(DriverImpl.isRedirect(new RuntimeException(new GraphException(moved))));
+        JedisAskDataException ask = new JedisAskDataException("ASK", new HostAndPort("h", 1), 1);
+        assertTrue(DriverImpl.isRedirect(new GraphException(ask)));
         assertFalse(DriverImpl.isRedirect(new GraphException(new JedisDataException("ERR"))));
         assertFalse(DriverImpl.isRedirect(new RuntimeException()));
     }

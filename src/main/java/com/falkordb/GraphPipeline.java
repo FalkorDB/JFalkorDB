@@ -176,7 +176,9 @@ public interface GraphPipeline
     /**
      * Get the execution plan for a given query.
      * @param query Cypher query
-     * @return a response which builds the execution plan as list of strings
+     * @return a response which builds the execution plan as list of strings. Its {@code get()} throws a
+     *     {@link com.falkordb.exceptions.GraphException} each time it is called if the plan holds an error, and
+     *     Jedis' {@code JedisDataException} if the server rejected the command.
      */
     Response<List<String>> explain(String query);
 
@@ -184,7 +186,9 @@ public interface GraphPipeline
      * Get the execution plan for a given query with parameters.
      * @param query Cypher query
      * @param params parameters map
-     * @return a response which builds the execution plan as list of strings
+     * @return a response which builds the execution plan as list of strings. Its {@code get()} throws a
+     *     {@link com.falkordb.exceptions.GraphException} each time it is called if the plan holds an error, and
+     *     Jedis' {@code JedisDataException} if the server rejected the command.
      */
     Response<List<String>> explain(String query, Map<String, Object> params);
 
