@@ -6,8 +6,10 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -23,6 +25,7 @@ import redis.clients.jedis.Protocol;
 import redis.clients.jedis.SslOptions;
 import redis.clients.jedis.exceptions.InvalidURIException;
 import redis.clients.jedis.exceptions.JedisConnectionException;
+import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.exceptions.JedisRedirectionException;
 import redis.clients.jedis.util.JedisURIHelper;
 import redis.clients.jedis.util.Pool;
@@ -95,6 +98,9 @@ public class DriverImpl implements Driver {
      * it just expires the subscription on a timer. See {@link #sentinelClientConfig}.
      */
     public static final int SENTINEL_SOCKET_TIMEOUT_MILLIS = 0;
+
+    /** The name {@code GRAPH.CONFIG GET} reads as every configuration parameter; no other name is a pattern. */
+    private static final String CONFIG_WILDCARD = "*";
 
     /**
      * The pool actually in use. Resolved on first demand rather than in the constructor, because
@@ -975,15 +981,37 @@ public class DriverImpl implements Driver {
     /**
      * Gets the value of a FalkorDB configuration parameter.
      *
-     * @param name The configuration parameter name (e.g., "RESULTSET_SIZE")
+     * @param name The configuration parameter name (e.g., "RESULTSET_SIZE"), matched case-insensitively
      * @return The value of the configuration parameter as a String
+     * @throws IllegalArgumentException if {@code name} is null or {@code "*"}, or the server answers with
+     *     more than one parameter; {@link #configGetAll()} reads them all
      * @throws redis.clients.jedis.exceptions.JedisDataException if the configuration parameter is invalid
      */
     @Override
     public String configGet(String name) {
+        // Both checks come before the connection is borrowed, which can mean probing the server.
+        requireConfigName(name);
+        if (CONFIG_WILDCARD.equals(name)) {
+            throw new IllegalArgumentException("configGet reads one configuration parameter, but \"*\" names all of"
+                    + " them; use configGetAll() to read them all");
+        }
         try (Jedis conn = getConnection()) {
             Object response = conn.sendCommand(GraphCommand.CONFIG, "GET", name);
             return parseConfigGetResponse(response);
+        }
+    }
+
+    /**
+     * Gets every FalkorDB configuration parameter. In a Redis Cluster they are read from one primary, as
+     * {@link #configGet(String)} reads a single one.
+     *
+     * @return every configuration parameter's value, by its upper-case name, in the server's order
+     * @throws JedisDataException if the response format is unexpected
+     */
+    @Override
+    public Map<String, String> configGetAll() {
+        try (Jedis conn = getConnection()) {
+            return parseConfigGetAllResponse(conn.sendCommand(GraphCommand.CONFIG, "GET", CONFIG_WILDCARD));
         }
     }
 
@@ -993,36 +1021,99 @@ public class DriverImpl implements Driver {
      * @param name The configuration parameter name (e.g., "RESULTSET_SIZE")
      * @param value The value to set
      * @return true if the configuration was set successfully
+     * @throws IllegalArgumentException if {@code name} is null
      * @throws redis.clients.jedis.exceptions.JedisDataException if setting fails (e.g., invalid parameter)
      */
     @Override
     public boolean configSet(String name, Object value) {
+        requireConfigName(name);
         // Configuration is per node, so a Redis Cluster needs it set on every primary.
         return allTrue(pool().onEachPrimary(conn ->
                 parseConfigSetResponse(conn.sendCommand(GraphCommand.CONFIG, "SET", name, String.valueOf(value)))));
     }
 
+    private static void requireConfigName(@Nullable String name) {
+        if (name == null) {
+            throw new IllegalArgumentException("name must not be null");
+        }
+    }
+
     /**
-     * Parses the response from GRAPH.CONFIG GET command.
+     * Parses the response from GRAPH.CONFIG GET command for a single parameter.
      * Response format: [name, value]
      *
      * @param response the raw response from Redis
      * @return the configuration value as a String
+     * @throws IllegalArgumentException if the response holds more than one parameter, which a wildcard
+     *     name produces
      * @throws JedisDataException if the response format is unexpected
      */
     String parseConfigGetResponse(Object response) {
-        if (response instanceof List<?>) {
-            List<?> list = (List<?>) response;
-            if (list.size() >= 2) {
-                Object value = list.get(1);
-                if (value instanceof byte[]) {
-                    return SafeEncoder.encode((byte[]) value);
-                } else if (value != null) {
-                    return value.toString();
+        Map<String, String> parameters = parseConfigGetAllResponse(response);
+        if (parameters.size() > 1) {
+            throw new IllegalArgumentException("configGet reads one configuration parameter, but GRAPH.CONFIG GET"
+                    + " returned " + parameters.size() + "; use configGetAll() to read them all");
+        }
+        if (parameters.isEmpty()) {
+            throw unexpectedConfigGetResponse();
+        }
+        return parameters.values().iterator().next();
+    }
+
+    /**
+     * Parses the response from GRAPH.CONFIG GET command into values by parameter name.
+     * Response format: [name, value] for one parameter, or [[name, value], ...] for "*"
+     *
+     * @param response the raw response from Redis
+     * @return an unmodifiable map of the configuration values, in the order of the response
+     * @throws JedisDataException if the response format is unexpected
+     */
+    Map<String, String> parseConfigGetAllResponse(Object response) {
+        if (!(response instanceof List<?>)) {
+            throw unexpectedConfigGetResponse();
+        }
+        List<?> list = (List<?>) response;
+        Map<String, String> parameters = new LinkedHashMap<>();
+        if (!list.isEmpty() && !(list.get(0) instanceof List<?>)) {
+            putConfigParameter(parameters, list);
+        } else {
+            for (Object pair : list) {
+                if (!(pair instanceof List<?>)) {
+                    throw unexpectedConfigGetResponse();
                 }
+                putConfigParameter(parameters, (List<?>) pair);
             }
         }
-        throw new redis.clients.jedis.exceptions.JedisDataException("Unexpected response format from GRAPH.CONFIG GET");
+        return Collections.unmodifiableMap(parameters);
+    }
+
+    private static void putConfigParameter(Map<String, String> parameters, List<?> pair) {
+        if (pair.size() != 2) {
+            throw unexpectedConfigGetResponse();
+        }
+        if (parameters.put(configText(pair.get(0)), configText(pair.get(1))) != null) {
+            // The server never names a parameter twice, so this isn't a reply we understand.
+            throw unexpectedConfigGetResponse();
+        }
+    }
+
+    /**
+     * Reads a name or value from a GRAPH.CONFIG GET response. Only the types a reply can hold are
+     * accepted, so anything else, such as an error Jedis nested in the list, is never mistaken for a
+     * value.
+     */
+    private static String configText(@Nullable Object item) {
+        if (item instanceof byte[]) {
+            return SafeEncoder.encode((byte[]) item);
+        }
+        if (item instanceof Long || item instanceof String) {
+            return item.toString();
+        }
+        throw unexpectedConfigGetResponse();
+    }
+
+    private static JedisDataException unexpectedConfigGetResponse() {
+        return new JedisDataException("Unexpected response format from GRAPH.CONFIG GET");
     }
 
     /**
