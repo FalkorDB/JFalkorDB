@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793691873814,
+  "lastUpdate": 1793692182798,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -8082,6 +8082,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 13187,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ce4794354bc2724247c54d7f71652abe35935203",
+          "message": "fix!: keep the socket timeout for queries sent with a timeout, and reject negative timeouts (#498)\n\n* fix!: keep the socket timeout for queries sent with a timeout, and reject negative timeouts\n\nGraphContextImpl sent GRAPH.QUERY and GRAPH.RO_QUERY with a timeout through\nJedis' sendBlockingCommand, which is meant for BLPOP and the like: it turns\nthe socket timeout off for the read. Graph.query(q, timeout) and its three\nsiblings therefore waited forever for a dead or silent server, whatever\nsocket timeout the driver was configured with. They now use sendCommand, as\nevery other command does, so the configured socket timeout bounds the wait.\n\nA negative timeout was sent as it was, and the server took it as \"use the\ndefault timeout\". Every timeout overload of Graph, GraphContext,\nGraphPipeline and GraphTransaction now rejects it with\nIllegalArgumentException before anything is sent or queued.\n\nBREAKING CHANGE: a query sent with a timeout now also obeys the connection's\nsocket timeout. With the drivers FalkorDB.builder() builds nothing changes\nunless socketTimeout is set, but a pool passed to DriverImpl(Pool) gets\nJedis' 2000 ms default, so on such a pool query(q, 30_000) now fails with a\nread timeout after 2 s while the server may still run it. Set the socket\ntimeout above your longest query timeout, or to 0. A negative timeout throws\nIllegalArgumentException instead of running with the server's default.\n\nCloses #491\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: compare the sent-command count as a long\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: qualify the async and builder timeout notes\n\nSay that an async call's IllegalArgumentException applies when the task\nruns, and that FalkorDB.builder()'s Sentinel and cluster discovery requests\nkeep their 2000 ms deadline.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: a socket timeout limits each read and doesn't stop the query\n\n- The socket timeout limits how long each read waits for data, not the\n  whole reply. The server sends nothing until a query has finished, so\n  it still has to exceed the query timeout.\n- After a socket timeout the server may still run the query to the end,\n  so a write's outcome is unknown and a query that isn't idempotent\n  shouldn't be retried blindly.\n- The README said a FalkorDB.builder() driver's Sentinel and cluster\n  discovery requests use a 2000 ms deadline. Only the detection probes\n  do, and only when socketTimeout isn't set; the connections to the\n  Sentinels, which look up the master's address, never have one.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: send a valid timeout from a pipeline and a transaction\n\nThe pipeline and transaction timeout overloads were only called with a\nnegative timeout. Each of the eight now queues its query with\nTIMEOUT 1000, and the reply decodes after sync() or exec().\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-03T09:47:18+02:00",
+          "tree_id": "713e1b3666d49adfd72710a3c26b4a831e0155a6",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/ce4794354bc2724247c54d7f71652abe35935203"
+        },
+        "date": 1793692182764,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 5056,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 8838.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 13803,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 17726.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 16889.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 16780,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 16302.667,
             "unit": "ops/s"
           }
         ]
