@@ -5,7 +5,6 @@ import com.falkordb.ResultSet;
 import com.falkordb.impl.Utils;
 import com.falkordb.impl.graph_cache.GraphCache;
 import com.falkordb.impl.resultset.ResultSetImpl;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -13,7 +12,6 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import redis.clients.jedis.*;
 import redis.clients.jedis.commands.ProtocolCommand;
-import redis.clients.jedis.util.SafeEncoder;
 
 /**
  * This class is extending Jedis Pipeline
@@ -101,6 +99,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      */
     @Override
     public Response<ResultSet> query(String query, long timeout) {
+        Utils.checkTimeout(timeout);
         return appendWithResponse(
                 GraphCommand.QUERY,
                 Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout)),
@@ -117,6 +116,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      */
     @Override
     public Response<ResultSet> readOnlyQuery(String query, long timeout) {
+        Utils.checkTimeout(timeout);
         return appendWithResponse(
                 GraphCommand.RO_QUERY,
                 Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout)),
@@ -155,7 +155,6 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      * Executes a cypher query with parameters and timeout.
      *
      * NOTE: timeout is simply sent to DB. Socket timeout will not be changed.
-     * timeout.
      * @param query Cypher query.
      * @param params parameters map.
      * @param timeout timeout in milliseconds
@@ -163,6 +162,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      */
     @Override
     public Response<ResultSet> query(String query, Map<String, Object> params, long timeout) {
+        Utils.checkTimeout(timeout);
         return appendWithResponse(
                 GraphCommand.QUERY,
                 Arrays.asList(
@@ -178,7 +178,6 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      * Executes a cypher read-only query with parameters and timeout.
      *
      * NOTE: timeout is simply sent to DB. Socket timeout will not be changed.
-     * timeout.
      * @param query Cypher query.
      * @param params parameters map.
      * @param timeout timeout in milliseconds
@@ -186,6 +185,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      */
     @Override
     public Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params, long timeout) {
+        Utils.checkTimeout(timeout);
         return appendWithResponse(
                 GraphCommand.RO_QUERY,
                 Arrays.asList(
@@ -339,31 +339,8 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      * @return response with the execution plan as list of strings
      */
     @Override
-    @SuppressWarnings("unchecked")
     public Response<List<String>> explain(String query, Map<String, Object> params) {
-        return appendWithResponse(
-                GraphCommand.EXPLAIN,
-                Arrays.asList(graphId, Utils.prepareQuery(query, params)),
-                new Builder<List<String>>() {
-                    @Override
-                    public List<String> build(Object o) {
-                        // GRAPH.EXPLAIN returns an array of byte arrays, convert to list of strings
-                        if (o instanceof List) {
-                            List<Object> responseList = (List<Object>) o;
-                            List<String> result = new ArrayList<>(responseList.size());
-                            for (Object item : responseList) {
-                                if (item instanceof byte[]) {
-                                    result.add(SafeEncoder.encode((byte[]) item));
-                                } else {
-                                    result.add(item.toString());
-                                }
-                            }
-                            return result;
-                        } else {
-                            // Fallback for unexpected response format
-                            return Arrays.asList(SafeEncoder.encode((byte[]) o));
-                        }
-                    }
-                });
+        List<Object> args = Arrays.asList(graphId, Utils.prepareQuery(query, params));
+        return ExplainPlans.queue(builder -> appendWithResponse(GraphCommand.EXPLAIN, args, builder));
     }
 }

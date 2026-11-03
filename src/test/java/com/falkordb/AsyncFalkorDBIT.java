@@ -79,6 +79,18 @@ public class AsyncFalkorDBIT {
         assertTrue(failure.getCause() instanceof RuntimeException, "server error should surface as the cause");
     }
 
+    @Test
+    public void anInvalidProcedureNameFailsTheFuture() throws Exception {
+        AsyncGraph async = asyncClient();
+        async.query("CREATE (:Item)").get(30, TimeUnit.SECONDS); // so cleanup() has a graph to delete
+
+        CompletableFuture<ResultSet> future =
+                async.callProcedure("db.labels() YIELD label MATCH (n) DETACH DELETE n //");
+
+        ExecutionException failure = assertThrows(ExecutionException.class, () -> future.get(30, TimeUnit.SECONDS));
+        assertTrue(failure.getCause() instanceof IllegalArgumentException, String.valueOf(failure.getCause()));
+    }
+
     @AfterEach
     public void cleanup() throws IOException {
         try {

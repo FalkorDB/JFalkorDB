@@ -48,6 +48,9 @@ public interface AsyncGraph {
     /**
      * Asynchronously runs {@link Graph#query(String, long)}.
      *
+     * <p>When the task runs, a negative timeout completes the future exceptionally with an {@link
+     * IllegalArgumentException}.
+     *
      * @param query   the Cypher query
      * @param timeout timeout in milliseconds
      * @return a future completing with the result set
@@ -56,6 +59,9 @@ public interface AsyncGraph {
 
     /**
      * Asynchronously runs {@link Graph#readOnlyQuery(String, long)}.
+     *
+     * <p>When the task runs, a negative timeout completes the future exceptionally with an {@link
+     * IllegalArgumentException}.
      *
      * @param query   the Cypher query
      * @param timeout timeout in milliseconds
@@ -84,6 +90,9 @@ public interface AsyncGraph {
     /**
      * Asynchronously runs {@link Graph#query(String, Map, long)}.
      *
+     * <p>When the task runs, a negative timeout completes the future exceptionally with an {@link
+     * IllegalArgumentException}.
+     *
      * @param query   the Cypher query
      * @param params  the query parameters
      * @param timeout timeout in milliseconds
@@ -94,6 +103,9 @@ public interface AsyncGraph {
     /**
      * Asynchronously runs {@link Graph#readOnlyQuery(String, Map, long)}.
      *
+     * <p>When the task runs, a negative timeout completes the future exceptionally with an {@link
+     * IllegalArgumentException}.
+     *
      * @param query   the Cypher query
      * @param params  the query parameters
      * @param timeout timeout in milliseconds
@@ -103,6 +115,10 @@ public interface AsyncGraph {
 
     /**
      * Asynchronously runs {@link Graph#callProcedure(String)}.
+     *
+     * <p>The procedure name, arguments and output columns are checked as {@link
+     * Graph#callProcedure(String, List, Map)} describes. When the task runs, an invalid one completes the
+     * future exceptionally with an {@link IllegalArgumentException}.
      *
      * @param procedure the procedure name
      * @return a future completing with the result set
@@ -129,6 +145,10 @@ public interface AsyncGraph {
     /**
      * Asynchronously runs {@link Graph#callProcedure(String, List)}.
      *
+     * <p>The procedure name, arguments and output columns are checked as {@link
+     * Graph#callProcedure(String, List, Map)} describes. When the task runs, an invalid one completes the
+     * future exceptionally with an {@link IllegalArgumentException}.
+     *
      * @param procedure the procedure name
      * @param args      the procedure arguments
      * @return a future completing with the result set
@@ -137,6 +157,10 @@ public interface AsyncGraph {
 
     /**
      * Asynchronously runs {@link Graph#callProcedure(String, List, Map)}.
+     *
+     * <p>The procedure name, arguments and output columns are checked as {@link
+     * Graph#callProcedure(String, List, Map)} describes. When the task runs, an invalid one completes the
+     * future exceptionally with an {@link IllegalArgumentException}.
      *
      * @param procedure the procedure name
      * @param args      the procedure arguments

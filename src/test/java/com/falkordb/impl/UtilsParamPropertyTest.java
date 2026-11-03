@@ -1,14 +1,20 @@
 package com.falkordb.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
+import net.jqwik.api.Combinators;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
+import net.jqwik.api.statistics.Statistics;
 
 /**
  * Property-based checks that {@link Utils#prepareQuery} always emits a well-formed, non-terminable
@@ -19,6 +25,8 @@ import net.jqwik.api.Provide;
 class UtilsParamPropertyTest {
 
     private static final String PREFIX = "CYPHER `p`=";
+    private static final Pattern DOTTED_IDENTIFIERS =
+            Pattern.compile("[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)*");
     private static final String SUFFIX = " RETURN $p";
 
     @Property(tries = 2000)
@@ -69,5 +77,78 @@ class UtilsParamPropertyTest {
             }
             return sb.toString();
         });
+    }
+
+    /**
+     * A procedure name is accepted exactly when it is ASCII Cypher identifiers joined by dots, and is then
+     * written unchanged; anything else is rejected with {@code IllegalArgumentException} before a query is
+     * built. The oracle is a regex, independent of the character loop under test (the generated names are
+     * short, so the regex's recursion is no concern here).
+     */
+    @Property(tries = 3000)
+    void aProcedureNameIsAcceptedExactlyWhenItIsDottedIdentifiers(@ForAll("nameCandidates") String name) {
+        boolean valid = isDottedIdentifiers(name);
+        Statistics.collect(valid);
+        Statistics.coverage(coverage -> {
+            coverage.check(true).percentage(p -> p > 20);
+            coverage.check(false).percentage(p -> p > 20);
+        });
+        if (valid) {
+            assertEquals("CALL " + name + "()", Utils.prepareProcedure(name, Collections.emptyList(), new HashMap<>()));
+        } else {
+            assertThrows(
+                    IllegalArgumentException.class,
+                    () -> Utils.prepareProcedure(name, Collections.emptyList(), new HashMap<>()));
+        }
+    }
+
+    /** The same for a {@code YIELD} column, which must be a single identifier. */
+    @Property(tries = 3000)
+    void aYieldColumnIsAcceptedExactlyWhenItIsAnIdentifier(@ForAll("nameCandidates") String column) {
+        boolean valid = column.indexOf('.') < 0 && isDottedIdentifiers(column);
+        Statistics.collect(valid);
+        Statistics.coverage(coverage -> {
+            coverage.check(true).percentage(p -> p > 10);
+            coverage.check(false).percentage(p -> p > 20);
+        });
+        Map<String, List<String>> kwargs = new HashMap<>();
+        kwargs.put("y", Collections.singletonList(column));
+        if (valid) {
+            assertEquals("CALL p() YIELD " + column, Utils.prepareProcedure("p", Collections.emptyList(), kwargs));
+        } else {
+            assertThrows(
+                    IllegalArgumentException.class, () -> Utils.prepareProcedure("p", Collections.emptyList(), kwargs));
+        }
+    }
+
+    private static boolean isDottedIdentifiers(String s) {
+        return DOTTED_IDENTIFIERS.matcher(s).matches();
+    }
+
+    /**
+     * Half well-formed dotted names (one to four identifiers, mostly accepted), half those names with one
+     * character inserted or replaced from an alphabet of near misses: separators, quoting, digits, non-ASCII
+     * letters and digits that {@code Character.isLetter} would accept, line breaks and NUL.
+     */
+    @Provide
+    Arbitrary<String> nameCandidates() {
+        Arbitrary<String> identifier = Combinators.combine(
+                        Arbitraries.strings().withChars("abcxyzABCXYZ_").ofLength(1),
+                        Arbitraries.strings().withChars("abzAZ_0189").ofMaxLength(6))
+                .as((first, rest) -> first + rest);
+        Arbitrary<String> dotted = identifier.list().ofMinSize(1).ofMaxSize(4).map(parts -> String.join(".", parts));
+        Arbitrary<Character> nearMiss = Arbitraries.of(
+                '.', ' ', '`', '(', ')', ';', '-', '$', '0', '7', '\n', '\u2028', '\u0000', '\u00e9', '\u212A',
+                '\u0663', '\uFF21', 'a', '_');
+        Arbitrary<String> mutated = Combinators.combine(
+                        dotted, Arbitraries.integers().between(0, 40), nearMiss, Arbitraries.of(true, false))
+                .as((name, at, c, insert) -> {
+                    int i = Math.min(at, name.length());
+                    if (insert || i == name.length()) {
+                        return name.substring(0, i) + c + name.substring(i);
+                    }
+                    return name.substring(0, i) + c + name.substring(i + 1);
+                });
+        return Arbitraries.oneOf(dotted, mutated);
     }
 }

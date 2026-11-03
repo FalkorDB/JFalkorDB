@@ -30,8 +30,12 @@
 ## Pitfalls (avoid)
 
 - Parameter **values** are safely encoded, so they can't inject Cypher. This does **not** extend to
-  the query text itself, dynamic **labels/identifiers**, or procedure names — never build those from
-  untrusted input.
+  the query text itself or dynamic **labels/identifiers** — never build those from untrusted input.
+  `callProcedure` requires the procedure name to be identifiers joined by dots (such as `db.labels`)
+  and each `YIELD` column to be a single identifier, where an identifier is `[A-Za-z_][A-Za-z0-9_]*`;
+  anything else throws `IllegalArgumentException`. That checks the form only, not which procedure
+  runs (some, like `db.idx.fulltext.drop`, change the graph), so allowlist procedure names that come
+  from untrusted input.
 - A read against a graph that doesn't exist yet errors — create it with a write query first.
 
 See `README.md` for the full API and examples.
