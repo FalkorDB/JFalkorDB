@@ -2,6 +2,8 @@ package com.falkordb.impl.graph_cache;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.falkordb.Graph;
@@ -9,15 +11,21 @@ import com.falkordb.Header;
 import com.falkordb.Record;
 import com.falkordb.ResultSet;
 import com.falkordb.Statistics;
+import com.falkordb.exceptions.GraphException;
 import com.falkordb.impl.resultset.RecordImpl;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -30,7 +38,7 @@ class GraphCacheListTest {
     @Test
     void returnsProcedureValuesAndRefreshesOnce() {
         CountingGraph graph = new CountingGraph("a", "b", "c");
-        GraphCacheList cache = new GraphCacheList("db.labels");
+        GraphCacheList cache = new GraphCacheList("db.labels", "label");
 
         assertEquals("a", cache.getCachedData(0, graph));
         assertEquals("b", cache.getCachedData(1, graph));
@@ -41,7 +49,7 @@ class GraphCacheListTest {
     @Test
     void concurrentGetForAFreshIndexRefreshesExactlyOnce() throws InterruptedException {
         CountingGraph graph = new CountingGraph("a", "b", "c");
-        GraphCacheList cache = new GraphCacheList("db.labels");
+        GraphCacheList cache = new GraphCacheList("db.labels", "label");
 
         int threads = 16;
         CountDownLatch ready = new CountDownLatch(threads);
@@ -79,7 +87,7 @@ class GraphCacheListTest {
     @Test
     void warmsTheCacheWithAReadOnlyQuerySoReplicasAcceptIt() {
         CountingGraph graph = new CountingGraph("a", "b", "c");
-        GraphCacheList cache = new GraphCacheList("db.labels");
+        GraphCacheList cache = new GraphCacheList("db.labels", "label");
 
         assertEquals("a", cache.getCachedData(0, graph));
 
@@ -93,7 +101,7 @@ class GraphCacheListTest {
     @Test
     void clearForcesARefreshOnNextGet() {
         CountingGraph graph = new CountingGraph("a", "b", "c");
-        GraphCacheList cache = new GraphCacheList("db.labels");
+        GraphCacheList cache = new GraphCacheList("db.labels", "label");
 
         assertEquals("a", cache.getCachedData(0, graph));
         assertEquals(1, graph.calls.get());
@@ -101,6 +109,98 @@ class GraphCacheListTest {
         cache.clear();
         assertEquals("a", cache.getCachedData(0, graph));
         assertEquals(2, graph.calls.get(), "after clear the cache must re-fetch");
+    }
+
+    @Test
+    void aRefreshReplacesEntriesFromARecreatedGraph() {
+        // The graph was deleted and recreated elsewhere (another client, or another handle with its own
+        // cache) with different labels. A refresh used to append only the entries past the cached ones,
+        // so id 0 kept decoding to the old graph's label.
+        CountingGraph graph = new CountingGraph("Old0");
+        GraphCacheList cache = new GraphCacheList("db.labels", "label");
+        assertEquals("Old0", cache.getCachedData(0, graph));
+
+        graph.values = Arrays.asList("New0", "New1");
+        assertEquals("New1", cache.getCachedData(1, graph));
+        assertEquals("New0", cache.getCachedData(0, graph));
+        assertEquals(2, graph.calls.get());
+    }
+
+    @Test
+    void anIdTheGraphDoesNotListThrowsAGraphException() {
+        CountingGraph graph = new CountingGraph("a");
+        GraphCacheList cache = new GraphCacheList("db.labels", "label");
+
+        GraphException e = assertThrows(GraphException.class, () -> cache.getCachedData(5, graph));
+        assertTrue(e.getMessage().contains("label id 5"), e.getMessage());
+        assertTrue(e.getMessage().contains("db.labels() lists 1"), e.getMessage());
+
+        // the refresh that found the id missing is kept, so a listed id needs no further query
+        assertEquals("a", cache.getCachedData(0, graph));
+        assertEquals(1, graph.calls.get());
+    }
+
+    @Test
+    void aNegativeIdThrowsAGraphExceptionWithoutQuerying() {
+        CountingGraph graph = new CountingGraph("a");
+        GraphCacheList cache = new GraphCacheList("db.labels", "label");
+
+        GraphException e = assertThrows(GraphException.class, () -> cache.getCachedData(-1, graph));
+        assertEquals("Invalid label id -1", e.getMessage());
+        assertEquals(0, graph.calls.get());
+    }
+
+    @Test
+    void aConcurrentClearNeverFailsALookup() throws InterruptedException {
+        // Every clear() makes the next lookup refresh, so the readers race clears and refreshes alike.
+        // Before the list was replaced as a whole, a clear() that landed between a reader's bounds check
+        // and its get() threw IndexOutOfBoundsException for an id that was cached a moment earlier.
+        CountingGraph graph = new CountingGraph("a", "b", "c");
+        graph.recordQueries = false;
+        GraphCacheList cache = new GraphCacheList("db.labels", "label");
+        AtomicBoolean clearing = new AtomicBoolean();
+        AtomicBoolean stop = new AtomicBoolean();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        int readers = 4;
+        // each reader counts down once it has finished a lookup that began after the clearing did
+        CountDownLatch raced = new CountDownLatch(readers);
+        ExecutorService pool = Executors.newFixedThreadPool(readers);
+        try {
+            for (int i = 0; i < readers; i++) {
+                pool.execute(() -> {
+                    try {
+                        boolean counted = false;
+                        while (!stop.get()) {
+                            boolean duringClears = clearing.get();
+                            assertEquals("c", cache.getCachedData(2, graph));
+                            if (duringClears && !counted) {
+                                raced.countDown();
+                                counted = true;
+                            }
+                        }
+                    } catch (Throwable t) {
+                        failure.compareAndSet(null, t);
+                    }
+                });
+            }
+            clearing.set(true);
+            // clear for 200 ms, and on until every reader has looked up while the clears ran, so the race is
+            // really run even by a reader that was slow to start
+            long start = System.nanoTime();
+            long minimum = TimeUnit.MILLISECONDS.toNanos(200);
+            long limit = TimeUnit.SECONDS.toNanos(10);
+            while ((System.nanoTime() - start < minimum || raced.getCount() > 0)
+                    && System.nanoTime() - start < limit
+                    && failure.get() == null) {
+                cache.clear();
+            }
+        } finally {
+            stop.set(true);
+            pool.shutdown();
+            assertTrue(pool.awaitTermination(10, TimeUnit.SECONDS), "a reader did not stop in time");
+        }
+        assertNull(failure.get(), () -> "a lookup failed while the cache was being cleared: " + failure.get());
+        assertEquals(0, raced.getCount(), "a reader did not look up while the cache was being cleared");
     }
 
     /**
@@ -112,17 +212,21 @@ class GraphCacheListTest {
     private static final class CountingGraph implements Graph {
         final AtomicInteger calls = new AtomicInteger();
         final List<String> issuedQueries = Collections.synchronizedList(new ArrayList<>());
-        private final List<String> values;
+        /** What the procedure returns; replace it to stand for a graph that was recreated. */
+        volatile List<String> values;
+        /** Off for stress tests, which would otherwise grow {@link #issuedQueries} without bound. */
+        volatile boolean recordQueries = true;
 
         CountingGraph(String... values) {
-            this.values = new ArrayList<>();
-            Collections.addAll(this.values, values);
+            this.values = Arrays.asList(values);
         }
 
         @Override
         public ResultSet readOnlyQuery(String query) {
             calls.incrementAndGet();
-            issuedQueries.add(query);
+            if (recordQueries) {
+                issuedQueries.add(query);
+            }
             List<Record> records = new ArrayList<>();
             for (String v : values) {
                 records.add(new RecordImpl(Collections.singletonList("col"), Collections.singletonList(v)));

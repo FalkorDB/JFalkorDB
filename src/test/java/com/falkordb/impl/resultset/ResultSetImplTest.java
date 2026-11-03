@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.falkordb.Record;
 import com.falkordb.ResultSet;
+import com.falkordb.exceptions.GraphException;
+import com.falkordb.impl.graph_cache.GraphCache;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -50,5 +52,34 @@ public class ResultSetImplTest {
         assertThrows(
                 UnsupportedOperationException.class,
                 () -> resultSet.getHeader().getSchemaNames().add("injected"));
+    }
+
+    @Test
+    public void schemaIdsOutsideTheIntRangeAreRejectedBeforeAnyLookup() {
+        // A label, relationship-type or property-key id used to be narrowed with intValue(), so 4294967296
+        // wrapped to 0 and decoded as the first label, and 2147483648 turned negative. The guard fires
+        // before the cache is consulted, which is why no graph is needed here.
+        for (long id : new long[] {-1L, Integer.MAX_VALUE + 1L, 1L << 32}) {
+            List<Object> node = Arrays.asList(0L, Collections.singletonList(id), Collections.emptyList());
+            assertInvalidId("label", id, Arrays.asList(8L, node)); // VALUE_NODE
+
+            List<Object> edge = Arrays.asList(0L, id, 0L, 0L, Collections.emptyList());
+            assertInvalidId("relationship type", id, Arrays.asList(7L, edge)); // VALUE_EDGE
+
+            List<Object> property = Arrays.asList(id, 3L, 1L); // key id, VALUE_INTEGER, 1
+            List<Object> propertyNode = Arrays.asList(0L, Collections.emptyList(), Collections.singletonList(property));
+            assertInvalidId("property key", id, Arrays.asList(8L, propertyNode));
+        }
+    }
+
+    private static void assertInvalidId(String entryName, long id, List<Object> cell) {
+        List<Object> column = Arrays.asList(1L, SafeEncoder.encode("v")); // COLUMN_SCALAR
+        List<List<Object>> rawHeader = Collections.singletonList(column);
+        List<List<Object>> rawRows = Collections.singletonList(Collections.singletonList((Object) cell));
+        List<Object> rawResponse = Arrays.asList(rawHeader, rawRows, new ArrayList<>());
+
+        GraphException e =
+                assertThrows(GraphException.class, () -> new ResultSetImpl(rawResponse, null, new GraphCache()));
+        assertEquals("Invalid " + entryName + " id " + id, e.getMessage());
     }
 }
