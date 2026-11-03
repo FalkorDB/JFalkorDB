@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793705719440,
+  "lastUpdate": 1793706660526,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -18446,6 +18446,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 49509.871,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8414c04f4945070a46b1a3d0efe0e96710d99eb6",
+          "message": "ci: retry dependency resolution and warm the Maven cache in every job (#506)\n\n* ci: retry dependency resolution and warm the Maven cache in every job\n\nThe v0.15.0 tag build failed in smoke-jdk8 with \"Could not find artifact\"\nfor jspecify, junit-jupiter, testcontainers and others, while the other\njobs of the same run resolved the same versions. Central answered 404,\nwhich the connector's retry handler (.mvn/maven.config) doesn't retry,\nand smoke-jdk8 had no warm-up step, so the build failed outright.\n\nfetch-deps now retries the whole resolution three times with a back-off,\npassing -U on a retry so Maven asks Central again instead of trusting the\n\"not found\" it just recorded. Every job that builds with Maven warms the\ncache with it first; lint, format and javadoc warm the -Pquality plugins.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* ci: pass fetch-deps arguments to Maven as given\n\n{{args}} pasted the arguments into the script as text, so one with a\nspace, such as --settings 'maven conf/settings.xml', reached Maven as\ntwo. The recipe now takes them as positional arguments and passes \"$@\".\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* ci: warm the help plugin and the smoke-test and examples plugins too\n\nfetch-deps warmed only the root build. verify-jdk and examples then\nresolved maven-help-plugin and the compiler 3.15.0 and surefire 3.5.6\nthat smoke-test/ and examples/ pin, outside any retry. The warm-up now\nresolves those as well, inside the retried attempt. It uses\ndependency:resolve-plugins for the two poms: go-offline would fetch their\ndependency on the jar this build installs, which may not be on Central,\nand dependency-plugin 3.7.0's go-offline ignores excludeGroupIds.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* ci: pass fetch-deps arguments to every Maven call of the warm-up\n\nOnly the root go-offline got them, so --settings or -Dmaven.repo.local\ndidn't reach the help plugin or the smoke-test and examples plugins.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-03T13:48:43+02:00",
+          "tree_id": "92c7ae29ac2d84c2b1b4bf5302642d17f4ce0110",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/8414c04f4945070a46b1a3d0efe0e96710d99eb6"
+        },
+        "date": 1793706659652,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 112.106,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 137.754,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 155.759,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 136.1,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 165.774,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 180.936,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 194.566,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 285.351,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 344.679,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 334.624,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 553.717,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 685.242,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 393.57,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 3597.625,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 7875.563,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 403.375,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 10154.863,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 21615.281,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 404.908,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 23455.605,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 51590.518,
             "unit": "us"
           }
         ]
