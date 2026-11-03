@@ -491,12 +491,17 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <section class="detail" id="callProcedure(java.lang.String)">
 <h3>callProcedure</h3>
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">callProcedure</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;procedure)</span></div>
-<div class="block">Invokes stored procedures without arguments</div>
+<div class="block">Invokes stored procedures without arguments
+
+ <p>The call is checked before it is queued, so a rejected call queues nothing.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
-<dd><code>procedure</code> - procedure name to invoke</dd>
+<dd><code>procedure</code> - procedure name to invoke: identifiers (<code>[A-Za-z_][A-Za-z0-9_]*</code>)
+     joined by dots, such as <code>db.labels</code></dd>
 <dt>Returns:</dt>
 <dd>a response which builds result set with the procedure data</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>procedure</code> is null or not a valid procedure name</dd>
 </dl>
 </section>
 </li>
@@ -505,13 +510,19 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <h3>callProcedure</h3>
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">callProcedure</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;procedure,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;args)</span></div>
-<div class="block">Invokes stored procedure with arguments</div>
+<div class="block">Invokes stored procedure with arguments
+
+ <p>The call is checked before it is queued, so a rejected call queues nothing.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
-<dd><code>procedure</code> - procedure name to invoke</dd>
-<dd><code>args</code> - procedure arguments</dd>
+<dd><code>procedure</code> - procedure name to invoke: identifiers (<code>[A-Za-z_][A-Za-z0-9_]*</code>)
+     joined by dots, such as <code>db.labels</code></dd>
+<dd><code>args</code> - procedure arguments, sent as string literals</dd>
 <dt>Returns:</dt>
 <dd>a response which builds result set with the procedure data</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>procedure</code> is null or not a valid procedure name, or
+     <code>args</code> or one of its elements is null</dd>
 </dl>
 </section>
 </li>
@@ -521,15 +532,23 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">callProcedure</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;procedure,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;args,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&gt;&nbsp;kwargs)</span></div>
-<div class="block">Invoke a stored procedure</div>
+<div class="block">Invoke a stored procedure
+
+ <p>The call is checked before it is queued, so a rejected call queues nothing.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
-<dd><code>procedure</code> - - procedure to execute</dd>
-<dd><code>args</code> - - procedure arguments</dd>
+<dd><code>procedure</code> - - procedure name to invoke: identifiers (<code>[A-Za-z_][A-Za-z0-9_]*</code>)
+     joined by dots, such as <code>db.labels</code></dd>
+<dd><code>args</code> - - procedure arguments, sent as string literals</dd>
 <dd><code>kwargs</code> - - procedure output arguments: the <code>"y"</code> entry lists the output
-     columns to bind with Cypher's <code>YIELD</code> clause</dd>
+     columns to bind with Cypher's <code>YIELD</code> clause, each a Cypher identifier (<code>
+     [A-Za-z_][A-Za-z0-9_]*</code>, without an <code>AS</code> alias)</dd>
 <dt>Returns:</dt>
 <dd>a response which builds result set with the procedure data</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>procedure</code> is null or not a valid procedure name, if
+     <code>args</code>, <code>kwargs</code> or an argument is null, or if a <code>YIELD</code> column is not a
+     Cypher identifier</dd>
 </dl>
 </section>
 </li>

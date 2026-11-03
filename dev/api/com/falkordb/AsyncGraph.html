@@ -364,7 +364,10 @@ loadScripts(document, 'script');</script>
 <section class="detail" id="callProcedure(java.lang.String)">
 <h3>callProcedure</h3>
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/CompletableFuture.html" title="class or interface in java.util.concurrent" class="external-link">CompletableFuture</a>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">callProcedure</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;procedure)</span></div>
-<div class="block">Asynchronously runs <a href="Graph.html#callProcedure(java.lang.String)"><code>Graph.callProcedure(String)</code></a>.</div>
+<div class="block">Asynchronously runs <a href="Graph.html#callProcedure(java.lang.String)"><code>Graph.callProcedure(String)</code></a>.
+
+ <p>The procedure name, arguments and output columns are checked as <a href="Graph.html#callProcedure(java.lang.String,java.util.List,java.util.Map)"><code>Graph.callProcedure(String, List, Map)</code></a> describes. When the task runs, an invalid one completes the
+ future exceptionally with an <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link"><code>IllegalArgumentException</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>procedure</code> - the procedure name</dd>
@@ -406,7 +409,10 @@ loadScripts(document, 'script');</script>
 <h3>callProcedure</h3>
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/CompletableFuture.html" title="class or interface in java.util.concurrent" class="external-link">CompletableFuture</a>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">callProcedure</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;procedure,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;args)</span></div>
-<div class="block">Asynchronously runs <a href="Graph.html#callProcedure(java.lang.String,java.util.List)"><code>Graph.callProcedure(String, List)</code></a>.</div>
+<div class="block">Asynchronously runs <a href="Graph.html#callProcedure(java.lang.String,java.util.List)"><code>Graph.callProcedure(String, List)</code></a>.
+
+ <p>The procedure name, arguments and output columns are checked as <a href="Graph.html#callProcedure(java.lang.String,java.util.List,java.util.Map)"><code>Graph.callProcedure(String, List, Map)</code></a> describes. When the task runs, an invalid one completes the
+ future exceptionally with an <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link"><code>IllegalArgumentException</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>procedure</code> - the procedure name</dd>
@@ -422,7 +428,10 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/CompletableFuture.html" title="class or interface in java.util.concurrent" class="external-link">CompletableFuture</a>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">callProcedure</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;procedure,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;args,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&gt;&nbsp;kwargs)</span></div>
-<div class="block">Asynchronously runs <a href="Graph.html#callProcedure(java.lang.String,java.util.List,java.util.Map)"><code>Graph.callProcedure(String, List, Map)</code></a>.</div>
+<div class="block">Asynchronously runs <a href="Graph.html#callProcedure(java.lang.String,java.util.List,java.util.Map)"><code>Graph.callProcedure(String, List, Map)</code></a>.
+
+ <p>The procedure name, arguments and output columns are checked as <a href="Graph.html#callProcedure(java.lang.String,java.util.List,java.util.Map)"><code>Graph.callProcedure(String, List, Map)</code></a> describes. When the task runs, an invalid one completes the
+ future exceptionally with an <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link"><code>IllegalArgumentException</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>procedure</code> - the procedure name</dd>

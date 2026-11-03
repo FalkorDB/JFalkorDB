@@ -300,7 +300,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
  (including <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/math/BigDecimal.html" title="class or interface in java.math" class="external-link"><code>BigDecimal</code></a>), out-of-range integers, non-finite floating-point
  values, cyclic containers, non-String map keys, invalid parameter names, and a null
  <code>query</code> or <code>params</code> are rejected with <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link"><code>IllegalArgumentException</code></a>. This does not
- cover the query text itself, dynamic labels/identifiers, or procedure names.</div>
+ cover the query text itself or dynamic labels/identifiers. (The form of procedure names is
+ checked by <a href="#callProcedure(java.lang.String,java.util.List,java.util.Map)"><code>callProcedure(String, List, Map)</code></a>, but not which procedure they name.)</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>query</code> - Cypher query. Must not be <code>null</code>.</dd>
@@ -366,9 +367,13 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <div class="block">Invokes stored procedures without arguments</div>
 <dl class="notes">
 <dt>Parameters:</dt>
-<dd><code>procedure</code> - procedure name to invoke</dd>
+<dd><code>procedure</code> - procedure name to invoke: identifiers (<code>[A-Za-z_][A-Za-z0-9_]*</code>)
+     joined by dots, such as <code>db.labels</code></dd>
 <dt>Returns:</dt>
 <dd>result set with the procedure data</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>procedure</code> is null or not a valid procedure name</dd>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the call</dd>
 </dl>
 </section>
 </li>
@@ -410,10 +415,15 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <div class="block">Invokes stored procedure with arguments</div>
 <dl class="notes">
 <dt>Parameters:</dt>
-<dd><code>procedure</code> - procedure name to invoke</dd>
-<dd><code>args</code> - procedure arguments</dd>
+<dd><code>procedure</code> - procedure name to invoke: identifiers (<code>[A-Za-z_][A-Za-z0-9_]*</code>)
+     joined by dots, such as <code>db.labels</code></dd>
+<dd><code>args</code> - procedure arguments, sent as string literals</dd>
 <dt>Returns:</dt>
 <dd>result set with the procedure data</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>procedure</code> is null or not a valid procedure name, or
+     <code>args</code> or one of its elements is null</dd>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the call</dd>
 </dl>
 </section>
 </li>
@@ -426,12 +436,19 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <div class="block">Invoke a stored procedure</div>
 <dl class="notes">
 <dt>Parameters:</dt>
-<dd><code>procedure</code> - - procedure to execute</dd>
-<dd><code>args</code> - - procedure arguments</dd>
+<dd><code>procedure</code> - - procedure name to invoke: identifiers (<code>[A-Za-z_][A-Za-z0-9_]*</code>)
+     joined by dots, such as <code>db.labels</code></dd>
+<dd><code>args</code> - - procedure arguments, sent as string literals</dd>
 <dd><code>kwargs</code> - - procedure output arguments: the <code>"y"</code> entry lists the output
-     columns to bind with Cypher's <code>YIELD</code> clause</dd>
+     columns to bind with Cypher's <code>YIELD</code> clause, each a Cypher identifier (<code>
+     [A-Za-z_][A-Za-z0-9_]*</code>, without an <code>AS</code> alias)</dd>
 <dt>Returns:</dt>
 <dd>result set with the procedure data</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>procedure</code> is null or not a valid procedure name, if
+     <code>args</code>, <code>kwargs</code> or an argument is null, or if a <code>YIELD</code> column is not a
+     Cypher identifier</dd>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the call</dd>
 </dl>
 </section>
 </li>
