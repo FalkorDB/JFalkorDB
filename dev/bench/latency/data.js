@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793691127088,
+  "lastUpdate": 1793691508066,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -17414,6 +17414,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 40590.302,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2608edb35cf1c0a337933744227812b1ecfe5895",
+          "message": "fix!: replace stale entries and reject unknown ids in the graph schema cache (#496)\n\n* fix!: replace stale entries and reject unknown ids in the graph schema cache\n\nGraphCacheList refreshed its list on a miss but kept every entry it already\nhad and appended only the rest. After the graph was deleted and recreated\nelsewhere, the low ids went on decoding to the old graph's names. An id the\nfresh list still didn't reach, or a negative one, escaped as an\nIndexOutOfBoundsException, and so could a lookup that raced a clear().\n\nThe list is now an immutable snapshot, replaced as a whole under the refresh\nlock. A refresh replaces every entry, a reader checks the bounds and reads\nfrom one snapshot, and an unknown or negative id throws GraphException.\nResultSetImpl range-checks the ids as longs before narrowing them to int, as\nHeaderImpl already does for column types.\n\nBREAKING CHANGE: a reply that names a label, relationship type or property\nkey the graph doesn't list now fails with GraphException instead of\nIndexOutOfBoundsException, and an id beyond the int range fails instead of\nwrapping to another entry. GraphException is a JedisDataException, so\nGraphPipeline.syncAndReturnAll() and GraphTransaction.exec() now return it as\nthat command's result instead of throwing it.\n\nCloses #490\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: start clearing only once every reader is looking up\n\nWithout the latch the clear loop could finish before a reader ran, and the\ntest would pass without exercising the race.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: count a reader only once it has looked up while clear() runs\n\nThe readiness latch counted a reader down after its warm-up lookup, so a\nreader descheduled before its loop could sit out the 200 ms of clears.\nEach reader now counts down after finishing a lookup that began once the\nclearing had, and the clearing goes on until all four have (at most 10 s),\nwhich the test asserts.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-03T09:36:20+02:00",
+          "tree_id": "8e731041e51c2c9abcb75513533ca07b1b243761",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/2608edb35cf1c0a337933744227812b1ecfe5895"
+        },
+        "date": 1793691507161,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 77.356,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 89.886,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 99.62,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 94.813,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 118.79,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 134.001,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 138.107,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 219.79,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 283.278,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 243.326,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 417.189,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 518.961,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 289.624,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 2433.226,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 5894.072,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 295.916,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 6592.913,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 15806.91,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 295.565,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 16293.774,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 36456.485,
             "unit": "us"
           }
         ]
