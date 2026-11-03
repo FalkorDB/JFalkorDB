@@ -286,6 +286,54 @@ class QueuedRepliesTest {
     }
 
     @Test
+    void aClosedContextBuiltWithoutAGraphReportsALookupInsteadOfSendingIt() {
+        // After close() the connection may be lent to another borrower, and this context has no graph to borrow
+        // another one from.
+        Response<ResultSet> cold;
+        try (GraphContextImpl plain = new GraphContextImpl(pool.getResource(), cache, "g")) {
+            GraphPipeline pipeline = plain.pipelined();
+            cold = pipeline.query(QUERY);
+            pipeline.sync();
+        }
+        GraphException e = assertThrows(GraphException.class, () -> label(cold));
+        assertTrue(e.getMessage().contains("closed"), e.getMessage());
+        assertEquals(0, lookups(server), "sent no lookup");
+
+        // a reply that needs no lookup still decodes
+        warmCache("Person");
+        Response<ResultSet> warm;
+        try (GraphContextImpl plain = new GraphContextImpl(pool.getResource(), cache, "g")) {
+            GraphPipeline pipeline = plain.pipelined();
+            warm = pipeline.query(QUERY);
+            pipeline.sync();
+        }
+        assertEquals("Person", label(warm));
+        assertEquals(0, lookups(server));
+        assertEquals(0, poolServer.received().size());
+    }
+
+    @Test
+    void aBusyContextBuiltWithoutAGraphReportsALookupInsteadOfSendingIt() {
+        // A lookup on the connection would read the reply of the command still queued instead of its own.
+        try (GraphContextImpl plain = new GraphContextImpl(pool.getResource(), cache, "g")) {
+            GraphPipeline pipeline = plain.pipelined();
+            Response<ResultSet> cold = pipeline.query(QUERY);
+            pipeline.sync();
+            Response<ResultSet> queued = pipeline.query(QUERY);
+
+            GraphException e = assertThrows(GraphException.class, () -> label(cold));
+            assertTrue(e.getMessage().contains("awaits replies"), e.getMessage());
+            assertEquals(0, lookups(server), "sent no lookup");
+
+            pipeline.sync();
+            // once nothing is queued, the context looks up on its own connection again
+            assertEquals("Person", label(queued));
+            assertEquals(1, lookups(server));
+        }
+        assertEquals(0, poolServer.received().size());
+    }
+
+    @Test
     void aPipelineBuiltWithAGraphLooksLabelsUpThroughThatGraph() {
         warmCache("Person");
         try (Jedis own = pool.getResource()) {

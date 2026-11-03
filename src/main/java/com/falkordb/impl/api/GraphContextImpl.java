@@ -42,7 +42,9 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     private final AtomicBoolean closed = new AtomicBoolean();
 
     /**
-     * Generates a new instance with a specific Jedis connection
+     * Generates a new instance with a specific Jedis connection. Its pipelines and transactions have no other
+     * connection to look a schema name up on, so a reply that needs one after this context is closed, or while
+     * one of them awaits replies, fails with a {@link GraphException} (see {@link #decodeQueued}).
      * @param connection Jedis connection
      * @param cache GraphCache
      * @param graphId graph id
@@ -75,12 +77,18 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      * because decoding can refresh the cache under its lock, and a thread must not wait for the pool while it
      * holds that lock: the threads that hold the pool's connections may be waiting for the lock.
      *
+     * <p>A context built without that graph has no connection to borrow, so a reply that needs a lookup then
+     * fails with a {@link GraphException} instead.
+     *
      * <p>Before {@link #close()}, replies are expected to be read on the thread that uses this context, like
      * every other call on it.
+     *
+     * @throws GraphException if the reply needs a lookup that can't run on this context's connection and this
+     *     context was built without a graph to borrow another from
      */
     ResultSet decodeQueued(List<Object> reply, GraphCache replyCache) {
-        GraphContextGenerator pool = poolGraph;
-        if (pool == null || !(closed.get() || connectionAwaitsReplies())) {
+        boolean isClosed = closed.get();
+        if (!(isClosed || connectionAwaitsReplies())) {
             return new ResultSetImpl(reply, this, replyCache);
         }
         try {
@@ -88,6 +96,12 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             // connection. A context holding its pool's only connection can't borrow another.
             return new ResultSetImpl(reply, NoLookups.GRAPH, replyCache);
         } catch (NoLookups.Needed lookupNeeded) {
+            GraphContextGenerator pool = poolGraph;
+            if (pool == null) {
+                throw new GraphException("Can't look up a schema name to decode this reply: the context "
+                        + (isClosed ? "is closed" : "has a pipeline or transaction that awaits replies")
+                        + ", and it was built without a graph to borrow another connection from");
+            }
             try (GraphContext own = pool.getContext()) {
                 return new ResultSetImpl(reply, own, replyCache);
             }
