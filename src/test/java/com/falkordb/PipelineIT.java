@@ -1,13 +1,18 @@
 package com.falkordb;
 
+import com.falkordb.exceptions.GraphException;
 import com.falkordb.graph_entities.Node;
 import com.falkordb.graph_entities.Property;
 import com.falkordb.impl.resultset.ResultSetImpl;
+import java.io.IOException;
 import java.util.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Pipeline;
+import redis.clients.jedis.Response;
 
 public class PipelineIT {
 
@@ -107,6 +112,120 @@ public class PipelineIT {
             Assertions.assertFalse(iterator.hasNext());
             Assertions.assertEquals(Arrays.asList("label"), record.keys());
             Assertions.assertEquals("Person", record.getValue("label"));
+        }
+    }
+
+    @Test
+    public void testResponseGetAfterContextClosed() throws IOException {
+        // A reply is decoded when it is read, after its context is closed here. Decoding needs the label and
+        // the property key, but the context's connection is back in the pool. Lent out again and put in
+        // pipeline mode, it makes Jedis refuse any stray command sent on it.
+        try (Driver driver = FalkorDB.builder()
+                .host(TestServer.host())
+                .port(TestServer.port())
+                .poolMaxTotal(2)
+                .poolMaxIdle(2)
+                .build()) {
+            GraphContextGenerator graph = driver.graph("social"); // its own, empty cache
+            Response<ResultSet> reply;
+            try (GraphContext c = graph.getContext()) {
+                GraphPipeline pipeline = c.pipelined();
+                reply = pipeline.query("CREATE (n:PostCloseLabel {k:'v'}) RETURN n");
+                pipeline.sync();
+            }
+            try (Jedis lentOut = driver.getConnection()) { // the pool lends the connection returned last
+                Pipeline busy = lentOut.pipelined();
+                busy.get("pipeline-it-busy");
+
+                Node node = (Node) reply.get().iterator().next().getValue(0);
+                Assertions.assertEquals("PostCloseLabel", node.getLabel(0));
+                Assertions.assertEquals("v", node.getProperty("k").getValue());
+                busy.sync();
+            }
+        }
+    }
+
+    @Test
+    public void testQueryFollowedByDeleteGraphInSamePipeline() {
+        api.query("CREATE (:Person {name:'a'})");
+        api.query("MATCH (n:Person) RETURN n"); // caches the label and the property key
+        try (GraphContext c = api.getContext()) {
+            GraphPipeline pipeline = c.pipelined();
+            pipeline.query("MATCH (n:Person) RETURN n");
+            pipeline.deleteGraph();
+            List<Object> results = pipeline.syncAndReturnAll();
+
+            Node node = (Node) ((ResultSet) results.get(0)).iterator().next().getValue(0);
+            Assertions.assertEquals("Person", node.getLabel(0));
+            Assertions.assertEquals("a", node.getProperty("name").getValue());
+        }
+
+        // the same with sync(), reading the reply afterwards
+        api.query("CREATE (:Person {name:'b'})");
+        api.query("MATCH (n:Person) RETURN n");
+        try (GraphContext c = api.getContext()) {
+            GraphPipeline pipeline = c.pipelined();
+            Response<ResultSet> reply = pipeline.query("MATCH (n:Person) RETURN n");
+            pipeline.deleteGraph();
+            pipeline.sync();
+
+            Node node = (Node) reply.get().iterator().next().getValue(0);
+            Assertions.assertEquals("Person", node.getLabel(0));
+            Assertions.assertEquals("b", node.getProperty("name").getValue());
+        }
+
+        // sync() ran the delete, so the cache was cleared: a recreated graph decodes with its own names
+        api.query("CREATE (:Animal {kind:'cat'})");
+        Node animal = (Node) api.query("MATCH (n) RETURN n").iterator().next().getValue(0);
+        Assertions.assertEquals("Animal", animal.getLabel(0));
+        Assertions.assertEquals("cat", animal.getProperty("kind").getValue());
+    }
+
+    @Test
+    public void testAColdCacheReplyQueuedBeforeDeleteGraphIsReportedRatherThanMisread() {
+        // The issue's example, with nothing cached: the reply before the delete can't be decoded any more.
+        // Looking its label id up after the batch would find the recreated graph's label, so it is reported.
+        api.query("CREATE (:Person {name:'a'})");
+        GraphContextGenerator cold = TestServer.graph("social"); // its own, empty cache
+        try (GraphContext c = cold.getContext()) {
+            GraphPipeline pipeline = c.pipelined();
+            pipeline.query("MATCH (n:Person) RETURN n");
+            pipeline.deleteGraph();
+            pipeline.query("CREATE (n:Animal {kind:'cat'}) RETURN n");
+            List<Object> results = pipeline.syncAndReturnAll();
+
+            Assertions.assertTrue(results.get(0) instanceof GraphException, String.valueOf(results.get(0)));
+            Node animal = (Node) ((ResultSet) results.get(2)).iterator().next().getValue(0);
+            Assertions.assertEquals("Animal", animal.getLabel(0));
+        } finally {
+            cold.close();
+        }
+    }
+
+    @Test
+    public void testReadingAReplyWhileATransactionIsOpenOnTheSameContext() throws IOException {
+        api.query("CREATE (:Person {name:'a'})");
+        // A driver of its own: a lookup sent on the connection by mistake would leave it out of step, and the
+        // shared pool would hand that connection to the next test.
+        try (Driver driver = FalkorDB.builder()
+                .host(TestServer.host())
+                .port(TestServer.port())
+                .build()) {
+            GraphContextGenerator cold = driver.graph("social"); // its own, empty cache
+            try (GraphContext c = cold.getContext()) {
+                GraphPipeline pipeline = c.pipelined();
+                Response<ResultSet> reply = pipeline.query("MATCH (n:Person) RETURN n");
+                pipeline.sync();
+
+                // The connection is inside MULTI, so the label can't be looked up on it.
+                GraphTransaction transaction = c.multi();
+                transaction.set("x", "1");
+                Node node = (Node) reply.get().iterator().next().getValue(0);
+                Assertions.assertEquals("Person", node.getLabel(0));
+                Assertions.assertEquals("a", node.getProperty("name").getValue());
+
+                Assertions.assertEquals(Collections.singletonList("OK"), transaction.exec());
+            }
         }
     }
 

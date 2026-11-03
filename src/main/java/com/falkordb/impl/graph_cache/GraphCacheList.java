@@ -118,6 +118,11 @@ class GraphCacheList {
         return Collections.unmodifiableList(fresh);
     }
 
+    /** A copy of the entries cached now. */
+    List<String> snapshot() {
+        return new ArrayList<>(data);
+    }
+
     public void clear() {
         // Serialize with an in-flight refresh, so a refresh that fetched the list before the clear can't
         // publish it after the clear.
