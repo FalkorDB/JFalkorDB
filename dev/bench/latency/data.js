@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793704076568,
+  "lastUpdate": 1793705719440,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -18317,6 +18317,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 76885.72,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7c25866c1cbed139a26f534ba52eed7b4f5c85a2",
+          "message": "test: read an unknown cluster host as the seed in ClusterIT (#507)\n\nThe migration test connected to each primary at the host CLUSTER SLOTS\nreports. A cluster that doesn't know a node's endpoint, such as one with\ncluster-preferred-endpoint-type unknown-endpoint, reports it as null,\nempty or ?, which the driver reads as the node that answered. The test\ntried to connect to it and failed with UnknownHostException. It now\nfalls back to the seed host the same way.\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-03T13:32:56+02:00",
+          "tree_id": "fcd5a28b8a2945ec7af969180d9af20f79e69ec6",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/7c25866c1cbed139a26f534ba52eed7b4f5c85a2"
+        },
+        "date": 1793705718152,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 105.709,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 128.193,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 142.105,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 134.28,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 165.188,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 180.1,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 200.301,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 319.68,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 418.297,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 347.562,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 592.148,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 733.761,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 402.173,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 3321.647,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 8001.992,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 414.672,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 9169.044,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 21292.905,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 423.476,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 21839.945,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 49509.871,
             "unit": "us"
           }
         ]
