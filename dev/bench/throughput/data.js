@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793699142601,
+  "lastUpdate": 1793703528995,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -8259,6 +8259,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11393,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "142a846e6ea7a169e4de9cbbfe369d909bf4c038",
+          "message": "fix!: follow ASK redirects, and move single-primary reads off a dead primary (#501)\n\n* fix!: follow ASK redirects, and move single-primary reads off a dead primary\n\nIn a Redis Cluster an ASK means the graph's slot is being migrated and the\ngraph has already moved, for this command only. routed() treated it like\nMOVED: it relearned the slot table, which still names the old owner until\nthe migration ends, and went back there, so every call during a migration\nfailed after three attempts. Now an ASK sends the next attempt to the node\nit names, after ASKING, without relearning. A context on that node sends\nASKING before every command, so the lookups that decode the reply are\naccepted too, and an ASK that names no host goes to the host that answered.\nEach attempt now borrows its connection through a Route that routed() hands\nit.\n\nA query that ran but whose reply hit a redirect while decoding (a schema\nlookup on a node that just lost the slot) was retried, applying a write\ntwice. It is now reported as a ReplyDecodeException, which routed() does not\nretry; a read-only query still is.\n\nudfList() and configGet() went to one primary chosen round-robin and failed\nwhenever it was down. They now try the next primary, relearning the topology\nonce, and give up if the relearning fails too.\n\nBREAKING CHANGE: a query or profile whose reply can't be decoded because a\nschema lookup was redirected now fails with a GraphException saying the\ncommand ran, instead of being run again.\n\nCloses #492\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: keep cluster reads and ASK retries going in more failure cases\n\n- onAnyPrimary still tries the other known primaries when relearning the\n  layout fails, since one may answer on a pooled connection.\n- The round-robin index is computed as a long, so a wrapped counter can't\n  skip a primary.\n- Borrowing from an ASK target retries on a fresh pool if a topology\n  refresh closed the old one in between.\n- A MOVED met while decoding still makes the driver relearn the slot table,\n  though the command isn't repeated.\n- An ASK attempt sends ASKING once per command: the route's ASKING covers\n  the context's first command.\n- The README says only a redirect on the command itself means it didn't\n  run, and the migration IT cleans up however far the migration got.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: close a fake server's late-accepted connections, and warm node 1 first\n\nFakeRedisServer.close() closed its listening socket, then the clients it\nknew. The socket can finish closing only when the acceptor wakes, and a\nconnection accepted in that window was never closed, so a \"closed\" node\nkept answering: readsMoveOnToAnotherPrimaryWhenOneIsDown failed that way\non CI. The acceptor now closes anything it accepts after close(), and\nclose() waits for it before closing the clients. The test also has node 1\nanswer once before it is closed.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: start the cluster tests only when every node sees the cluster as up\n\nThe IT cluster waited for node 7001 to report cluster_state:ok, but the\nother two nodes can still be converging then and answer CLUSTERDOWN. That\nfailed ClusterIT in the smoke-jdk job of #497 and #501. The start script\nnow waits for each node.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: cover an ASK target that answers MOVED\n\nThe importing node stopped importing between the ASK and the attempt\nsent to it, and a third node owns the slot now. The driver relearns the\nslot table and the next attempt reaches the new owner without ASKING.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: let a read on any primary borrow again when a refresh closed its pool\n\nCopilot found this in its reviews of 92223ab and 96635b6. onAnyPrimary\nborrowed with poolFor(node).getResource(). A refresh that closed the\nnode's pool in between made the borrow fail with a plain JedisException,\nwhich the read doesn't take for an unreachable node, so udfList() and\nconfigGet() failed instead of moving on. It now borrows through borrow(),\nas connectionTo() does.\n\nClusterConnections takes the way it makes a node's pool in a new\npackage-private constructor, so a test can run a refresh between the\nlookup and the borrow. New tests cover the read, an ASK target, the\nthree-attempt limit, a source closed during the borrow, an ASKING that\nfails, and a single source asked for another node. A read gives up only\nafter trying every primary, and a topology always has one, so the\n\"no primary is known\" branch could never run; it is an assertion now.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: cover decode-time redirects, udfList filters and redirect targets\n\n- A MOVED while decoding keeps a failed relearn attached, an ASK while\n  decoding is reported without relearning, and any other lookup error is\n  reported as it is.\n- udfList sends the filters it is given, and a reply that isn't a list\n  reads as no libraries.\n- A context made for an ASK attempt asks before every command after its\n  first, copies and deletes included.\n- redirectTarget follows a named host, sends a missing or unknown one to\n  the node that answered, and keeps it when that node is unknown.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: keep a slotless node's pool while its connections are out\n\nCopilot found this in its review of 551a067. A refresh closed the pool of\nevery node that owns no slot, and an empty node importing its first slot,\nthe target of an ASK, is one of them. Closing it while an ASK attempt\nstill held a connection made the next attempt open a new pool, so the\nnode's connections could exceed the per-node pool limit.\n\nA refresh now closes such a pool only when nothing is borrowed from it;\na busy one stays, and a later refresh closes it once it is idle. Closing\nis harmless when another thread already removed the pool, so the loop no\nlonger needs a branch for that.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: cover the failover that issue #492 describes\n\nudfListAndConfigGetRefreshTopologyWhenAPrimaryGoesDown closes one of two\nprimaries and gives its slots to the other. The first read that tries\nthe closed primary relearns the slot table, and no later udfList() or\nconfigGet() tries it again. Master fails it with a\nJedisConnectionException. It also fails if a relearned table serves only\nthe read that relearned it, which readsMoveOnToAnotherPrimaryWhenOneIsDown\nmisses.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: add Javadoc to the helpers this PR touches that had none\n\nCodeRabbit's Docstring Coverage check counts the functions a PR touches.\nThese main-code helpers had no Javadoc. The touched functions still\nwithout one are test methods, which this repo names rather than\ndocuments.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: never close a node's pool mid-borrow, and retry a restarted primary\n\n- The topology carries its generation, so a read takes both from one volatile read; a refresh in\n  between can no longer leave a stale view paired with a newer generation.\n- Each node's pool is a NodePool that counts the borrows in progress. A refresh retires and closes\n  it only while no borrow is in progress and none of its connections is out, and a borrow that\n  finds it retired moves to a new pool. Before, a borrow that completed between the idle check and\n  close() left a connection out of a closed pool, and the next borrow opened a second pool to the\n  node, past its limit.\n- onAnyPrimary drops a failing node's idle connections, and after a successful relearn gives each\n  primary one more try once all have been tried. A lone primary that restarted no longer fails\n  the read on a stale pooled socket, and a dead primary is still tried only once while another\n  can answer.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: make the redirect the direct cause of ReplyDecodeException\n\nThe lookup's GraphException used to sit between them, so getCause() didn't tell a MOVED from an\nASK. It is now attached as suppressed.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: check the slot is empty before ClusterIT migrates it\n\nThe source refuses SETSLOT NODE while it holds another key in the slot, which would leave a shared\ncluster half migrated.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: pick the migration target by node id from the cluster topology\n\naGraphInTheMiddleOfAMigrationIsFollowedThroughAsk chose the target and\nsettled the slot by comparing the configured addresses with the ones\nCLUSTER SLOTS reports. With FALKORDB_CLUSTER_NODES set to one hostname\nseed, such as localhost:7002 when 7002 owns the slot, it picked the\nsource itself and failed with \"ERR I'm already the owner of hash slot\".\nIt now reads the primaries and their node ids from CLUSTER SLOTS, picks\nthe target before creating the graph, and creates the graph inside the\nblock that cleans up.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-03T12:56:29+02:00",
+          "tree_id": "638b3be4ce812f65ed0ded25317a4d1e10938ddc",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/142a846e6ea7a169e4de9cbbfe369d909bf4c038"
+        },
+        "date": 1793703528961,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 6729.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 11952.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 18119.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 23432.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 22391.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 21452.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 21766.667,
             "unit": "ops/s"
           }
         ]
