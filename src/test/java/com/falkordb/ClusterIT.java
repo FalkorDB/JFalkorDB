@@ -256,8 +256,16 @@ public class ClusterIT {
                     JedisClusterCRC16.getSlot(PREFIX + i) != slot,
                     "the migrated slot must not move other tests' graphs");
         }
-        driver.graph(graph).query("CREATE (:Person {name:'a'})");
         HostAndPort source = ownerOf(slot);
+        try (Jedis owner = new Jedis(source)) {
+            // The graph must be the slot's only key. The source refuses to give the slot away while it holds
+            // another key in it, which would leave the cluster half migrated for the other tests.
+            assertEquals(
+                    0L,
+                    owner.clusterCountKeysInSlot(slot),
+                    "slot " + slot + " must be empty before this test migrates it");
+        }
+        driver.graph(graph).query("CREATE (:Person {name:'a'})");
         HostAndPort target = null;
         for (String address : ClusterTestServer.nodes()) {
             HostAndPort node = HostAndPort.from(address);
