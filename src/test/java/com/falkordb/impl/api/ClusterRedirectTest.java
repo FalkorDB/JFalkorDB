@@ -374,6 +374,7 @@ class ClusterRedirectTest {
             assertEquals(Collections.singletonList("library-0"), names(driver.udfList()));
             assertEquals(Collections.singletonList("library-0"), names(driver.udfList("library-0", true)));
             assertEquals("1000", driver.configGet("RESULTSET_SIZE"));
+            assertEquals(Collections.singletonMap("RESULTSET_SIZE", "1000"), driver.configGetAll());
         }
         assertTrue(cluster.node(0).count("CLUSTER", "SLOTS") > 1, "the slot table was relearned");
     }
@@ -405,6 +406,7 @@ class ClusterRedirectTest {
             assertEquals(Collections.singletonList("library-0"), names(driver.udfList()));
             assertEquals(Collections.singletonList("library-0"), names(driver.udfList("library-0", true)));
             assertEquals("1000", driver.configGet("RESULTSET_SIZE"));
+            assertEquals(Collections.singletonMap("RESULTSET_SIZE", "1000"), driver.configGetAll());
         }
         assertEquals(relearned, cluster.node(0).count("CLUSTER", "SLOTS"), "no read tried node 1 again");
     }

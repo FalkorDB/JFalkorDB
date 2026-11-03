@@ -4,11 +4,7 @@ import com.falkordb.GraphContext;
 import com.falkordb.GraphContextGenerator;
 import com.falkordb.ResultSet;
 import com.falkordb.impl.graph_cache.GraphCache;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.util.SafeEncoder;
 
 /**
  * An implementation of GraphContextGenerator.
@@ -118,7 +114,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
     }
 
     /**
-     * Copies the graph
+     * Copies the graph from a connection received from the Jedis pool, and returns it once done.
      *
      * @param destinationGraphId duplicated graph name
      * @return copy running time statistics
@@ -126,59 +122,40 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
     @Override
     public String copyGraph(String destinationGraphId) {
         return driver.routed(graphId, route -> {
-            try (Jedis conn = route.connection()) {
-                Object response = conn.sendCommand(GraphCommand.COPY, graphId, destinationGraphId);
-                return SafeEncoder.encode((byte[]) response);
+            try (GraphContext contextedGraph = newContext(route)) {
+                return contextedGraph.copyGraph(destinationGraphId);
             }
         });
     }
 
     /**
-     * Deletes the entire graph
+     * Deletes the entire graph from a connection received from the Jedis pool, and returns it once done.
      *
      * @return delete running time statistics
      */
     @Override
     public String deleteGraph() {
         return driver.routed(graphId, route -> {
-            try (Jedis conn = route.connection()) {
-                Object response = conn.sendCommand(GraphCommand.DELETE, graphId);
-                // clear local state
-                cache.clear();
-                return SafeEncoder.encode((byte[]) response);
+            try (GraphContext contextedGraph = newContext(route)) {
+                // the context shares this graph's cache, and clears it once the delete succeeds
+                return contextedGraph.deleteGraph();
             }
         });
     }
 
     /**
-     * Sends an explain command using GRAPH.EXPLAIN
+     * Sends an explain command using GRAPH.EXPLAIN, from a connection received from the Jedis pool, and
+     * returns it once done.
      *
      * @param preparedQuery prepared query
      * @return execution plan as list of strings
      */
     @Override
-    @SuppressWarnings("unchecked")
     protected List<String> sendExplain(String preparedQuery) {
         return driver.routed(graphId, route -> {
-            try (Jedis conn = route.connection()) {
-                Object response = conn.sendCommand(GraphCommand.EXPLAIN, graphId, preparedQuery);
-
-                // GRAPH.EXPLAIN returns an array of byte arrays, convert to list of strings
-                if (response instanceof List) {
-                    List<Object> responseList = (List<Object>) response;
-                    List<String> result = new ArrayList<>(responseList.size());
-                    for (Object item : responseList) {
-                        if (item instanceof byte[]) {
-                            result.add(SafeEncoder.encode((byte[]) item));
-                        } else {
-                            result.add(item.toString());
-                        }
-                    }
-                    return result;
-                } else {
-                    // Fallback for unexpected response format
-                    return Arrays.asList(SafeEncoder.encode((byte[]) response));
-                }
+            try (GraphContext contextedGraph = newContext(route)) {
+                // explain(String) sends the query as it is, so it isn't prepared a second time
+                return contextedGraph.explain(preparedQuery);
             }
         });
     }
@@ -199,12 +176,12 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
 
     /** A context on a connection to the node that serves this graph (any node outside a cluster). */
     private GraphContext newContext() {
-        return new GraphContextImpl(driver.getConnection(this.graphId), this.cache, this.graphId);
+        return new GraphContextImpl(driver.getConnection(this.graphId), this, this.cache, this.graphId);
     }
 
     /** A context for one attempt of a routed command, on the node the attempt goes to. */
     private GraphContext newContext(DriverImpl.Route route) {
-        GraphContextImpl context = new GraphContextImpl(route.connection(), this.cache, this.graphId);
+        GraphContextImpl context = new GraphContextImpl(route.connection(), this, this.cache, this.graphId);
         if (route.asking()) {
             context.askBeforeEachCommand();
         }

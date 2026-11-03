@@ -277,7 +277,7 @@ try (Driver driver = FalkorDB.builder()
 - **`udfLoad`, `udfDelete`, `udfFlush` and `configSet`** run on every primary, because libraries and
   configuration are per node. They return `true` only if every primary accepted the command, and an
   error from any primary is thrown.
-- **`udfList` and `configGet`** are answered by any one primary. If it refuses the connection or drops it,
+- **`udfList`, `configGet` and `configGetAll`** are answered by any one primary. If it refuses the connection or drops it,
   the driver relearns the layout once and asks another primary. A primary that hangs without answering
   still holds the call up, unless a socket timeout is set.
 - **`getConnection()`** returns a connection to an arbitrary primary. Use it for commands that do not
@@ -328,8 +328,18 @@ floating-point number, a `BigInteger` within signed 64-bit range, or an array/`L
 values, where every `Map` key is a `String`); unsupported types (including `BigDecimal`), out-of-range
 integers, non-finite floating-point values, cyclic containers, non-String map keys, and invalid
 parameter names are rejected with `IllegalArgumentException`.
-This safety covers parameter **values** only — it does not extend to the query text, dynamic
-labels/identifiers, or procedure names, so never build those from untrusted input.
+This safety covers parameter **values** only — it does not extend to the query text or to dynamic
+labels/identifiers, so never build those from untrusted input.
+
+`callProcedure` checks the names it writes into the query itself. The procedure name must be
+identifiers joined by dots, such as `db.labels` or `db.idx.fulltext.queryNodes`, and each `YIELD`
+column a single identifier, where an identifier is ASCII letters, digits and underscores, not starting
+with a digit (`[A-Za-z_][A-Za-z0-9_]*`). Quoted names and `AS` aliases are not accepted. Anything else,
+or a `null` argument, is rejected with `IllegalArgumentException` before anything is sent. The
+procedure's arguments are encoded as string literals, like parameter values.
+The check is about form only: it doesn't limit which procedure runs, and some change the graph, such
+as `db.idx.fulltext.drop`. If the procedure name comes from untrusted input, check it against a list
+of the procedures you allow.
 
 ## Configuring Connection Pool
 
@@ -449,6 +459,20 @@ JedisPool jedisPool = new JedisPool(poolConfig, hostAndPort, clientConfig);
 
 Driver driver = new DriverImpl(jedisPool);
 ```
+
+The socket timeout limits how long each read of a reply waits for data, and that includes the reply to
+a query sent with a timeout, such as `graph.query(query, 30_000)`. That timeout limits how long the
+server runs the query, not how long the client waits for it. The server sends nothing until the query
+has finished, so keep the socket timeout longer than the query timeouts you pass, or set it to `0` for
+no read deadline. A socket timeout doesn't stop the query either: the server may still run it to the
+end, so after one you can't tell whether a write was applied, and retrying a query that isn't
+idempotent can apply it twice.
+
+A pool built without a socket timeout, like the first two examples above, gets Jedis' default of
+2000 ms. A driver built with `FalkorDB.builder()` sets no read deadline unless you set `socketTimeout`,
+with two exceptions. The one-shot probes that detect a Sentinel or a Redis Cluster wait at most
+2000 ms when `socketTimeout` isn't set. The connections to the Sentinels themselves, which look up the
+master's address and listen for failovers, never have a read deadline.
 
 ### Connection Pool Configuration with SSL/TLS
 
