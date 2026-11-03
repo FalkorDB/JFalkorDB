@@ -93,7 +93,19 @@ loadScripts(document, 'script');</script>
 <hr>
 <div class="type-signature"><span class="modifiers">public interface </span><span class="element-name type-name-label">GraphContext</span><span class="extends-implements">
 extends <a href="Graph.html" title="interface in com.falkordb">Graph</a></span></div>
-<div class="block">An interface for a FalkorDB graph with context.</div>
+<div class="block">An interface for a FalkorDB graph with context.
+
+ <p>A context runs all its commands on one connection, borrowed from the driver's connection pool
+ when the context is created. The connection stays bound to the context until <a href="Graph.html#close()"><code>Graph.close()</code></a> is
+ called, even if a command fails: after the server rejects a command, such as a query that fails with
+ a <a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a>, the context remains usable. Always close the
+ context, for example with try-with-resources, to return its connection to the pool:
+
+ <pre><code>
+ try (GraphContext context = driver.graph("social").getContext()) {
+     context.query("CREATE (:person {name: 'roi'})");
+ }
+ </code></pre></div>
 </section>
 <section class="summary">
 <ul class="summary-list">
