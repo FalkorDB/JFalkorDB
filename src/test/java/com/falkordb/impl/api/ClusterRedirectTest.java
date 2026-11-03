@@ -31,6 +31,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisAskDataException;
 import redis.clients.jedis.exceptions.JedisClusterOperationException;
 import redis.clients.jedis.exceptions.JedisConnectionException;
+import redis.clients.jedis.exceptions.JedisMovedDataException;
 
 /**
  * How the driver follows an {@code ASK} redirect, treats a redirect met while decoding a reply, and fails a
@@ -251,7 +252,10 @@ class ClusterRedirectTest {
                 assertThrows(GraphException.class, () -> driver.graph(GRAPH).query("CREATE (n:Person) RETURN n"));
 
         assertTrue(e.getMessage().startsWith("The command ran, but its reply could not be decoded"), e.getMessage());
-        assertTrue(DriverImpl.isRedirect(e), "the redirect stays the cause");
+        assertTrue(e.getCause() instanceof JedisMovedDataException, "the redirect is the cause: " + e.getCause());
+        assertTrue(
+                Arrays.stream(e.getSuppressed()).anyMatch(s -> s instanceof GraphException),
+                "the failed lookup is attached: " + Arrays.toString(e.getSuppressed()));
         assertEquals(1, cluster.node(0).count("GRAPH.QUERY"), "the query ran once");
         assertEquals(2, slotTableReads(), "the MOVED still made the driver relearn the slot table");
     }
@@ -325,7 +329,7 @@ class ClusterRedirectTest {
                 assertThrows(GraphException.class, () -> driver.graph(GRAPH).query("CREATE (n:Person) RETURN n"));
 
         assertTrue(e.getMessage().startsWith("The command ran, but its reply could not be decoded"), e.getMessage());
-        assertTrue(DriverImpl.askRedirect(e) != null, "the ASK stays the cause");
+        assertTrue(e.getCause() instanceof JedisAskDataException, "the ASK is the cause: " + e.getCause());
         assertEquals(1, cluster.node(0).count("GRAPH.QUERY"), "the query ran once");
         assertEquals(1, slotTableReads(), "the slot table was not relearned");
     }

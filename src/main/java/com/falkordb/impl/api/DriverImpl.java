@@ -921,12 +921,17 @@ public class DriverImpl implements Driver {
 
     /** Whether {@code failure}, or anything it wraps, is a cluster redirection (MOVED or ASK). */
     static boolean isRedirect(Throwable failure) {
+        return redirectIn(failure) != null;
+    }
+
+    /** The cluster redirection (MOVED or ASK) that {@code failure} is or wraps, or null if there is none. */
+    static @Nullable JedisRedirectionException redirectIn(Throwable failure) {
         for (Throwable t = failure; t != null; t = t.getCause()) {
             if (t instanceof JedisRedirectionException) {
-                return true;
+                return (JedisRedirectionException) t;
             }
         }
-        return false;
+        return null;
     }
 
     /**

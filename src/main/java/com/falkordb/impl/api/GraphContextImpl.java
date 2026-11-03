@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisDataException;
+import redis.clients.jedis.exceptions.JedisRedirectionException;
 import redis.clients.jedis.util.SafeEncoder;
 
 /**
@@ -158,8 +159,9 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
         try {
             return new ResultSetImpl(reply, this, this.cache);
         } catch (GraphException e) {
-            if (DriverImpl.isRedirect(e)) {
-                throw new ReplyDecodeException(e);
+            JedisRedirectionException redirect = DriverImpl.redirectIn(e);
+            if (redirect != null) {
+                throw new ReplyDecodeException(e, redirect);
             }
             throw e;
         }
