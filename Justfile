@@ -179,9 +179,38 @@ bench-compare base_ref threshold="1.25" loads="1,2,4,8,16,32,64":
 
 # --- Publish (run by the snapshot/release CI workflows; not for day-to-day local use) ---
 
-# Pre-fetch dependencies (snapshot workflow warm-up).
-fetch-deps:
-    ./mvnw -B -q dependency:go-offline
+# Pre-fetch every plugin and dependency (the CI warm-up), so a transient Maven Central error fails here
+# rather than midway through a build. That covers the root build, the help plugin the recipes read the
+# version with, and the plugins smoke-test/ and examples/ pin; their dependency on the jar this build
+# installs isn't fetched, since it may not be on Central yet. The retries in .mvn/maven.config cover I/O
+# errors, but not a 404 from a Central mirror that briefly lacks files, so the whole warm-up is retried.
+# A retry passes -U: without it Maven trusts the "not found" it just recorded and doesn't ask Central
+# again. Arguments go to every Maven call as given, e.g. `just fetch-deps -Pquality` for the lint plugins.
+[positional-arguments]
+fetch-deps *args:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    warm() {
+        local args=(${maven_args[@]+"${maven_args[@]}"} "$@")
+        ./mvnw -B -q ${args[@]+"${args[@]}"} dependency:go-offline || return 1
+        ./mvnw -B -q ${args[@]+"${args[@]}"} -DforceStdout help:evaluate -Dexpression=project.version >/dev/null || return 1
+        for pom in smoke-test/pom.xml examples/pom.xml; do
+            ./mvnw -B -q ${args[@]+"${args[@]}"} -f "$pom" dependency:resolve-plugins || return 1
+        done
+    }
+    maven_args=("$@")
+    for attempt in 1 2 3; do
+        if [ "$attempt" -eq 1 ]; then
+            if warm; then exit 0; fi
+        elif warm -U; then
+            exit 0
+        fi
+        if [ "$attempt" -lt 3 ]; then
+            echo "Dependency resolution failed (attempt $attempt of 3); retrying in $((attempt * 20))s" >&2
+            sleep $((attempt * 20))
+        fi
+    done
+    exit 1
 
 # Set the project version (release workflow, from the git tag). `quote(...)` shell-escapes the value
 # so it is always passed to Maven as a single literal argument (defense-in-depth for any caller).
