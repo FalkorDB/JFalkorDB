@@ -13,7 +13,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -421,6 +423,42 @@ class DriverImplClusterTest {
             assertEquals(
                     DriverImpl.CLUSTER_REDIRECT_ATTEMPTS, cluster.node(0).count(command.getKey()), command.getKey());
         }
+    }
+
+    @Test
+    void explainCopyAndDeleteFollowARedirectToTheNewOwner() {
+        // Each command finds the graph just moved to the other node, so each one's retry must relearn the
+        // topology and run on the new owner.
+        Map<String, AtomicInteger> asked = new ConcurrentHashMap<>();
+        cluster = new FakeCluster(2, (node, command) -> {
+            String name = command.get(0).toUpperCase(Locale.ROOT);
+            if (!name.equals("GRAPH.EXPLAIN") && !name.equals("GRAPH.COPY") && !name.equals("GRAPH.DELETE")) {
+                return null;
+            }
+            if (asked.computeIfAbsent(name, k -> new AtomicInteger()).getAndIncrement() == 0) {
+                int newOwner = 1 - node;
+                cluster.assign(newOwner, 1);
+                return FakeRedisServer.error(
+                        "MOVED 100 " + cluster.node(newOwner).address());
+            }
+            return name.equals("GRAPH.EXPLAIN")
+                    ? FakeRedisServer.array(FakeRedisServer.bulk("Results"))
+                    : FakeRedisServer.bulk("OK");
+        });
+        connectToSeed(cluster.node(0), ClusterOptions.autoDetect());
+        String graph = FakeCluster.lowGraph();
+
+        assertEquals(Arrays.asList("Results"), driver.graph(graph).explain("RETURN 1"));
+        assertEquals(1, cluster.node(0).count("GRAPH.EXPLAIN"), "explain tried the old owner once");
+        assertEquals(1, cluster.node(1).count("GRAPH.EXPLAIN"), "then followed the redirect");
+
+        driver.graph(graph).copyGraph("copy");
+        assertEquals(1, cluster.node(1).count("GRAPH.COPY"), "copy tried the old owner once");
+        assertEquals(1, cluster.node(0).count("GRAPH.COPY"), "then followed the redirect");
+
+        driver.graph(graph).deleteGraph();
+        assertEquals(1, cluster.node(0).count("GRAPH.DELETE"), "delete tried the old owner once");
+        assertEquals(1, cluster.node(1).count("GRAPH.DELETE"), "then followed the redirect");
     }
 
     // --- routed() --------------------------------------------------------------------------------
