@@ -185,16 +185,17 @@ bench-compare base_ref threshold="1.25" loads="1,2,4,8,16,32,64":
 # installs isn't fetched, since it may not be on Central yet. The retries in .mvn/maven.config cover I/O
 # errors, but not a 404 from a Central mirror that briefly lacks files, so the whole warm-up is retried.
 # A retry passes -U: without it Maven trusts the "not found" it just recorded and doesn't ask Central
-# again. Arguments go to the root build as given, e.g. `just fetch-deps -Pquality` for the lint plugins.
+# again. Arguments go to every Maven call as given, e.g. `just fetch-deps -Pquality` for the lint plugins.
 [positional-arguments]
 fetch-deps *args:
     #!/usr/bin/env bash
     set -euo pipefail
     warm() {
-        ./mvnw -B -q "$@" dependency:go-offline ${maven_args[@]+"${maven_args[@]}"} || return 1
-        ./mvnw -B -q "$@" -DforceStdout help:evaluate -Dexpression=project.version >/dev/null || return 1
+        local args=(${maven_args[@]+"${maven_args[@]}"} "$@")
+        ./mvnw -B -q ${args[@]+"${args[@]}"} dependency:go-offline || return 1
+        ./mvnw -B -q ${args[@]+"${args[@]}"} -DforceStdout help:evaluate -Dexpression=project.version >/dev/null || return 1
         for pom in smoke-test/pom.xml examples/pom.xml; do
-            ./mvnw -B -q "$@" -f "$pom" dependency:resolve-plugins || return 1
+            ./mvnw -B -q ${args[@]+"${args[@]}"} -f "$pom" dependency:resolve-plugins || return 1
         done
     }
     maven_args=("$@")
