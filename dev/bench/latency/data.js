@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793689641451,
+  "lastUpdate": 1793691127088,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -17285,6 +17285,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 49194.043,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "06327d476e038c80bc087bd4b0989693922bd32b",
+          "message": "feat!: add configGetAll() and make configGet() reject the \"*\" wildcard (#495)\n\n* feat!: add configGetAll() and make configGet() reject the \"*\" wildcard\n\nGRAPH.CONFIG GET * answers with a list of [name, value] pairs, but\nconfigGet read every reply as a single pair and returned the second\npair's toString(), e.g. \"[[B@2133814f, 0]\".\n\n- Driver.configGetAll() returns every parameter as an unmodifiable map,\n  in the server's order, keyed by the server's upper-case names. It is\n  a default method that throws UnsupportedOperationException, so a class\n  implementing Driver elsewhere keeps compiling; DriverImpl implements it.\n- configGet rejects \"*\" with IllegalArgumentException before borrowing\n  a connection. A reply that still holds several parameters is rejected\n  the same way, and a single pair nested in a list is unwrapped.\n- The reply parser accepts only pairs of exactly two items whose name\n  and value are bulk strings, integers or strings, so a reply it doesn't\n  understand fails with JedisDataException instead of being half-read.\n- configGet and configSet reject a null name with\n  IllegalArgumentException before any I/O.\n\nBREAKING CHANGE: configGet(\"*\") now throws IllegalArgumentException\ninstead of returning a meaningless string. Use configGetAll() to read\nevery parameter.\nCloses #489\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: cover configGetAll() on a driver that doesn't implement it\n\nA Driver written outside the library before configGetAll() existed still\ncompiles, and calling the new method throws UnsupportedOperationException\nnaming the class. No test reached that default method.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-03T09:29:49+02:00",
+          "tree_id": "c8fb8aea2cfe559139ac4c6edb587461c3c02c96",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/06327d476e038c80bc087bd4b0989693922bd32b"
+        },
+        "date": 1793691126188,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 80.601,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 94.994,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 106.541,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 103.436,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 138.489,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 171.94,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 143.236,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 227.653,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 281.415,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 251.889,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 429.908,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 530.65,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 300.503,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 2609.96,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 5904.96,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 304.379,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 7350.545,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 16792.866,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 298.16,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 17264.407,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 40590.302,
             "unit": "us"
           }
         ]
