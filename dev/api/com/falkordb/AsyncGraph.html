@@ -271,7 +271,9 @@ loadScripts(document, 'script');</script>
 <h3>query</h3>
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/CompletableFuture.html" title="class or interface in java.util.concurrent" class="external-link">CompletableFuture</a>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">query</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  long&nbsp;timeout)</span></div>
-<div class="block">Asynchronously runs <a href="Graph.html#query(java.lang.String,long)"><code>Graph.query(String, long)</code></a>.</div>
+<div class="block">Asynchronously runs <a href="Graph.html#query(java.lang.String,long)"><code>Graph.query(String, long)</code></a>.
+
+ <p>When the task runs, a negative timeout completes the future exceptionally with an <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link"><code>IllegalArgumentException</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>query</code> - the Cypher query</dd>
@@ -286,7 +288,9 @@ loadScripts(document, 'script');</script>
 <h3>readOnlyQuery</h3>
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/CompletableFuture.html" title="class or interface in java.util.concurrent" class="external-link">CompletableFuture</a>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">readOnlyQuery</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  long&nbsp;timeout)</span></div>
-<div class="block">Asynchronously runs <a href="Graph.html#readOnlyQuery(java.lang.String,long)"><code>Graph.readOnlyQuery(String, long)</code></a>.</div>
+<div class="block">Asynchronously runs <a href="Graph.html#readOnlyQuery(java.lang.String,long)"><code>Graph.readOnlyQuery(String, long)</code></a>.
+
+ <p>When the task runs, a negative timeout completes the future exceptionally with an <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link"><code>IllegalArgumentException</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>query</code> - the Cypher query</dd>
@@ -332,7 +336,9 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/CompletableFuture.html" title="class or interface in java.util.concurrent" class="external-link">CompletableFuture</a>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">query</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;&nbsp;params,
  long&nbsp;timeout)</span></div>
-<div class="block">Asynchronously runs <a href="Graph.html#query(java.lang.String,java.util.Map,long)"><code>Graph.query(String, Map, long)</code></a>.</div>
+<div class="block">Asynchronously runs <a href="Graph.html#query(java.lang.String,java.util.Map,long)"><code>Graph.query(String, Map, long)</code></a>.
+
+ <p>When the task runs, a negative timeout completes the future exceptionally with an <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link"><code>IllegalArgumentException</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>query</code> - the Cypher query</dd>
@@ -349,7 +355,9 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/CompletableFuture.html" title="class or interface in java.util.concurrent" class="external-link">CompletableFuture</a>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">readOnlyQuery</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;&nbsp;params,
  long&nbsp;timeout)</span></div>
-<div class="block">Asynchronously runs <a href="Graph.html#readOnlyQuery(java.lang.String,java.util.Map,long)"><code>Graph.readOnlyQuery(String, Map, long)</code></a>.</div>
+<div class="block">Asynchronously runs <a href="Graph.html#readOnlyQuery(java.lang.String,java.util.Map,long)"><code>Graph.readOnlyQuery(String, Map, long)</code></a>.
+
+ <p>When the task runs, a negative timeout completes the future exceptionally with an <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link"><code>IllegalArgumentException</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>query</code> - the Cypher query</dd>

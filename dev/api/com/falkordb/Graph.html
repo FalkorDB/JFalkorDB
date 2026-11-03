@@ -260,13 +260,25 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <h3>query</h3>
 <div class="member-signature"><span class="return-type"><a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a></span>&nbsp;<span class="element-name">query</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  long&nbsp;timeout)</span></div>
-<div class="block">Execute a Cypher query with timeout.</div>
+<div class="block">Execute a Cypher query with timeout.
+
+ <p>The timeout limits how long the server runs the query; <code>0</code> sets none, so the server's
+ default (<code>TIMEOUT_DEFAULT</code>) applies. It doesn't change how long the client waits for the
+ reply. A socket (read) timeout on the connection limits how long each read waits for data, and the
+ server sends nothing until the query has finished, so keep the socket timeout longer than the query
+ timeouts you pass, or turn it off (see <a href="FalkorDB.Builder.html#socketTimeout(java.time.Duration)"><code>FalkorDB.Builder.socketTimeout(java.time.Duration)</code></a>).
+ A socket timeout doesn't stop the query on the server, which may still run it to the end: after one,
+ whether a write was applied is unknown, and retrying a query that isn't idempotent can apply it twice.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>query</code> - Cypher query</dd>
-<dd><code>timeout</code> - timeout in milliseconds</dd>
+<dd><code>timeout</code> - timeout in milliseconds; not negative</dd>
 <dt>Returns:</dt>
 <dd>a result set</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>timeout</code> is negative</dd>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query, for instance when it
+     runs out of time</dd>
 </dl>
 </section>
 </li>
@@ -275,13 +287,17 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <h3>readOnlyQuery</h3>
 <div class="member-signature"><span class="return-type"><a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a></span>&nbsp;<span class="element-name">readOnlyQuery</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  long&nbsp;timeout)</span></div>
-<div class="block">Execute a Cypher read-only query with timeout.</div>
+<div class="block">Execute a Cypher read-only query with timeout. The timeout works as for <a href="#query(java.lang.String,long)"><code>query(String, long)</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>query</code> - Cypher query</dd>
-<dd><code>timeout</code> - timeout in milliseconds</dd>
+<dd><code>timeout</code> - timeout in milliseconds; not negative</dd>
 <dt>Returns:</dt>
 <dd>a result set</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>timeout</code> is negative</dd>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query, for instance when it
+     runs out of time</dd>
 </dl>
 </section>
 </li>
@@ -332,14 +348,18 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <div class="member-signature"><span class="return-type"><a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a></span>&nbsp;<span class="element-name">query</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;&nbsp;params,
  long&nbsp;timeout)</span></div>
-<div class="block">Executes a cypher query with parameters and timeout.</div>
+<div class="block">Executes a cypher query with parameters and timeout. The parameters work as for <a href="#query(java.lang.String,java.util.Map)"><code>query(String, Map)</code></a>, and the timeout as for <a href="#query(java.lang.String,long)"><code>query(String, long)</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>query</code> - Cypher query.</dd>
 <dd><code>params</code> - parameters map.</dd>
-<dd><code>timeout</code> - timeout in milliseconds</dd>
+<dd><code>timeout</code> - timeout in milliseconds; not negative</dd>
 <dt>Returns:</dt>
 <dd>a result set.</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>timeout</code> is negative</dd>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query, for instance when it
+     runs out of time</dd>
 </dl>
 </section>
 </li>
@@ -349,14 +369,18 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <div class="member-signature"><span class="return-type"><a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a></span>&nbsp;<span class="element-name">readOnlyQuery</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;&nbsp;params,
  long&nbsp;timeout)</span></div>
-<div class="block">Executes a cypher read-only query with parameters and timeout.</div>
+<div class="block">Executes a cypher read-only query with parameters and timeout. The parameters work as for <a href="#query(java.lang.String,java.util.Map)"><code>query(String, Map)</code></a>, and the timeout as for <a href="#query(java.lang.String,long)"><code>query(String, long)</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>query</code> - Cypher query.</dd>
 <dd><code>params</code> - parameters map.</dd>
-<dd><code>timeout</code> - timeout in milliseconds</dd>
+<dd><code>timeout</code> - timeout in milliseconds; not negative</dd>
 <dt>Returns:</dt>
 <dd>a result set</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>timeout</code> is negative</dd>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query, for instance when it
+     runs out of time</dd>
 </dl>
 </section>
 </li>

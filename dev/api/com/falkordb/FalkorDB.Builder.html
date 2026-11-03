@@ -364,7 +364,13 @@ loadScripts(document, 'script');</script>
 <h3>socketTimeout</h3>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></span>&nbsp;<span class="element-name">socketTimeout</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;socketTimeout)</span></div>
 <div class="block">Sets the socket (read) timeout (default <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html#ZERO" title="class or interface in java.time" class="external-link"><code>Duration.ZERO</code></a> = no read deadline, so a
- long-running server query is never cut off client-side).</div>
+ long-running server query is never cut off client-side).
+
+ <p>It limits how long each read of a reply waits for data, including the reply to a query sent with
+ a timeout, such as <a href="Graph.html#query(java.lang.String,long)"><code>Graph.query(String, long)</code></a>: that timeout limits how long the server runs
+ the query, not how long the client waits. The server sends nothing until a query has finished, so a
+ socket timeout shorter than the query's ends the wait first, though the server may still run the
+ query to the end.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>socketTimeout</code> - read timeout; must not be negative</dd>
