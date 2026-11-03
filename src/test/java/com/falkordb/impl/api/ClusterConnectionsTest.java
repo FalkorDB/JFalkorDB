@@ -7,6 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.management.LockInfo;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,6 +18,8 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.junit.jupiter.api.AfterEach;
@@ -223,6 +229,34 @@ class ClusterConnectionsTest {
     }
 
     @Test
+    void aReadWhoseRelearningFailsTriesEachPrimaryOnce() {
+        // Every node is down, so relearning fails too: the read tries each primary it knew once, not a second time.
+        cluster = new FakeCluster(2, null);
+        AtomicInteger borrows = new AtomicInteger();
+        connections = new ClusterConnections(
+                startup(cluster.addresses()),
+                config(),
+                target -> new JedisPool(new GenericObjectPoolConfig<Jedis>(), target, config()) {
+                    @Override
+                    public Jedis getResource() {
+                        borrows.incrementAndGet();
+                        return super.getResource();
+                    }
+                });
+        connections.topologyChanged(); // learns both primaries
+        cluster.node(0).close();
+        cluster.node(1).close();
+
+        JedisConnectionException e =
+                assertThrows(JedisConnectionException.class, () -> connections.onAnyPrimary(c -> c.echo("who")));
+
+        assertEquals(2, borrows.get(), "each primary was tried once");
+        assertTrue(
+                Arrays.stream(e.getSuppressed()).anyMatch(s -> s instanceof JedisClusterOperationException),
+                "the failed relearning is attached: " + Arrays.toString(e.getSuppressed()));
+    }
+
+    @Test
     void noConnectionIsHandedOutOnceClosed() {
         cluster = new FakeCluster(1, null);
         connect(startup(cluster.addresses()));
@@ -353,12 +387,12 @@ class ClusterConnectionsTest {
         connections.close();
     }
 
-    // --- a refresh that closes a pool between looking it up and borrowing from it -----------------
+    // --- a refresh while a pool is being borrowed from --------------------------------------------
 
     @Test
-    void aReadOnAnyPrimaryBorrowsFromANewPoolWhenARefreshClosedTheOneItGot() {
-        // A refresh that finds node 0 owning no slot closes node 0's pool after the read has looked it up.
-        // Jedis reports borrowing from a closed pool as a plain JedisException, not as an unreachable node.
+    void aRefreshDuringAReadOnAnyPrimaryKeepsThePoolItBorrowsFrom() {
+        // A refresh that finds node 0 owning no slot runs while the read borrows from node 0's pool. Closing the
+        // pool then would leave the read's connection out of a closed pool, and the next borrow would open another.
         cluster = new FakeCluster(2, null);
         Pools pools = new Pools(HostAndPort.from(cluster.node(0).address()), 1, () -> {
             cluster.assign(1, 1);
@@ -368,14 +402,17 @@ class ClusterConnectionsTest {
 
         String answeredBy = connections.onAnyPrimary(c -> c.echo("who")); // the round robin starts at node 0
 
-        assertEquals("0", answeredBy, "the read borrowed from a new pool to the node it had picked");
-        assertEquals(2, pools.made.size());
-        assertTrue(pools.made.get(0).isClosed(), "the refresh closed the pool the read had looked up");
+        assertEquals("0", answeredBy);
+        assertEquals(1, pools.made.size(), "the read kept the pool it was borrowing from");
+        assertFalse(pools.made.get(0).isClosed());
+
+        connections.topologyChanged();
+        assertTrue(pools.made.get(0).isClosed(), "once idle, the pool went at the next refresh");
     }
 
     @Test
-    void anAskTargetIsBorrowedFromANewPoolWhenARefreshClosedTheOneItGot() {
-        // Node 1 owns no slot, like an empty node importing its first one, so every refresh closes its pool.
+    void aRefreshDuringABorrowOfAnAskTargetKeepsItsPool() {
+        // Node 1 owns no slot, like an empty node importing its first one, so a refresh closes its pool once idle.
         cluster = new FakeCluster(2, null);
         cluster.assign(0, 0);
         HostAndPort node1 = HostAndPort.from(cluster.node(1).address());
@@ -384,27 +421,115 @@ class ClusterConnectionsTest {
 
         try (Jedis connection = connections.connectionTo(node1, true)) {
             assertEquals("1", connection.echo("who"));
+            assertEquals(1, pools.made.size());
+            assertFalse(pools.made.get(0).isClosed(), "the refresh kept the pool the borrow was using");
         }
-
-        assertEquals(2, pools.made.size());
-        assertTrue(pools.made.get(0).isClosed(), "the refresh closed the pool the borrow had looked up");
         assertEquals(1, cluster.node(1).count("ASKING"));
+
+        connections.topologyChanged();
+        assertTrue(pools.made.get(0).isClosed(), "once idle, the pool went at the next refresh");
     }
 
     @Test
-    void aBorrowGivesUpWhenEveryNewPoolIsClosedToo() {
+    void aBorrowThatStartsWhileARefreshClosesThePoolMovesToANewOne() {
+        // The refresh finds node 1's pool idle. A borrow that starts right then must not get a connection from the
+        // pool the refresh is about to close: the next borrow would open a second pool to node 1, past its limit.
         cluster = new FakeCluster(2, null);
         cluster.assign(0, 0);
         HostAndPort node1 = HostAndPort.from(cluster.node(1).address());
-        Pools pools = new Pools(node1, Integer.MAX_VALUE, () -> connections.topologyChanged());
-        connections = new ClusterConnections(startup(cluster.addresses()), config(), pools);
+        List<JedisPool> made = new ArrayList<>();
+        AtomicReference<Jedis> racer = new AtomicReference<>();
+        AtomicReference<RuntimeException> racerFailure = new AtomicReference<>();
+        connections = new ClusterConnections(startup(cluster.addresses()), config(), target -> {
+            if (!target.equals(node1)) {
+                return new JedisPool(new GenericObjectPoolConfig<Jedis>(), target, config());
+            }
+            JedisPool pool = made.isEmpty()
+                    ? new RacingPool(target, () -> {
+                        try {
+                            racer.set(connections.connectionTo(node1, false));
+                        } catch (RuntimeException e) {
+                            racerFailure.set(e);
+                        }
+                    })
+                    : new JedisPool(new GenericObjectPoolConfig<Jedis>(), target, config());
+            made.add(pool);
+            return pool;
+        });
+        connections.topologyChanged(); // learns the topology
+        connections.connectionTo(node1, false).close(); // makes node 1's pool, idle
 
-        JedisException e = assertTimeoutPreemptively(
-                Duration.ofSeconds(10),
-                () -> assertThrows(JedisException.class, () -> connections.connectionTo(node1, false)));
+        assertTimeoutPreemptively(Duration.ofSeconds(20), () -> {
+            RacingPool first = (RacingPool) made.get(0);
+            first.armed = true;
+            connections.topologyChanged(); // its idle check starts the racing borrow
+            first.racer.join();
+        });
 
-        assertTrue(e.getCause() instanceof IllegalStateException, "commons-pool's closed pool: " + e.getCause());
-        assertEquals(3, pools.made.size(), "three pools, then the borrow gave up");
+        assertNull(racerFailure.get(), () -> "the racing borrow failed: " + racerFailure.get());
+        try (Jedis connection = racer.get()) {
+            assertEquals("1", connection.echo("who"));
+            assertEquals(2, made.size(), "the borrow moved to a new pool");
+            assertTrue(made.get(0).isClosed());
+            assertEquals(0, made.get(0).getNumActive(), "no connection is out of the closed pool");
+            assertEquals(1, made.get(1).getNumActive());
+        }
+    }
+
+    // --- reads any primary can answer --------------------------------------------------------------
+
+    @Test
+    void aReadRetriesARestartedPrimaryOnANewConnection() throws Exception {
+        // The only primary restarted: every connection its pool holds is gone, but the relearned topology still
+        // names it, and a new connection reaches it.
+        cluster = new FakeCluster(1, null);
+        connect(startup(cluster.addresses()));
+        try (Jedis first = connections.get(null);
+                Jedis second = connections.get(null)) {
+            assertEquals("0", first.echo("who"));
+            assertEquals("0", second.echo("who"));
+        } // two idle connections in the pool
+        cluster.node(0).dropClients();
+
+        assertEquals("0", connections.onAnyPrimary(c -> c.echo("who")));
+        assertEquals(2, cluster.node(0).count("CLUSTER", "SLOTS"), "the topology was relearned once");
+
+        // The failure dropped the pool's other broken connections too, so two reads at once both get working ones.
+        try (Jedis first = connections.get(null);
+                Jedis second = connections.get(null)) {
+            assertEquals("0", first.echo("who"));
+            assertEquals("0", second.echo("who"));
+        }
+    }
+
+    @Test
+    void aReadTriesADeadPrimaryOnceWhenAnotherAnswers() {
+        // Node 1 is down but the topology still lists it, as before a failover completes. Each attempt on it can
+        // cost a connect timeout, so a read that has another primary to try doesn't try node 1 again.
+        cluster = new FakeCluster(2, null);
+        HostAndPort node1 = HostAndPort.from(cluster.node(1).address());
+        AtomicInteger borrowsFromNode1 = new AtomicInteger();
+        connections = new ClusterConnections(startup(cluster.addresses()), config(), target -> {
+            if (!target.equals(node1)) {
+                return new JedisPool(new GenericObjectPoolConfig<Jedis>(), target, config());
+            }
+            return new JedisPool(new GenericObjectPoolConfig<Jedis>(), target, config()) {
+                @Override
+                public Jedis getResource() {
+                    borrowsFromNode1.incrementAndGet();
+                    return super.getResource();
+                }
+            };
+        });
+        connections.topologyChanged(); // learns both primaries
+        cluster.node(1).close();
+
+        for (int read = 1; read <= 4; read++) { // the round robin starts half of them at node 1
+            int before = borrowsFromNode1.get();
+            assertEquals("0", connections.onAnyPrimary(c -> c.echo("who")));
+            assertTrue(borrowsFromNode1.get() - before <= 1, "node 1 was tried more than once in read " + read);
+        }
+        assertTrue(borrowsFromNode1.get() > 0, "no read started at node 1");
     }
 
     @Test
@@ -449,8 +574,52 @@ class ClusterConnectionsTest {
     }
 
     /**
-     * A pool that runs an action when it is first borrowed from: after the source has looked it up, and before
-     * the borrow reaches commons-pool. That is where a refresh on another thread can close it.
+     * A pool whose idle check, once {@link #armed}, runs {@code race} on another thread and waits until it has
+     * borrowed or is blocked starting its borrow, then answers with the count from before {@code race} ran. That
+     * is the moment a refresh has found the pool idle and is about to close it.
+     */
+    private static final class RacingPool extends JedisPool {
+        private final Runnable race;
+        volatile boolean armed;
+        /** The thread {@code race} runs on, once started. */
+        volatile Thread racer;
+
+        RacingPool(HostAndPort node, Runnable race) {
+            super(new GenericObjectPoolConfig<Jedis>(), node, config());
+            this.race = race;
+        }
+
+        @Override
+        public int getNumActive() {
+            int active = super.getNumActive();
+            if (!armed) {
+                return active;
+            }
+            armed = false;
+            Thread racer = new Thread(race, "racing-borrow");
+            this.racer = racer;
+            racer.start();
+            ThreadMXBean threads = ManagementFactory.getThreadMXBean();
+            while (racer.isAlive() && !blockedOnANodePool(threads, racer)) {
+                Thread.yield();
+            }
+            return active;
+        }
+
+        /** Whether {@code thread} waits for the monitor of the source's per-node pool. */
+        private static boolean blockedOnANodePool(ThreadMXBean threads, Thread thread) {
+            ThreadInfo info = threads.getThreadInfo(thread.getId());
+            LockInfo lock = info == null ? null : info.getLockInfo();
+            return info != null
+                    && info.getThreadState() == Thread.State.BLOCKED
+                    && lock != null
+                    && lock.getClassName().equals(ClusterConnections.class.getName() + "$NodePool");
+        }
+    }
+
+    /**
+     * A pool that runs an action when it is first borrowed from: after the borrow has started, and before it
+     * reaches commons-pool. That is where a refresh on another thread could close it.
      */
     private static final class InterruptedPool extends JedisPool {
         private final Runnable beforeFirstBorrow;

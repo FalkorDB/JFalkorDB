@@ -98,6 +98,18 @@ final class FakeRedisServer implements AutoCloseable {
         }
     }
 
+    /** Closes every client connection but keeps listening, as a restarted node does to the sockets it had. */
+    void dropClients() {
+        for (Socket client : clients) {
+            clients.remove(client);
+            try {
+                client.close();
+            } catch (IOException ignored) {
+                // already gone
+            }
+        }
+    }
+
     private void acceptLoop() {
         while (!closed) {
             try {
