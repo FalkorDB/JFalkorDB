@@ -628,7 +628,9 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <dt>Parameters:</dt>
 <dd><code>query</code> - Cypher query</dd>
 <dt>Returns:</dt>
-<dd>a response which builds the execution plan as list of strings</dd>
+<dd>a response which builds the execution plan as list of strings. Its <code>get()</code> throws a
+     <a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a> each time it is called if the plan holds an error, and
+     Jedis' <code>JedisDataException</code> if the server rejected the command.</dd>
 </dl>
 </section>
 </li>
@@ -643,7 +645,9 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <dd><code>query</code> - Cypher query</dd>
 <dd><code>params</code> - parameters map</dd>
 <dt>Returns:</dt>
-<dd>a response which builds the execution plan as list of strings</dd>
+<dd>a response which builds the execution plan as list of strings. Its <code>get()</code> throws a
+     <a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a> each time it is called if the plan holds an error, and
+     Jedis' <code>JedisDataException</code> if the server rejected the command.</dd>
 </dl>
 </section>
 </li>

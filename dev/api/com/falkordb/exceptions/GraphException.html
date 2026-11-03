@@ -107,7 +107,15 @@ loadScripts(document, 'script');</script>
 <div class="type-signature"><span class="modifiers">public class </span><span class="element-name type-name-label">GraphException</span>
 <span class="extends-implements">extends redis.clients.jedis.exceptions.JedisDataException</span></div>
 <div class="block">Graph query evaluation exception. An instance of GraphException is
- thrown when Graph encounters an error during query evaluation.</div>
+ thrown when Graph encounters an error during query evaluation.
+
+ <p>A <a href="../Graph.html" title="interface in com.falkordb"><code>Graph</code></a> or <a href="../GraphContext.html" title="interface in com.falkordb"><code>GraphContext</code></a> command that the server rejects —
+ a query, a procedure call, <code>profile</code>, <code>explain</code>, <code>copyGraph</code> or <code>deleteGraph</code> —
+ throws this exception, with the <code>JedisDataException</code> Jedis raised for the error reply as its cause.
+ Jedis raises a subclass for some errors, such as <code>JedisAccessControlException</code> for <code>NOPERM</code>,
+ so look at <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Throwable.html#getCause()" title="class or interface in java.lang" class="external-link"><code>Throwable.getCause()</code></a> to tell them apart. An error the server reports inside a reply, such as a
+ query that fails while it runs, and some replies the client can't decode, such as a malformed vector, are
+ reported as this exception too.</div>
 <dl class="notes">
 <dt>See Also:</dt>
 <dd>

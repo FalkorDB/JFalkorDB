@@ -239,6 +239,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>query</code> - Cypher query</dd>
 <dt>Returns:</dt>
 <dd>a result set</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query</dd>
 </dl>
 </section>
 </li>
@@ -252,6 +254,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>query</code> - Cypher query</dd>
 <dt>Returns:</dt>
 <dd>a result set</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query</dd>
 </dl>
 </section>
 </li>
@@ -324,6 +328,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>params</code> - parameters map. Must not be <code>null</code>.</dd>
 <dt>Returns:</dt>
 <dd>a result set.</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query</dd>
 </dl>
 </section>
 </li>
@@ -339,6 +345,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>params</code> - parameters map.</dd>
 <dt>Returns:</dt>
 <dd>a result set.</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query</dd>
 </dl>
 </section>
 </li>
@@ -412,6 +420,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>query</code> - Cypher query</dd>
 <dt>Returns:</dt>
 <dd>a result set with execution plan and performance metrics</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query</dd>
 </dl>
 </section>
 </li>
@@ -428,6 +438,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>params</code> - parameters map</dd>
 <dt>Returns:</dt>
 <dd>a result set with execution plan and performance metrics</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query</dd>
 </dl>
 </section>
 </li>
@@ -486,6 +498,9 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>destinationGraphId</code> - duplicated graph name</dd>
 <dt>Returns:</dt>
 <dd>copy running time statistics</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the command, for instance because
+     the graph does not exist</dd>
 </dl>
 </section>
 </li>
@@ -497,6 +512,9 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>delete running time statistics</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the command, for instance because
+     the graph does not exist</dd>
 </dl>
 </section>
 </li>
@@ -510,6 +528,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>query</code> - Cypher query</dd>
 <dt>Returns:</dt>
 <dd>execution plan as list of strings</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query</dd>
 </dl>
 </section>
 </li>
@@ -525,6 +545,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>params</code> - parameters map</dd>
 <dt>Returns:</dt>
 <dd>execution plan as list of strings</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query</dd>
 </dl>
 </section>
 </li>
