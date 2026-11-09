@@ -318,9 +318,13 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
  Boolean, a boxed integer or floating-point number, a <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/math/BigInteger.html" title="class or interface in java.math" class="external-link"><code>BigInteger</code></a> within signed
  64-bit range, or an array/List/Map of such values, where every Map key is a String); other types
  (including <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/math/BigDecimal.html" title="class or interface in java.math" class="external-link"><code>BigDecimal</code></a>), out-of-range integers, non-finite floating-point
- values, cyclic containers, non-String map keys, invalid parameter names, and a null
- <code>query</code> or <code>params</code> are rejected with <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link"><code>IllegalArgumentException</code></a>. This does not
- cover the query text itself or dynamic labels/identifiers. (The form of procedure names is
+ values, cyclic containers, non-String map keys, a parameter name that is null, empty or contains a
+ backtick, a NUL character or an unpaired surrogate, and a null <code>query</code> or <code>params</code> are
+ rejected with <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link"><code>IllegalArgumentException</code></a>. A name needn't be a Cypher identifier; on FalkorDB
+ 4.x, refer to one such as <code>1</code> as <code>$`1`</code> (6.x also accepts <code>$1</code>). FalkorDB 6.x
+ limits a name to 512 bytes of UTF-8 (so 256 characters such as <code>é</code>): the client sends a
+ longer one, and the server's error comes back as a <a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a>. This does not cover the query text itself or
+ dynamic labels/identifiers. (The form of procedure names is
  checked by <a href="#callProcedure(java.lang.String,java.util.List,java.util.Map)"><code>callProcedure(String, List, Map)</code></a>, but not which procedure they name.)</div>
 <dl class="notes">
 <dt>Parameters:</dt>
