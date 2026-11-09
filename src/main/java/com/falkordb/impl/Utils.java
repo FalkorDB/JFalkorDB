@@ -37,7 +37,7 @@ public class Utils {
      */
     public static final String TIMEOUT_STRING = "TIMEOUT";
 
-    /** A Cypher identifier: used for parameter names, bare (unquoted) map keys and YIELD columns. */
+    /** A Cypher identifier: used for bare (unquoted) map keys and YIELD columns. */
     private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
 
     private Utils() {}

@@ -280,7 +280,7 @@ public class ParameterRoundTripIT {
 
     static Stream<String> nonIdentifierParameterNames() {
         StringBuilder longName = new StringBuilder();
-        for (int i = 0; i < 10_000; i++) {
+        for (int i = 0; i < 512; i++) { // the longest name FalkorDB 6.x accepts
             longName.append('x');
         }
         return Stream.of(

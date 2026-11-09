@@ -330,8 +330,9 @@ integers, non-finite floating-point values, cyclic containers, non-String map ke
 name that is `null`, empty or contains a backtick, a NUL character or an unpaired surrogate are rejected
 with `IllegalArgumentException`.
 As in the Python client, a parameter name needn't be a Cypher identifier, because the client
-backtick-quotes every name. Refer to a name such as `1` or `a b` backtick-quoted in the query, as
-``$`1` `` or ``$`a b` ``: FalkorDB 4.x doesn't parse an unquoted `$1`.
+backtick-quotes every name. In the query, refer to a name that isn't an identifier backtick-quoted,
+as ``$`a b` ``. FalkorDB 6.x also accepts an unquoted `$1`, but 4.x needs ``$`1` ``. FalkorDB 6.x
+limits a name to 512 characters.
 This safety covers parameter **values** only — it does not extend to the query text or to dynamic
 labels/identifiers, so never build those from untrusted input.
 

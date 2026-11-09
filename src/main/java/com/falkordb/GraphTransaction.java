@@ -76,9 +76,9 @@ public interface GraphTransaction
      * {@link java.math.BigDecimal}), out-of-range integers, non-finite floating-point values, cyclic
      * containers, non-String map keys, a parameter name that is null, empty or contains a backtick, a NUL
      * character or an unpaired surrogate, and a null {@code query} or {@code params} are rejected with
-     * {@link IllegalArgumentException}. A name needn't be a Cypher identifier: refer to one such as
-     * {@code 1} as {@code $`1`}. This safety covers parameter values only — not the query text itself,
-     * dynamic labels/identifiers, or procedure names.
+     * {@link IllegalArgumentException}. A name needn't be a Cypher identifier; on FalkorDB 4.x, refer to
+     * one such as {@code 1} as {@code $`1`} (6.x also accepts {@code $1}). This safety covers parameter
+     * values only — not the query text itself, dynamic labels/identifiers, or procedure names.
      *
      * @param query Cypher query. Must not be {@code null}.
      * @param params parameters map. Must not be {@code null}.
