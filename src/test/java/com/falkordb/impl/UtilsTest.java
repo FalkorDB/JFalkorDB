@@ -233,15 +233,74 @@ public class UtilsTest {
     }
 
     @Test
-    public void testRejectsInvalidParameterNames() {
-        for (String bad : new String[] {"", " ", "a b", "1a", "a-b", "a.b", "a`b", "a=b", "$a", "a\u0000"}) {
+    public void testQuotesParameterNamesThatAreNotIdentifiers() {
+        // Every name is backtick-quoted, so a name needn't be a Cypher identifier (#502), as in the Python
+        // client. A backslash is literal inside the quotes, so a trailing one can't escape the closing one.
+        for (String name : new String[] {
+            "1",
+            "1a",
+            "-1",
+            " ",
+            " a ",
+            "a b",
+            "a-b",
+            "a.b",
+            "a=b",
+            "$a",
+            "a'b",
+            "a\"b",
+            "a\\b",
+            "a\\",
+            "\\",
+            "a\nb",
+            "x RETURN 1",
+            "CYPHER",
+            "\u00e9",
+            "\ud83d\ude00"
+        }) {
             Map<String, Object> params = new HashMap<>();
-            params.put(bad, 1);
-            assertThrows(
-                    IllegalArgumentException.class,
-                    () -> Utils.prepareQuery("RETURN 1", params),
-                    "expected rejection of parameter name: " + bad);
+            params.put(name, 1);
+            assertEquals(
+                    "CYPHER `" + name + "`=1 RETURN 1",
+                    Utils.prepareQuery("RETURN 1", params),
+                    "expected parameter name to be quoted: " + name);
         }
+    }
+
+    @Test
+    public void testRejectsEmptyParameterName() {
+        assertEquals("Cypher parameter name cannot be empty", paramNameError(""));
+    }
+
+    @Test
+    public void testRejectsParameterNameWithBacktick() {
+        for (String bad : new String[] {"`", "a`b", "a``b", "a`=1 RETURN 1 //"}) {
+            assertEquals(
+                    "Cypher parameter name cannot contain a backtick: \"" + bad
+                            + "\" (FalkorDB does not support escaped backticks in identifiers)",
+                    paramNameError(bad));
+        }
+    }
+
+    @Test
+    public void testRejectsParameterNameWithNul() {
+        assertEquals("Cypher parameter name cannot contain a NUL character: \"a\\u0000b\"", paramNameError("a\u0000b"));
+        assertEquals("Cypher parameter name cannot contain a NUL character: \"\\u0000\"", paramNameError("\u0000"));
+    }
+
+    @Test
+    public void testRejectsParameterNameWithUnpairedSurrogate() {
+        assertEquals(
+                "Cypher parameter name cannot contain an unpaired surrogate: \"a\\ud800\"", paramNameError("a\ud800"));
+        assertEquals(
+                "Cypher parameter name cannot contain an unpaired surrogate: \"\\udc00a\"", paramNameError("\udc00a"));
+    }
+
+    private static String paramNameError(String name) {
+        Map<String, Object> params = new HashMap<>();
+        params.put(name, 1);
+        return assertThrows(IllegalArgumentException.class, () -> Utils.prepareQuery("RETURN 1", params))
+                .getMessage();
     }
 
     @Test
@@ -280,12 +339,8 @@ public class UtilsTest {
 
     @Test
     public void testRejectsNullParameterName() {
-        // A HashMap permits a single null key; it must be rejected (and its safeDisplay renders "null").
-        Map<String, Object> params = new HashMap<>();
-        params.put(null, 1);
-        IllegalArgumentException e =
-                assertThrows(IllegalArgumentException.class, () -> Utils.prepareQuery("RETURN 1", params));
-        assertTrue(e.getMessage().contains("null"));
+        // A HashMap permits a single null key; it must be rejected.
+        assertEquals("Cypher parameter name cannot be null", paramNameError(null));
     }
 
     @Test
@@ -298,7 +353,7 @@ public class UtilsTest {
     public void testInvalidParamNameWithEmojiIsRejectedAndDisplayedSafely() {
         // A valid surrogate pair (emoji) inside an invalid name exercises safeDisplay's pair branch.
         Map<String, Object> params = new HashMap<>();
-        params.put("bad\ud83d\ude00name", 1);
+        params.put("bad\ud83d\ude00`name", 1);
         assertThrows(IllegalArgumentException.class, () -> Utils.prepareQuery("RETURN 1", params));
     }
 
@@ -383,7 +438,7 @@ public class UtilsTest {
         // A rejected parameter name/key must not leak a raw newline into the exception message
         // (log-forging); safeDisplay escapes control characters.
         Map<String, Object> badName = new HashMap<>();
-        badName.put("bad\nname", 1);
+        badName.put("bad\n`name", 1);
         IllegalArgumentException e1 =
                 assertThrows(IllegalArgumentException.class, () -> Utils.prepareQuery("RETURN 1", badName));
         assertFalse(e1.getMessage().contains("\n"), "name message must not contain a raw newline");
@@ -396,7 +451,7 @@ public class UtilsTest {
 
         // Also escape C1 controls (U+0085 NEL) and Unicode line/paragraph separators (U+2028/U+2029).
         Map<String, Object> unicodeName = new HashMap<>();
-        unicodeName.put("bad\u2028\u2029\u0085name", 1);
+        unicodeName.put("bad\u2028\u2029\u0085`name", 1);
         IllegalArgumentException e3 =
                 assertThrows(IllegalArgumentException.class, () -> Utils.prepareQuery("RETURN 1", unicodeName));
         assertFalse(e3.getMessage().contains("\u2028"), "message must not contain a raw line separator");
@@ -424,6 +479,7 @@ public class UtilsTest {
             name.append('a');
         }
         name.append("\ud83d\ude00"); // 😀
+        name.append('`'); // rejected, so the message shows the truncated name
         Map<String, Object> params = new HashMap<>();
         params.put(name.toString(), 1);
         IllegalArgumentException e =

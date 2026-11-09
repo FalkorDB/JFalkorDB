@@ -56,3 +56,5 @@ failover
 resharding
 Resharding
 github
+backtick
+NUL
