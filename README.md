@@ -333,6 +333,7 @@ As in the Python client, a parameter name needn't be a Cypher identifier, becaus
 backtick-quotes every name. In the query, refer to a name that isn't an identifier backtick-quoted,
 as ``$`a b` ``. FalkorDB 6.x also accepts an unquoted `$1`, but 4.x needs ``$`1` ``. FalkorDB 6.x
 limits a name to 512 bytes of UTF-8, which is 512 ASCII characters but only 256 characters such as `é`.
+The client doesn't check that limit: it sends a longer name, and the server rejects the query.
 This safety covers parameter **values** only — it does not extend to the query text or to dynamic
 labels/identifiers, so never build those from untrusted input.
 
