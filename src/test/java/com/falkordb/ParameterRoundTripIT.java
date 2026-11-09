@@ -3,6 +3,7 @@ package com.falkordb;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.falkordb.graph_entities.Node;
@@ -261,6 +262,78 @@ public class ParameterRoundTripIT {
         Node node = it.next().getValue("t");
         assertEquals("hello", node.getProperty("name").getValue());
         assertFalse(it.hasNext());
+    }
+
+    /** Each non-identifier name binds its own value on the server, and doesn't disturb another parameter. */
+    @ParameterizedTest(name = "parameter name [{index}] binds")
+    @MethodSource("nonIdentifierParameterNames")
+    public void nonIdentifierParameterNamesBind(String name) {
+        // #502: a name needn't be a Cypher identifier. The query refers to it backtick-quoted ($`1`):
+        // FalkorDB 4.x doesn't parse an unquoted $1. A second parameter checks nothing cross-binds.
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put(name, 7L);
+        params.put("other", 8L);
+        ResultSet rs = client.query("RETURN $`" + name + "` AS v, $other AS o", params);
+        Record row = rs.iterator().next();
+        assertEquals(7L, (Long) row.getValue("v"), () -> "wrong value bound for: " + escape(name));
+        assertEquals(8L, (Long) row.getValue("o"), () -> "other parameter disturbed by: " + escape(name));
+    }
+
+    /** Names that aren't Cypher identifiers, which the server accepts backtick-quoted (see #502). */
+    static Stream<String> nonIdentifierParameterNames() {
+        // FalkorDB 6.x limits a name to 512 bytes of UTF-8: these are the longest names it accepts.
+        StringBuilder longName = new StringBuilder();
+        StringBuilder longAccented = new StringBuilder();
+        for (int i = 0; i < 512; i++) {
+            longName.append('x');
+        }
+        for (int i = 0; i < 256; i++) {
+            longAccented.append('é'); // two bytes each in UTF-8
+        }
+        return Stream.of(
+                "1",
+                "1a",
+                "-1",
+                " ",
+                " a ",
+                "a b",
+                "a-b",
+                "a.b",
+                "a=b",
+                "$a",
+                "a'b",
+                "a\"b",
+                "a\\b",
+                "a\\", // a trailing backslash must not escape the closing backtick
+                "\\",
+                "a\nb",
+                "a\rb",
+                "x RETURN 1",
+                "CYPHER",
+                "a/*b*/",
+                "é",
+                "名字",
+                "😀",
+                longName.toString(),
+                longAccented.toString());
+    }
+
+    @Test
+    public void severalNonIdentifierParameterNamesBindTogether() {
+        Map<String, Object> params = new LinkedHashMap<>();
+        params.put("1", 1L);
+        params.put("2", 2L);
+        params.put("a b", 3L);
+        ResultSet rs = client.query("RETURN $`1` + $`2` * 10 + $`a b` * 100 AS v", params);
+        assertEquals(321L, (Long) rs.iterator().next().getValue("v"));
+    }
+
+    @Test
+    public void parameterNameWithBacktickIsRejectedBeforeSending() {
+        client.query("RETURN 1"); // creates the graph, which deleteGraph() then removes
+        IllegalArgumentException e = assertThrows(
+                IllegalArgumentException.class, () -> client.query("RETURN 1", Collections.singletonMap("a`b", 1)));
+        assertTrue(e.getMessage().startsWith("Cypher parameter name cannot contain a backtick"), e.getMessage());
     }
 
     private static String escape(String s) {

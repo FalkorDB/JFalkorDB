@@ -326,8 +326,14 @@ graph.query("MATCH (p:person {name: $name}) RETURN p", Collections.singletonMap(
 Values must be an encodable type (null, `String`, `Character`, `Boolean`, a boxed integer or
 floating-point number, a `BigInteger` within signed 64-bit range, or an array/`List`/`Map` of such
 values, where every `Map` key is a `String`); unsupported types (including `BigDecimal`), out-of-range
-integers, non-finite floating-point values, cyclic containers, non-String map keys, and invalid
-parameter names are rejected with `IllegalArgumentException`.
+integers, non-finite floating-point values, cyclic containers, non-String map keys, and a parameter
+name that is `null`, empty or contains a backtick, a NUL character or an unpaired surrogate are rejected
+with `IllegalArgumentException`.
+As in the Python client, a parameter name needn't be a Cypher identifier, because the client
+backtick-quotes every name. In the query, refer to a name that isn't an identifier backtick-quoted,
+as ``$`a b` ``. FalkorDB 6.x also accepts an unquoted `$1`, but 4.x needs ``$`1` ``. FalkorDB 6.x
+limits a name to 512 bytes of UTF-8, which is 512 ASCII characters but only 256 characters such as `é`.
+The client doesn't check that limit: it sends a longer name, and the server rejects the query.
 This safety covers parameter **values** only — it does not extend to the query text or to dynamic
 labels/identifiers, so never build those from untrusted input.
 

@@ -37,7 +37,7 @@ public class Utils {
      */
     public static final String TIMEOUT_STRING = "TIMEOUT";
 
-    /** A Cypher identifier: used for parameter names, bare (unquoted) map keys and YIELD columns. */
+    /** A Cypher identifier: used for bare (unquoted) map keys and YIELD columns. */
     private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
 
     private Utils() {}
@@ -118,16 +118,18 @@ public class Utils {
     /**
      * Prepares and formats a query and its parameters.
      *
-     * <p>Each parameter is emitted as {@code `name`=value} in a {@code CYPHER ...} header. Parameter
-     * names are validated as Cypher identifiers and backtick-quoted (so a name that collides with the
-     * {@code CYPHER} header keyword cannot be misparsed), and values are encoded via the type-checked
-     * {@link #appendValue}. Callers should always parameterize user input rather than concatenating it
+     * <p>Each parameter is emitted as {@code `name`=value} in a {@code CYPHER ...} header. Every name is
+     * backtick-quoted, so it needn't be a Cypher identifier (such as {@code 1}, referenced as
+     * {@code $`1`}) and can't be misparsed as a header keyword such as {@code CYPHER}. As in the Python
+     * client, a name is rejected only when it's empty or contains a backtick, which FalkorDB can't escape
+     * inside a quoted name; a {@code null} name, a NUL character and an unpaired surrogate are rejected
+     * too, as the server can't use them. Values are encoded via the type-checked {@link #appendValue}. Callers should always parameterize user input rather than concatenating it
      * into the query text.
      *
      * @param query - query
      * @param params - query parameters
      * @return query with parameters header
-     * @throws IllegalArgumentException if a parameter name is not a valid identifier or a value is not
+     * @throws IllegalArgumentException if a parameter name can't be quoted (see above) or a value is not
      *     an encodable type
      */
     public static String prepareQuery(String query, Map<String, Object> params) {
@@ -149,13 +151,41 @@ public class Utils {
         return sb.toString();
     }
 
+    /**
+     * Appends a parameter name to the {@code CYPHER} header, backtick-quoted.
+     *
+     * <p>Any text the quotes can hold is a valid name, as in the Python client, which rejects only an
+     * empty name and a backtick (FalkorDB can't escape one inside a quoted name, so it would end the
+     * quote early); the messages match the Python client's. Java also rejects what a String can hold
+     * but the server can't use: a null key, a NUL character (the server stops reading the query there)
+     * and an unpaired surrogate (not encodable as UTF-8).
+     *
+     * @param sb the header being built
+     * @param name the parameter name
+     * @throws IllegalArgumentException if the name is null or empty, or contains a backtick, a NUL
+     *     character or an unpaired surrogate
+     */
     private static void appendParamName(StringBuilder sb, String name) {
-        if (name == null || !IDENTIFIER.matcher(name).matches()) {
-            throw new IllegalArgumentException(
-                    "Invalid query parameter name: " + safeDisplay(name) + " (must match [A-Za-z_][A-Za-z0-9_]*)");
+        if (name == null) {
+            throw new IllegalArgumentException("Cypher parameter name cannot be null");
         }
-        // Backtick-quote the (already validated, backtick-free) name so an identifier that happens to
-        // be a header keyword such as "CYPHER" is not stripped/misparsed by the server's header parser.
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException("Cypher parameter name cannot be empty");
+        }
+        if (name.indexOf('`') >= 0) {
+            throw new IllegalArgumentException("Cypher parameter name cannot contain a backtick: " + safeDisplay(name)
+                    + " (FalkorDB does not support escaped backticks in identifiers)");
+        }
+        if (name.indexOf('\0') >= 0) {
+            throw new IllegalArgumentException(
+                    "Cypher parameter name cannot contain a NUL character: " + safeDisplay(name));
+        }
+        try {
+            requireWellFormedUtf16(name);
+        } catch (IllegalArgumentException unpaired) {
+            throw new IllegalArgumentException(
+                    "Cypher parameter name cannot contain an unpaired surrogate: " + safeDisplay(name), unpaired);
+        }
         sb.append('`').append(name).append('`');
     }
 

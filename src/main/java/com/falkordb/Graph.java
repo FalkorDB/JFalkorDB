@@ -65,9 +65,13 @@ public interface Graph extends Closeable {
      * Boolean, a boxed integer or floating-point number, a {@link java.math.BigInteger} within signed
      * 64-bit range, or an array/List/Map of such values, where every Map key is a String); other types
      * (including {@link java.math.BigDecimal}), out-of-range integers, non-finite floating-point
-     * values, cyclic containers, non-String map keys, invalid parameter names, and a null
-     * {@code query} or {@code params} are rejected with {@link IllegalArgumentException}. This does not
-     * cover the query text itself or dynamic labels/identifiers. (The form of procedure names is
+     * values, cyclic containers, non-String map keys, a parameter name that is null, empty or contains a
+     * backtick, a NUL character or an unpaired surrogate, and a null {@code query} or {@code params} are
+     * rejected with {@link IllegalArgumentException}. A name needn't be a Cypher identifier; on FalkorDB
+     * 4.x, refer to one such as {@code 1} as {@code $`1`} (6.x also accepts {@code $1}). FalkorDB 6.x
+     * limits a name to 512 bytes of UTF-8 (so 256 characters such as {@code é}): the client sends a
+     * longer one, and the server's error comes back as a {@link com.falkordb.exceptions.GraphException}. This does not cover the query text itself or
+     * dynamic labels/identifiers. (The form of procedure names is
      * checked by {@link #callProcedure(String, List, Map)}, but not which procedure they name.)
      *
      * @param query Cypher query. Must not be {@code null}.
