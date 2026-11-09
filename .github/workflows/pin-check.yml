@@ -1,17 +1,27 @@
 name: Virtual-thread pinning check
 
 # Wave 5 (Project Loom): verifies the blocking client does not pin carrier threads when driven from
-# virtual threads on JDK 21+. It warms the connection pool (so the KNOWN upstream commons-pool2
-# cold-creation pin is excluded), then runs a virtual-thread query workload over the warm pool under a
-# JFR recording and fails if any jdk.VirtualThreadPinned event runs through our com.falkordb.impl client
-# internals (the known upstream commons-pool2 cold-creation pin is excluded).
+# virtual threads on JDK 21+. It warms the connection pool (so cold commons-pool2 connection creation
+# runs off the measured path), then runs a virtual-thread query workload over the warm pool under a JFR
+# recording, with -Djdk.tracePinnedThreads=full marking which frames hold the monitor on each pinned
+# stack. It fails if one of them is in our com.falkordb.impl client internals; pins whose monitor a
+# dependency holds (commons-pool2 2.13+ returning a connection under contention) are reported, not failed.
 # Virtual-thread load timing is runner-sensitive, so this runs on a schedule (and on demand) rather
-# than as a per-PR gate. See `just pin-check`.
+# than as a per-PR gate, plus on PRs that change the check itself. See `just pin-check`.
 
 on:
   schedule:
     - cron: '0 5 * * 1' # weekly, Mondays 05:00 UTC
   workflow_dispatch:
+  pull_request:
+    branches: [ "master" ]
+    paths:
+      - 'pin-check/**'
+      - '.github/workflows/pin-check.yml'
+      - 'Justfile'
+      # The check installs the root project first, so a dependency change (such as the Jedis 8 bump
+      # that brought in commons-pool2 2.13) runs it too.
+      - 'pom.xml'
 
 permissions:
   contents: read
