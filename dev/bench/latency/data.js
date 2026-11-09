@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793706660526,
+  "lastUpdate": 1794205906090,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -18575,6 +18575,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 51590.518,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a1a4a4b764df5e51c17cc414da0a76172bce2082",
+          "message": "test: attribute virtual-thread pins to the code that holds the monitor (#517)\n\n* test: attribute virtual-thread pins to the code that holds the monitor\n\nThe weekly pin-check has failed since Jedis 8 brought in commons-pool2 2.13.\nIts GenericObjectPool.returnObject now holds synchronized (p) while it waits\nfor the idle deque's lock (POOL-419), so on JDK 21-23 every contended\nconnection return pins a carrier. The check blamed JFalkorDB because the\npinned stack runs through GraphContextImpl.close(), but a JFR stack doesn't\nsay which frame holds the monitor.\n\nRun the check's JVM with -Djdk.tracePinnedThreads=full, which marks the\nmonitor holders on each distinct pinned stack, and fail only when one of\nthem is in com.falkordb.impl. That replaces the create/makeObject name\nheuristic and still catches synchronized around our own close(). If pins on\nclient stacks can't be attributed (no trace, or a monitor stack with no\nmarked holder), the check fails instead of passing.\n\nDocument the contended-return pin in the README and run the workflow on PRs\nthat change the check.\n\nFixes #516\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: match each pinned JFR event to a traced stack\n\nThe JDK skips a pinned-thread print when System.out's lock is contended,\nso a traced client stack can't vouch for every client pin. Match each JFR\npin through com.falkordb.impl to a traced stack on their non-JDK frames\n(JFR also lists hidden lambda classes) and fail on any pin that matches\nnone. Document that the trace needs a plain PrintStream as System.out.\n\nAlso: flush the capture stream before restoring System.out, lock\nSYSTEM_OUT for the test, run the workflow on root pom.xml changes, and\nnarrow the README claims to the query path the check exercises and to the\npinning JEP 491 removes.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: document the pin-check helpers\n\nAdd Javadoc to the touched pin-check methods that branch or loop, and\nrewrap a class-Javadoc line left too long.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-09T08:29:35+02:00",
+          "tree_id": "0f60c9358ce1f7913d72885d113446a27ac12310",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/a1a4a4b764df5e51c17cc414da0a76172bce2082"
+        },
+        "date": 1794205905334,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 131.064,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 164.632,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 237.817,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 162.357,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 205.73,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 253.232,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 204.091,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 338.926,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 433.815,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 335.746,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 567.208,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 706.876,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 398.984,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 3490.23,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 7494.437,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 415.197,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 9326.648,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 20485.898,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 420.305,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 22371.961,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 48162.314,
             "unit": "us"
           }
         ]
