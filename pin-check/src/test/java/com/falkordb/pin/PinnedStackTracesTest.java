@@ -97,6 +97,7 @@ class PinnedStackTracesTest {
                 java.base/java.lang.VirtualThread.run(VirtualThread.java:329)
             """;
 
+    /** Both observed return variants (waiting in {@code addFirst} or in {@code size}) are commons-pool2's pin. */
     @Test
     void contendedReturnIsHeldByThePoolNotTheClient() {
         for (String trace : List.of(RETURN_ADD_FIRST, RETURN_SIZE)) {

@@ -57,8 +57,9 @@ import org.testcontainers.utility.DockerImageName;
  * (p)} (POOL-419) while it waits for the idle deque's lock, so every contended connection return pins.
  *
  * <p>The trace is the only attribution, so each JFR pin on our stacks must match a traced stack (compared
- * on their non-JDK frames); a pin that matches none fails the check rather than passing unattributed. {@code jdk.tracePinnedThreads} exists on JDK 21–23 only; from JDK 24
- * (JEP 491) {@code synchronized} no longer pins, and a remaining pin (a native frame) through our code
+ * on their non-JDK frames); a pin that matches none fails the check rather than passing unattributed.
+ * {@code jdk.tracePinnedThreads} exists on JDK 21–23 only; from JDK 24 (JEP 491) {@code synchronized} no
+ * longer pins, and a remaining pin (a native frame) through our code
  * fails here too, as our pure-Java code shouldn't produce one.
  *
  * <p>Uses a pinned Testcontainers FalkorDB by default, or an external one via {@code FALKORDB_HOST} /
@@ -85,6 +86,10 @@ class VirtualThreadPinningTest {
     private static final int MEASURED_QUERIES = 1024; // virtual-thread queries over the warm pool
     private static final Duration WORKLOAD_TIMEOUT = Duration.ofSeconds(120);
 
+    /**
+     * Runs the virtual-thread workload over a warm pool and fails if a pinned stack has a monitor held by
+     * {@link #CLIENT_PACKAGE}, or if a pin through it can't be attributed (see the class Javadoc).
+     */
     @Test
     @ResourceLock(Resources.SYSTEM_OUT) // replaces System.out to capture the pinned-thread trace
     void hotPathDoesNotPinVirtualThreads() throws Exception {
@@ -355,6 +360,7 @@ class VirtualThreadPinningTest {
         return holders;
     }
 
+    /** The failure message for pins whose monitor our code holds, listing each stack with its holders marked. */
     private static String describeOurs(List<PinnedStackTraces.Stack> ours, int pins) {
         StringBuilder message = new StringBuilder()
                 .append("Virtual-thread pinning caused by JFalkorDB: ")
@@ -377,6 +383,7 @@ class VirtualThreadPinningTest {
         return message.toString();
     }
 
+    /** The failure message for pins through our code that match no traced stack, with their JFR stacks. */
     private static String describeUnattributed(List<RecordedEvent> unattributed, int throughClient, int pins) {
         StringBuilder message = new StringBuilder()
                 .append(unattributed.size())
@@ -396,6 +403,7 @@ class VirtualThreadPinningTest {
         return message.toString();
     }
 
+    /** Appends each JFR pin's duration and stack, top frame first, to {@code message}. */
     private static void appendJfrStacks(StringBuilder message, List<RecordedEvent> pins) {
         for (RecordedEvent pin : pins) {
             message.append("  pinned for ").append(pin.getDuration().toMillis()).append(" ms:\n");
