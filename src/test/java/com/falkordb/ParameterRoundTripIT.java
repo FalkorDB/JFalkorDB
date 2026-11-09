@@ -281,9 +281,14 @@ public class ParameterRoundTripIT {
 
     /** Names that aren't Cypher identifiers, which the server accepts backtick-quoted (see #502). */
     static Stream<String> nonIdentifierParameterNames() {
+        // FalkorDB 6.x limits a name to 512 bytes of UTF-8: these are the longest names it accepts.
         StringBuilder longName = new StringBuilder();
-        for (int i = 0; i < 512; i++) { // the longest name FalkorDB 6.x accepts
+        StringBuilder longAccented = new StringBuilder();
+        for (int i = 0; i < 512; i++) {
             longName.append('x');
+        }
+        for (int i = 0; i < 256; i++) {
+            longAccented.append('é'); // two bytes each in UTF-8
         }
         return Stream.of(
                 "1",
@@ -309,7 +314,8 @@ public class ParameterRoundTripIT {
                 "é",
                 "名字",
                 "😀",
-                longName.toString());
+                longName.toString(),
+                longAccented.toString());
     }
 
     @Test

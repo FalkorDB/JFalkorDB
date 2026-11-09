@@ -58,3 +58,4 @@ Resharding
 github
 backtick
 NUL
+UTF

@@ -92,7 +92,8 @@ public interface GraphPipeline
      * character or an unpaired surrogate, and a null {@code query} or {@code params} are rejected with
      * {@link IllegalArgumentException}. A name needn't be a Cypher identifier; on FalkorDB 4.x, refer to
      * one such as {@code 1} as {@code $`1`} (6.x also accepts {@code $1}). FalkorDB 6.x limits a name to
-     * 512 characters: the client sends a longer one, and the server rejects it. This safety covers
+     * 512 bytes of UTF-8 (so 256 characters such as {@code é}): the client sends a longer one, and the
+     * server rejects it. This safety covers
      * parameter values only — not the query text itself, dynamic labels/identifiers, or procedure names.
      *
      * @param query Cypher query. Must not be {@code null}.
