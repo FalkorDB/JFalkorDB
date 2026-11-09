@@ -38,6 +38,51 @@ class UtilsParamPropertyTest {
         assertWellFormedStringLiteral(literal, value);
     }
 
+    /** The run-copying encoder must spell a value exactly as a character-by-character encoder does. */
+    @Property(tries = 2000)
+    void escapedValueMatchesTheCharacterByCharacterEncoder(@ForAll("riskyStrings") String value) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("p", value);
+        String prepared = Utils.prepareQuery("RETURN $p", params);
+        assertEquals(
+                characterByCharacterLiteral(value),
+                prepared.substring(PREFIX.length(), prepared.length() - SUFFIX.length()));
+    }
+
+    /** The oracle: one append per character, no run copying. */
+    private static String characterByCharacterLiteral(String value) {
+        StringBuilder sb = new StringBuilder(value.length() + 2).append('"');
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            switch (c) {
+                case '\\':
+                    sb.append("\\\\");
+                    break;
+                case '"':
+                    sb.append("\\\"");
+                    break;
+                case '\n':
+                    sb.append("\\n");
+                    break;
+                case '\r':
+                    sb.append("\\r");
+                    break;
+                case '\t':
+                    sb.append("\\t");
+                    break;
+                case '\b':
+                    sb.append("\\b");
+                    break;
+                case '\f':
+                    sb.append("\\f");
+                    break;
+                default:
+                    sb.append(c);
+            }
+        }
+        return sb.append('"').toString();
+    }
+
     private static void assertWellFormedStringLiteral(String literal, String source) {
         assertEquals('"', literal.charAt(0), () -> "literal must open with a quote for: " + source);
         assertEquals('"', literal.charAt(literal.length() - 1), () -> "literal must close with a quote for: " + source);

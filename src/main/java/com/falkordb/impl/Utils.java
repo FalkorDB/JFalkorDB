@@ -72,47 +72,53 @@ public class Utils {
     }
 
     private static void appendEscaped(StringBuilder sb, String str) {
+        int runStart = 0; // start of the run of characters that need no escaping
         for (int i = 0; i < str.length(); i++) {
             char c = str.charAt(i);
+            String escape;
             switch (c) {
                 case '\\':
-                    sb.append("\\\\");
+                    escape = "\\\\";
                     break;
                 case '"':
-                    sb.append("\\\"");
+                    escape = "\\\"";
                     break;
                 case '\n':
-                    sb.append("\\n");
+                    escape = "\\n";
                     break;
                 case '\r':
-                    sb.append("\\r");
+                    escape = "\\r";
                     break;
                 case '\t':
-                    sb.append("\\t");
+                    escape = "\\t";
                     break;
                 case '\b':
-                    sb.append("\\b");
+                    escape = "\\b";
                     break;
                 case '\f':
-                    sb.append("\\f");
+                    escape = "\\f";
                     break;
                 case '\0':
                     throw new IllegalArgumentException("Cypher string parameters cannot contain the NUL character");
                 default:
                     if (Character.isHighSurrogate(c)) {
                         if (i + 1 < str.length() && Character.isLowSurrogate(str.charAt(i + 1))) {
-                            sb.append(c).append(str.charAt(++i));
+                            i++; // a well-formed pair is literal, like the rest of its run
                         } else {
                             throw new IllegalArgumentException("Unpaired surrogate in string parameter at index " + i);
                         }
                     } else if (Character.isLowSurrogate(c)) {
                         throw new IllegalArgumentException("Unpaired surrogate in string parameter at index " + i);
-                    } else {
-                        // Every other character (including raw control chars and UTF-8) is literal.
-                        sb.append(c);
                     }
+                    // Every other character (including raw control chars and UTF-8) is literal.
+                    continue;
             }
+            // Copy the run collected so far in one append: appending character by character is what
+            // made encoding a large value (a document, a JSON payload) slow.
+            sb.append(str, runStart, i).append(escape);
+            runStart = i + 1;
         }
+        sb.append(str, runStart, str.length());
     }
 
     /**
