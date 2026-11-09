@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794206456906,
+  "lastUpdate": 1794212233814,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -18833,6 +18833,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 72020.22,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1ee2fd126dcb58e84770db1cb916edae0b0615a5",
+          "message": "fix!: accept query parameter names that aren't Cypher identifiers (#519)\n\n* fix!: accept query parameter names that aren't Cypher identifiers\n\nThe client backtick-quotes every parameter name in the CYPHER header, so\nrequiring [A-Za-z_][A-Za-z0-9_]* was stricter than needed: a name such as\n1 couldn't be sent. Accept any name the quotes can hold, as the Python\nclient does, and use its messages: reject an empty name and a backtick,\nwhich FalkorDB can't escape inside a quoted name. Also reject what the\nserver can't use: a null key, a NUL character and an unpaired surrogate.\n\nOn FalkorDB 4.x the query must refer to such a name quoted, as $`1`.\n\nBREAKING CHANGE: names that used to throw IllegalArgumentException are now\nsent, and the messages for rejected names changed.\n\nFixes #502\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: keep the long parameter name within FalkorDB 6's 512-character limit\n\nfalkordb/falkordb:latest is now FalkorDB 6.0.4, which rejects identifiers\nlonger than 512 characters, so the 10,000-character name failed\nverify-latest. Use 512 characters, the longest name both 4.x and 6.x\naccept. Also say in the README and Javadoc that only 4.x needs $`1` (6.x\nparses an unquoted $1) and that 6.x limits a name to 512 characters, and\ndrop \"parameter names\" from the IDENTIFIER comment.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: mention FalkorDB 6's 512-character parameter name limit in the Javadoc\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: add Javadoc to appendParamName and the parameter-name test helpers\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: FalkorDB 6 limits a parameter name to 512 bytes of UTF-8, not characters\n\nProbed on falkordb/falkordb:latest (6.0.4): 512 ASCII characters, 256 é\nand 128 emoji (each 512 bytes) are accepted, and one more character of\neach is rejected. Say \"512 bytes of UTF-8\" in the Javadoc and README, and\nround-trip a 256-é name too.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: say the client sends a parameter name over 512 bytes and the server rejects it\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-09T10:14:35+02:00",
+          "tree_id": "ca4555a5ba17fc2887c04b240147d4e49472515b",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/1ee2fd126dcb58e84770db1cb916edae0b0615a5"
+        },
+        "date": 1794212232657,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 171.652,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 218.751,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 252.034,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 197.241,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 240.193,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 262.474,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 294.554,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 469.202,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 588.074,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 488.288,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 801.345,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 972.047,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 564.452,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5228.393,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 10827.958,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 570.997,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 14461.781,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 30835.294,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 574.259,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 33590.249,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 71012.457,
             "unit": "us"
           }
         ]
