@@ -151,12 +151,21 @@ public class Utils {
         return sb.toString();
     }
 
+    /**
+     * Appends a parameter name to the {@code CYPHER} header, backtick-quoted.
+     *
+     * <p>Any text the quotes can hold is a valid name, as in the Python client, which rejects only an
+     * empty name and a backtick (FalkorDB can't escape one inside a quoted name, so it would end the
+     * quote early); the messages match the Python client's. Java also rejects what a String can hold
+     * but the server can't use: a null key, a NUL character (the server stops reading the query there)
+     * and an unpaired surrogate (not encodable as UTF-8).
+     *
+     * @param sb the header being built
+     * @param name the parameter name
+     * @throws IllegalArgumentException if the name is null or empty, or contains a backtick, a NUL
+     *     character or an unpaired surrogate
+     */
     private static void appendParamName(StringBuilder sb, String name) {
-        // The name is always backtick-quoted, so any text the quotes can hold is a valid name, as in the
-        // Python client, which rejects only an empty name and a backtick (FalkorDB can't escape one inside
-        // a quoted name, so it would end the quote early). The messages match the Python client's. Java
-        // also rejects what a String can hold but the server can't use: a null key, a NUL character (the
-        // server stops reading the query there) and an unpaired surrogate (not encodable as UTF-8).
         if (name == null) {
             throw new IllegalArgumentException("Cypher parameter name cannot be null");
         }

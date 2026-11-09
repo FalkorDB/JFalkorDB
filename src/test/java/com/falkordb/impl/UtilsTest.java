@@ -232,6 +232,7 @@ public class UtilsTest {
         assertThrows(IllegalArgumentException.class, () -> q("a\udc00b")); // unpaired low
     }
 
+    /** Names that aren't Cypher identifiers are backtick-quoted into the header unchanged. */
     @Test
     public void testQuotesParameterNamesThatAreNotIdentifiers() {
         // Every name is backtick-quoted, so a name needn't be a Cypher identifier (#502), as in the Python
@@ -272,6 +273,7 @@ public class UtilsTest {
         assertEquals("Cypher parameter name cannot be empty", paramNameError(""));
     }
 
+    /** A backtick anywhere in a name is rejected with the Python client's message. */
     @Test
     public void testRejectsParameterNameWithBacktick() {
         for (String bad : new String[] {"`", "a`b", "a``b", "a`=1 RETURN 1 //"}) {
@@ -296,6 +298,7 @@ public class UtilsTest {
                 "Cypher parameter name cannot contain an unpaired surrogate: \"\\udc00a\"", paramNameError("\udc00a"));
     }
 
+    /** Returns the message of the exception {@code prepareQuery} throws for a parameter called {@code name}. */
     private static String paramNameError(String name) {
         Map<String, Object> params = new HashMap<>();
         params.put(name, 1);

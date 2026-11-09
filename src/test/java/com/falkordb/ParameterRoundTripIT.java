@@ -264,6 +264,7 @@ public class ParameterRoundTripIT {
         assertFalse(it.hasNext());
     }
 
+    /** Each non-identifier name binds its own value on the server, and doesn't disturb another parameter. */
     @ParameterizedTest(name = "parameter name [{index}] binds")
     @MethodSource("nonIdentifierParameterNames")
     public void nonIdentifierParameterNamesBind(String name) {
@@ -278,6 +279,7 @@ public class ParameterRoundTripIT {
         assertEquals(8L, (Long) row.getValue("o"), () -> "other parameter disturbed by: " + escape(name));
     }
 
+    /** Names that aren't Cypher identifiers, which the server accepts backtick-quoted (see #502). */
     static Stream<String> nonIdentifierParameterNames() {
         StringBuilder longName = new StringBuilder();
         for (int i = 0; i < 512; i++) { // the longest name FalkorDB 6.x accepts
