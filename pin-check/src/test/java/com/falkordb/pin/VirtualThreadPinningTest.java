@@ -33,6 +33,8 @@ import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.consumer.RecordingFile;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
@@ -54,8 +56,8 @@ import org.testcontainers.utility.DockerImageName;
  * commons-pool2 2.13+ (Jedis 8), whose {@code GenericObjectPool.returnObject} holds {@code synchronized
  * (p)} (POOL-419) while it waits for the idle deque's lock, so every contended connection return pins.
  *
- * <p>The trace is the only attribution, so a pin on our stacks with no trace printed fails the check
- * rather than passing unattributed. {@code jdk.tracePinnedThreads} exists on JDK 21–23 only; from JDK 24
+ * <p>The trace is the only attribution, so each JFR pin on our stacks must match a traced stack (compared
+ * on their non-JDK frames); a pin that matches none fails the check rather than passing unattributed. {@code jdk.tracePinnedThreads} exists on JDK 21–23 only; from JDK 24
  * (JEP 491) {@code synchronized} no longer pins, and a remaining pin (a native frame) through our code
  * fails here too, as our pure-Java code shouldn't produce one.
  *
@@ -84,6 +86,7 @@ class VirtualThreadPinningTest {
     private static final Duration WORKLOAD_TIMEOUT = Duration.ofSeconds(120);
 
     @Test
+    @ResourceLock(Resources.SYSTEM_OUT) // replaces System.out to capture the pinned-thread trace
     void hotPathDoesNotPinVirtualThreads() throws Exception {
         GenericContainer<?> container = null;
         String host;
@@ -121,7 +124,9 @@ class VirtualThreadPinningTest {
 
                 List<RecordedEvent> pins;
                 // The JVM prints each distinct pinned stack once, so capture from before the first
-                // virtual thread: a stack first printed during warm-up is not printed again.
+                // virtual thread: a stack first printed during warm-up is not printed again. It must be a
+                // plain PrintStream: the JDK prints the trace only when System.out's lock is its internal
+                // lock, which Surefire's own PrintStream subclass doesn't use.
                 ByteArrayOutputStream trace = new ByteArrayOutputStream();
                 PrintStream stdout = System.out;
                 System.setOut(new PrintStream(new TeeOutputStream(stdout, trace), true, StandardCharsets.UTF_8));
@@ -132,6 +137,7 @@ class VirtualThreadPinningTest {
                     runVirtualThreadQueries(graph, WARMUP_QUERIES);
                     pins = recordPinning(() -> runVirtualThreadQueries(graph, MEASURED_QUERIES));
                 } finally {
+                    System.out.flush();
                     System.setOut(stdout);
                 }
                 List<PinnedStackTraces.Stack> traced = PinnedStackTraces.parse(trace.toString(StandardCharsets.UTF_8));
@@ -151,11 +157,20 @@ class VirtualThreadPinningTest {
                 if (!ours.isEmpty()) {
                     fail(describeOurs(ours, pins.size()));
                 }
-                // Fail safe: a pin we can't attribute fails the check rather than passing. The trace must
-                // show a stack through our code for the pins JFR saw there, and every monitor stack must
-                // name its monitor holder (else the trace format has drifted from what the parser reads).
-                if (!throughClient.isEmpty() && traced.stream().noneMatch(stack -> stack.runsThrough(CLIENT_PACKAGE))) {
-                    fail(describeUnattributed(throughClient, pins.size()));
+                // Fail safe: a pin we can't attribute fails the check rather than passing. Each pin JFR saw
+                // through our code must match a traced stack (the JVM can skip a print under contention),
+                // and every monitor stack must name its monitor holder (else the trace format has drifted
+                // from what the parser reads).
+                List<RecordedEvent> unattributed = new ArrayList<>();
+                for (RecordedEvent pin : throughClient) {
+                    List<String> appFrames = PinnedStackTraces.appFrames(frameNames(pin));
+                    boolean truncated = pin.getStackTrace().isTruncated();
+                    if (traced.stream().noneMatch(stack -> PinnedStackTraces.matches(appFrames, truncated, stack))) {
+                        unattributed.add(pin);
+                    }
+                }
+                if (!unattributed.isEmpty()) {
+                    fail(describeUnattributed(unattributed, throughClient.size(), pins.size()));
                 }
                 for (PinnedStackTraces.Stack stack : traced) {
                     if ("MONITOR".equals(stack.reason())
@@ -317,6 +332,18 @@ class VirtualThreadPinningTest {
         return false;
     }
 
+    /** A JFR pin's frames as {@code class.method}, top first. */
+    private static List<String> frameNames(RecordedEvent pin) {
+        List<String> names = new ArrayList<>();
+        for (RecordedFrame frame : pin.getStackTrace().getFrames()) {
+            RecordedMethod method = frame.getMethod();
+            if (method != null && method.getType() != null) {
+                names.add(method.getType().getName() + "." + method.getName());
+            }
+        }
+        return names;
+    }
+
     /** The distinct frames that hold a monitor on any traced stack, e.g. {@code [GenericObjectPool.returnObject]}. */
     private static Set<String> monitorHolders(List<PinnedStackTraces.Stack> traced) {
         Set<String> holders = new TreeSet<>();
@@ -350,21 +377,22 @@ class VirtualThreadPinningTest {
         return message.toString();
     }
 
-    private static String describeUnattributed(List<RecordedEvent> throughClient, int pins) {
+    private static String describeUnattributed(List<RecordedEvent> unattributed, int throughClient, int pins) {
         StringBuilder message = new StringBuilder()
-                .append(throughClient.size())
-                .append(" of ")
-                .append(pins)
-                .append(" jdk.VirtualThreadPinned event(s) run through ")
+                .append(unattributed.size())
+                .append(" of the ")
+                .append(throughClient)
+                .append(" jdk.VirtualThreadPinned event(s) through ")
                 .append(CLIENT_PACKAGE)
-                .append(", but the JVM printed no pinned-thread trace through that package to say which code")
-                .append(" holds the monitor. Run on JDK 21-23")
-                .append(" with -Djdk.tracePinnedThreads=full (jdk.tracePinnedThreads is ")
+                .append(" (")
+                .append(pins)
+                .append(" in all) match no pinned-thread trace, so nothing says which code holds the monitor.")
+                .append(" Run on JDK 21-23 with -Djdk.tracePinnedThreads=full (jdk.tracePinnedThreads is ")
                 .append(System.getProperty("jdk.tracePinnedThreads"))
                 .append(", Java ")
                 .append(Runtime.version())
-                .append("). The JFR stacks:\n");
-        appendJfrStacks(message, throughClient);
+                .append("). The unmatched JFR stacks:\n");
+        appendJfrStacks(message, unattributed);
         return message.toString();
     }
 

@@ -19,6 +19,9 @@ on:
       - 'pin-check/**'
       - '.github/workflows/pin-check.yml'
       - 'Justfile'
+      # The check installs the root project first, so a dependency change (such as the Jedis 8 bump
+      # that brought in commons-pool2 2.13) runs it too.
+      - 'pom.xml'
 
 permissions:
   contents: read

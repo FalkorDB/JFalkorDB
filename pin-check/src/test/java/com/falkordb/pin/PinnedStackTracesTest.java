@@ -242,6 +242,66 @@ class PinnedStackTracesTest {
     }
 
     @Test
+    void monitorStackWithoutMarksHasNoHolders() {
+        // The caller fails the check on this: a MONITOR pin always has a holder, so a trace without one
+        // means the format has drifted from what the parser reads.
+        PinnedStackTraces.Stack stack = PinnedStackTraces.parse(RETURN_SIZE.replace(" <== monitors:1", ""))
+                .get(0);
+        assertEquals("MONITOR", stack.reason());
+        assertTrue(stack.monitorHolders().isEmpty());
+        assertFalse(stack.monitorHeldIn(POOL));
+    }
+
+    @Test
+    void jfrPinMatchesTheTracedStackOnItsApplicationFrames() {
+        // JFR starts the stack at different JDK frames and lists the hidden lambda classes the trace omits.
+        List<String> jfrSize = List.of(
+                "java.lang.VirtualThread.parkOnCarrierThread",
+                "java.lang.VirtualThread.park",
+                "java.util.concurrent.locks.ReentrantLock.lock",
+                "org.apache.commons.pool2.impl.LinkedBlockingDeque.size",
+                "org.apache.commons.pool2.impl.GenericObjectPool.returnObject",
+                "redis.clients.jedis.util.Pool.returnResource",
+                "redis.clients.jedis.JedisPool.returnResource",
+                "redis.clients.jedis.JedisPool.returnResource",
+                "redis.clients.jedis.Jedis.close",
+                "com.falkordb.impl.api.GraphContextImpl.close",
+                "com.falkordb.impl.api.GraphImpl.lambda$sendQuery$0",
+                "com.falkordb.impl.api.GraphImpl$$Lambda.0x00007fd0d82cdd40.apply",
+                "com.falkordb.impl.api.DriverImpl.routed",
+                "com.falkordb.impl.api.GraphImpl.sendQuery",
+                "com.falkordb.impl.api.AbstractGraph.query",
+                "com.falkordb.pin.VirtualThreadPinningTest.lambda$runVirtualThreadQueries$2",
+                "com.falkordb.pin.VirtualThreadPinningTest$$Lambda.0x00007fd0d8320000.run",
+                "java.util.concurrent.CompletableFuture$AsyncRun.run",
+                "java.lang.VirtualThread.run");
+        List<String> app = PinnedStackTraces.appFrames(jfrSize);
+        assertEquals("org.apache.commons.pool2.impl.LinkedBlockingDeque.size", app.get(0));
+        assertFalse(app.stream().anyMatch(name -> name.contains("$$Lambda")));
+
+        PinnedStackTraces.Stack sizeStack = PinnedStackTraces.parse(RETURN_SIZE).get(0);
+        PinnedStackTraces.Stack addFirstStack =
+                PinnedStackTraces.parse(RETURN_ADD_FIRST).get(0);
+        assertTrue(PinnedStackTraces.matches(app, false, sizeStack));
+        // The addFirst trace is a different stack, so it can't vouch for this pin.
+        assertFalse(PinnedStackTraces.matches(app, false, addFirstStack));
+        // Nor can a trace of some other client stack.
+        assertFalse(PinnedStackTraces.matches(
+                app, false, PinnedStackTraces.parse(CLIENT_MONITOR_ACROSS_READ).get(0)));
+    }
+
+    @Test
+    void truncatedJfrPinMatchesATracedStackThatStartsWithItsFrames() {
+        PinnedStackTraces.Stack stack = PinnedStackTraces.parse(RETURN_SIZE).get(0);
+        List<String> top = stack.appFrames().subList(0, 5);
+        assertTrue(PinnedStackTraces.matches(top, true, stack));
+        assertFalse(PinnedStackTraces.matches(top, false, stack), "an untruncated stack must match exactly");
+        List<String> otherTop =
+                PinnedStackTraces.parse(RETURN_ADD_FIRST).get(0).appFrames().subList(0, 5);
+        assertFalse(PinnedStackTraces.matches(otherTop, true, stack));
+    }
+
+    @Test
     void outputWithoutATraceHasNoStacks() {
         assertTrue(PinnedStackTraces.parse("").isEmpty());
         assertTrue(PinnedStackTraces.parse(

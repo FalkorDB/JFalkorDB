@@ -633,11 +633,13 @@ workload, 1,024 virtual-thread queries over 16 pooled connections, produced 26 s
 and up to 76 on a laptop, each lasting 0–8 ms. Each pin is short, but a pinned carrier runs no other virtual
 thread meanwhile, and more simultaneous returns mean more pins.
 
-The client's own code holds no monitor across a blocking call. A CI **pinning check** runs a
-virtual-thread load on JDK 21, finds which code holds the monitor on each distinct pinned stack, and fails
-if that code is in `com.falkordb.impl`. **JDK 24+ removes carrier pinning for `synchronized` entirely**
+On the query path, the client's own code holds no monitor across a blocking call. A CI **pinning
+check** runs a virtual-thread query load against a standalone server on JDK 21, finds which code holds
+the monitor on each pinned stack, and fails if that code is in `com.falkordb.impl`. It doesn't exercise
+cluster topology refreshes. **JDK 24+ removes carrier pinning caused by `synchronized`**
 ([JEP 491](https://openjdk.org/jeps/491)), so both the warm-up and the return pin matter only on JDK
-21–23. For a heavy virtual-thread workload, prefer JDK 24 or later.
+21–23. A virtual thread can still pin on JDK 24+ when it blocks inside native code or a callback from it,
+which JFalkorDB doesn't do. For a heavy virtual-thread workload, prefer JDK 24 or later.
 
 ## Benchmarks
 

@@ -13,7 +13,11 @@ import java.util.regex.Pattern;
  * to our code or to a dependency without guessing from frame names.
  *
  * <p>The JDK prints each distinct pinned stack once per JVM, so the trace lists the distinct stacks, not
- * one per pin. Lines that are not part of a trace (other output on {@code System.out}) are ignored.
+ * one per pin. It also skips a print when another thread holds {@code System.out}'s lock, and prints
+ * nothing unless {@code System.out} is a plain {@link java.io.PrintStream} (its lock must be the JDK's
+ * internal lock). A skipped stack isn't recorded as printed, so its next pin tries again, but a caller
+ * must match each pin to a traced stack ({@link #matches}) rather than assume every pin was traced.
+ * Lines that are not part of a trace (other output on {@code System.out}) are ignored.
  */
 final class PinnedStackTraces {
 
@@ -52,8 +56,8 @@ final class PinnedStackTraces {
 
         /** Whether a frame in {@code packagePrefix} holds a monitor, i.e. that code pins the carrier. */
         boolean monitorHeldIn(String packagePrefix) {
-            for (Frame frame : monitorHolders()) {
-                if (frame.className().startsWith(packagePrefix)) {
+            for (Frame frame : frames) {
+                if (frame.monitors() > 0 && frame.className().startsWith(packagePrefix)) {
                     return true;
                 }
             }
@@ -69,6 +73,48 @@ final class PinnedStackTraces {
             }
             return false;
         }
+
+        /** The stack's {@link #appFrames application frames}. */
+        List<String> appFrames() {
+            List<String> names = new ArrayList<>();
+            for (Frame frame : frames) {
+                names.add(frame.qualifiedName());
+            }
+            return PinnedStackTraces.appFrames(names);
+        }
+    }
+
+    /**
+     * The non-JDK frames of a stack, as {@code class.method}, top first. JFR and the pinned-thread trace
+     * start the same stack at different JDK frames, and only JFR lists hidden lambda classes
+     * ({@code Foo$$Lambda.0x...}), so a stack is compared on these frames.
+     */
+    static List<String> appFrames(List<String> qualifiedNames) {
+        List<String> app = new ArrayList<>();
+        for (String name : qualifiedNames) {
+            if (!(name.startsWith("java.")
+                    || name.startsWith("jdk.")
+                    || name.startsWith("sun.")
+                    || name.startsWith("javax.")
+                    || name.startsWith("com.sun.")
+                    || name.contains("$$Lambda"))) {
+                app.add(name);
+            }
+        }
+        return app;
+    }
+
+    /**
+     * Whether a JFR pin with these {@link #appFrames application frames} is the pin {@code stack} traces.
+     * A JFR stack cut off at its depth limit matches a traced stack that starts with the same frames.
+     */
+    static boolean matches(List<String> jfrAppFrames, boolean jfrTruncated, Stack stack) {
+        List<String> traced = stack.appFrames();
+        if (jfrTruncated) {
+            return traced.size() >= jfrAppFrames.size()
+                    && traced.subList(0, jfrAppFrames.size()).equals(jfrAppFrames);
+        }
+        return traced.equals(jfrAppFrames);
     }
 
     /** Parses every traced stack in {@code output}, in the order printed. */
