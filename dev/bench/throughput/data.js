@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794205907780,
+  "lastUpdate": 1794206459178,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -8554,6 +8554,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 15848.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ea491207dfb761798f2a7286b0c877038c356eae",
+          "message": "build(deps): combine open Dependabot updates (#518)\n\n* fix(deps): bump com.google.errorprone:error_prone_core\n\nBumps [com.google.errorprone:error_prone_core](https://github.com/google/error-prone) from 2.51.0 to 2.52.0.\n- [Release notes](https://github.com/google/error-prone/releases)\n- [Commits](https://github.com/google/error-prone/compare/v2.51.0...v2.52.0)\n\n---\nupdated-dependencies:\n- dependency-name: com.google.errorprone:error_prone_core\n  dependency-version: 2.52.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n(cherry picked from commit fbdb9c0827d9cd162d717e04aaea4ad26d473d62)\n\n* build(deps-dev): bump com.diffplug.spotless:spotless-maven-plugin\n\nBumps [com.diffplug.spotless:spotless-maven-plugin](https://github.com/diffplug/spotless) from 3.10.4 to 3.11.0.\n- [Release notes](https://github.com/diffplug/spotless/releases)\n- [Changelog](https://github.com/diffplug/spotless/blob/main/CHANGES.md)\n- [Commits](https://github.com/diffplug/spotless/compare/maven/3.10.4...maven/3.11.0)\n\n---\nupdated-dependencies:\n- dependency-name: com.diffplug.spotless:spotless-maven-plugin\n  dependency-version: 3.11.0\n  dependency-type: direct:development\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n(cherry picked from commit a25d97dd27141a8cdf7c3ebcafde39bb1218bc05)\n\n* build(deps): bump amannn/action-semantic-pull-request\n\nBumps [amannn/action-semantic-pull-request](https://github.com/amannn/action-semantic-pull-request) from 6.1.1 to 6.1.2.\n- [Release notes](https://github.com/amannn/action-semantic-pull-request/releases)\n- [Changelog](https://github.com/amannn/action-semantic-pull-request/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/amannn/action-semantic-pull-request/compare/48f256284bd46cdaab1048c3721360e808335d50...2252a14e810aa9b85c2d560bd7070c802206ecf6)\n\n---\nupdated-dependencies:\n- dependency-name: amannn/action-semantic-pull-request\n  dependency-version: 6.1.2\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n(cherry picked from commit 4ecf8c91e2054ca6dda82a50ccb59e43d4129d2b)\n\n* build(deps-dev): bump com.github.siom79.japicmp:japicmp-maven-plugin\n\nBumps [com.github.siom79.japicmp:japicmp-maven-plugin](https://github.com/siom79/japicmp) from 0.26.5 to 0.27.0.\n- [Release notes](https://github.com/siom79/japicmp/releases)\n- [Changelog](https://github.com/siom79/japicmp/blob/master/release.py)\n- [Commits](https://github.com/siom79/japicmp/compare/japicmp-base-0.26.5...japicmp-base-0.27.0)\n\n---\nupdated-dependencies:\n- dependency-name: com.github.siom79.japicmp:japicmp-maven-plugin\n  dependency-version: 0.27.0\n  dependency-type: direct:development\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n(cherry picked from commit 3e15c639993f849a0449c380dcd49beb65b5e56b)\n\n* build(deps): bump github/codeql-action/analyze from 4.39.1 to 4.39.3\n\nBumps [github/codeql-action/analyze](https://github.com/github/codeql-action) from 4.39.1 to 4.39.3.\n- [Release notes](https://github.com/github/codeql-action/releases)\n- [Changelog](https://github.com/github/codeql-action/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/github/codeql-action/compare/9b3254085494b55a0f7c4c2b3d2d52cc712ce370...33d7b85da1a04171e211befe2c739303b9a4c066)\n\n---\nupdated-dependencies:\n- dependency-name: github/codeql-action/analyze\n  dependency-version: 4.39.3\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n(cherry picked from commit c2f582a6e3824ae27f4a518c58c32f7fa2a9f4c3)\n\n* build(deps): bump github/codeql-action/init from 4.39.1 to 4.39.3\n\nBumps [github/codeql-action/init](https://github.com/github/codeql-action) from 4.39.1 to 4.39.3.\n- [Release notes](https://github.com/github/codeql-action/releases)\n- [Changelog](https://github.com/github/codeql-action/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/github/codeql-action/compare/9b3254085494b55a0f7c4c2b3d2d52cc712ce370...33d7b85da1a04171e211befe2c739303b9a4c066)\n\n---\nupdated-dependencies:\n- dependency-name: github/codeql-action/init\n  dependency-version: 4.39.3\n  dependency-type: direct:production\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n(cherry picked from commit 98f7931d5b7a270d32a5878825540e6888e0cd7b)\n\n* build(deps): bump actions/setup-java from 6.1.0 to 6.2.0\n\nBumps [actions/setup-java](https://github.com/actions/setup-java) from 6.1.0 to 6.2.0.\n- [Release notes](https://github.com/actions/setup-java/releases)\n- [Commits](https://github.com/actions/setup-java/compare/b843ebf9b913146b38da2eaa7aeddf76074ae1ad...77dd5b2ce225ea11469928ac317850245a74ae78)\n\n---\nupdated-dependencies:\n- dependency-name: actions/setup-java\n  dependency-version: 6.2.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n(cherry picked from commit ec85e3aeebabb91cf29a84ba975310013eb06f8a)\n\n* build(deps-dev): bump org.pitest:pitest-maven from 1.30.1 to 1.30.2\n\nBumps [org.pitest:pitest-maven](https://github.com/hcoles/pitest) from 1.30.1 to 1.30.2.\n- [Release notes](https://github.com/hcoles/pitest/releases)\n- [Commits](https://github.com/hcoles/pitest/compare/1.30.1...1.30.2)\n\n---\nupdated-dependencies:\n- dependency-name: org.pitest:pitest-maven\n  dependency-version: 1.30.2\n  dependency-type: direct:development\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n(cherry picked from commit ca8e0bc3a749ce7e4d3b779076041fecfd3d3408)\n\n---------\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-11-09T08:38:33+02:00",
+          "tree_id": "bd395ae8f6b343babe20a02de8c15f9477ea8a90",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/ea491207dfb761798f2a7286b0c877038c356eae"
+        },
+        "date": 1794206459141,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3792,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6504,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9762.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 11957,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11503.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11507.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11474.667,
             "unit": "ops/s"
           }
         ]
