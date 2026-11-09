@@ -8,12 +8,14 @@
       Standalone (non-reactor, non-deployable) virtual-thread PINNING check for the JFalkorDB client.
 
       Wave 5 (Project Loom, #333) verifies that the blocking client does not pin carrier threads when
-      driven from virtual threads on JDK 21+. This module warms the connection pool (so there is no
-      cold commons-pool2 connection creation — the one KNOWN upstream pin), then runs a virtual-thread
-      query workload over the warm pool under a JFR recording and fails if any `jdk.VirtualThreadPinned`
-      event's stack involves our `com.falkordb.impl` client internals (the known upstream commons-pool2
-      cold-creation pin is excluded). It compiles at release 21 (it uses virtual
-      threads + the JFR API directly) and is never part of the main reactor or the published artifact.
+      driven from virtual threads on JDK 21+. This module warms the connection pool (so cold
+      commons-pool2 connection creation runs off the measured path), then runs a virtual-thread query
+      workload over the warm pool under a JFR recording. `-Djdk.tracePinnedThreads=full` makes the JVM
+      mark the frames that hold the monitor on each pinned stack, and the check fails if one of them is
+      in our `com.falkordb.impl` client internals. Pins whose monitor a dependency holds (commons-pool2
+      2.13+ returning a connection under contention) are reported, not failed. It compiles at release 21
+      (it uses virtual threads + the JFR API directly) and is never part of the main reactor or the
+      published artifact.
       Run via `just pin-check`; wired as the scheduled `pin-check` CI job.
     -->
     <groupId>com.falkordb.pin</groupId>
@@ -64,6 +66,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.6</version>
+                <configuration>
+                    <!-- JDK 21-23: print each distinct pinned stack with its monitor holders marked, which
+                         VirtualThreadPinningTest uses to attribute a pin. Read once at JVM start, so it
+                         must be a JVM argument; JDK 24+ ignores it. -->
+                    <argLine>-Djdk.tracePinnedThreads=full</argLine>
+                </configuration>
             </plugin>
         </plugins>
     </build>
