@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794212235625,
+  "lastUpdate": 1794294110571,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -8672,6 +8672,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11813,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fb0d39dc3302a99a68bd9ab7530f69028ea8123c",
+          "message": "build(deps-dev): bump org.codehaus.mojo:animal-sniffer-maven-plugin (#521)\n\nBumps [org.codehaus.mojo:animal-sniffer-maven-plugin](https://github.com/mojohaus/animal-sniffer) from 1.28 to 1.29.\n- [Release notes](https://github.com/mojohaus/animal-sniffer/releases)\n- [Commits](https://github.com/mojohaus/animal-sniffer/compare/1.28...1.29)\n\n---\nupdated-dependencies:\n- dependency-name: org.codehaus.mojo:animal-sniffer-maven-plugin\n  dependency-version: '1.29'\n  dependency-type: direct:development\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-11-10T08:59:34+02:00",
+          "tree_id": "5e9214f4816e51de805fc2f2ef3aa2499f069169",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/fb0d39dc3302a99a68bd9ab7530f69028ea8123c"
+        },
+        "date": 1794294110526,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3729,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6712,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9499.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 12560.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11852.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11839,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11800.667,
             "unit": "ops/s"
           }
         ]
