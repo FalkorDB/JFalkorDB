@@ -1,0 +1,797 @@
+package com.falkordb;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.StringReader;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+/**
+ * Renders the <em>whole</em> public API surface of JFalkorDB as sorted, line-oriented text, by
+ * reflection: the snapshot that {@link ApiSurfaceTest} compares against {@code api/jfalkordb.api}.
+ *
+ * <p>It exists because the japicmp {@code api-diff} gate only compares the classes inside our jar.
+ * {@code GraphPipeline} and {@code GraphTransaction} inherit about a thousand methods from Jedis'
+ * pipeline command interfaces, and {@code Driver.getConnection()} returns Jedis' {@code Jedis}, so
+ * a Jedis bump can remove or re-type methods our users call without any of our classes changing:
+ * the Jedis 8 bump did exactly that with {@code jsonNumIncrBy} and {@code Jedis.aclLogBinary()}.
+ *
+ * <p>What is rendered:
+ *
+ * <ul>
+ *   <li>Every <b>exported type</b>: a public type (or a protected member type of an extendable
+ *       exported class) under {@code com.falkordb}, outside {@code com.falkordb.impl}. For each: its
+ *       declaration, its direct generic supertypes, every transitive supertype, its public/protected
+ *       constructors, and every public/protected field and method it has, <b>inherited ones
+ *       included</b>, with generic signatures and {@code throws} clauses.
+ *   <li>Every <b>reachable type</b>: a type outside the JDK and the exported types that a signature
+ *       <em>declared by</em> an exported type names (a return, parameter, field, {@code throws} or
+ *       type-argument type). Only one level deep, which today means Jedis' {@code Jedis} and {@code
+ *       Response}, so the surface callers reach through our own signatures is pinned without pinning
+ *       all of Jedis. For these only the public instance methods and fields are listed: callers get
+ *       such an object from us, they don't construct or subclass it.
+ * </ul>
+ *
+ * <p>Left out on purpose, so that the text is the same on every JDK and only changes when the API
+ * does: synthetic and bridge members (including the ones JaCoCo adds); members declared by JDK types
+ * and the supertypes of JDK types (the JDK supertype itself is listed); the type an inherited member
+ * is declared in; annotations other than {@code @Deprecated}; constant values. Signatures are printed
+ * by {@link #type} rather than {@code Type.toString()}, whose format varies across JDKs. Inherited
+ * members are printed as the subtype sees them: type variables of a generic supertype are replaced by
+ * the type arguments the subtype supplies, and the erased JVM signature is appended whenever it
+ * doesn't follow from the printed generic one.
+ *
+ * <p>{@link #main} renders any build of the client, for example a published jar run on the classpath
+ * of the Jedis version it shipped with.
+ */
+final class ApiSurface {
+
+    /** The snapshot file, relative to the project directory. */
+    static final String SNAPSHOT = "api/jfalkordb.api";
+
+    /** The command that regenerates the snapshot. */
+    static final String UPDATE_COMMAND = "just api-surface-update";
+
+    private static final String ROOT = "com.falkordb.";
+    private static final String INTERNAL = "com.falkordb.impl.";
+    private static final String DEPRECATED = "@Deprecated ";
+
+    private static final int DECLARATION = 0;
+    private static final int SUPERTYPE = 1;
+    private static final int FIELD = 2;
+    private static final int CONSTRUCTOR = 3;
+    private static final int METHOD = 4;
+
+    private ApiSurface() {}
+
+    /**
+     * Prints the API surface of the client classes in a directory or jar.
+     *
+     * @param args the classes directory or jar to scan. Its classes and their dependencies must be on
+     *     the classpath, e.g. {@code java -cp target/test-classes:jfalkordb-0.10.1.jar:jedis-7.5.3.jar:...
+     *     com.falkordb.ApiSurface jfalkordb-0.10.1.jar}
+     * @throws IOException if the classes can't be listed or loaded
+     */
+    public static void main(String[] args) throws IOException {
+        if (args.length != 1) {
+            throw new IllegalArgumentException("usage: ApiSurface <classes directory or jar>");
+        }
+        System.out.print(render(Paths.get(args[0]), Thread.currentThread().getContextClassLoader()));
+    }
+
+    /**
+     * Renders the surface of the client classes on this class' classpath.
+     *
+     * @return the snapshot text
+     * @throws IOException if the classes can't be listed or loaded
+     */
+    static String render() throws IOException {
+        Path root;
+        try {
+            root = Paths.get(FalkorDB.class
+                    .getProtectionDomain()
+                    .getCodeSource()
+                    .getLocation()
+                    .toURI());
+        } catch (URISyntaxException e) {
+            throw new IOException(e);
+        }
+        return render(root, FalkorDB.class.getClassLoader());
+    }
+
+    static String render(Path classes, ClassLoader loader) throws IOException {
+        Set<Class<?>> exported = new TreeSet<>(Comparator.comparing(Class::getName));
+        for (String name : classNames(classes)) {
+            if (!name.startsWith(ROOT) || name.startsWith(INTERNAL)) {
+                continue;
+            }
+            Class<?> type;
+            try {
+                type = Class.forName(name, false, loader);
+            } catch (ClassNotFoundException | LinkageError e) {
+                throw new IOException("Can't load " + name + " from " + classes + ": " + e, e);
+            }
+            if (isExported(type)) {
+                exported.add(type);
+            }
+        }
+        Set<Class<?>> reachable = new TreeSet<>(Comparator.comparing(Class::getName));
+        for (Class<?> type : exported) {
+            reachable.addAll(guarded(type, () -> referencedTypes(type)));
+        }
+        reachable.removeAll(exported);
+
+        StringBuilder out = new StringBuilder()
+                .append("# JFalkorDB public API surface: every public/protected member of every exported\n")
+                .append("# type, inherited ones included, and the public instance members of the types our\n")
+                .append("# own signatures reach. Checked by ApiSurfaceTest; after a reviewed change, regenerate\n")
+                .append("# it with `")
+                .append(UPDATE_COMMAND)
+                .append("`. A removed or changed line is a change our users see.\n")
+                .append("\n## Exported types (com.falkordb, excluding com.falkordb.impl)\n");
+        for (Class<?> type : exported) {
+            out.append('\n').append(guarded(type, () -> describe(type, false)));
+        }
+        out.append("\n## Types reachable from the signatures exported types declare\n");
+        for (Class<?> type : reachable) {
+            out.append('\n').append(guarded(type, () -> describe(type, true)));
+        }
+        return out.toString();
+    }
+
+    /** Reflection loads every class a signature names; say which one is missing, and where. */
+    private static <T> T guarded(Class<?> type, java.util.function.Supplier<T> reflection) {
+        try {
+            return reflection.get();
+        } catch (LinkageError | TypeNotPresentException e) {
+            throw new IllegalStateException(
+                    "Can't read the API of " + type.getName() + ", a class it names is missing from the classpath: "
+                            + e,
+                    e);
+        }
+    }
+
+    private static List<String> classNames(Path classes) throws IOException {
+        List<String> names = new ArrayList<>();
+        if (Files.isDirectory(classes)) {
+            try (Stream<Path> files = Files.walk(classes)) {
+                for (Path file : files.collect(Collectors.toList())) {
+                    String relative = classes.relativize(file).toString().replace('\\', '/');
+                    if (relative.endsWith(".class")) {
+                        names.add(toClassName(relative));
+                    }
+                }
+            }
+        } else {
+            try (JarFile jar = new JarFile(classes.toFile())) {
+                for (Enumeration<JarEntry> e = jar.entries(); e.hasMoreElements(); ) {
+                    String entry = e.nextElement().getName();
+                    if (entry.endsWith(".class") && !entry.startsWith("META-INF/")) {
+                        names.add(toClassName(entry));
+                    }
+                }
+            }
+        }
+        return names;
+    }
+
+    private static String toClassName(String path) {
+        return path.substring(0, path.length() - ".class".length()).replace('/', '.');
+    }
+
+    private static boolean isExported(Class<?> type) {
+        // package-info is a synthetic interface, so it is skipped here too.
+        if (type.isSynthetic() || type.isAnonymousClass() || type.isLocalClass()) {
+            return false;
+        }
+        int modifiers = type.getModifiers();
+        Class<?> outer = type.getDeclaringClass();
+        if (outer == null) {
+            return Modifier.isPublic(modifiers);
+        }
+        return isExported(outer)
+                && (Modifier.isPublic(modifiers)
+                        || (Modifier.isProtected(modifiers) && !Modifier.isFinal(outer.getModifiers())));
+    }
+
+    private static boolean isJdk(Class<?> type) {
+        String name = type.getName();
+        return name.startsWith("java.") || name.startsWith("javax.") || name.startsWith("jdk.");
+    }
+
+    private static boolean isVisible(int modifiers) {
+        return Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers);
+    }
+
+    // --- the types an exported type's own declarations name ---
+
+    private static Set<Class<?>> referencedTypes(Class<?> type) {
+        List<Type> named = new ArrayList<>(Arrays.asList(type.getTypeParameters()));
+        for (Type supertype : directSupertypes(type)) {
+            if (supertype instanceof ParameterizedType) {
+                // The raw supertype's members are already inlined; only its type arguments are named.
+                named.addAll(Arrays.asList(((ParameterizedType) supertype).getActualTypeArguments()));
+            }
+        }
+        for (Field field : type.getDeclaredFields()) {
+            if (!field.isSynthetic() && isVisible(field.getModifiers())) {
+                named.add(field.getGenericType());
+            }
+        }
+        for (Constructor<?> constructor : type.getDeclaredConstructors()) {
+            if (!constructor.isSynthetic() && isVisible(constructor.getModifiers())) {
+                named.addAll(Arrays.asList(constructor.getTypeParameters()));
+                named.addAll(Arrays.asList(constructor.getGenericParameterTypes()));
+                named.addAll(Arrays.asList(constructor.getGenericExceptionTypes()));
+            }
+        }
+        for (Method method : type.getDeclaredMethods()) {
+            if (!method.isSynthetic() && !method.isBridge() && isVisible(method.getModifiers())) {
+                named.addAll(Arrays.asList(method.getTypeParameters()));
+                named.add(method.getGenericReturnType());
+                named.addAll(Arrays.asList(method.getGenericParameterTypes()));
+                named.addAll(Arrays.asList(method.getGenericExceptionTypes()));
+            }
+        }
+        Set<Class<?>> classes = new LinkedHashSet<>();
+        Set<Type> seen = new HashSet<>();
+        for (Type t : named) {
+            collectClasses(t, classes, seen);
+        }
+        Set<Class<?>> reachable = new LinkedHashSet<>();
+        for (Class<?> c : classes) {
+            if (!c.isPrimitive() && !isJdk(c) && !(c.getName().startsWith(ROOT) && isExported(c))) {
+                reachable.add(c);
+            }
+        }
+        return reachable;
+    }
+
+    private static void collectClasses(Type type, Set<Class<?>> into, Set<Type> seen) {
+        if (!seen.add(type)) {
+            return;
+        }
+        if (type instanceof Class) {
+            Class<?> c = (Class<?>) type;
+            while (c.isArray()) {
+                c = c.getComponentType();
+            }
+            into.add(c);
+        } else if (type instanceof ParameterizedType) {
+            ParameterizedType p = (ParameterizedType) type;
+            collectClasses(p.getRawType(), into, seen);
+            if (p.getOwnerType() != null) {
+                collectClasses(p.getOwnerType(), into, seen);
+            }
+            for (Type argument : p.getActualTypeArguments()) {
+                collectClasses(argument, into, seen);
+            }
+        } else if (type instanceof GenericArrayType) {
+            collectClasses(((GenericArrayType) type).getGenericComponentType(), into, seen);
+        } else if (type instanceof WildcardType) {
+            WildcardType w = (WildcardType) type;
+            for (Type bound : w.getUpperBounds()) {
+                collectClasses(bound, into, seen);
+            }
+            for (Type bound : w.getLowerBounds()) {
+                collectClasses(bound, into, seen);
+            }
+        } else if (type instanceof TypeVariable) {
+            for (Type bound : ((TypeVariable<?>) type).getBounds()) {
+                collectClasses(bound, into, seen);
+            }
+        }
+    }
+
+    // --- one type ---
+
+    private static final class Line {
+        final int category;
+        final String name;
+        final String text;
+
+        Line(int category, String name, String text) {
+            this.category = category;
+            this.name = name;
+            this.text = text;
+        }
+    }
+
+    /**
+     * Describes one type: a header line with its name, then one indented line per declaration,
+     * supertype and member, sorted.
+     *
+     * @param type the type
+     * @param reachable whether it is a reachable rather than an exported type, which lists only its
+     *     public instance methods and fields
+     * @return the description, ending with a newline
+     */
+    static String describe(Class<?> type, boolean reachable) {
+        Map<TypeVariable<?>, Type> arguments = typeArguments(type);
+        List<Line> lines = new ArrayList<>();
+        lines.add(new Line(DECLARATION, "", declaration(type)));
+        String extendsWord = type.isInterface() ? "extends " : "implements ";
+        Type superclass = type.getGenericSuperclass();
+        if (superclass != null && superclass != Object.class) {
+            lines.add(new Line(SUPERTYPE, "0", "extends " + type(superclass, arguments)));
+        }
+        for (Type supertype : type.getGenericInterfaces()) {
+            lines.add(new Line(SUPERTYPE, "1", extendsWord + type(supertype, arguments)));
+        }
+        for (Class<?> supertype : allSupertypes(type)) {
+            lines.add(new Line(SUPERTYPE, "2", "supertype " + supertype.getName()));
+        }
+        for (Field field : fields(type)) {
+            if (!reachable || isPublicInstance(field)) {
+                lines.add(new Line(FIELD, field.getName(), field(field, arguments)));
+            }
+        }
+        if (!reachable) {
+            for (Constructor<?> constructor : type.getDeclaredConstructors()) {
+                if (!constructor.isSynthetic() && isVisible(constructor.getModifiers())) {
+                    lines.add(new Line(CONSTRUCTOR, "", constructor(constructor, arguments)));
+                }
+            }
+        }
+        for (Method method : methods(type, arguments)) {
+            if (!reachable || isPublicInstance(method)) {
+                lines.add(new Line(METHOD, method.getName(), method(method, arguments)));
+            }
+        }
+        lines.sort(Comparator.<Line>comparingInt(l -> l.category)
+                .thenComparing(l -> l.name)
+                .thenComparing(l -> l.text));
+        StringBuilder out = new StringBuilder(type.getName()).append('\n');
+        Set<String> seen = new HashSet<>();
+        for (Line line : lines) {
+            if (seen.add(line.text)) {
+                out.append("  ").append(line.text).append('\n');
+            }
+        }
+        return out.toString();
+    }
+
+    private static boolean isPublicInstance(Member member) {
+        return Modifier.isPublic(member.getModifiers()) && !Modifier.isStatic(member.getModifiers());
+    }
+
+    private static String declaration(Class<?> type) {
+        StringBuilder s = new StringBuilder("type ");
+        if (type.isAnnotationPresent(Deprecated.class)) {
+            s.append(DEPRECATED);
+        }
+        int m = type.getModifiers();
+        s.append(Modifier.isPublic(m) ? "public " : "protected ");
+        boolean plainClass = !type.isInterface() && !type.isEnum();
+        if (plainClass && type.getDeclaringClass() != null && Modifier.isStatic(m)) {
+            s.append("static ");
+        }
+        if (plainClass && Modifier.isAbstract(m)) {
+            s.append("abstract ");
+        }
+        if (plainClass && Modifier.isFinal(m)) {
+            s.append("final ");
+        }
+        if (type.isAnnotation()) {
+            s.append("@interface ");
+        } else if (type.isInterface()) {
+            s.append("interface ");
+        } else if (type.isEnum()) {
+            s.append("enum ");
+        } else {
+            s.append("class ");
+        }
+        return s.append(type.getName())
+                .append(typeParameters(type.getTypeParameters(), Collections.emptyMap()))
+                .toString();
+    }
+
+    /** Every supertype except {@code Object}, sorted; a JDK supertype is listed but not climbed. */
+    private static List<Class<?>> allSupertypes(Class<?> type) {
+        Set<Class<?>> all = new TreeSet<>(Comparator.comparing(Class::getName));
+        List<Class<?>> work = new ArrayList<>(Collections.singletonList(type));
+        while (!work.isEmpty()) {
+            Class<?> c = work.remove(work.size() - 1);
+            List<Class<?>> parents = new ArrayList<>(Arrays.asList(c.getInterfaces()));
+            if (c.getSuperclass() != null) {
+                parents.add(c.getSuperclass());
+            }
+            for (Class<?> parent : parents) {
+                // What a JDK type extends is the JDK's business and varies by version: for example,
+                // java.lang.Enum implements java.lang.constant.Constable since JDK 12.
+                if (parent != Object.class && all.add(parent) && !isJdk(parent)) {
+                    work.add(parent);
+                }
+            }
+        }
+        return new ArrayList<>(all);
+    }
+
+    private static List<Type> directSupertypes(Class<?> type) {
+        List<Type> supertypes = new ArrayList<>(Arrays.asList(type.getGenericInterfaces()));
+        if (type.getGenericSuperclass() != null) {
+            supertypes.add(type.getGenericSuperclass());
+        }
+        return supertypes;
+    }
+
+    /** The type arguments {@code type} supplies, directly or indirectly, to each generic supertype. */
+    private static Map<TypeVariable<?>, Type> typeArguments(Class<?> type) {
+        Map<TypeVariable<?>, Type> arguments = new HashMap<>();
+        List<Type> work = new ArrayList<>(directSupertypes(type));
+        Set<Class<?>> visited = new HashSet<>();
+        while (!work.isEmpty()) {
+            Type supertype = work.remove(work.size() - 1);
+            Class<?> raw;
+            if (supertype instanceof ParameterizedType) {
+                ParameterizedType p = (ParameterizedType) supertype;
+                raw = (Class<?>) p.getRawType();
+                TypeVariable<?>[] variables = raw.getTypeParameters();
+                Type[] actual = p.getActualTypeArguments();
+                for (int i = 0; i < variables.length; i++) {
+                    arguments.putIfAbsent(variables[i], actual[i]);
+                }
+            } else {
+                raw = (Class<?>) supertype;
+            }
+            if (visited.add(raw) && !isJdk(raw)) {
+                work.addAll(directSupertypes(raw));
+            }
+        }
+        return arguments;
+    }
+
+    /** The public/protected methods {@code type} has once overriding is resolved. */
+    private static List<Method> methods(Class<?> type, Map<TypeVariable<?>, Type> arguments) {
+        Map<String, List<Method>> bySignature = new TreeMap<>();
+        for (Class<?> owner : hierarchy(type)) {
+            for (Method method : owner.getDeclaredMethods()) {
+                int m = method.getModifiers();
+                if (method.isSynthetic() || method.isBridge() || !isVisible(m)) {
+                    continue;
+                }
+                if (owner != type && owner.isInterface() && Modifier.isStatic(m)) {
+                    continue; // static interface methods are not inherited
+                }
+                // Keyed on the parameters as this type sees them, so that an override of a method
+                // of a generic supertype (set(Long) for set(T)) is recognised as one.
+                String key = method.getName()
+                        + Arrays.stream(method.getGenericParameterTypes())
+                                .map(p -> erasure(p, arguments).getName())
+                                .collect(Collectors.joining(",", "(", ")"));
+                bySignature.computeIfAbsent(key, k -> new ArrayList<>()).add(method);
+            }
+        }
+        List<Method> result = new ArrayList<>();
+        for (List<Method> candidates : bySignature.values()) {
+            result.addAll(mostSpecific(candidates));
+        }
+        return result;
+    }
+
+    /** The public/protected fields {@code type} has once hiding is resolved. */
+    private static List<Field> fields(Class<?> type) {
+        Map<String, List<Field>> byName = new TreeMap<>();
+        for (Class<?> owner : hierarchy(type)) {
+            for (Field field : owner.getDeclaredFields()) {
+                if (!field.isSynthetic() && isVisible(field.getModifiers())) {
+                    byName.computeIfAbsent(field.getName(), k -> new ArrayList<>())
+                            .add(field);
+                }
+            }
+        }
+        List<Field> result = new ArrayList<>();
+        for (List<Field> candidates : byName.values()) {
+            result.addAll(mostSpecific(candidates));
+        }
+        return result;
+    }
+
+    /** {@code type} and every supertype, JDK ones included so that they can override or hide. */
+    private static List<Class<?>> hierarchy(Class<?> type) {
+        List<Class<?>> hierarchy = new ArrayList<>();
+        hierarchy.add(type);
+        hierarchy.addAll(allSupertypes(type));
+        return hierarchy;
+    }
+
+    /**
+     * Drops the members another candidate overrides or hides (by declaring-type assignability, so
+     * diamonds resolve), then lets a class declaration win over interface ones, then drops what JDK
+     * types declare: those can't change with a dependency and differ between JDK versions.
+     */
+    private static <M extends Member> List<M> mostSpecific(List<M> candidates) {
+        List<M> kept = new ArrayList<>();
+        for (M candidate : candidates) {
+            Class<?> owner = candidate.getDeclaringClass();
+            boolean overridden = candidates.stream()
+                    .map(Member::getDeclaringClass)
+                    .anyMatch(other -> other != owner && owner.isAssignableFrom(other));
+            if (!overridden) {
+                kept.add(candidate);
+            }
+        }
+        if (kept.stream().anyMatch(m -> !m.getDeclaringClass().isInterface())) {
+            kept.removeIf(m -> m.getDeclaringClass().isInterface());
+        }
+        kept.removeIf(m -> isJdk(m.getDeclaringClass()));
+        return kept;
+    }
+
+    // --- members ---
+
+    private static String modifiers(Member member, boolean isDefault) {
+        int m = member.getModifiers();
+        StringBuilder s = new StringBuilder();
+        if (((AnnotatedElement) member).isAnnotationPresent(Deprecated.class)) {
+            s.append(DEPRECATED);
+        }
+        s.append(Modifier.isPublic(m) ? "public " : "protected ");
+        if (Modifier.isStatic(m)) {
+            s.append("static ");
+        }
+        if (Modifier.isAbstract(m)) {
+            s.append("abstract ");
+        }
+        if (isDefault) {
+            s.append("default ");
+        }
+        if (Modifier.isFinal(m)) {
+            s.append("final ");
+        }
+        return s.toString();
+    }
+
+    private static String field(Field field, Map<TypeVariable<?>, Type> arguments) {
+        String generic =
+                "field " + modifiers(field, false) + type(field.getGenericType(), arguments) + " " + field.getName();
+        return erasure(field.getGenericType(), arguments) == field.getType()
+                ? generic
+                : generic + " // erased: " + field.getType().getTypeName();
+    }
+
+    private static String constructor(Constructor<?> constructor, Map<TypeVariable<?>, Type> arguments) {
+        Type[] parameters = constructor.getGenericParameterTypes();
+        if (parameters.length != constructor.getParameterTypes().length) {
+            // An inner class constructor's generic signature can leave out the outer instance.
+            parameters = constructor.getParameterTypes();
+        }
+        return "constructor " + modifiers(constructor, false)
+                + typeParametersWithSpace(constructor.getTypeParameters(), arguments)
+                + constructor.getDeclaringClass().getName()
+                + parameters(parameters, constructor.isVarArgs(), arguments)
+                + throwsClause(constructor.getGenericExceptionTypes(), arguments);
+    }
+
+    private static String method(Method method, Map<TypeVariable<?>, Type> arguments) {
+        String generic = "method " + modifiers(method, method.isDefault())
+                + typeParametersWithSpace(method.getTypeParameters(), arguments)
+                + type(method.getGenericReturnType(), arguments) + " " + method.getName()
+                + parameters(method.getGenericParameterTypes(), method.isVarArgs(), arguments)
+                + throwsClause(method.getGenericExceptionTypes(), arguments);
+        Type[] generics = method.getGenericParameterTypes();
+        Class<?>[] erased = method.getParameterTypes();
+        boolean erasureShows = erasure(method.getGenericReturnType(), arguments) == method.getReturnType()
+                && generics.length == erased.length;
+        for (int i = 0; erasureShows && i < generics.length; i++) {
+            erasureShows = erasure(generics[i], arguments) == erased[i];
+        }
+        if (erasureShows) {
+            return generic;
+        }
+        return generic + " // erased: " + method.getReturnType().getTypeName() + " " + method.getName()
+                + Arrays.stream(erased).map(Class::getTypeName).collect(Collectors.joining(", ", "(", ")"));
+    }
+
+    private static String parameters(Type[] types, boolean varArgs, Map<TypeVariable<?>, Type> arguments) {
+        List<String> rendered = new ArrayList<>();
+        for (int i = 0; i < types.length; i++) {
+            String t = type(types[i], arguments);
+            if (varArgs && i == types.length - 1 && t.endsWith("[]")) {
+                t = t.substring(0, t.length() - 2) + "...";
+            }
+            rendered.add(t);
+        }
+        return rendered.stream().collect(Collectors.joining(", ", "(", ")"));
+    }
+
+    private static String throwsClause(Type[] exceptions, Map<TypeVariable<?>, Type> arguments) {
+        if (exceptions.length == 0) {
+            return "";
+        }
+        return Arrays.stream(exceptions)
+                .map(e -> type(e, arguments))
+                .sorted()
+                .collect(Collectors.joining(", ", " throws ", ""));
+    }
+
+    private static String typeParametersWithSpace(TypeVariable<?>[] variables, Map<TypeVariable<?>, Type> arguments) {
+        String s = typeParameters(variables, arguments);
+        return s.isEmpty() ? "" : s + " ";
+    }
+
+    private static String typeParameters(TypeVariable<?>[] variables, Map<TypeVariable<?>, Type> arguments) {
+        if (variables.length == 0) {
+            return "";
+        }
+        List<String> rendered = new ArrayList<>();
+        for (TypeVariable<?> variable : variables) {
+            Type[] bounds = variable.getBounds();
+            if (bounds.length == 1 && bounds[0] == Object.class) {
+                rendered.add(variable.getName());
+            } else {
+                rendered.add(variable.getName() + " extends "
+                        + Arrays.stream(bounds).map(b -> type(b, arguments)).collect(Collectors.joining(" & ")));
+            }
+        }
+        return rendered.stream().collect(Collectors.joining(", ", "<", ">"));
+    }
+
+    // --- types ---
+
+    /** Prints a type, replacing a supertype's type variables with what the subtype supplies. */
+    private static String type(Type type, Map<TypeVariable<?>, Type> arguments) {
+        if (type instanceof Class) {
+            Class<?> c = (Class<?>) type;
+            return c.isArray() ? type(c.getComponentType(), arguments) + "[]" : c.getName();
+        }
+        if (type instanceof ParameterizedType) {
+            ParameterizedType p = (ParameterizedType) type;
+            Class<?> raw = (Class<?>) p.getRawType();
+            String name = p.getOwnerType() instanceof ParameterizedType
+                    ? type(p.getOwnerType(), arguments) + "$" + raw.getSimpleName()
+                    : raw.getName();
+            return name
+                    + Arrays.stream(p.getActualTypeArguments())
+                            .map(a -> type(a, arguments))
+                            .collect(Collectors.joining(", ", "<", ">"));
+        }
+        if (type instanceof GenericArrayType) {
+            return type(((GenericArrayType) type).getGenericComponentType(), arguments) + "[]";
+        }
+        if (type instanceof WildcardType) {
+            WildcardType w = (WildcardType) type;
+            if (w.getLowerBounds().length > 0) {
+                return "? super " + type(w.getLowerBounds()[0], arguments);
+            }
+            Type upper = w.getUpperBounds()[0];
+            return upper == Object.class ? "?" : "? extends " + type(upper, arguments);
+        }
+        if (type instanceof TypeVariable) {
+            Type argument = arguments.get(type);
+            return argument != null ? type(argument, arguments) : ((TypeVariable<?>) type).getName();
+        }
+        throw new IllegalArgumentException("Unknown kind of Type: " + type.getClass());
+    }
+
+    private static Class<?> erasure(Type type, Map<TypeVariable<?>, Type> arguments) {
+        if (type instanceof Class) {
+            return (Class<?>) type;
+        }
+        if (type instanceof ParameterizedType) {
+            return (Class<?>) ((ParameterizedType) type).getRawType();
+        }
+        if (type instanceof GenericArrayType) {
+            Class<?> component = erasure(((GenericArrayType) type).getGenericComponentType(), arguments);
+            return Array.newInstance(component, 0).getClass();
+        }
+        if (type instanceof TypeVariable) {
+            Type argument = arguments.get(type);
+            return argument != null
+                    ? erasure(argument, arguments)
+                    : erasure(((TypeVariable<?>) type).getBounds()[0], arguments);
+        }
+        if (type instanceof WildcardType) {
+            return erasure(((WildcardType) type).getUpperBounds()[0], arguments);
+        }
+        throw new IllegalArgumentException("Unknown kind of Type: " + type.getClass());
+    }
+
+    // --- comparing two snapshots ---
+
+    /**
+     * Lists what changed between two snapshots, grouped by type: {@code -} for a line only the
+     * expected snapshot has, {@code +} for one only the actual has, and {@code ~} for a member whose
+     * only change is that it was deprecated or undeprecated. Comment lines are ignored.
+     *
+     * @param expected the committed snapshot
+     * @param actual the snapshot of the code
+     * @return one line per change, or an empty list when the two describe the same API
+     */
+    static List<String> diff(String expected, String actual) {
+        Map<String, Set<String>> before = parse(expected);
+        Map<String, Set<String>> after = parse(actual);
+        Set<String> types = new TreeSet<>(before.keySet());
+        types.addAll(after.keySet());
+        List<String> changes = new ArrayList<>();
+        for (String type : types) {
+            Set<String> removed = new TreeSet<>(before.getOrDefault(type, Collections.emptySet()));
+            removed.removeAll(after.getOrDefault(type, Collections.emptySet()));
+            Set<String> added = new TreeSet<>(after.getOrDefault(type, Collections.emptySet()));
+            added.removeAll(before.getOrDefault(type, Collections.emptySet()));
+            if (removed.isEmpty() && added.isEmpty()) {
+                continue;
+            }
+            Map<String, String> addedByUndeprecated = new HashMap<>();
+            for (String line : added) {
+                addedByUndeprecated.put(line.replace(DEPRECATED, ""), line);
+            }
+            List<String> lines = new ArrayList<>();
+            for (String line : removed) {
+                String counterpart = addedByUndeprecated.get(line.replace(DEPRECATED, ""));
+                if (counterpart != null) {
+                    lines.add("  ~ " + counterpart
+                            + (counterpart.contains(DEPRECATED) ? "  (now deprecated)" : "  (no longer deprecated)"));
+                    added.remove(counterpart);
+                } else {
+                    lines.add("  - " + line);
+                }
+            }
+            for (String line : added) {
+                lines.add("  + " + line);
+            }
+            changes.add(type
+                    + (before.containsKey(type)
+                            ? (after.containsKey(type) ? "" : "  (type removed)")
+                            : "  (type added)"));
+            changes.addAll(lines);
+        }
+        return changes;
+    }
+
+    /** The lines of a text, whether it ends them with LF or CRLF. */
+    static List<String> lines(String text) {
+        return new BufferedReader(new StringReader(text)).lines().collect(Collectors.toList());
+    }
+
+    private static Map<String, Set<String>> parse(String snapshot) {
+        Map<String, Set<String>> types = new LinkedHashMap<>();
+        Set<String> current = null;
+        for (String line : lines(snapshot)) {
+            if (line.isEmpty() || line.startsWith("#")) {
+                continue;
+            }
+            if (line.startsWith(" ")) {
+                if (current == null) {
+                    throw new IllegalArgumentException("Member line before any type: " + line);
+                }
+                current.add(line.trim());
+            } else {
+                current = types.computeIfAbsent(line, k -> new LinkedHashSet<>());
+            }
+        }
+        return types;
+    }
+}

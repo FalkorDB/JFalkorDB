@@ -1,3 +1,5 @@
 # Keep the POSIX Maven Wrapper script LF and the Windows one CRLF on checkout.
 mvnw text eol=lf
 *.cmd text eol=crlf
+# The API surface snapshot is compared byte for byte (after CRLF normalisation); keep it LF.
+api/*.api text eol=lf

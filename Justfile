@@ -53,6 +53,20 @@ javadoc:
 api-diff *ARGS:
     ./mvnw -B -Pquality -DskipTests -Dgpg.skip=true package com.github.siom79.japicmp:japicmp-maven-plugin:cmp {{ARGS}}
 
+# Full public-API surface gate (no server): checks that api/jfalkordb.api still lists every
+# public/protected member of the exported types, the ones inherited from Jedis included, plus the
+# public members of the Jedis types our signatures return (Jedis, Response). japicmp only compares our
+# own classes, so a Jedis bump can change that surface without it noticing; this can't miss it. Also
+# runs in `just test` / `just verify` (it is ApiSurfaceTest); the CI `api-diff` workflow runs it as a
+# separate step. No label approves a change: regenerate with `just api-surface-update` and commit.
+api-surface:
+    ./mvnw -B -Dgpg.skip=true -Dtest=ApiSurfaceTest -Dsurefire.failIfNoSpecifiedTests=false test
+
+# Regenerate api/jfalkordb.api after a reviewed API change (ours or a dependency's); commit the result
+# so the change is reviewed in the PR diff. `clean` first, so classes of deleted sources can't linger.
+api-surface-update:
+    ./mvnw -B -Dgpg.skip=true -Dtest=ApiSurfaceTest -Dsurefire.failIfNoSpecifiedTests=false -Dapi.surface.update=true clean test
+
 # Spellcheck the Markdown docs (CI gate). Needs `pyspelling` + `aspell` (see CONTRIBUTING.md).
 spellcheck:
     pyspelling -c .github/spellcheck-settings.yml -n Markdown

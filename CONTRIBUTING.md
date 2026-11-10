@@ -34,6 +34,8 @@ just fmt-check      # check formatting
 just lint           # static analysis: format check + SpotBugs/FindSecBugs + Error Prone (-Pquality)
 just audit          # OWASP dependency-check CVE scan (slow; needs NVD_API_KEY; run by the audit workflow)
 just api-diff       # public-API compatibility diff vs the last release (japicmp; the CI api-diff gate)
+just api-surface    # full public-API surface vs the committed api/jfalkordb.api (inherited Jedis members included)
+just api-surface-update  # regenerate api/jfalkordb.api after a reviewed API change
 just db-up          # start a local FalkorDB container
 just db-down        # stop it
 just bench          # client load-sweep benchmark (client latency vs throughput; feeds the radar)
@@ -42,6 +44,11 @@ just bench          # client load-sweep benchmark (client latency vs throughput;
 ## Before opening a PR
 
 - Run `just verify-local` and keep documentation in sync with your change.
+- If you changed the public API, run `just api-surface-update` and commit `api/jfalkordb.api` with it.
+  The snapshot lists every public member, including the ones `GraphPipeline` and `GraphTransaction`
+  inherit from Jedis, so the PR diff shows exactly what callers gain or lose. A Jedis bump that
+  changes that surface fails `build` and `api-diff` until the regenerated snapshot is pushed to its
+  branch and reviewed; that is intended, so a dependency can't change our API unnoticed.
 - Use a **Conventional-Commit** branch and PR title (`feat:`, `fix:`, `perf:`, `build:`, `docs:`, `ci:`,
   `chore:`, `bench:`, `test:`); the PR title is checked by the **`PR title`** workflow.
   The type decides the release: `feat:` → minor, `fix:`/`perf:` → patch, a breaking change

@@ -17,6 +17,13 @@ internal and may change at any time &mdash; do not depend on it.
   public/protected API. An intentional, reviewed break is approved with the **`breaking-change`** PR
   label; the PR title must then carry a `!` (for example `fix!:` / `feat!:`), which the **PR-title**
   gate enforces so the release is versioned correctly.
+- **`api-surface`** (`just api-surface`, also part of `just test`) &mdash; japicmp compares only the
+  classes inside our jar, so it can't see a dependency change the methods we inherit from it (about
+  960 each on `GraphPipeline` and `GraphTransaction`, from Jedis) or the Jedis types our signatures
+  return. This gate compares the full surface, those members included, with the committed
+  `api/jfalkordb.api`; a change is approved by regenerating it (`just api-surface-update`) in the PR,
+  where the diff is reviewed. A dependency bump that removes or changes a member there is a break for
+  our users even though none of our code changed.
 - **`javadoc`** (`just javadoc`) &mdash; a strict `doclint` gate that keeps the public API documented.
 
 ## Releases
