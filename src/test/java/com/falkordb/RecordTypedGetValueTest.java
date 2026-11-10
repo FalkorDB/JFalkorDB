@@ -179,16 +179,19 @@ public class RecordTypedGetValueTest {
 
         ClassCastException byKey = assertThrows(ClassCastException.class, () -> odd.getValue("A", String.class));
         assertEquals("Column \"A\" holds java.lang.Long, not the requested java.lang.String", byKey.getMessage());
+
+        ClassCastException fromTheEnd = assertThrows(ClassCastException.class, () -> odd.getValue(-1, String.class));
+        assertEquals("Column holds java.lang.Long, not the requested java.lang.String", fromTheEnd.getMessage());
     }
 
-    /** One key ("a", matched case-insensitively) over two values. */
+    /** One key ("a", matched case-insensitively) over two values; a negative index counts from the end. */
     private static final class OddRecord implements Record {
         private final List<@Nullable Object> values = Arrays.asList(1L, 2L);
 
         @Override
         @SuppressWarnings({"deprecation", "unchecked", "TypeParameterUnusedInFormals"})
         public <T> @Nullable T getValue(int index) {
-            return (T) values.get(index);
+            return (T) values.get(index < 0 ? values.size() + index : index);
         }
 
         @Override
