@@ -71,6 +71,14 @@ public class Utils {
         return sb.toString();
     }
 
+    /**
+     * Appends {@code str} to {@code sb} with the characters a Cypher string literal can't hold raw escaped;
+     * see {@link #quoteString}. Each run of characters that need no escaping is copied with one append.
+     *
+     * @param sb the builder to append to
+     * @param str the raw string value
+     * @throws IllegalArgumentException if the string contains a NUL character or an unpaired surrogate
+     */
     private static void appendEscaped(StringBuilder sb, String str) {
         int runStart = 0; // start of the run of characters that need no escaping
         for (int i = 0; i < str.length(); i++) {

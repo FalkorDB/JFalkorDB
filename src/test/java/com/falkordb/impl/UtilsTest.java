@@ -244,6 +244,14 @@ public class UtilsTest {
         assertEquals("CYPHER `param`=\"" + text + "\" RETURN $param", q(text));
     }
 
+    /** A long run is copied whole up to an escape, and so is the run that follows it. */
+    @Test
+    public void testLongRunsAroundAnEscapeAreCopiedWhole() {
+        String text = String.join("", Collections.nCopies(5_000, "abcdefghij-"));
+        assertEquals("CYPHER `param`=\"" + text + "\\\"end\" RETURN $param", q(text + "\"end"));
+        assertEquals("CYPHER `param`=\"" + text + "\\n" + text + "\" RETURN $param", q(text + "\n" + text));
+    }
+
     @Test
     public void testRejectsNulAndUnpairedSurrogates() {
         assertThrows(IllegalArgumentException.class, () -> q("a\u0000b"));
