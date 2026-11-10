@@ -57,6 +57,11 @@ final class RecordValues {
         return typed;
     }
 
+    /**
+     * The {@link ClassCastException} message: the column's index and name where the record can
+     * resolve them, the value's class, the requested class (and its wrapper, for a primitive), and a
+     * hint at FalkorDB's numeric types when a number was asked for as another number.
+     */
     private static String message(
             Record record, Object value, Class<?> type, Class<?> boxed, int index, @Nullable String key) {
         // Built only on failure, so the success path never calls keys(). An implementer's keys() may

@@ -376,9 +376,9 @@ public class GraphAPIIT {
         Assertions.assertEquals("32", record.getString("a.age"));
     }
 
+    /** Record.getValue(.., Class) against what the server actually decodes to (#400). */
     @Test
     public void testTypedGetValue() {
-        // Record.getValue(.., Class) against what the server actually decodes to (#400).
         client.query("CREATE (:person{name:'roi', age:32, score:1.5, active:true})-[:knows]->(:person{name:'amit'})");
         ResultSet resultSet = client.query("MATCH p = (a:person{name:'roi'})-[r:knows]->(:person) "
                 + "RETURN a, r, p, a.name, a.age, a.score, a.active, a.missing, [1, 2] AS list, {k: 1} AS map");

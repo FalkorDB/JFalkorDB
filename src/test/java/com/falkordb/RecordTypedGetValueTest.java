@@ -28,6 +28,7 @@ public class RecordTypedGetValueTest {
                 Collections.unmodifiableList(KEYS), Arrays.asList(42L, "x", null, true, 1.5, Arrays.asList(1L, 2L)));
     }
 
+    /** A value of the requested class is returned as is, by index and by key. */
     @Test
     public void returnsAMatchingValueByIndexAndByKey() {
         RecordImpl record = record();
@@ -39,6 +40,7 @@ public class RecordTypedGetValueTest {
         assertEquals("x", byKey);
     }
 
+    /** The check is instanceof, so a supertype or a raw container class matches. */
     @Test
     public void aSupertypeMatches() {
         RecordImpl record = record();
@@ -48,6 +50,7 @@ public class RecordTypedGetValueTest {
         assertEquals(Arrays.asList(1L, 2L), record.getValue("list", List.class));
     }
 
+    /** A null column is returned as null without a type check, even for a primitive class. */
     @Test
     public void aNullValueIsNullForAnyType() {
         RecordImpl record = record();
@@ -58,10 +61,13 @@ public class RecordTypedGetValueTest {
         assertNull(record.getValue(2, void.class));
     }
 
+    /**
+     * A wrong type throws from the call itself, even when the result is assigned to Object. That is
+     * the difference from the deprecated form: assigning to Object narrows nothing, so the bare
+     * getValue never throws here (RecordImplTest.getValueDoesNotCheckTheRequestedType pins that).
+     */
     @Test
     public void aWrongTypeThrowsFromTheCallEvenWhenTheResultStaysUntyped() {
-        // The difference from the deprecated form: assigning to Object narrows nothing, so the bare
-        // getValue never throws here (RecordImplTest.getValueDoesNotCheckTheRequestedType pins that).
         RecordImpl record = record();
 
         ClassCastException byIndex = assertThrows(ClassCastException.class, () -> {
@@ -77,15 +83,18 @@ public class RecordTypedGetValueTest {
         assertEquals("Column 1 (\"s\") holds java.lang.String, not the requested java.lang.Long", byKey.getMessage());
     }
 
+    /**
+     * With the deprecated form the checkcast is compiled into the caller, so the top frame is the
+     * caller's. Here the top frame is the client's own check.
+     */
     @Test
     public void theExceptionIsRaisedInsideTheClient() {
-        // With the deprecated form the checkcast is compiled into the caller, so the top frame is the
-        // caller's. Here the top frame is the client's own check.
         ClassCastException thrown = assertThrows(ClassCastException.class, () -> record().getValue(0, String.class));
 
         assertEquals(RecordValues.class.getName(), thrown.getStackTrace()[0].getClassName());
     }
 
+    /** Asking for another numeric type names the types FalkorDB integers and floats decode to. */
     @Test
     public void aWrongNumericTypeHintsAtTheDecodedTypes() {
         RecordImpl record = record();
@@ -100,6 +109,7 @@ public class RecordTypedGetValueTest {
         assertFalse(string.getMessage().contains("FalkorDB integers"), "no numeric hint for a non-numeric type");
     }
 
+    /** A primitive class reads its wrapper: long.class reads a Long. */
     @Test
     public void aPrimitiveClassStandsForItsWrapper() {
         RecordImpl record = record();
@@ -113,6 +123,7 @@ public class RecordTypedGetValueTest {
         assertEquals(Double.valueOf(1.5), score);
     }
 
+    /** A primitive class is not a conversion: int.class on a Long throws, as does void.class. */
     @Test
     public void aPrimitiveClassIsNotAConversion() {
         RecordImpl record = record();
@@ -129,6 +140,7 @@ public class RecordTypedGetValueTest {
                 voided.getMessage());
     }
 
+    /** A bad index throws the same exception, with the same message, as the deprecated form. */
     @Test
     @SuppressWarnings("deprecation") // compares against the deprecated form on purpose
     public void anUnknownIndexFailsExactlyAsTheUncheckedForm() {
@@ -142,6 +154,7 @@ public class RecordTypedGetValueTest {
         assertTrue(checked instanceof IndexOutOfBoundsException, "RecordImpl reports a bad index as IOOBE");
     }
 
+    /** An unknown key throws the same exception, with the same message, as the deprecated form. */
     @Test
     @SuppressWarnings("deprecation") // compares against the deprecated form on purpose
     public void anUnknownKeyFailsExactlyAsTheUncheckedForm() {
@@ -155,10 +168,12 @@ public class RecordTypedGetValueTest {
         assertEquals(unchecked.getMessage(), checked.getMessage());
     }
 
+    /**
+     * Passing null where @NullMarked forbids it is the point; the index and key are both unknown,
+     * so the order of the checks shows.
+     */
     @Test
     public void aNullTypeIsRejectedBeforeTheLookup() {
-        // Passing null where @NullMarked forbids it is the point; the index and key are both unknown,
-        // so the order of the checks shows.
         RecordImpl record = record();
         Class<Long> none = null;
 
@@ -168,10 +183,12 @@ public class RecordTypedGetValueTest {
         assertEquals("type must not be null", byKey.getMessage());
     }
 
+    /**
+     * An implementer's keys() may be shorter than its values, or its key lookup may not be exact
+     * keys() matching: report what is known rather than a wrong index or name.
+     */
     @Test
     public void theMessageLeavesOutAColumnTheRecordCannotResolve() {
-        // An implementer's keys() may be shorter than its values, or its key lookup may not be exact
-        // keys() matching: report what is known rather than a wrong index or name.
         Record odd = new OddRecord();
 
         ClassCastException byIndex = assertThrows(ClassCastException.class, () -> odd.getValue(1, String.class));
@@ -188,12 +205,14 @@ public class RecordTypedGetValueTest {
     private static final class OddRecord implements Record {
         private final List<@Nullable Object> values = Arrays.asList(1L, 2L);
 
+        /** Reads by position; a negative index counts from the end, which RecordImpl rejects. */
         @Override
         @SuppressWarnings({"deprecation", "unchecked", "TypeParameterUnusedInFormals"})
         public <T> @Nullable T getValue(int index) {
             return (T) values.get(index < 0 ? values.size() + index : index);
         }
 
+        /** Matches "a" case-insensitively, so keys().indexOf("A") misses a column the lookup finds. */
         @Override
         @SuppressWarnings({"deprecation", "unchecked", "TypeParameterUnusedInFormals"})
         public <T> @Nullable T getValue(String key) {
