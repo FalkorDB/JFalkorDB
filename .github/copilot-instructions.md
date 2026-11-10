@@ -104,7 +104,10 @@ accordingly, and use the `TestServer` helper for server access.
   or changes a line, or adds an abstract method to `GraphPipeline` / `GraphTransaction` (which any
   Jedis release adding commands does), that is a break we inherit, and **`just api-surface-breaks`**
   keeps `api-diff` red until the PR gets the `breaking-change` label and a `!` title (or the bump is
-  declined). japicmp already treats a new abstract method on our own interfaces the same way. Dependabot stops rebasing a PR once someone else has pushed to it, so rebase it by hand
+  declined). japicmp already treats a new abstract method on our own interfaces the same way. A
+  change that only adds or removes `@Deprecated` is not a break. Dependency types are covered one
+  level deep (the ones our declarations name, `Jedis` and `Response`), not the types their members
+  return in turn (e.g. `Jedis.getClient()`'s `Connection`). Dependabot stops rebasing a PR once someone else has pushed to it, so rebase it by hand
   afterwards if needed. Concurrent API PRs conflict on the snapshot: rebase, then rerun `just
   api-surface-update`.
 

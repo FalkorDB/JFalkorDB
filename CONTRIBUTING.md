@@ -51,8 +51,11 @@ just bench          # client load-sweep benchmark (client latency vs throughput;
   changes that surface fails `build` and `api-diff` until the regenerated snapshot is pushed to its
   branch and reviewed; that is intended, so a dependency can't change our API unnoticed. If the
   snapshot diff removes or changes a line, or adds an abstract method to an exported interface or
-  abstract class, code compiled against us can break: the `api-diff` check then also needs the `breaking-change` label and
-  a `!` title.
+  abstract class, code compiled against us can break: the `api-diff` check then also needs the
+  `breaking-change` label and a `!` title. Adding or removing only `@Deprecated` is not a break.
+  Dependency types are covered one level deep: those our own declarations name (`Jedis`,
+  `Response`), not the types *their* methods return (such as the `Connection` from
+  `Jedis.getClient()`).
 - Use a **Conventional-Commit** branch and PR title (`feat:`, `fix:`, `perf:`, `build:`, `docs:`, `ci:`,
   `chore:`, `bench:`, `test:`); the PR title is checked by the **`PR title`** workflow.
   The type decides the release: `feat:` → minor, `fix:`/`perf:` → patch, a breaking change
