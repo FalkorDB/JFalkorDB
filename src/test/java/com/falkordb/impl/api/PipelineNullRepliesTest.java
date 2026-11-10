@@ -60,10 +60,11 @@ class PipelineNullRepliesTest {
 
     @Test
     void execReturnsNullWhenTheTransactionIsAborted() {
-        // A WATCHed key changed: the server answers EXEC with a nil array and runs nothing.
+        // A WATCHed key changed before EXEC: the server answers EXEC with a nil array and runs nothing.
         List<Object> results = withContext(
                 command -> FakeRedisServer.startsWith(command, "EXEC") ? "*-1\r\n" : transactionReply(command),
                 context -> {
+                    context.watch("watched");
                     GraphTransaction transaction = context.multi();
                     transaction.get("watched");
                     return transaction.exec();
