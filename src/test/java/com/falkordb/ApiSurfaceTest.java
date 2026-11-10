@@ -174,6 +174,43 @@ class ApiSurfaceTest {
                 members(ApiSurface.describe(Marked.class, false), "extends ", "supertype "));
     }
 
+    public static class Base {
+        public int value;
+    }
+
+    @SuppressWarnings({"HidingField", "UnusedVariable"})
+    public static class Middle extends Base {
+        private int value;
+    }
+
+    public static class Client extends Middle {}
+
+    @Test
+    void aPrivateFieldHidesTheSameNamedFieldsAboveIt() {
+        // Client has no accessible `value`: Middle's private one hides Base's, so code compiled
+        // against Client.value breaks when a dependency adds Middle.value.
+        assertEquals(Arrays.asList(), members(ApiSurface.describe(Client.class, false), "field "));
+    }
+
+    public interface Limits {
+        int MAX = 1;
+    }
+
+    public static class Defaults {
+        public static final int MAX = 2;
+    }
+
+    public static class Settings extends Defaults implements Limits {}
+
+    @Test
+    void marksAFieldInheritedFromBothASuperclassAndAnInterfaceAsAmbiguous() {
+        // Settings.MAX doesn't compile: unlike methods, a superclass field doesn't win over an
+        // interface one.
+        assertEquals(
+                Arrays.asList("field public static final int MAX // ambiguous: 2 declarations"),
+                members(ApiSurface.describe(Settings.class, false), "field "));
+    }
+
     public interface WithFactory {
         static WithFactory create() {
             return null;
@@ -286,6 +323,38 @@ class ApiSurfaceTest {
                 ApiSurface.breaks(before, after),
                 "removed and changed lines break callers; additions and deprecations don't");
         assertEquals(Arrays.asList(), ApiSurface.breaks(after, after + "redis.clients.jedis.Response\n  type x\n"));
+    }
+
+    @Test
+    void anAbstractMethodAddedToAnExportedInterfaceIsABreak() {
+        String before = "## Exported types (com.falkordb)\n\n"
+                + "com.falkordb.GraphPipeline\n"
+                + "  type public interface com.falkordb.GraphPipeline\n"
+                + "  method public abstract java.lang.Object a()\n"
+                + "\n## Types reachable from the signatures exported types declare\n\n"
+                + "redis.clients.jedis.Response\n"
+                + "  type public class redis.clients.jedis.Response\n";
+        String after = "## Exported types (com.falkordb)\n\n"
+                + "com.falkordb.GraphPipeline\n"
+                + "  type public interface com.falkordb.GraphPipeline\n"
+                + "  method public abstract java.lang.Object a()\n"
+                + "  method public abstract java.lang.Object b()\n"
+                + "  method public default java.lang.Object c()\n"
+                + "  method public static java.lang.Object d()\n"
+                + "com.falkordb.Fresh\n"
+                + "  type public interface com.falkordb.Fresh\n"
+                + "  method public abstract java.lang.Object e()\n"
+                + "\n## Types reachable from the signatures exported types declare\n\n"
+                + "redis.clients.jedis.Response\n"
+                + "  type public class redis.clients.jedis.Response\n"
+                + "  method public abstract java.lang.Object f()\n";
+        // Only b() breaks: c() and d() need no implementation, Fresh has no implementations yet, and
+        // callers don't implement a reachable type.
+        assertEquals(
+                Arrays.asList(
+                        "com.falkordb.GraphPipeline",
+                        "  + method public abstract java.lang.Object b()  (new abstract method: implementations break)"),
+                ApiSurface.breaks(before, after));
     }
 
     private static String block(String surface, String type) {

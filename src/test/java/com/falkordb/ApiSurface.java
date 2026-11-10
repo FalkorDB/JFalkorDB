@@ -88,6 +88,7 @@ final class ApiSurface {
     private static final String ROOT = "com.falkordb.";
     private static final String INTERNAL = "com.falkordb.impl.";
     private static final String DEPRECATED = "@Deprecated ";
+    private static final String EXPORTED_SECTION = "## Exported types";
 
     private static final int DECLARATION = 0;
     private static final int SUPERTYPE = 1;
@@ -104,8 +105,8 @@ final class ApiSurface {
      * @param args either the classes directory or jar to scan, whose classes and dependencies must be
      *     on the classpath (e.g. {@code java -cp target/test-classes:jfalkordb-0.10.1.jar:jedis-7.5.3.jar:...
      *     com.falkordb.ApiSurface jfalkordb-0.10.1.jar}); or {@code --breaks <old snapshot> <new
-     *     snapshot> [allow]}, which exits with status 1 when a line of the old snapshot is removed or
-     *     changed, unless {@code allow} approves the break
+     *     snapshot> [allow]}, which exits with status 1 on a {@link #breaks breaking change} unless
+     *     {@code allow} approves it
      * @throws IOException if the classes or snapshots can't be read
      */
     public static void main(String[] args) throws IOException {
@@ -116,8 +117,9 @@ final class ApiSurface {
                 System.out.println("No member of " + args[1] + " is removed or changed in " + args[2] + ".");
                 return;
             }
-            System.out.println("These lines of " + SNAPSHOT + " are removed or changed, so callers compiled"
-                    + " against the old API can break (even when the cause is a dependency bump):");
+            System.out.println("These changes to " + SNAPSHOT + " can break code compiled against the old"
+                    + " API (even when the cause is a dependency bump): a removed or changed line breaks"
+                    + " callers, a new abstract method breaks implementations");
             breaks.forEach(System.out::println);
             if (approved) {
                 System.out.println("Approved as a breaking change (the PR has the `breaking-change` label).");
@@ -187,7 +189,9 @@ final class ApiSurface {
                 .append("# it with `")
                 .append(UPDATE_COMMAND)
                 .append("`. A removed or changed line is a change our users see.\n")
-                .append("\n## Exported types (com.falkordb, excluding com.falkordb.impl)\n");
+                .append("\n")
+                .append(EXPORTED_SECTION)
+                .append(" (com.falkordb, excluding com.falkordb.impl)\n");
         for (Class<?> type : exported) {
             out.append('\n').append(guarded(type, () -> describe(type, false)));
         }
@@ -380,9 +384,16 @@ final class ApiSurface {
         for (Class<?> supertype : allSupertypes(type)) {
             lines.add(new Line(SUPERTYPE, "2", "supertype " + supertypeAsSeenFrom(supertype, arguments)));
         }
-        for (Field field : fields(type)) {
+        List<Field> fields = fields(type);
+        Map<String, Long> declarations =
+                fields.stream().collect(Collectors.groupingBy(Field::getName, Collectors.counting()));
+        for (Field field : fields) {
             if (!reachable || isPublicInstance(field)) {
-                lines.add(new Line(FIELD, field.getName(), field(field, arguments)));
+                long count = declarations.get(field.getName());
+                lines.add(new Line(
+                        FIELD,
+                        field.getName(),
+                        field(field, arguments) + (count > 1 ? " // ambiguous: " + count + " declarations" : "")));
             }
         }
         if (!reachable) {
@@ -542,7 +553,7 @@ final class ApiSurface {
         }
         List<Method> result = new ArrayList<>();
         for (List<Method> candidates : bySignature.values()) {
-            result.addAll(mostSpecific(candidates));
+            result.addAll(mostSpecific(candidates, true));
         }
         return result;
     }
@@ -552,7 +563,9 @@ final class ApiSurface {
         Map<String, List<Field>> byName = new TreeMap<>();
         for (Class<?> owner : hierarchy(type)) {
             for (Field field : owner.getDeclaredFields()) {
-                if (!field.isSynthetic() && isVisible(field.getModifiers())) {
+                // Every field takes part in hiding, whatever its access: a private field in a
+                // superclass hides the same-named fields above it, so callers lose them.
+                if (!field.isSynthetic()) {
                     byName.computeIfAbsent(field.getName(), k -> new ArrayList<>())
                             .add(field);
                 }
@@ -560,7 +573,11 @@ final class ApiSurface {
         }
         List<Field> result = new ArrayList<>();
         for (List<Field> candidates : byName.values()) {
-            result.addAll(mostSpecific(candidates));
+            for (Field field : mostSpecific(candidates, false)) {
+                if (isVisible(field.getModifiers())) {
+                    result.add(field);
+                }
+            }
         }
         return result;
     }
@@ -575,10 +592,10 @@ final class ApiSurface {
 
     /**
      * Drops the members another candidate overrides or hides (by declaring-type assignability, so
-     * diamonds resolve), then lets a class declaration win over interface ones, then drops what JDK
+     * diamonds resolve), then, for methods, lets a class declaration win over interface ones, then drops what JDK
      * types declare: those can't change with a dependency and differ between JDK versions.
      */
-    private static <M extends Member> List<M> mostSpecific(List<M> candidates) {
+    private static <M extends Member> List<M> mostSpecific(List<M> candidates, boolean classWins) {
         List<M> kept = new ArrayList<>();
         for (M candidate : candidates) {
             Class<?> owner = candidate.getDeclaringClass();
@@ -589,7 +606,9 @@ final class ApiSurface {
                 kept.add(candidate);
             }
         }
-        if (kept.stream().anyMatch(m -> !m.getDeclaringClass().isInterface())) {
+        // Only for methods: a field inherited from a superclass and one from an interface are both
+        // members, and naming either through this type is ambiguous.
+        if (classWins && kept.stream().anyMatch(m -> !m.getDeclaringClass().isInterface())) {
             kept.removeIf(m -> m.getDeclaringClass().isInterface());
         }
         kept.removeIf(m -> isJdk(m.getDeclaringClass()));
@@ -823,29 +842,63 @@ final class ApiSurface {
     }
 
     /**
-     * The breaking part of {@link #diff}: the lines of the old snapshot the new one no longer has
-     * (a removed or changed member, supertype or declaration), under their type. A deprecation-only
-     * change and an addition are not breaks.
+     * The breaking part of {@link #diff}, under their types: every line of the old snapshot the new
+     * one no longer has (a removed or changed member, supertype or declaration), and every abstract
+     * method added to an exported interface or abstract class that already existed, which breaks the
+     * classes implementing or extending it (japicmp fails on that too). Other additions, and
+     * deprecation-only changes, are not breaks.
      *
      * @param expected the old snapshot
      * @param actual the new snapshot
-     * @return the type lines and {@code -} lines, or an empty list when nothing breaks
+     * @return the type lines and their breaking lines, or an empty list when nothing breaks
      */
     static List<String> breaks(String expected, String actual) {
+        Set<String> extendable = extendableExportedTypes(actual);
         List<String> breaks = new ArrayList<>();
+        String header = null;
         String type = null;
+        boolean existed = false;
         for (String line : diff(expected, actual)) {
             if (!line.startsWith(" ")) {
-                type = line;
-            } else if (line.startsWith("  - ")) {
-                if (type != null) {
-                    breaks.add(type);
-                    type = null;
+                header = line;
+                type = line.contains("  (") ? line.substring(0, line.indexOf("  (")) : line;
+                existed = !line.endsWith("(type added)");
+                continue;
+            }
+            boolean removed = line.startsWith("  - ");
+            boolean newAbstractMethod = existed
+                    && extendable.contains(type)
+                    && line.startsWith("  + method ")
+                    && line.contains(" abstract ");
+            if (removed || newAbstractMethod) {
+                if (header != null) {
+                    breaks.add(header);
+                    header = null;
                 }
-                breaks.add(line);
+                breaks.add(newAbstractMethod ? line + "  (new abstract method: implementations break)" : line);
             }
         }
         return breaks;
+    }
+
+    /** The exported interfaces and abstract classes: the types callers may implement or extend. */
+    private static Set<String> extendableExportedTypes(String snapshot) {
+        Set<String> types = new HashSet<>();
+        boolean exported = false;
+        String type = null;
+        for (String line : lines(snapshot)) {
+            if (line.startsWith("## ")) {
+                exported = line.startsWith(EXPORTED_SECTION);
+            } else if (!line.isEmpty() && !line.startsWith("#") && !line.startsWith(" ")) {
+                type = line;
+            } else if (exported
+                    && type != null
+                    && line.startsWith("  type ")
+                    && (line.contains(" interface ") || line.contains(" abstract class "))) {
+                types.add(type);
+            }
+        }
+        return types;
     }
 
     private static Map<String, Set<String>> parse(String snapshot) {

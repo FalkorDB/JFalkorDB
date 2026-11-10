@@ -36,7 +36,7 @@ just audit          # OWASP dependency-check CVE scan (slow; needs NVD_API_KEY; 
 just api-diff       # public-API compatibility diff vs the last release (japicmp; the CI api-diff gate)
 just api-surface    # full public-API surface vs the committed api/jfalkordb.api (inherited Jedis members included)
 just api-surface-update  # regenerate api/jfalkordb.api after a reviewed API change
-just api-surface-breaks origin/master  # removed/changed snapshot lines vs master (need the breaking-change label)
+just api-surface-breaks origin/master  # breaking snapshot changes vs master (need the breaking-change label)
 just db-up          # start a local FalkorDB container
 just db-down        # stop it
 just bench          # client load-sweep benchmark (client latency vs throughput; feeds the radar)
@@ -50,8 +50,9 @@ just bench          # client load-sweep benchmark (client latency vs throughput;
   inherit from Jedis, so the PR diff shows exactly what callers gain or lose. A Jedis bump that
   changes that surface fails `build` and `api-diff` until the regenerated snapshot is pushed to its
   branch and reviewed; that is intended, so a dependency can't change our API unnoticed. If the
-  snapshot diff removes or changes a line, callers can break: the `api-diff` check then also needs the
-  `breaking-change` label and a `!` title.
+  snapshot diff removes or changes a line, or adds an abstract method to an exported interface, code
+  compiled against us can break: the `api-diff` check then also needs the `breaking-change` label and
+  a `!` title.
 - Use a **Conventional-Commit** branch and PR title (`feat:`, `fix:`, `perf:`, `build:`, `docs:`, `ci:`,
   `chore:`, `bench:`, `test:`); the PR title is checked by the **`PR title`** workflow.
   The type decides the release: `feat:` → minor, `fix:`/`perf:` → patch, a breaking change

@@ -68,9 +68,10 @@ api-surface:
 api-surface-update:
     ./mvnw -B -Dgpg.skip=true -Dtest=ApiSurfaceTest -Dapi.surface.update=true clean test
 
-# Fail when api/jfalkordb.api removes or changes a line relative to <base_ref>: a member, supertype or
-# declaration callers compiled against the old API rely on, even when a dependency bump is the cause.
-# Additions and deprecations pass. Approve a reviewed break by passing `allow` as the second argument,
+# Fail when api/jfalkordb.api breaks code compiled against <base_ref>'s, even when a dependency bump is
+# the cause: a removed or changed line (a member, supertype or declaration callers rely on), or a new
+# abstract method on an exported interface or abstract class (implementations break; japicmp fails on
+# that too). Other additions and deprecations pass. Approve a reviewed break by passing `allow` as the second argument,
 # which the CI `api-diff` job does when the PR has the `breaking-change` label (the same approval as
 # japicmp, so the title also needs a `!`). Compares committed snapshots only; `just api-surface` checks
 # the snapshot matches the code. e.g. `just api-surface-breaks origin/master`.

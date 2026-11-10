@@ -28,7 +28,7 @@ recipe; recipes call the pinned Maven Wrapper (`./mvnw`).
 | `just api-diff` | Public-API compatibility diff vs the last release on Maven Central (japicmp, the CI **`api-diff`** gate): fails on binary/source-incompatible changes to the public/protected API (`com.falkordb.impl` excluded), in the off-by-default `-Pquality` profile. Approve a reviewed break with the `breaking-change` PR label. It only sees our own classes, so `just api-surface` covers what we inherit. |
 | `just api-surface` | Full public-API surface gate (`ApiSurfaceTest`, so it also runs in `just test` / `just verify`, and as a step of the CI **`api-diff`** workflow): `api/jfalkordb.api` must list every public/protected member of every exported type, **including the thousand-odd each `GraphPipeline` / `GraphTransaction` inherit from Jedis**, plus the public instance members of the Jedis types our own signatures name (`Jedis` from `Driver.getConnection()`, `Response`). Fails with a per-type diff; a mismatch is fixed by regenerating, never by a label. |
 | `just api-surface-update` | Regenerate `api/jfalkordb.api` after a reviewed API change (ours or a dependency's), then commit it so the change shows in the PR diff. |
-| `just api-surface-breaks <base_ref> [allow]` | Fails when `api/jfalkordb.api` removes or changes a line relative to `<base_ref>` (a break callers see, even when a dependency bump causes it); additions and deprecations pass. A step of the CI **`api-diff`** workflow, which passes `allow` when the PR has the `breaking-change` label, the same approval as japicmp. |
+| `just api-surface-breaks <base_ref> [allow]` | Fails when `api/jfalkordb.api` changes in a breaking way relative to `<base_ref>`, even when a dependency bump causes it: a removed or changed line (callers break) or a new abstract method on an exported interface or abstract class (implementations break). Other additions and deprecations pass. A step of the CI **`api-diff`** workflow, which passes `allow` when the PR has the `breaking-change` label, the same approval as japicmp. |
 | `just javadoc` | Javadoc gate (the CI **`javadoc`** gate): strict `doclint=all` + `failOnWarnings` on the public/protected API (`com.falkordb.impl` excluded), in the off-by-default `-Pquality` profile. |
 | `just spellcheck` | Spellcheck the Markdown docs (the CI `spellcheck` gate). |
 | `just examples` | Compile the standalone `examples/` module (runnable public-API examples) with `--release 8` against the built jar — the CI **`examples`** gate. Run one via the Exec plugin (see `examples/README.md`). |
@@ -101,9 +101,10 @@ accordingly, and use the `TestServer` helper for server access.
   snapshot with the change. A **Dependabot** bump of Jedis (or any dependency whose types we expose)
   that changes that surface **fails `build` and `api-diff` on purpose** until someone runs `just
   api-surface-update` on the PR branch, reviews the snapshot diff, and pushes it. If the diff removes
-  or changes a line, that is a break callers inherit, and **`just api-surface-breaks`** keeps
-  `api-diff` red until the PR gets the `breaking-change` label and a `!` title (or the bump is
-  declined). Dependabot stops rebasing a PR once someone else has pushed to it, so rebase it by hand
+  or changes a line, or adds an abstract method to `GraphPipeline` / `GraphTransaction` (which any
+  Jedis release adding commands does), that is a break we inherit, and **`just api-surface-breaks`**
+  keeps `api-diff` red until the PR gets the `breaking-change` label and a `!` title (or the bump is
+  declined). japicmp already treats a new abstract method on our own interfaces the same way. Dependabot stops rebasing a PR once someone else has pushed to it, so rebase it by hand
   afterwards if needed. Concurrent API PRs conflict on the snapshot: rebase, then rerun `just
   api-surface-update`.
 

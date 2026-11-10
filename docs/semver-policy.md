@@ -22,8 +22,9 @@ internal and may change at any time &mdash; do not depend on it.
   thousand-odd each on `GraphPipeline` and `GraphTransaction`, from Jedis) or the Jedis types our
   signatures return. This gate compares the full surface, those members included, with the committed
   `api/jfalkordb.api`; the snapshot is updated (`just api-surface-update`) in the PR, where its diff
-  is reviewed. A removed or changed line is a break for our users even when only a dependency
-  changed, so **`just api-surface-breaks`** fails the `api-diff` check on one until the PR carries the
+  is reviewed. A removed or changed line, or a new abstract method on an exported interface or
+  abstract class, is a break for our users even when only a dependency changed, so **`just
+  api-surface-breaks`** fails the `api-diff` check on one until the PR carries the
   **`breaking-change`** label and a `!` title, exactly as for a japicmp finding.
 - **`javadoc`** (`just javadoc`) &mdash; a strict `doclint` gate that keeps the public API documented.
 

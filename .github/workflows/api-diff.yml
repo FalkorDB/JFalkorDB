@@ -11,7 +11,7 @@ name: API diff
 #
 # Two more steps cover what japicmp can't see (members inherited from Jedis, and the Jedis types our
 # signatures return): `just api-surface` checks the committed api/jfalkordb.api still matches the
-# code, and `just api-surface-breaks` fails when the PR removes or changes a line of it, which the
+# code, and `just api-surface-breaks` fails when the PR changes it in a breaking way, which the
 # `breaking-change` label approves just like a japicmp finding.
 
 on:
@@ -59,9 +59,9 @@ jobs:
       if: ${{ !cancelled() }}
       run: just api-surface
     - name: Breaking changes in the API surface snapshot vs the base branch (via just)
-      # A removed or changed line of api/jfalkordb.api is a break callers see, even when it comes from
-      # a dependency bump; like japicmp's findings it needs the `breaking-change` label (and so a `!`
-      # title). The base ref goes through env, not the script text.
+      # A removed or changed line of api/jfalkordb.api breaks callers, and a new abstract method on an
+      # exported interface breaks implementations, even when a dependency bump is the cause; like
+      # japicmp's findings it needs the `breaking-change` label (and so a `!` title). The base ref goes through env, not the script text.
       if: ${{ !cancelled() }}
       env:
         BASE_REF: ${{ github.base_ref }}
