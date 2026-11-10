@@ -15,9 +15,11 @@
 
 - Build a driver, select a graph, run Cypher, read statistics/rows:
 
-      GraphContextGenerator client = FalkorDB.driver().graph("social");  // driver() defaults to localhost:6379
-      ResultSet rs = client.query("CREATE (:Person {name: 'bsb'})");
-      int created = rs.getStatistics().nodesCreated();
+      try (Driver driver = FalkorDB.driver()) {  // driver() defaults to localhost:6379
+          GraphContextGenerator client = driver.graph("social");
+          ResultSet rs = client.query("CREATE (:Person {name: 'bsb'})");
+          int created = rs.getStatistics().nodesCreated();
+      }
 
 - Always parameterize queries instead of concatenating values into Cypher — parameter **values** are
   safely encoded (a value can't break out and inject Cypher):
@@ -37,5 +39,7 @@
   runs (some, like `db.idx.fulltext.drop`, change the graph), so allowlist procedure names that come
   from untrusted input.
 - A read against a graph that doesn't exist yet errors — create it with a write query first.
+- A `Driver` owns the connection pool: close it, ideally with try-with-resources. Its `close()` throws
+  no checked exception, so don't wrap it in `catch (IOException e)`: that no longer compiles.
 
 See `README.md` for the full API and examples.

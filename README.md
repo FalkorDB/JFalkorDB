@@ -79,60 +79,62 @@ import java.util.Map;
 public class GraphExample {
     public static void main(String[] args) {
 
-        // general context api. Not bound to graph key or connection
-        Driver driver = FalkorDB.driver();
-        Graph graph = driver.graph("social");
+        // the driver owns the connection pool: try-with-resources closes it (no checked exception to catch)
+        try (Driver driver = FalkorDB.driver()) {
+            // general context api. Not bound to graph key or connection
+            Graph graph = driver.graph("social");
 
-        Map<String, Object> params = new HashMap<>();
-        params.put("age", 30);
-        params.put("name", "amit");
+            Map<String, Object> params = new HashMap<>();
+            params.put("age", 30);
+            params.put("name", "amit");
 
-        // send queries to a specific graph called "social"
-        graph.query("CREATE (:person{name:'roi',age:32})");
-        graph.query("CREATE (:person{name:$name,age:$age})", params);
-        graph.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit') CREATE (a)-[:knows]->(b)");
+            // send queries to a specific graph called "social"
+            graph.query("CREATE (:person{name:'roi',age:32})");
+            graph.query("CREATE (:person{name:$name,age:$age})", params);
+            graph.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit') CREATE (a)-[:knows]->(b)");
 
-        ResultSet resultSet = graph.query("MATCH (a:person)-[r:knows]->(b:person) RETURN a, r, b");
+            ResultSet resultSet = graph.query("MATCH (a:person)-[r:knows]->(b:person) RETURN a, r, b");
 
-        // iterate over result set       
-        for(Record record: resultSet) {
-            // get values
-            Node n = record.getValue("a");
-            Edge e =  record.getValue("r");
+            // iterate over result set       
+            for(Record record: resultSet) {
+                // get values
+                Node n = record.getValue("a");
+                Edge e =  record.getValue("r");
 
-            //print record
-            System.out.println("Node: " + n + ", Edge: " + e);
-        }
+                //print record
+                System.out.println("Node: " + n + ", Edge: " + e);
+            }
 
-        resultSet = graph.query("MATCH p = (:person)-[:knows]->(:person) RETURN p");
-        for(Record record: resultSet) {
-            Path p = record.getValue("p");
+            resultSet = graph.query("MATCH p = (:person)-[:knows]->(:person) RETURN p");
+            for(Record record: resultSet) {
+                Path p = record.getValue("p");
 
-            // More path API at Javadoc.
-            System.out.println(p.nodeCount());
-        }
+                // More path API at Javadoc.
+                System.out.println(p.nodeCount());
+            }
 
-        // delete graph
-        graph.deleteGraph();
+            // delete graph
+            graph.deleteGraph();
 
-        GraphContextGenerator contextGraph = driver.graph("contextSocial");
-        // get connection context - closable object
-        try(GraphContext context = contextGraph.getContext()) {
-            context.query("CREATE (:person{name:'roi',age:32})");
-            context.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit') CREATE (a)-[:knows]->(b)");
-            // WATCH/MULTI/EXEC
-            context.watch("contextSocial");
+            GraphContextGenerator contextGraph = driver.graph("contextSocial");
+            // get connection context - closable object
+            try(GraphContext context = contextGraph.getContext()) {
+                context.query("CREATE (:person{name:'roi',age:32})");
+                context.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit') CREATE (a)-[:knows]->(b)");
+                // WATCH/MULTI/EXEC
+                context.watch("contextSocial");
 
-            GraphTransaction t = context.multi();
-            t.query("MATCH (a:person)-[r:knows]->(b:person{name:$name,age:$age}) RETURN a, r, b", params);
-            // support for Redis/Jedis native commands in transaction
-            t.set("x", "1");
-            t.get("x");
-            // get multi/exec results
-            List<Object> execResults =  t.exec();
-            System.out.println(execResults.toString());
+                GraphTransaction t = context.multi();
+                t.query("MATCH (a:person)-[r:knows]->(b:person{name:$name,age:$age}) RETURN a, r, b", params);
+                // support for Redis/Jedis native commands in transaction
+                t.set("x", "1");
+                t.get("x");
+                // get multi/exec results
+                List<Object> execResults =  t.exec();
+                System.out.println(execResults.toString());
 
-            context.deleteGraph();
+                context.deleteGraph();
+            }
         }
     }
 }
@@ -394,14 +396,11 @@ poolConfig.setTestWhileIdle(true);
 // Create a JedisPool with custom configuration
 JedisPool jedisPool = new JedisPool(poolConfig, "localhost", 6379);
 
-// Create the driver with the custom pool
-Driver driver = new DriverImpl(jedisPool);
-
-// Use the driver
-// ... your code here ...
-
-// Don't forget to close the driver when done
-driver.close();
+// Create the driver with the custom pool; closing the driver closes the pool
+try (Driver driver = new DriverImpl(jedisPool)) {
+    // Use the driver
+    // ... your code here ...
+}
 ```
 
 ### Connection Pool Configuration with Authentication
@@ -567,19 +566,20 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-Driver driver = FalkorDB.builder().host("localhost").port(6379).build();
-ExecutorService vthreads = Executors.newVirtualThreadPerTaskExecutor(); // JDK 21+
-AsyncGraph async = AsyncFalkorDB.wrap(driver.graph("social"), vthreads);
+try (Driver driver = FalkorDB.builder().host("localhost").port(6379).build();
+        ExecutorService vthreads = Executors.newVirtualThreadPerTaskExecutor()) { // JDK 21+
+    AsyncGraph async = AsyncFalkorDB.wrap(driver.graph("social"), vthreads);
 
-CompletableFuture<ResultSet> future = async.query("MATCH (n) RETURN count(n)");
-ResultSet result = future.join(); // or compose with thenApply/thenCompose
-
-// on shutdown: drain outstanding futures, then vthreads.shutdown() and driver.close()
+    CompletableFuture<ResultSet> future = async.query("MATCH (n) RETURN count(n)");
+    ResultSet result = future.join(); // or compose with thenApply/thenCompose
+} // closes the executor first, which waits for its queued queries, then the driver
 ```
 
 The facade **owns nothing** — it is not `Closeable`; the caller shuts the executor down and closes the
-underlying `Driver` (which releases the pooled connections) when done. Failures surface as the future
-completing exceptionally (`join()` throws `CompletionException`, `get()` throws `ExecutionException`).
+underlying `Driver` (which releases the pooled connections) when done, in that order. Since JDK 19 an
+`ExecutorService` is `AutoCloseable`, so listing it after the driver in one try-with-resources does
+both. Failures surface as the future completing exceptionally (`join()` throws `CompletionException`,
+`get()` throws `ExecutionException`).
 Cancellation is best-effort: cancelling before a task starts skips the query, but an in-flight blocking
 read cannot be interrupted — bound it with `socketTimeout` instead (see below).
 

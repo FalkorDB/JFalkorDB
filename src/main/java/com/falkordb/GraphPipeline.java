@@ -252,4 +252,15 @@ public interface GraphPipeline
      *         current connection
      */
     Response<Long> waitReplicas(int replicas, long timeout);
+
+    /**
+     * Sends the queued commands and reads their replies, as {@link #sync()} does. The connection of the context
+     * that created the pipeline stays open.
+     *
+     * <p>Unlike {@link Closeable#close()}, this throws no checked exception, so a pipeline opened in a
+     * try-with-resources statement needs no {@code catch (IOException)}. Like {@code sync()}, it can still
+     * throw an unchecked exception, such as a {@code JedisConnectionException} if the connection fails.
+     */
+    @Override
+    void close();
 }

@@ -5,7 +5,6 @@ import com.falkordb.FalkorDB;
 import com.falkordb.GraphContextGenerator;
 import com.falkordb.Record;
 import com.falkordb.ResultSet;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -50,7 +49,7 @@ public final class ClusterDriver {
 
     private ClusterDriver() {}
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         String host = args.length > 0 ? args[0] : "localhost";
         int port = args.length > 1 ? Integer.parseInt(args[1]) : 6379;
 
@@ -65,7 +64,7 @@ public final class ClusterDriver {
      * host:port} is a cluster node or a plain FalkorDB server. Each graph below may live on a
      * different node; the same code runs unchanged either way.
      */
-    private static void queryThroughAutoDetectedEndpoint(String host, int port) throws IOException {
+    private static void queryThroughAutoDetectedEndpoint(String host, int port) {
         System.out.println("Connecting to " + host + ":" + port + " (cluster node or server - detected automatically)");
 
         String run = UUID.randomUUID().toString();
@@ -101,7 +100,7 @@ public final class ClusterDriver {
      * Naming several nodes lets the driver learn the layout from whichever answers first, so one node
      * being down at start-up does not matter.
      */
-    private static void showExplicitStartupNodes() throws IOException {
+    private static void showExplicitStartupNodes() {
         try (Driver driver = FalkorDB.builder()
                 .cluster("node-a:6379", "node-b:6379", "node-c:6379")
                 .credentials("app-user", "app-password")
@@ -116,14 +115,14 @@ public final class ClusterDriver {
      * graphs each one holds. ({@code udfLoad}, {@code udfDelete}, {@code udfFlush} and
      * {@code configSet} likewise run on all of them.)
      */
-    private static void showClusterWideCommands(String host, int port) throws IOException {
+    private static void showClusterWideCommands(String host, int port) {
         try (Driver driver = FalkorDB.driver(host, port)) {
             System.out.println("Graphs on every primary: " + driver.listGraphs());
         }
     }
 
     /** Auto-detection costs one {@code INFO} on the first connection; this skips it. */
-    private static void showAutoDetectionTurnedOff() throws IOException {
+    private static void showAutoDetectionTurnedOff() {
         try (Driver driver =
                 FalkorDB.builder().host("db.example.com").autoDetectCluster(false).build()) {
             System.out.println("Built a driver that connects directly, without probing for a cluster: "

@@ -25,7 +25,7 @@ public final class EnvironmentConfiguredDriver {
 
     private EnvironmentConfiguredDriver() {}
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         // Picks up FALKORDB_URL, or FALKORDB_HOST + FALKORDB_PORT, or falls back to localhost:6379.
         try (Driver driver = FalkorDB.driver()) {
             GraphContextGenerator graph = driver.graph("social");

@@ -18,7 +18,7 @@ public final class QuickStart {
 
     private QuickStart() {}
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         String host = args.length > 0 ? args[0] : "localhost";
         int port = args.length > 1 ? Integer.parseInt(args[1]) : 6379;
 
