@@ -19,8 +19,9 @@ import java.util.concurrent.Executor;
  * } // closes the executor first, which waits for its queued queries, then the driver
  * }</pre>
  *
- * <p>If the closing thread is interrupted while it waits, {@code ExecutorService.close()} stops waiting for the
- * queued operations: those not yet started never run, and their futures never complete.
+ * <p>If the closing thread is interrupted while it waits, {@code ExecutorService.close()} drops the queued
+ * operations that haven't started: they never run, and their futures never complete. It still waits for the
+ * running ones, so a blocking query holds up closing until it ends or times out.
  *
  * <p>An {@link AsyncGraph} owns nothing, so there is nothing to close on it: the caller keeps ownership of the
  * graph, its driver and the executor, and closes them. Shut the executor down first, so that no queued
