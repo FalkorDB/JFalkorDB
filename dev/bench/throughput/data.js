@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794294110571,
+  "lastUpdate": 1794296301811,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -8731,6 +8731,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11800.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "neyazmaliyimm@gmail.com",
+            "name": "qownz",
+            "username": "qownz"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f145e1f1d9da9dd42210df3628dd7ae89c80a7ab",
+          "message": "perf: copy literal runs when encoding string query parameters (#520)\n\n* perf: copy literal runs when encoding string query parameters\n\nUtils.prepareQuery builds the \"CYPHER name=value ...\" header for every\nparameterized query. appendEscaped appended string values one character\nat a time. It now appends each run of characters that need no escaping\nwith a single StringBuilder.append(str, start, end). The escape list,\nNUL rejection and unpaired-surrogate rejection are unchanged, and the\nemitted Cypher is byte-identical.\n\nThread CPU time per call, median of three runs, old and new run\nalternately (JDK 21):\n\n  500-char string               3.58 us ->   1.40 us   (2.6x)\n  4 KB string                  30.38 us ->  10.05 us   (3.0x)\n  43 KB string                321.75 us -> 103.11 us   (3.1x)\n  typical two-parameter query   0.23 us ->   0.23 us   (unchanged)\n  1536-dimension float[]       428.5 us -> 431.8 us    (control)\n\nWall-clock JMH runs agreed in direction but ranged from 2.2x to 4.6x on\na loaded machine, so the CPU-time medians are the stable numbers.\nAllocation per call is unchanged, so the win is CPU only.\n\nA new property test compares the encoder with a character-by-character\nreference on generated strings with escapes, NULs and surrogates; unit\ntests pin the run boundaries around escapes.\n\n* test: cover surrogate pairs, rejections and long runs before an escape\n\nThe property test reused riskyStrings(), which never generates a NUL or a surrogate, so it never\nreached the encoder's surrogate-pair and rejection paths. It now draws from encoderStrings(), which\nmixes in well-formed pairs and, now and then, a NUL or a lone surrogate; its oracle keeps a pair\ntogether and expects the encoder to reject those values. About 40% of the generated values are\nrejected.\n\nA new unit test puts an escape between two 55,000-character runs. No test had a run longer than 48\ncharacters followed by an escape, so a bug that cut such a run short passed every test.\n\nappendEscaped gets a Javadoc comment.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Barak Bar Orion <barak.bar@gmail.com>\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-10T09:36:23+02:00",
+          "tree_id": "4d4aef2d3e64b11206b9b534eaafe7922e7346c9",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/f145e1f1d9da9dd42210df3628dd7ae89c80a7ab"
+        },
+        "date": 1794296301771,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3876.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6584.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9092.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 12067,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11485,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11343,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11438.667,
             "unit": "ops/s"
           }
         ]
