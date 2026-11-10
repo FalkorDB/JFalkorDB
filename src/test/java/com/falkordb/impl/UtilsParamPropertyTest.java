@@ -38,6 +38,71 @@ class UtilsParamPropertyTest {
         assertWellFormedStringLiteral(literal, value);
     }
 
+    /**
+     * The run-copying encoder must spell a value exactly as a character-by-character encoder does, and
+     * reject exactly the values it rejects.
+     */
+    @Property(tries = 2000)
+    void escapedValueMatchesTheCharacterByCharacterEncoder(@ForAll("encoderStrings") String value) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("p", value);
+        String expected = characterByCharacterLiteral(value);
+        Statistics.label("outcome").collect(expected == null ? "rejected" : "encoded");
+        if (expected == null) {
+            assertThrows(IllegalArgumentException.class, () -> Utils.prepareQuery("RETURN $p", params));
+            return;
+        }
+        String prepared = Utils.prepareQuery("RETURN $p", params);
+        assertEquals(expected, prepared.substring(PREFIX.length(), prepared.length() - SUFFIX.length()));
+    }
+
+    /**
+     * The oracle: one append per character, no run copying. Returns {@code null} for a value the encoder
+     * must reject: one with a NUL or an unpaired surrogate.
+     */
+    private static String characterByCharacterLiteral(String value) {
+        StringBuilder sb = new StringBuilder(value.length() + 2).append('"');
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            switch (c) {
+                case '\\':
+                    sb.append("\\\\");
+                    break;
+                case '"':
+                    sb.append("\\\"");
+                    break;
+                case '\n':
+                    sb.append("\\n");
+                    break;
+                case '\r':
+                    sb.append("\\r");
+                    break;
+                case '\t':
+                    sb.append("\\t");
+                    break;
+                case '\b':
+                    sb.append("\\b");
+                    break;
+                case '\f':
+                    sb.append("\\f");
+                    break;
+                case '\0':
+                    return null;
+                default:
+                    if (Character.isHighSurrogate(c)
+                            && i + 1 < value.length()
+                            && Character.isLowSurrogate(value.charAt(i + 1))) {
+                        sb.append(c).append(value.charAt(++i));
+                    } else if (Character.isSurrogate(c)) {
+                        return null;
+                    } else {
+                        sb.append(c);
+                    }
+            }
+        }
+        return sb.append('"').toString();
+    }
+
     private static void assertWellFormedStringLiteral(String literal, String source) {
         assertEquals('"', literal.charAt(0), () -> "literal must open with a quote for: " + source);
         assertEquals('"', literal.charAt(literal.length() - 1), () -> "literal must close with a quote for: " + source);
@@ -65,18 +130,36 @@ class UtilsParamPropertyTest {
      */
     @Provide
     Arbitrary<String> riskyStrings() {
-        Arbitrary<Character> chars = Arbitraries.frequencyOf(
-                net.jqwik.api.Tuple.of(3, Arbitraries.of('\\', '"', '\n', '\r', '\t', '\b', '\f', '\'', '/')),
-                net.jqwik.api.Tuple.of(2, Arbitraries.chars().range('\u0001', '\u007e')),
-                net.jqwik.api.Tuple.of(1, Arbitraries.chars().range('\u00a1', '\ud7ff')),
-                net.jqwik.api.Tuple.of(1, Arbitraries.chars().range('\ue000', '\uffff')));
-        return chars.list().ofMaxSize(48).map(list -> {
+        return riskyChars().list().ofMaxSize(48).map(list -> {
             StringBuilder sb = new StringBuilder(list.size());
             for (char c : list) {
                 sb.append(c);
             }
             return sb.toString();
         });
+    }
+
+    /** Escapes and literal characters, without NULs or surrogates. */
+    private static Arbitrary<Character> riskyChars() {
+        return Arbitraries.frequencyOf(
+                net.jqwik.api.Tuple.of(3, Arbitraries.of('\\', '"', '\n', '\r', '\t', '\b', '\f', '\'', '/')),
+                net.jqwik.api.Tuple.of(2, Arbitraries.chars().range('\u0001', '\u007e')),
+                net.jqwik.api.Tuple.of(1, Arbitraries.chars().range('\u00a1', '\ud7ff')),
+                net.jqwik.api.Tuple.of(1, Arbitraries.chars().range('\ue000', '\uffff')));
+    }
+
+    /**
+     * {@link #riskyStrings} with well-formed surrogate pairs mixed in, and now and then a NUL or a lone
+     * surrogate, which the encoder must reject.
+     */
+    @Provide
+    Arbitrary<String> encoderStrings() {
+        Arbitrary<String> pieces = Arbitraries.frequencyOf(
+                net.jqwik.api.Tuple.of(60, riskyChars().map(String::valueOf)),
+                net.jqwik.api.Tuple.of(
+                        10, Arbitraries.of("\ud83d\ude00", "\ud83e\udd80", "\ud800\udc00", "\udbff\udfff")),
+                net.jqwik.api.Tuple.of(1, Arbitraries.of("\u0000", "\ud83d", "\ude00")));
+        return pieces.list().ofMaxSize(48).map(list -> String.join("", list));
     }
 
     /**
