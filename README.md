@@ -578,8 +578,10 @@ try (Driver driver = FalkorDB.builder().host("localhost").port(6379).build();
 The facade **owns nothing** — it is not `Closeable`; the caller shuts the executor down and closes the
 underlying `Driver` (which releases the pooled connections) when done, in that order. Since JDK 19 an
 `ExecutorService` is `AutoCloseable`, so listing it after the driver in one try-with-resources does
-both. Failures surface as the future completing exceptionally (`join()` throws `CompletionException`,
-`get()` throws `ExecutionException`).
+both. Closing the executor waits for the queued queries, unless the closing thread is interrupted: then
+the queries that haven't started never run, and their futures never complete. Failures surface as the
+future completing exceptionally (`join()` throws `CompletionException`, `get()` throws
+`ExecutionException`).
 Cancellation is best-effort: cancelling before a task starts skips the query, but an in-flight blocking
 read cannot be interrupted — bound it with `socketTimeout` instead (see below).
 

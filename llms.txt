@@ -39,7 +39,8 @@
   runs (some, like `db.idx.fulltext.drop`, change the graph), so allowlist procedure names that come
   from untrusted input.
 - A read against a graph that doesn't exist yet errors — create it with a write query first.
-- A `Driver` owns the connection pool: close it, ideally with try-with-resources. Its `close()` throws
-  no checked exception, so don't wrap it in `catch (IOException e)`: that no longer compiles.
+- A `Driver` owns the connection pool: close it, ideally with try-with-resources. After 0.15.0 its
+  `close()` throws no checked exception, so don't wrap it in `catch (IOException e)`: that no longer
+  compiles. Up to 0.15.0 it declares `IOException`, which the enclosing method must catch or declare.
 
 See `README.md` for the full API and examples.
