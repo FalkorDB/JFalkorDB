@@ -3,6 +3,7 @@ package com.falkordb;
 import java.io.Closeable;
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An interface for a FalkorDB graph.
@@ -75,11 +76,12 @@ public interface Graph extends Closeable {
      * checked by {@link #callProcedure(String, List, Map)}, but not which procedure they name.)
      *
      * @param query Cypher query. Must not be {@code null}.
-     * @param params parameters map. Must not be {@code null}.
+     * @param params parameters map. Must not be {@code null}; its values may be, and a {@code null} value is sent
+     *     as Cypher {@code null}.
      * @return a result set.
      * @throws com.falkordb.exceptions.GraphException if the server rejects the query
      */
-    ResultSet query(String query, Map<String, Object> params);
+    ResultSet query(String query, Map<String, @Nullable Object> params);
 
     /**
      * Executes a cypher read-only query with parameters.
@@ -88,7 +90,7 @@ public interface Graph extends Closeable {
      * @return a result set.
      * @throws com.falkordb.exceptions.GraphException if the server rejects the query
      */
-    ResultSet readOnlyQuery(String query, Map<String, Object> params);
+    ResultSet readOnlyQuery(String query, Map<String, @Nullable Object> params);
 
     /**
      * Executes a cypher query with parameters and timeout. The parameters work as for {@link #query(String,
@@ -101,7 +103,7 @@ public interface Graph extends Closeable {
      * @throws com.falkordb.exceptions.GraphException if the server rejects the query, for instance when it
      *     runs out of time
      */
-    ResultSet query(String query, Map<String, Object> params, long timeout);
+    ResultSet query(String query, Map<String, @Nullable Object> params, long timeout);
 
     /**
      * Executes a cypher read-only query with parameters and timeout. The parameters work as for {@link
@@ -114,7 +116,7 @@ public interface Graph extends Closeable {
      * @throws com.falkordb.exceptions.GraphException if the server rejects the query, for instance when it
      *     runs out of time
      */
-    ResultSet readOnlyQuery(String query, Map<String, Object> params, long timeout);
+    ResultSet readOnlyQuery(String query, Map<String, @Nullable Object> params, long timeout);
 
     /**
      * Invokes stored procedures without arguments
@@ -143,7 +145,7 @@ public interface Graph extends Closeable {
      * @return a result set with execution plan and performance metrics
      * @throws com.falkordb.exceptions.GraphException if the server rejects the query
      */
-    ResultSet profile(String query, Map<String, Object> params);
+    ResultSet profile(String query, Map<String, @Nullable Object> params);
 
     /**
      * Invokes stored procedure with arguments
@@ -205,7 +207,7 @@ public interface Graph extends Closeable {
      * @return execution plan as list of strings
      * @throws com.falkordb.exceptions.GraphException if the server rejects the query
      */
-    List<String> explain(String query, Map<String, Object> params);
+    List<String> explain(String query, Map<String, @Nullable Object> params);
 
     @Override
     void close();

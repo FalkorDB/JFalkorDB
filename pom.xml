@@ -351,7 +351,11 @@
 								<!-- Required by Error Prone on JDK 16+ (enforced since EP 2.4x). -->
 								<arg>-XDaddTypeAnnotationsToSymbol=true</arg>
 								<arg>--should-stop=ifError=FLOW</arg>
-								<arg>-Xplugin:ErrorProne</arg>
+								<!-- EqualsMissingNullable fails an equals(Object) override in a @NullMarked package
+								     whose parameter is not @Nullable: Object.equals accepts null, so a plain Object
+								     parameter there would narrow the contract. Checks go in the same arg as the
+								     plugin. -->
+								<arg>-Xplugin:ErrorProne -Xep:EqualsMissingNullable:ERROR</arg>
 								<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
 								<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
 								<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>

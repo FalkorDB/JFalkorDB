@@ -2,6 +2,7 @@ package com.falkordb.graph_entities;
 
 import java.util.List;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This class represents a path in the graph.
@@ -119,7 +120,7 @@ public final class Path {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Path path = (Path) o;

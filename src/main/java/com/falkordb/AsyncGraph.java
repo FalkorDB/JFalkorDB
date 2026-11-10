@@ -3,6 +3,7 @@ package com.falkordb;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An asynchronous view over a {@link Graph}: every method mirrors the synchronous {@code Graph}
@@ -76,7 +77,7 @@ public interface AsyncGraph {
      * @param params the query parameters
      * @return a future completing with the result set
      */
-    CompletableFuture<ResultSet> query(String query, Map<String, Object> params);
+    CompletableFuture<ResultSet> query(String query, Map<String, @Nullable Object> params);
 
     /**
      * Asynchronously runs {@link Graph#readOnlyQuery(String, Map)}.
@@ -85,7 +86,7 @@ public interface AsyncGraph {
      * @param params the query parameters
      * @return a future completing with the result set
      */
-    CompletableFuture<ResultSet> readOnlyQuery(String query, Map<String, Object> params);
+    CompletableFuture<ResultSet> readOnlyQuery(String query, Map<String, @Nullable Object> params);
 
     /**
      * Asynchronously runs {@link Graph#query(String, Map, long)}.
@@ -98,7 +99,7 @@ public interface AsyncGraph {
      * @param timeout timeout in milliseconds
      * @return a future completing with the result set
      */
-    CompletableFuture<ResultSet> query(String query, Map<String, Object> params, long timeout);
+    CompletableFuture<ResultSet> query(String query, Map<String, @Nullable Object> params, long timeout);
 
     /**
      * Asynchronously runs {@link Graph#readOnlyQuery(String, Map, long)}.
@@ -111,7 +112,7 @@ public interface AsyncGraph {
      * @param timeout timeout in milliseconds
      * @return a future completing with the result set
      */
-    CompletableFuture<ResultSet> readOnlyQuery(String query, Map<String, Object> params, long timeout);
+    CompletableFuture<ResultSet> readOnlyQuery(String query, Map<String, @Nullable Object> params, long timeout);
 
     /**
      * Asynchronously runs {@link Graph#callProcedure(String)}.
@@ -140,7 +141,7 @@ public interface AsyncGraph {
      * @param params the query parameters
      * @return a future completing with the result set (execution plan and metrics)
      */
-    CompletableFuture<ResultSet> profile(String query, Map<String, Object> params);
+    CompletableFuture<ResultSet> profile(String query, Map<String, @Nullable Object> params);
 
     /**
      * Asynchronously runs {@link Graph#callProcedure(String, List)}.
@@ -200,7 +201,7 @@ public interface AsyncGraph {
      * @param params the query parameters
      * @return a future completing with the execution plan
      */
-    CompletableFuture<List<String>> explain(String query, Map<String, Object> params);
+    CompletableFuture<List<String>> explain(String query, Map<String, @Nullable Object> params);
 
     /**
      * The wrapped synchronous graph. The caller owns and closes it; use this to reach synchronous or
