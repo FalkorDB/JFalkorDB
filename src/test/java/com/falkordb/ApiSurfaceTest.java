@@ -194,13 +194,15 @@ class ApiSurfaceTest {
 
     public interface Limits {
         int MAX = 1;
+
+        int limit();
     }
 
     public static class Defaults {
         public static final int MAX = 2;
     }
 
-    public static class Settings extends Defaults implements Limits {}
+    public abstract static class Settings extends Defaults implements Limits {}
 
     @Test
     void marksAFieldInheritedFromBothASuperclassAndAnInterfaceAsAmbiguous() {
