@@ -29,6 +29,13 @@ public class RecordImpl implements Record {
         this.values = values;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @deprecated see {@link Record#getValue(int)}; the checked {@link Record#getValue(int, Class)}
+     *     delegates here for the lookup.
+     */
+    @Deprecated
     @Override
     public <T> @Nullable T getValue(int index) {
         // Unchecked and erased: nothing here can verify T, so the compiler inserts the checkcast at the
@@ -36,6 +43,13 @@ public class RecordImpl implements Record {
         return (T) this.values.get(index);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @deprecated see {@link Record#getValue(String)}; the checked {@link Record#getValue(String,
+     *     Class)} delegates here for the lookup.
+     */
+    @Deprecated
     @Override
     public <T> @Nullable T getValue(String key) {
         return getValue(indexOf(key));

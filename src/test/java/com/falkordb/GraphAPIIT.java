@@ -377,6 +377,40 @@ public class GraphAPIIT {
     }
 
     @Test
+    public void testTypedGetValue() {
+        // Record.getValue(.., Class) against what the server actually decodes to (#400).
+        client.query("CREATE (:person{name:'roi', age:32, score:1.5, active:true})-[:knows]->(:person{name:'amit'})");
+        ResultSet resultSet = client.query("MATCH p = (a:person{name:'roi'})-[r:knows]->(:person) "
+                + "RETURN a, r, p, a.name, a.age, a.score, a.active, a.missing, [1, 2] AS list, {k: 1} AS map");
+        Record record = resultSet.iterator().next();
+
+        Node a = record.getValue("a", Node.class);
+        Assertions.assertEquals("roi", a.getProperty("name").getValue());
+        Assertions.assertEquals(a, record.getValue(0, GraphEntity.class));
+        Assertions.assertEquals("knows", record.getValue(1, Edge.class).getRelationshipType());
+        Assertions.assertEquals(2, record.getValue("p", Path.class).nodeCount());
+        Assertions.assertEquals("roi", record.getValue("a.name", String.class));
+        Assertions.assertEquals(Long.valueOf(32L), record.getValue("a.age", Long.class));
+        Assertions.assertEquals(Long.valueOf(32L), record.getValue(4, long.class));
+        Assertions.assertEquals(Double.valueOf(1.5), record.getValue("a.score", double.class));
+        Assertions.assertEquals(Boolean.TRUE, record.getValue("a.active", Boolean.class));
+        Assertions.assertNull(record.getValue("a.missing", String.class));
+        Assertions.assertNull(record.getValue("a.missing", long.class));
+        Assertions.assertEquals(Arrays.asList(1L, 2L), record.getValue("list", List.class));
+        Assertions.assertEquals(Collections.singletonMap("k", 1L), record.getValue("map", Map.class));
+
+        ClassCastException wrong = Assertions.assertThrows(ClassCastException.class, () -> {
+            Object untyped = record.getValue("a.age", Integer.class);
+            Assertions.assertNull(untyped, "unreachable: the call itself throws");
+        });
+        Assertions.assertTrue(
+                wrong.getMessage()
+                        .startsWith(
+                                "Column 4 (\"a.age\") holds java.lang.Long, not the requested " + "java.lang.Integer"),
+                wrong.getMessage());
+    }
+
+    @Test
     public void testMultiThread() {
 
         Assertions.assertNotNull(
