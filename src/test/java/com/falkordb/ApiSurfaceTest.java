@@ -141,6 +141,39 @@ class ApiSurfaceTest {
                 members(ApiSurface.describe(LongSource.class, false), "method "));
     }
 
+    public interface Bounded<T extends Number> {
+        T get();
+    }
+
+    @SuppressWarnings("rawtypes")
+    public interface RawBounded extends Bounded {}
+
+    @Test
+    void erasesTheMembersOfARawSupertype() {
+        // Through a raw supertype, get() returns the erasure of T. Printing "T get()" would hide a
+        // change of T's bound, which changes the JVM signature callers are compiled against.
+        assertEquals(
+                Arrays.asList("method public abstract java.lang.Number get()"),
+                members(ApiSurface.describe(RawBounded.class, false), "method "));
+    }
+
+    public interface Marker<T> {}
+
+    public interface StringMarked extends Marker<String> {}
+
+    public interface Marked extends StringMarked {}
+
+    @Test
+    void listsTheTypeArgumentsOfTransitiveSupertypes() {
+        // Whether Marked can be assigned to a Marker<String> depends on the argument, not the class.
+        assertEquals(
+                Arrays.asList(
+                        "extends com.falkordb.ApiSurfaceTest$StringMarked",
+                        "supertype com.falkordb.ApiSurfaceTest$Marker<java.lang.String>",
+                        "supertype com.falkordb.ApiSurfaceTest$StringMarked"),
+                members(ApiSurface.describe(Marked.class, false), "extends ", "supertype "));
+    }
+
     public interface WithFactory {
         static WithFactory create() {
             return null;
@@ -162,7 +195,7 @@ class ApiSurfaceTest {
                         + "  extends com.falkordb.ApiSurfaceTest$WithFactory\n"
                         + "  extends java.lang.Iterable<java.lang.String>\n"
                         + "  supertype com.falkordb.ApiSurfaceTest$WithFactory\n"
-                        + "  supertype java.lang.Iterable\n"
+                        + "  supertype java.lang.Iterable<java.lang.String>\n"
                         + "  method @Deprecated public default int count()\n",
                 ApiSurface.describe(Strings.class, false));
     }
@@ -176,7 +209,9 @@ class ApiSurfaceTest {
         // java.lang.Enum implements Constable only since JDK 12: listing it would make the snapshot
         // depend on the JDK that generated it.
         assertEquals(
-                Arrays.asList("extends java.lang.Enum<com.falkordb.ApiSurfaceTest$Color>", "supertype java.lang.Enum"),
+                Arrays.asList(
+                        "extends java.lang.Enum<com.falkordb.ApiSurfaceTest$Color>",
+                        "supertype java.lang.Enum<com.falkordb.ApiSurfaceTest$Color>"),
                 members(ApiSurface.describe(Color.class, false), "extends ", "supertype "));
     }
 
@@ -242,6 +277,15 @@ class ApiSurfaceTest {
                         "  - method public java.util.List<byte[]> aclLogBinary()"),
                 ApiSurface.diff(before, after));
         assertEquals(Arrays.asList(), ApiSurface.diff(before, "# only the comments differ\n" + before));
+        assertEquals(
+                Arrays.asList(
+                        "com.falkordb.GraphPipeline",
+                        "  - method public abstract java.lang.Object jsonNumIncrBy(java.lang.String, double)",
+                        "redis.clients.jedis.Jedis",
+                        "  - method public java.util.List<byte[]> aclLogBinary()"),
+                ApiSurface.breaks(before, after),
+                "removed and changed lines break callers; additions and deprecations don't");
+        assertEquals(Arrays.asList(), ApiSurface.breaks(after, after + "redis.clients.jedis.Response\n  type x\n"));
     }
 
     private static String block(String surface, String type) {

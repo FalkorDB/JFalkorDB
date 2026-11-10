@@ -16,6 +16,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -74,7 +75,7 @@ import java.util.stream.Stream;
  * doesn't follow from the printed generic one.
  *
  * <p>{@link #main} renders any build of the client, for example a published jar run on the classpath
- * of the Jedis version it shipped with.
+ * of the Jedis version it shipped with, and lists the breaking changes between two snapshots.
  */
 final class ApiSurface {
 
@@ -97,18 +98,44 @@ final class ApiSurface {
     private ApiSurface() {}
 
     /**
-     * Prints the API surface of the client classes in a directory or jar.
+     * Prints the API surface of the client classes in a directory or jar, or, with {@code --breaks},
+     * the breaking changes between two snapshots (what {@code just api-surface-breaks} runs).
      *
-     * @param args the classes directory or jar to scan. Its classes and their dependencies must be on
-     *     the classpath, e.g. {@code java -cp target/test-classes:jfalkordb-0.10.1.jar:jedis-7.5.3.jar:...
-     *     com.falkordb.ApiSurface jfalkordb-0.10.1.jar}
-     * @throws IOException if the classes can't be listed or loaded
+     * @param args either the classes directory or jar to scan, whose classes and dependencies must be
+     *     on the classpath (e.g. {@code java -cp target/test-classes:jfalkordb-0.10.1.jar:jedis-7.5.3.jar:...
+     *     com.falkordb.ApiSurface jfalkordb-0.10.1.jar}); or {@code --breaks <old snapshot> <new
+     *     snapshot> [allow]}, which exits with status 1 when a line of the old snapshot is removed or
+     *     changed, unless {@code allow} approves the break
+     * @throws IOException if the classes or snapshots can't be read
      */
     public static void main(String[] args) throws IOException {
+        if (args.length >= 3 && args[0].equals("--breaks")) {
+            List<String> breaks = breaks(read(Paths.get(args[1])), read(Paths.get(args[2])));
+            boolean approved = args.length > 3 && args[3].equals("allow");
+            if (breaks.isEmpty()) {
+                System.out.println("No member of " + args[1] + " is removed or changed in " + args[2] + ".");
+                return;
+            }
+            System.out.println("These lines of " + SNAPSHOT + " are removed or changed, so callers compiled"
+                    + " against the old API can break (even when the cause is a dependency bump):");
+            breaks.forEach(System.out::println);
+            if (approved) {
+                System.out.println("Approved as a breaking change (the PR has the `breaking-change` label).");
+                return;
+            }
+            System.out.println("If this is intended, add the `breaking-change` label to the PR and mark its"
+                    + " title with `!`, as for any other public-API break.");
+            System.exit(1);
+        }
         if (args.length != 1) {
-            throw new IllegalArgumentException("usage: ApiSurface <classes directory or jar>");
+            throw new IllegalArgumentException(
+                    "usage: ApiSurface <classes directory or jar> | --breaks <old snapshot> <new snapshot> [allow]");
         }
         System.out.print(render(Paths.get(args[0]), Thread.currentThread().getContextClassLoader()));
+    }
+
+    private static String read(Path file) throws IOException {
+        return new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
     }
 
     /**
@@ -351,7 +378,7 @@ final class ApiSurface {
             lines.add(new Line(SUPERTYPE, "1", extendsWord + type(supertype, arguments)));
         }
         for (Class<?> supertype : allSupertypes(type)) {
-            lines.add(new Line(SUPERTYPE, "2", "supertype " + supertype.getName()));
+            lines.add(new Line(SUPERTYPE, "2", "supertype " + supertypeAsSeenFrom(supertype, arguments)));
         }
         for (Field field : fields(type)) {
             if (!reachable || isPublicInstance(field)) {
@@ -439,6 +466,19 @@ final class ApiSurface {
         return new ArrayList<>(all);
     }
 
+    /**
+     * A transitive supertype with the type arguments this type supplies to it, e.g. {@code
+     * java.lang.Iterable<com.falkordb.Record>}: assignability depends on them, not just on the class.
+     */
+    private static String supertypeAsSeenFrom(Class<?> supertype, Map<TypeVariable<?>, Type> arguments) {
+        TypeVariable<?>[] variables = supertype.getTypeParameters();
+        if (variables.length == 0) {
+            return supertype.getName();
+        }
+        return supertype.getName()
+                + Arrays.stream(variables).map(v -> type(v, arguments)).collect(Collectors.joining(", ", "<", ">"));
+    }
+
     private static List<Type> directSupertypes(Class<?> type) {
         List<Type> supertypes = new ArrayList<>(Arrays.asList(type.getGenericInterfaces()));
         if (type.getGenericSuperclass() != null) {
@@ -465,6 +505,12 @@ final class ApiSurface {
                 }
             } else {
                 raw = (Class<?>) supertype;
+                // Inherited through a raw reference, a generic supertype's members are erased: print
+                // its type variables as their erasure, so that a change of bound (a change of the JVM
+                // signature callers are compiled against) shows.
+                for (TypeVariable<?> variable : raw.getTypeParameters()) {
+                    arguments.putIfAbsent(variable, erasure(variable, Collections.emptyMap()));
+                }
             }
             if (visited.add(raw) && !isJdk(raw)) {
                 work.addAll(directSupertypes(raw));
@@ -774,6 +820,32 @@ final class ApiSurface {
     /** The lines of a text, whether it ends them with LF or CRLF. */
     static List<String> lines(String text) {
         return new BufferedReader(new StringReader(text)).lines().collect(Collectors.toList());
+    }
+
+    /**
+     * The breaking part of {@link #diff}: the lines of the old snapshot the new one no longer has
+     * (a removed or changed member, supertype or declaration), under their type. A deprecation-only
+     * change and an addition are not breaks.
+     *
+     * @param expected the old snapshot
+     * @param actual the new snapshot
+     * @return the type lines and {@code -} lines, or an empty list when nothing breaks
+     */
+    static List<String> breaks(String expected, String actual) {
+        List<String> breaks = new ArrayList<>();
+        String type = null;
+        for (String line : diff(expected, actual)) {
+            if (!line.startsWith(" ")) {
+                type = line;
+            } else if (line.startsWith("  - ")) {
+                if (type != null) {
+                    breaks.add(type);
+                    type = null;
+                }
+                breaks.add(line);
+            }
+        }
+        return breaks;
     }
 
     private static Map<String, Set<String>> parse(String snapshot) {

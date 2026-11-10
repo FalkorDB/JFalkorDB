@@ -26,8 +26,9 @@ recipe; recipes call the pinned Maven Wrapper (`./mvnw`).
 | `just mutation` | PITest mutation testing of the pure-unit packages (observability, **not** a gate); run by the scheduled/manual **`mutation`** workflow, in the off-by-default `-Pquality` profile. |
 | `just pin-check` | Virtual-thread **pinning check** (Wave 5 / Project Loom): warms the pool, then runs a virtual-thread workload under JFR with `-Djdk.tracePinnedThreads=full` and fails if a frame holding the monitor on a pinned stack is in our `com.falkordb.impl` client internals (i.e. we pin carriers; pins whose monitor a dependency holds, such as commons-pool2 2.13+ returning a connection, are reported, not failed). Needs JDK 21–23 for the attribution; run by the **`pin-check`** workflow weekly, on demand, and on PRs that change `pin-check/`. |
 | `just api-diff` | Public-API compatibility diff vs the last release on Maven Central (japicmp, the CI **`api-diff`** gate): fails on binary/source-incompatible changes to the public/protected API (`com.falkordb.impl` excluded), in the off-by-default `-Pquality` profile. Approve a reviewed break with the `breaking-change` PR label. It only sees our own classes, so `just api-surface` covers what we inherit. |
-| `just api-surface` | Full public-API surface gate (`ApiSurfaceTest`, so it also runs in `just test` / `just verify`, and as a step of the CI **`api-diff`** workflow): `api/jfalkordb.api` must list every public/protected member of every exported type, **including the ~960 each `GraphPipeline` / `GraphTransaction` inherit from Jedis**, plus the public instance members of the Jedis types our own signatures name (`Jedis` from `Driver.getConnection()`, `Response`). Fails with a per-type diff. No label approves a change. |
+| `just api-surface` | Full public-API surface gate (`ApiSurfaceTest`, so it also runs in `just test` / `just verify`, and as a step of the CI **`api-diff`** workflow): `api/jfalkordb.api` must list every public/protected member of every exported type, **including the thousand-odd each `GraphPipeline` / `GraphTransaction` inherit from Jedis**, plus the public instance members of the Jedis types our own signatures name (`Jedis` from `Driver.getConnection()`, `Response`). Fails with a per-type diff; a mismatch is fixed by regenerating, never by a label. |
 | `just api-surface-update` | Regenerate `api/jfalkordb.api` after a reviewed API change (ours or a dependency's), then commit it so the change shows in the PR diff. |
+| `just api-surface-breaks <base_ref> [allow]` | Fails when `api/jfalkordb.api` removes or changes a line relative to `<base_ref>` (a break callers see, even when a dependency bump causes it); additions and deprecations pass. A step of the CI **`api-diff`** workflow, which passes `allow` when the PR has the `breaking-change` label, the same approval as japicmp. |
 | `just javadoc` | Javadoc gate (the CI **`javadoc`** gate): strict `doclint=all` + `failOnWarnings` on the public/protected API (`com.falkordb.impl` excluded), in the off-by-default `-Pquality` profile. |
 | `just spellcheck` | Spellcheck the Markdown docs (the CI `spellcheck` gate). |
 | `just examples` | Compile the standalone `examples/` module (runnable public-API examples) with `--release 8` against the built jar — the CI **`examples`** gate. Run one via the Exec plugin (see `examples/README.md`). |
@@ -91,7 +92,7 @@ accordingly, and use the `TestServer` helper for server access.
   `breaking-change` PR label. A user-facing break is at least a **minor** bump (the project is
   pre-1.0).
 - japicmp compares only the classes **inside our jar**, so it can't see a dependency change what
-  callers reach through us: the ~960 methods `GraphPipeline` / `GraphTransaction` inherit from Jedis'
+  callers reach through us: the thousand-odd methods `GraphPipeline` / `GraphTransaction` inherit from Jedis'
   pipeline interfaces, or the `Jedis` that `Driver.getConnection()` returns. (The Jedis 8 bump
   re-typed `jsonNumIncrBy(String, Path2, double)` to `Number` and removed `Jedis.aclLogBinary()`
   unnoticed.) The **`just api-surface`** gate closes that gap: the committed `api/jfalkordb.api` is the
@@ -99,9 +100,10 @@ accordingly, and use the `TestServer` helper for server access.
   no longer matches it. When you change the public API, run **`just api-surface-update`** and commit the
   snapshot with the change. A **Dependabot** bump of Jedis (or any dependency whose types we expose)
   that changes that surface **fails `build` and `api-diff` on purpose** until someone runs `just
-  api-surface-update` on the PR branch, reviews the snapshot diff (a `-` line is a break callers
-  inherit: it needs a `!` title and a changelog note, or a decision not to take the bump), and pushes
-  it. Dependabot stops rebasing a PR once someone else has pushed to it, so rebase it by hand
+  api-surface-update` on the PR branch, reviews the snapshot diff, and pushes it. If the diff removes
+  or changes a line, that is a break callers inherit, and **`just api-surface-breaks`** keeps
+  `api-diff` red until the PR gets the `breaking-change` label and a `!` title (or the bump is
+  declined). Dependabot stops rebasing a PR once someone else has pushed to it, so rebase it by hand
   afterwards if needed. Concurrent API PRs conflict on the snapshot: rebase, then rerun `just
   api-surface-update`.
 

@@ -2433,7 +2433,7 @@ com.falkordb.Header
 com.falkordb.Header$ResultSetColumnTypes
   type public enum com.falkordb.Header$ResultSetColumnTypes
   extends java.lang.Enum<com.falkordb.Header$ResultSetColumnTypes>
-  supertype java.lang.Enum
+  supertype java.lang.Enum<com.falkordb.Header$ResultSetColumnTypes>
   field public static final com.falkordb.Header$ResultSetColumnTypes COLUMN_NODE
   field public static final com.falkordb.Header$ResultSetColumnTypes COLUMN_RELATION
   field public static final com.falkordb.Header$ResultSetColumnTypes COLUMN_SCALAR
@@ -2455,7 +2455,7 @@ com.falkordb.Record
 com.falkordb.ResultSet
   type public interface com.falkordb.ResultSet
   extends java.lang.Iterable<com.falkordb.Record>
-  supertype java.lang.Iterable
+  supertype java.lang.Iterable<com.falkordb.Record>
   method public abstract com.falkordb.Header getHeader()
   method public abstract com.falkordb.Statistics getStatistics()
   method public abstract int size()
@@ -2476,7 +2476,7 @@ com.falkordb.Statistics
 com.falkordb.Statistics$Label
   type public enum com.falkordb.Statistics$Label
   extends java.lang.Enum<com.falkordb.Statistics$Label>
-  supertype java.lang.Enum
+  supertype java.lang.Enum<com.falkordb.Statistics$Label>
   field public static final com.falkordb.Statistics$Label CACHED_EXECUTION
   field public static final com.falkordb.Statistics$Label INDICES_ADDED
   field public static final com.falkordb.Statistics$Label INDICES_DELETED
@@ -3757,7 +3757,7 @@ redis.clients.jedis.Jedis
 redis.clients.jedis.Response
   type public class redis.clients.jedis.Response<T>
   implements java.util.function.Supplier<T>
-  supertype java.util.function.Supplier
+  supertype java.util.function.Supplier<T>
   method public T get()
   method public void set(java.lang.Object)
   method public void setDependency(redis.clients.jedis.Response<?>)

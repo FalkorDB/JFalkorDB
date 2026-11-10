@@ -58,14 +58,34 @@ api-diff *ARGS:
 # public members of the Jedis types our signatures return (Jedis, Response). japicmp only compares our
 # own classes, so a Jedis bump can change that surface without it noticing; this can't miss it. Also
 # runs in `just test` / `just verify` (it is ApiSurfaceTest); the CI `api-diff` workflow runs it as a
-# separate step. No label approves a change: regenerate with `just api-surface-update` and commit.
+# separate step. A mismatch is fixed by `just api-surface-update` and committing, never by a label.
+# `clean` first, so the class of a deleted source can't keep the old surface alive.
 api-surface:
-    ./mvnw -B -Dgpg.skip=true -Dtest=ApiSurfaceTest -Dsurefire.failIfNoSpecifiedTests=false test
+    ./mvnw -B -Dgpg.skip=true -Dtest=ApiSurfaceTest clean test
 
 # Regenerate api/jfalkordb.api after a reviewed API change (ours or a dependency's); commit the result
 # so the change is reviewed in the PR diff. `clean` first, so classes of deleted sources can't linger.
 api-surface-update:
-    ./mvnw -B -Dgpg.skip=true -Dtest=ApiSurfaceTest -Dsurefire.failIfNoSpecifiedTests=false -Dapi.surface.update=true clean test
+    ./mvnw -B -Dgpg.skip=true -Dtest=ApiSurfaceTest -Dapi.surface.update=true clean test
+
+# Fail when api/jfalkordb.api removes or changes a line relative to <base_ref>: a member, supertype or
+# declaration callers compiled against the old API rely on, even when a dependency bump is the cause.
+# Additions and deprecations pass. Approve a reviewed break by passing `allow` as the second argument,
+# which the CI `api-diff` job does when the PR has the `breaking-change` label (the same approval as
+# japicmp, so the title also needs a `!`). Compares committed snapshots only; `just api-surface` checks
+# the snapshot matches the code. e.g. `just api-surface-breaks origin/master`.
+api-surface-breaks base_ref approval="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! git cat-file -e "{{base_ref}}:api/jfalkordb.api" 2>/dev/null; then
+        echo "{{base_ref}} has no api/jfalkordb.api yet; nothing to compare against."
+        exit 0
+    fi
+    base="$(mktemp)"
+    trap 'rm -f "$base"' EXIT
+    git show "{{base_ref}}:api/jfalkordb.api" > "$base"
+    ./mvnw -B -q -Dgpg.skip=true -DskipTests test-compile
+    java -cp target/test-classes:target/classes com.falkordb.ApiSurface --breaks "$base" api/jfalkordb.api {{approval}}
 
 # Spellcheck the Markdown docs (CI gate). Needs `pyspelling` + `aspell` (see CONTRIBUTING.md).
 spellcheck:
