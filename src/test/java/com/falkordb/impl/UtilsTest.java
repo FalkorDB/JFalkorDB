@@ -225,6 +225,33 @@ public class UtilsTest {
         assertEquals("CYPHER `param`=\"\u00e9\ud83d\ude00\" RETURN $param", q("\u00e9\ud83d\ude00"));
     }
 
+    /** Pins the run boundaries: escapes first, last and adjacent, with surrogate pairs around them. */
+    @Test
+    public void testCopiesLiteralRunsAroundEscapes() {
+        assertEquals("CYPHER `param`=\"\\\"x\" RETURN $param", q("\"x"));
+        assertEquals("CYPHER `param`=\"x\\\"\" RETURN $param", q("x\""));
+        assertEquals("CYPHER `param`=\"a\\\"\\\\b\" RETURN $param", q("a\"\\b"));
+        assertEquals("CYPHER `param`=\"\ud83d\ude00\\\"\ud83d\ude00\" RETURN $param", q("\ud83d\ude00\"\ud83d\ude00"));
+        assertEquals("CYPHER `param`=\"\\\\\ud83d\ude00\\\\\" RETURN $param", q("\\\ud83d\ude00\\"));
+        assertEquals("CYPHER `param`=\"\u0001x\\ty\" RETURN $param", q("\u0001x\ty"));
+    }
+
+    /** A long value with no escapes is encoded with a single copy. */
+    @Test
+    public void testLongEscapeFreeStringIsCopiedVerbatim() {
+        String text = String.join("", Collections.nCopies(5_000, "abcdefghij-"));
+        assertEquals(55_000, text.length());
+        assertEquals("CYPHER `param`=\"" + text + "\" RETURN $param", q(text));
+    }
+
+    /** A long run is copied whole up to an escape, and so is the run that follows it. */
+    @Test
+    public void testLongRunsAroundAnEscapeAreCopiedWhole() {
+        String text = String.join("", Collections.nCopies(5_000, "abcdefghij-"));
+        assertEquals("CYPHER `param`=\"" + text + "\\\"end\" RETURN $param", q(text + "\"end"));
+        assertEquals("CYPHER `param`=\"" + text + "\\n" + text + "\" RETURN $param", q(text + "\n" + text));
+    }
+
     @Test
     public void testRejectsNulAndUnpairedSurrogates() {
         assertThrows(IllegalArgumentException.class, () -> q("a\u0000b"));
