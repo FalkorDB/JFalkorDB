@@ -2,6 +2,7 @@ package com.falkordb.impl.resultset;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import redis.clients.jedis.util.SafeEncoder;
 
@@ -70,6 +72,26 @@ public class ResultSetImplTest {
             List<Object> propertyNode = Arrays.asList(0L, Collections.emptyList(), Collections.singletonList(property));
             assertInvalidId("property key", id, Arrays.asList(8L, propertyNode));
         }
+    }
+
+    @Test
+    public void nullInsideAMapOrAnArrayDecodesToANullValue() {
+        // Record documents that a map or list value can hold null values: `RETURN {a: null}` and
+        // `RETURN [1, null]` send VALUE_NULL entries inside the container, which decode to null.
+        List<Object> nullScalar = Arrays.asList(1L, null); // VALUE_NULL
+        List<Object> map = Arrays.asList(10L, Arrays.asList(SafeEncoder.encode("a"), nullScalar)); // VALUE_MAP
+        List<Object> array = Arrays.asList(6L, Arrays.asList(Arrays.asList(3L, 1L), nullScalar)); // VALUE_ARRAY
+        List<List<Object>> rawHeader = Arrays.asList(
+                Arrays.asList(1L, SafeEncoder.encode("m")), Arrays.asList(1L, SafeEncoder.encode("l"))); // scalars
+        List<List<Object>> rawRows = Collections.singletonList(Arrays.asList((Object) map, array));
+        List<Object> rawResponse = Arrays.asList(rawHeader, rawRows, new ArrayList<>());
+
+        Record record = new ResultSetImpl(rawResponse, null, null).iterator().next();
+
+        Map<String, Object> m = record.getValue("m");
+        assertTrue(m.containsKey("a"));
+        assertNull(m.get("a"));
+        assertEquals(Arrays.asList(1L, null), record.getValue("l"));
     }
 
     private static void assertInvalidId(String entryName, long id, List<Object> cell) {

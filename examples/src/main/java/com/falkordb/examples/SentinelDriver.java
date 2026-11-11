@@ -68,7 +68,7 @@ public final class SentinelDriver {
 
                 ResultSet people = graph.query("MATCH (p:Person) RETURN p.name, p.age ORDER BY p.age");
                 for (Record record : people) {
-                    System.out.println(record.getString("p.name") + " is " + record.getValue("p.age"));
+                    System.out.println(record.getString("p.name") + " is " + record.getValue("p.age", Long.class));
                 }
             } finally {
                 // Best-effort cleanup: don't let a failure here mask a real error from the queries above.

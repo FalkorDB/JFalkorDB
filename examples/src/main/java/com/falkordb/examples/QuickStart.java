@@ -18,6 +18,13 @@ public final class QuickStart {
 
     private QuickStart() {}
 
+    /**
+     * Creates two people, reads them back with the type-checked {@code Record.getValue(key, Class)},
+     * then deletes the graph.
+     *
+     * @param args optional {@code <host> <port>}, defaulting to {@code localhost 6379}
+     * @throws Exception if the server can't be reached or a query fails
+     */
     public static void main(String[] args) throws Exception {
         String host = args.length > 0 ? args[0] : "localhost";
         int port = args.length > 1 ? Integer.parseInt(args[1]) : 6379;
@@ -31,7 +38,7 @@ public final class QuickStart {
 
                 ResultSet people = graph.query("MATCH (p:Person) RETURN p.name, p.age ORDER BY p.age");
                 for (Record record : people) {
-                    System.out.println(record.getString("p.name") + " is " + record.getValue("p.age"));
+                    System.out.println(record.getString("p.name") + " is " + record.getValue("p.age", Long.class));
                 }
             } finally {
                 // Best-effort cleanup: don't let a failure here mask a real error from the queries above.

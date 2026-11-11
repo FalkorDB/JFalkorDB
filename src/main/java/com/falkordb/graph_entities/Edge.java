@@ -86,7 +86,7 @@ public class Edge extends GraphEntity {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) return true;
         if (!(o instanceof Edge)) return false;
         if (!super.equals(o)) return false;
