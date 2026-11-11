@@ -472,6 +472,14 @@
 								<ignoreMissingNewVersion>false</ignoreMissingNewVersion>
 								<excludes>
 									<exclude>com.falkordb.impl</exclude>
+									<!-- Breaks already approved (`breaking-change` label) and merged, but not yet in
+									     a release: the label only approves its own PR, so without these every later PR
+									     would re-flag them against the baseline. Delete each entry once
+									     `api.diff.baseline` is a release that ships it. -->
+									<!-- #522: close() redeclared without IOException. -->
+									<exclude>com.falkordb.Driver#close()</exclude>
+									<exclude>com.falkordb.GraphPipeline#close()</exclude>
+									<exclude>com.falkordb.GraphTransaction#close()</exclude>
 								</excludes>
 								<skipXmlReport>true</skipXmlReport>
 							</parameter>

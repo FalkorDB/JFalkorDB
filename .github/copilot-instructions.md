@@ -120,6 +120,9 @@ PR** that bumps the root `pom.xml` `<version>` and `CHANGELOG.md`. **Merging tha
 release-please then opens the next `-SNAPSHOT` PR. `bump-minor-pre-major` means a pre-1.0
 breaking change bumps `0.x` → `0.(x+1)` (semver §6). After a release publishes, bump the
 `api.diff.baseline` property to the just-released version (a manual step for now, so the **`api-diff`**
-gate compares against the new release; a safe post-publish automation is a possible later enhancement).
+gate compares against the new release; a safe post-publish automation is a possible later enhancement),
+and delete the japicmp `<exclude>` entries for approved breaks that release ships. Those entries carry a
+merged, labeled break until it's released: the label approves only its own PR, so without one every later
+PR's `api-diff` would re-flag it against the old baseline.
 `version-and-release.yml` also has a `workflow_dispatch(tag)` recovery path to re-deploy a specific
 tag manually.

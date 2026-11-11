@@ -16,7 +16,9 @@ internal and may change at any time &mdash; do not depend on it.
   last release on Maven Central and **fails on any binary- or source-incompatible** change to the
   public/protected API. An intentional, reviewed break is approved with the **`breaking-change`** PR
   label; the PR title must then carry a `!` (for example `fix!:` / `feat!:`), which the **PR-title**
-  gate enforces so the release is versioned correctly.
+  gate enforces so the release is versioned correctly. The label approves only its own PR, so a merged
+  break is also listed as a japicmp `<exclude>` in `pom.xml` until a release ships it and
+  `api.diff.baseline` moves past it.
 - **`api-surface`** (`just api-surface`, also part of `just test`) &mdash; japicmp compares only the
   classes inside our jar, so it can't see a dependency change the methods we inherit from it (a
   thousand-odd each on `GraphPipeline` and `GraphTransaction`, from Jedis) or the Jedis types our
