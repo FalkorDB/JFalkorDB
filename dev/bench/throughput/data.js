@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794383797291,
+  "lastUpdate": 1794385462415,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -9144,6 +9144,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11411.333,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9c54caa53c8cbf0dc828246997e92a47dc1e1d10",
+          "message": "build: compare api-diff against 0.16.0 (#528)\n\nThe baseline was still 0.11.1, four releases back. 0.16.0 ships #522, so\nthe excludes that carried its approved close() break go too.\n\nRefs #400\n\nCo-authored-by: Barak Bar Orion <barak.bar@falkordb.com>\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-11T10:22:05+02:00",
+          "tree_id": "5d990c6a1bb6c16ba3f2d3298280356e2cfda3a6",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/9c54caa53c8cbf0dc828246997e92a47dc1e1d10"
+        },
+        "date": 1794385462383,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 8707,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 13981,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 21028.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 26084.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 24111.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 23786.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 23584.667,
             "unit": "ops/s"
           }
         ]
