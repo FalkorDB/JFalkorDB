@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 import com.falkordb.Driver;
 import com.falkordb.FalkorDB;
@@ -43,6 +44,17 @@ class GraphContextCloseTest {
     /** The reply to a write: statistics only, no result rows. */
     private static final String WRITE_REPLY =
             FakeRedisServer.array(FakeRedisServer.array(FakeRedisServer.bulk("Nodes created: 1")));
+
+    /** The reply to {@code MATCH (n) RETURN n}: one node, whose label has id 0. */
+    private static final String NODE_REPLY = FakeRedisServer.array(
+            FakeRedisServer.array(FakeRedisServer.array(FakeRedisServer.integer(1), FakeRedisServer.bulk("n"))),
+            FakeRedisServer.array(FakeRedisServer.array(FakeRedisServer.array(
+                    FakeRedisServer.integer(8), // VALUE_NODE: id 7, label 0, no properties
+                    FakeRedisServer.array(
+                            FakeRedisServer.integer(7),
+                            FakeRedisServer.array(FakeRedisServer.integer(0)),
+                            FakeRedisServer.array())))),
+            FakeRedisServer.array(FakeRedisServer.bulk("Cached execution: 0")));
 
     /** The state of each connection the server accepted, oldest first. */
     private final List<ConnectionState> connections = new CopyOnWriteArrayList<>();
@@ -297,6 +309,26 @@ class GraphContextCloseTest {
     }
 
     @Test
+    void closingAfterAFailedSyncAndReturnAllDropsTheConnection() {
+        // No read deadline, as the driver's default: Jedis' own default of 2 s would end the wait.
+        try (JedisPool pool = new JedisPool(poolOfOne(), "127.0.0.1", server.port(), 0)) {
+            nextBorrower = pool::getResource;
+            GraphContextImpl context = new GraphContextImpl(pool.getResource(), new FailingCache(), "g");
+            GraphPipeline pipeline = context.pipelined();
+            pipeline.query("MATCH (n) RETURN n"); // a node, whose label decoding looks up
+            pipeline.query("CREATE ()");
+            // Jedis reads both replies, then fails building the first: the second response stays queued, with no
+            // reply left on the connection for it.
+            assertThrows(LookupFailed.class, pipeline::syncAndReturnAll);
+
+            // So reading for the queued response would wait forever.
+            assertTimeoutPreemptively(
+                    Duration.ofSeconds(10), context::close, "close() waited for a reply that never comes");
+            assertNextBorrowerGetsANewCleanConnection();
+        }
+    }
+
+    @Test
     void aReplyOutOfStepWhileCleaningDropsTheConnection() {
         GraphContext context = driver.graph("g").getContext();
         GraphTransaction transaction = context.multi();
@@ -321,6 +353,7 @@ class GraphContextCloseTest {
         assertEquals(2, connections.size(), "the pool lent the context's connection again");
     }
 
+    /** The next borrower's own command gets its own reply, not one left on the connection or a {@code QUEUED}. */
     private void assertNextBorrowerGetsACleanConnection() {
         try (Jedis next = nextBorrower.get()) {
             assertEquals("next", next.echo("next"), "the next borrower read a reply that wasn't its own");
@@ -365,6 +398,23 @@ class GraphContextCloseTest {
         return config;
     }
 
+    /** Thrown by {@link FailingCache}: an {@link Error}, which decoding lets through as Jedis' batch loops do. */
+    private static final class LookupFailed extends Error {
+        private static final long serialVersionUID = 1L;
+
+        LookupFailed() {
+            super("the label lookup failed");
+        }
+    }
+
+    /** A cache whose label lookup fails, so a reply that names a label fails to decode. */
+    private static final class FailingCache extends GraphCache {
+        @Override
+        public String getLabel(int index, com.falkordb.Graph graph) {
+            throw new LookupFailed();
+        }
+    }
+
     /** A cache that counts how often it is cleared. */
     private static final class CountingCache extends GraphCache {
         int clears;
@@ -401,6 +451,7 @@ class GraphContextCloseTest {
 
         private final List<String> queued = new ArrayList<>();
 
+        /** Answers one command, queuing it instead while the connection is inside {@code MULTI}. */
         @Override
         public synchronized String apply(List<String> command) {
             String name = command.get(0).toUpperCase(Locale.ROOT);
@@ -443,12 +494,14 @@ class GraphContextCloseTest {
             }
         }
 
+        /** {@code EXEC} or {@code DISCARD}: the connection leaves {@code MULTI}, and its watches end. */
         private void endTransaction() {
             inMulti = false;
             watching = false;
             queued.clear();
         }
 
+        /** The reply to a command outside {@code MULTI}. */
         private static String answer(String name, List<String> command) {
             switch (name) {
                 case "ECHO":
@@ -456,7 +509,7 @@ class GraphContextCloseTest {
                 case "PING":
                     return "+PONG\r\n";
                 case "GRAPH.QUERY":
-                    return WRITE_REPLY;
+                    return command.get(2).startsWith("MATCH") ? NODE_REPLY : WRITE_REPLY;
                 default:
                     return FakeRedisServer.ok();
             }

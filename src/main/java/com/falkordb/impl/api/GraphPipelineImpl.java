@@ -22,6 +22,11 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
     private final QueuedReplies replies;
     /** True while sync() or syncAndReturnAll() reads the replies, so none is outstanding on the connection. */
     private boolean draining;
+    /**
+     * True when the last sync() or syncAndReturnAll() failed. Jedis may then have read every reply and still hold
+     * responses it didn't build, so whether replies are outstanding on the connection can't be told.
+     */
+    private boolean readFailed;
 
     /**
      * Creates a new pipeline for a given graph.
@@ -50,6 +55,11 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
     /** How this pipeline decodes its replies; the context that created it watches it through this. */
     QueuedReplies replies() {
         return replies;
+    }
+
+    /** Whether the last sync() or syncAndReturnAll() failed, after which this pipeline's state is unknown. */
+    boolean readFailed() {
+        return readFailed;
     }
 
     /**
@@ -292,6 +302,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
             read = true;
         } finally {
             draining = false;
+            readFailed = !read;
             if (read) {
                 replies.read();
             } else {
@@ -314,6 +325,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
             return results;
         } finally {
             draining = false;
+            readFailed = !read;
             if (read) {
                 replies.read();
             } else {

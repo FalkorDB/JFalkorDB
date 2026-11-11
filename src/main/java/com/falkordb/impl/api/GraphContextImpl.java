@@ -477,7 +477,9 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      *       {@code MULTI}, so no order hands each its own. Their deletes may have run, so the replies are marked
      *       unknown, which clears the schema cache if one of them queued a delete;
      *   <li>a batch older than the ones {@link #heldBatches} holds was collected, after it may have sent commands
-     *       or a delete: the schema cache is cleared in case one ran.
+     *       or a delete: the schema cache is cleared in case one ran;
+     *   <li>a pipeline's last read failed: Jedis may have read every reply and still hold responses it didn't
+     *       build, so reading the ones it holds could wait for replies that never come.
      * </ul>
      *
      * <p>So it is when ending one fails, after which what is left on the connection is unknown. The pool then
@@ -491,12 +493,14 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
         heldBatches.clear();
 
         List<Closeable> ordered = new ArrayList<>(open.size());
+        boolean readFailed = false;
         for (Closeable batch : open) {
             if (repliesOf(batch).awaitsReplies()) {
                 ordered.add(batch);
             }
+            readFailed |= batch instanceof GraphPipelineImpl && ((GraphPipelineImpl) batch).readFailed();
         }
-        if (collected || ordered.size() > 1) {
+        if (collected || readFailed || ordered.size() > 1) {
             for (Closeable abandoned : ordered) {
                 repliesOf(abandoned).unknown();
             }

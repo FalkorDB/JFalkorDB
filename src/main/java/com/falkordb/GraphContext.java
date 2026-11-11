@@ -20,10 +20,11 @@ package com.falkordb;
  * are read, which waits for them to arrive. A {@code Response} of a transaction discarded this way can't be read.
  * If more than one transaction or pipeline still awaits replies, or ending one fails, the connection is closed
  * instead of being returned to the pool, and the {@code Response}s still waiting for its replies can't be read
- * either. So it is when one of them was dropped and garbage-collected before the context closed, which only the
- * ones older than the latest 128 can be: what that one left on the connection is unknown, and the graph's schema
- * cache is cleared too, in case it deleted the graph. Like every other call on the context, close it on the thread
- * that uses the context.
+ * either. The same happens when a pipeline's last {@code sync()} or {@code syncAndReturnAll()} failed, and when a
+ * transaction or pipeline the caller dropped was garbage-collected before the context closed. The context holds
+ * its latest 128 transactions and pipelines, so only an older one can be collected; what it left on the connection
+ * is then unknown, and the graph's schema cache is cleared too, in case it deleted the graph. Like every other call
+ * on the context, close it on the thread that uses the context.
  */
 public interface GraphContext extends Graph {
 

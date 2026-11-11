@@ -137,6 +137,7 @@ final class FakeRedisServer implements AutoCloseable {
         }
     }
 
+    /** Answers one client connection's commands, with a handler of its own, until the client goes away. */
     private void serve(Socket client) {
         Function<List<String>, String> handler = handlers.get();
         try (InputStream in = new BufferedInputStream(client.getInputStream());
