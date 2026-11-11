@@ -23,9 +23,8 @@ public final class QuickStart {
      * then deletes the graph.
      *
      * @param args optional {@code <host> <port>}, defaulting to {@code localhost 6379}
-     * @throws Exception if the server can't be reached or a query fails
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         String host = args.length > 0 ? args[0] : "localhost";
         int port = args.length > 1 ? Integer.parseInt(args[1]) : 6379;
 

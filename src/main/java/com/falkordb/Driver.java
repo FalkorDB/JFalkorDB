@@ -121,4 +121,14 @@ public interface Driver extends Closeable {
      * @see <a href="https://docs.falkordb.com/commands/graph.config-set.html">GRAPH.CONFIG SET</a>
      */
     boolean configSet(String name, Object value);
+
+    /**
+     * Closes the driver and releases its pooled connections. Closing a driver that is already closed has no
+     * effect.
+     *
+     * <p>Unlike {@link Closeable#close()}, this throws no checked exception, so a driver opened in a
+     * try-with-resources statement needs no {@code catch (IOException)}.
+     */
+    @Override
+    void close();
 }

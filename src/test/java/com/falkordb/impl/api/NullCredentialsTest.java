@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.falkordb.Driver;
 import com.falkordb.FalkorDB;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
@@ -50,7 +49,7 @@ class NullCredentialsTest {
      * if none. The factory probes the endpoint for Sentinel and cluster mode first, on connections of its own that
      * authenticate the same way, so every AUTH must be the same one.
      */
-    private static @Nullable List<String> authSent(Function<FakeRedisServer, Driver> connect) throws IOException {
+    private static @Nullable List<String> authSent(Function<FakeRedisServer, Driver> connect) {
         List<List<String>> auths;
         try (FakeRedisServer server = new FakeRedisServer(command -> FakeRedisServer.ok());
                 Driver driver = connect.apply(server)) {

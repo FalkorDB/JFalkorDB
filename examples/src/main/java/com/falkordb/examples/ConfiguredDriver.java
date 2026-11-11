@@ -17,7 +17,7 @@ public final class ConfiguredDriver {
 
     private ConfiguredDriver() {}
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         try (Driver driver = FalkorDB.builder()
                 .host("db.example.com")
                 .port(6380)

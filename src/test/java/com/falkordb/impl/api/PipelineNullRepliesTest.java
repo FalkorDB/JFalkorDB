@@ -89,8 +89,6 @@ class PipelineNullRepliesTest {
                         "127.0.0.1", server.port(), null, null, SentinelOptions.disabled(), ClusterOptions.disabled());
                 GraphContext context = driver.graph("g").getContext()) {
             return body.apply(context);
-        } catch (java.io.IOException e) {
-            throw new IllegalStateException(e);
         }
     }
 

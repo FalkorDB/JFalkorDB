@@ -30,9 +30,8 @@ public final class EnvironmentConfiguredDriver {
      * type-checked {@code Record.getValue(key, Class)}, then deletes the graph.
      *
      * @param args unused; the connection comes from the environment
-     * @throws Exception if the server can't be reached or a query fails
      */
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         // Picks up FALKORDB_URL, or FALKORDB_HOST + FALKORDB_PORT, or falls back to localhost:6379.
         try (Driver driver = FalkorDB.driver()) {
             GraphContextGenerator graph = driver.graph("social");
