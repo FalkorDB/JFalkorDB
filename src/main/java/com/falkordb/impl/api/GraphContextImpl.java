@@ -482,7 +482,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      *       build, so reading the ones it holds could wait for replies that never come.
      * </ul>
      *
-     * <p>So it is when ending one fails, after which what is left on the connection is unknown. The pool then
+     * <p>So it is when ending one fails, after which what is left on the connection is unknown; its replies are
+     * marked unknown too, in case it queued a delete that ran. The pool then
      * destroys the connection instead of lending it again, and this returns normally, as the pool does when its
      * own reset fails.
      */
@@ -511,7 +512,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             return;
         }
         for (Closeable batch : open) {
-            if (!ordered.contains(batch)) {
+            if (!repliesOf(batch).awaitsReplies()) { // the one that does is in ordered already
                 ordered.add(batch);
             }
         }
@@ -519,6 +520,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             try {
                 batch.close();
             } catch (IOException | RuntimeException e) {
+                // It may have read a delete's reply without recording that the delete ran.
+                repliesOf(batch).unknown();
                 connection.getConnection().setBroken();
                 return;
             }

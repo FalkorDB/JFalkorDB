@@ -329,6 +329,43 @@ class GraphContextCloseTest {
     }
 
     @Test
+    void closingAPipelineAfterAFailedSyncAndReturnAllDoesNotWait() {
+        // No read deadline, as the driver's default.
+        try (JedisPool pool = new JedisPool(poolOfOne(), "127.0.0.1", server.port(), 0)) {
+            nextBorrower = pool::getResource;
+            GraphContextImpl context = new GraphContextImpl(pool.getResource(), new FailingCache(), "g");
+            GraphPipeline pipeline = context.pipelined();
+            pipeline.query("MATCH (n) RETURN n");
+            pipeline.query("CREATE ()");
+            assertThrows(LookupFailed.class, pipeline::syncAndReturnAll);
+
+            // As try-with-resources on the pipeline does, before the context's own close().
+            assertTimeoutPreemptively(
+                    Duration.ofSeconds(10), pipeline::close, "the pipeline waited for a reply that never comes");
+            context.close();
+            assertNextBorrowerGetsANewCleanConnection();
+        }
+    }
+
+    @Test
+    void endingABatchThatFailsAfterReadingADeleteClearsTheCache() {
+        try (JedisPool pool = new JedisPool(poolOfOne(), "127.0.0.1", server.port())) {
+            nextBorrower = pool::getResource;
+            CountingCache cache = new CountingCache();
+            GraphContextImpl context = new GraphContextImpl(pool.getResource(), cache, "g");
+            GraphPipeline pipeline = context.pipelined();
+            pipeline.deleteGraph();
+            // The delete ran, but its reply is out of step: recording that it ran fails after the reply was read.
+            connections.get(0).deleteReply = FakeRedisServer.integer(1);
+            context.close();
+
+            assertEquals(1, cache.clears, "the delete may have run");
+            assertNextBorrowerGetsACleanConnection(); // a new one, unless the failure was kept in the reply
+            assertNotNull(pipeline);
+        }
+    }
+
+    @Test
     void aReplyOutOfStepWhileCleaningDropsTheConnection() {
         GraphContext context = driver.graph("g").getContext();
         GraphTransaction transaction = context.multi();
@@ -448,6 +485,8 @@ class GraphContextCloseTest {
         volatile boolean watching;
         /** What {@code DISCARD} answers in a transaction; {@code +OK} unless a test makes it misbehave. */
         volatile String discardReply = FakeRedisServer.ok();
+        /** What {@code GRAPH.DELETE} answers; statistics unless a test makes it misbehave. */
+        volatile String deleteReply = FakeRedisServer.bulk("Graph removed, internal execution time: 0.1 milliseconds");
 
         private final List<String> queued = new ArrayList<>();
 
@@ -485,7 +524,7 @@ class GraphContextCloseTest {
                     watching = false;
                     return FakeRedisServer.ok();
                 default:
-                    String reply = answer(name, command);
+                    String reply = "GRAPH.DELETE".equals(name) ? deleteReply : answer(name, command);
                     if (inMulti) {
                         queued.add(reply);
                         return "+QUEUED\r\n";

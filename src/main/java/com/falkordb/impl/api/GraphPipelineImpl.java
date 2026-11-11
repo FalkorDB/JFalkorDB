@@ -290,6 +290,21 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
     }
 
     /**
+     * Reads the replies still awaited, as {@link #sync()} does, unless the last sync() or syncAndReturnAll() failed:
+     * reading then could wait for replies that never come, since Jedis may have read every reply and still hold
+     * responses it didn't build. The connection is marked broken instead, so its pool destroys it rather than lend
+     * it again.
+     */
+    @Override
+    public void close() {
+        if (readFailed) {
+            connection.setBroken();
+            return;
+        }
+        super.close();
+    }
+
+    /**
      * Reads the replies to every command queued so far, without decoding them; each is decoded when its
      * {@code Response} is read. A {@link #deleteGraph()} that ran clears the schema cache now.
      */
