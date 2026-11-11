@@ -77,14 +77,21 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     }
 
     /**
+     * Queues a graph command whose reply is a result set, decoded when it is read. A reply that fails to decode fails
+     * every read of its response with the same exception (see {@link QueuedReply}).
+     */
+    private Response<ResultSet> queueResultSet(ProtocolCommand command, List<Object> arguments) {
+        return replies.queueResultSet(builder -> appendWithResponse(command, arguments, builder));
+    }
+
+    /**
      * Execute a Cypher query.
      * @param query Cypher query
      * @return a response which builds the result set with the query answer.
      */
     @Override
     public Response<ResultSet> query(String query) {
-        return appendWithResponse(
-                GraphCommand.QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), replies.resultSet());
+        return queueResultSet(GraphCommand.QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING));
     }
 
     /**
@@ -94,8 +101,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> readOnlyQuery(String query) {
-        return appendWithResponse(
-                GraphCommand.RO_QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING), replies.resultSet());
+        return queueResultSet(GraphCommand.RO_QUERY, Arrays.asList(graphId, query, Utils.COMPACT_STRING));
     }
 
     /**
@@ -109,10 +115,9 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     @Override
     public Response<ResultSet> query(String query, long timeout) {
         Utils.checkTimeout(timeout);
-        return appendWithResponse(
+        return queueResultSet(
                 GraphCommand.QUERY,
-                Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout)),
-                replies.resultSet());
+                Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout)));
     }
 
     /**
@@ -126,10 +131,9 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     @Override
     public Response<ResultSet> readOnlyQuery(String query, long timeout) {
         Utils.checkTimeout(timeout);
-        return appendWithResponse(
+        return queueResultSet(
                 GraphCommand.RO_QUERY,
-                Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout)),
-                replies.resultSet());
+                Arrays.asList(graphId, query, Utils.COMPACT_STRING, Utils.TIMEOUT_STRING, Long.toString(timeout)));
     }
 
     /**
@@ -140,10 +144,8 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> query(String query, Map<String, Object> params) {
-        return appendWithResponse(
-                GraphCommand.QUERY,
-                Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING),
-                replies.resultSet());
+        return queueResultSet(
+                GraphCommand.QUERY, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING));
     }
 
     /**
@@ -154,10 +156,8 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params) {
-        return appendWithResponse(
-                GraphCommand.RO_QUERY,
-                Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING),
-                replies.resultSet());
+        return queueResultSet(
+                GraphCommand.RO_QUERY, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING));
     }
 
     /**
@@ -172,15 +172,14 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     @Override
     public Response<ResultSet> query(String query, Map<String, Object> params, long timeout) {
         Utils.checkTimeout(timeout);
-        return appendWithResponse(
+        return queueResultSet(
                 GraphCommand.QUERY,
                 Arrays.asList(
                         graphId,
                         Utils.prepareQuery(query, params),
                         Utils.COMPACT_STRING,
                         Utils.TIMEOUT_STRING,
-                        Long.toString(timeout)),
-                replies.resultSet());
+                        Long.toString(timeout)));
     }
 
     /**
@@ -195,15 +194,14 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     @Override
     public Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params, long timeout) {
         Utils.checkTimeout(timeout);
-        return appendWithResponse(
+        return queueResultSet(
                 GraphCommand.RO_QUERY,
                 Arrays.asList(
                         graphId,
                         Utils.prepareQuery(query, params),
                         Utils.COMPACT_STRING,
                         Utils.TIMEOUT_STRING,
-                        Long.toString(timeout)),
-                replies.resultSet());
+                        Long.toString(timeout)));
     }
 
     /**
@@ -248,8 +246,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> profile(String query) {
-        return appendWithResponse(
-                GraphCommand.PROFILE, Arrays.asList(graphId, query, Utils.COMPACT_STRING), replies.resultSet());
+        return queueResultSet(GraphCommand.PROFILE, Arrays.asList(graphId, query, Utils.COMPACT_STRING));
     }
 
     /**
@@ -261,10 +258,8 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      */
     @Override
     public Response<ResultSet> profile(String query, Map<String, Object> params) {
-        return appendWithResponse(
-                GraphCommand.PROFILE,
-                Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING),
-                replies.resultSet());
+        return queueResultSet(
+                GraphCommand.PROFILE, Arrays.asList(graphId, Utils.prepareQuery(query, params), Utils.COMPACT_STRING));
     }
 
     // Disabled due to bug in FalkorDB caused by using transactions in conjunction with graph copy
@@ -297,8 +292,8 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
 
     /**
      * Runs the transaction, then reads and decodes every reply, in order.
-     * @return the decoded replies, an error in place of each command that failed, or {@code null} if the
-     *     transaction was aborted because a watched key changed
+     * @return the decoded replies, an error in place of each command that failed or whose reply failed to decode,
+     *     or {@code null} if the transaction was aborted because a watched key changed
      */
     @Override
     public @Nullable List<Object> exec() {
@@ -308,6 +303,7 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
         List<Object> results = null;
         try {
             results = super.exec();
+            QueuedReplyFailure.unwrap(results);
             ran = true;
             return results;
         } catch (JedisDataException e) {

@@ -22,9 +22,10 @@ import redis.clients.jedis.commands.RedisModulePipelineCommands;
  * label, property key or relationship type. {@code exec()} decodes the replies before it
  * learns whether the delete succeeded, so it does the same for a delete that fails.
  *
- * <p>A {@link com.falkordb.exceptions.GraphException} while decoding a reply becomes that reply's element of
- * the list {@code exec()} returns, like an error reply. Jedis does not keep it, so reading the same
- * {@code Response} afterwards returns {@code null}.
+ * <p>A graph reply that fails to decode, with a {@link com.falkordb.exceptions.GraphException} or with the
+ * failure of a lookup that decoding needed, becomes that reply's element of the list {@code exec()} returns, like
+ * an error reply, and the other replies are still returned. Every {@code get()} of its {@code Response} throws
+ * the same exception.
  */
 public interface GraphTransaction
         extends PipelineCommands, PipelineBinaryCommands, RedisModulePipelineCommands, Closeable {
@@ -218,7 +219,8 @@ public interface GraphTransaction
      * <p>The list is {@code null} when the transaction was aborted, because a key it {@code WATCH}ed changed. An
      * element is {@code null} where that command's reply is nil, such as a queued {@code get} of a missing key; a
      * command that failed has its exception, a {@code JedisDataException} such as a
-     * {@link com.falkordb.exceptions.GraphException}, as its element instead of throwing it.
+     * {@link com.falkordb.exceptions.GraphException}, as its element instead of throwing it. So does a graph reply
+     * that failed to decode, whatever it threw, such as the failure of a lookup that decoding needed.
      * @return a list of the executed transaction commands answers, whose elements may be {@code null}, in case of
      *     successful transaction, null otherwise
      */
