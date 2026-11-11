@@ -169,7 +169,11 @@ loadScripts(document, 'script');</script>
  so the compiler inserts it at <em>your</em> call site. Asking for the wrong type therefore
  throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/ClassCastException.html" title="class or interface in java.lang" class="external-link"><code>ClassCastException</code></a> there rather than here, and throws nothing at all while the
  value stays untyped (assigned to <code>Object</code>, or passed straight on). Check the column's
- <a href="Header.html#getSchemaTypes()"><code>schema type</code></a> if you cannot rely on the query shape.</div>
+ <a href="Header.html#getSchemaTypes()"><code>schema type</code></a> if you cannot rely on the query shape.
+
+ <p>Nullness inside a value is unchecked too: a map or list value can hold <code>null</code> values or elements,
+ as <code>RETURN {a: null}</code> and <code>RETURN [1, null]</code> do, so read one as, for example, a
+ <code>Map&lt;String, @Nullable Object&gt;</code>.</div>
 <dl class="notes">
 <dt>Type Parameters:</dt>
 <dd><code>T</code> - return value type, unchecked</dd>

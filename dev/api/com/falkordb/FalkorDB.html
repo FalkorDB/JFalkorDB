@@ -145,8 +145,8 @@ loadScripts(document, 'script');</script>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Driver.html" title="interface in com.falkordb">Driver</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#driver(java.lang.String,int,java.lang.String,java.lang.String)" class="member-name-link">driver</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;host,
  int&nbsp;port,
- <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;user,
- <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</code></div>
+ @Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;user,
+ @Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Creates a new driver instance</div>
 </div>
@@ -236,15 +236,19 @@ loadScripts(document, 'script');</script>
 <h3>driver</h3>
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="Driver.html" title="interface in com.falkordb">Driver</a></span>&nbsp;<span class="element-name">driver</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;host,
  int&nbsp;port,
- <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;user,
- <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</span></div>
-<div class="block">Creates a new driver instance</div>
+ @Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;user,
+ @Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</span></div>
+<div class="block">Creates a new driver instance
+
+ <p><code>null</code> means "none" for either credential: a <code>null</code> <code>user</code> authenticates with the
+ password only (as the <code>default</code> user), and a <code>null</code> <code>password</code> sends no credentials at
+ all, so a <code>user</code> given without a password is ignored.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>host</code> - host name</dd>
 <dd><code>port</code> - port number</dd>
-<dd><code>user</code> - username</dd>
-<dd><code>password</code> - password</dd>
+<dd><code>user</code> - username, or <code>null</code> for password-only authentication</dd>
+<dd><code>password</code> - password, or <code>null</code> for no authentication</dd>
 <dt>Returns:</dt>
 <dd>a new driver instance</dd>
 </dl>

@@ -159,6 +159,8 @@ loadScripts(document, 'script');</script>
 <dd><code>executor</code> - the executor each operation runs on (e.g. a virtual-thread executor on JDK 21+)</dd>
 <dt>Returns:</dt>
 <dd>an asynchronous view over <code>graph</code></dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/NullPointerException.html" title="class or interface in java.lang" class="external-link">NullPointerException</a></code> - if <code>graph</code> or <code>executor</code> is null</dd>
 </dl>
 </section>
 </li>
