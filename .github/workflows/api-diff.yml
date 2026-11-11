@@ -8,6 +8,11 @@ name: API diff
 # build/test matrix. Runs only on PRs: a reviewed break is approved per-PR via the label, so the
 # post-merge master push (which has no PR label) would re-flag an already approved break; direct
 # pushes to master are disallowed, so PR coverage is sufficient.
+#
+# Two more steps cover what japicmp can't see (members inherited from Jedis, and the Jedis types our
+# signatures return): `just api-surface` checks the committed api/jfalkordb.api still matches the
+# code, and `just api-surface-breaks` fails when the PR changes it in a breaking way, which the
+# `breaking-change` label approves just like a japicmp finding.
 
 on:
   pull_request:
@@ -30,6 +35,8 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       with:
         persist-credentials: false
+        # Full history, so `just api-surface-breaks` can read the base branch's api/jfalkordb.api.
+        fetch-depth: 0
     - name: Set up JDK 21
       uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
       with:
@@ -43,3 +50,19 @@ jobs:
       # Central. Approve a reviewed, intentional break by adding the `breaking-change` label to the PR,
       # which flips the japicmp gate to non-failing for this run.
       run: just api-diff ${{ contains(github.event.pull_request.labels.*.name, 'breaking-change') && '-Dapi.diff.fail=false' || '' }}
+    - name: Full public-API surface snapshot, inherited Jedis members included (via just)
+      # japicmp only compares the classes in our jar, so it can't see a dependency bump change the
+      # thousand-odd methods GraphPipeline/GraphTransaction each inherit from Jedis, or the Jedis type
+      # Driver.getConnection() returns. This checks them against the committed api/jfalkordb.api.
+      # Runs even when the japicmp step failed, so every report shows. A mismatch is fixed by
+      # committing `just api-surface-update`'s output, never by a label.
+      if: ${{ !cancelled() }}
+      run: just api-surface
+    - name: Breaking changes in the API surface snapshot vs the base branch (via just)
+      # A removed or changed line of api/jfalkordb.api breaks callers, and a new abstract method on an
+      # exported interface breaks implementations, even when a dependency bump is the cause; like
+      # japicmp's findings it needs the `breaking-change` label (and so a `!` title). The base ref goes through env, not the script text.
+      if: ${{ !cancelled() }}
+      env:
+        BASE_REF: ${{ github.base_ref }}
+      run: just api-surface-breaks "origin/$BASE_REF" ${{ contains(github.event.pull_request.labels.*.name, 'breaking-change') && 'allow' || '' }}

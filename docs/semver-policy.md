@@ -16,7 +16,21 @@ internal and may change at any time &mdash; do not depend on it.
   last release on Maven Central and **fails on any binary- or source-incompatible** change to the
   public/protected API. An intentional, reviewed break is approved with the **`breaking-change`** PR
   label; the PR title must then carry a `!` (for example `fix!:` / `feat!:`), which the **PR-title**
-  gate enforces so the release is versioned correctly.
+  gate enforces so the release is versioned correctly. The label approves only its own PR, so a merged
+  break is also listed as a japicmp `<exclude>` in `pom.xml` until a release ships it and
+  `api.diff.baseline` moves past it.
+- **`api-surface`** (`just api-surface`, also part of `just test`) &mdash; japicmp compares only the
+  classes inside our jar, so it can't see a dependency change the methods we inherit from it (a
+  thousand-odd each on `GraphPipeline` and `GraphTransaction`, from Jedis) or the Jedis types our
+  signatures return. This gate compares the full surface, those members included, with the committed
+  `api/jfalkordb.api`; the snapshot is updated (`just api-surface-update`) in the PR, where its diff
+  is reviewed. A removed or changed line (other than one that only gains or loses `@Deprecated`), or
+  a new abstract method on an exported interface or abstract class that already existed (a new type
+  may declare abstract methods freely), is a break for our users even when only a dependency changed.
+  For such a change **`just api-surface-breaks`** fails the `api-diff` check until the PR carries the
+  **`breaking-change`** label and a `!` title, exactly as for a japicmp finding. Dependency types are covered one level deep: the ones our own declarations name (today
+  `Jedis` and `Response`), not the types their members return in turn (such as the `Connection` from
+  `Jedis.getClient()`); following that chain would snapshot all of Jedis.
 - **`javadoc`** (`just javadoc`) &mdash; a strict `doclint` gate that keeps the public API documented.
 
 ## Releases

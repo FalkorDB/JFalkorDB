@@ -53,6 +53,45 @@ javadoc:
 api-diff *ARGS:
     ./mvnw -B -Pquality -DskipTests -Dgpg.skip=true package com.github.siom79.japicmp:japicmp-maven-plugin:cmp {{ARGS}}
 
+# Full public-API surface gate (no server): checks that api/jfalkordb.api still lists every
+# public/protected member of the exported types, the ones inherited from Jedis included, plus the
+# public members of the Jedis types our signatures return (Jedis, Response). japicmp only compares our
+# own classes, so a Jedis bump can change that surface without it noticing; this can't miss it. Also
+# runs in `just test` / `just verify` (it is ApiSurfaceTest); the CI `api-diff` workflow runs it as a
+# separate step. A mismatch is fixed by `just api-surface-update` and committing, never by a label.
+# `clean` first, so the class of a deleted source can't keep the old surface alive.
+api-surface:
+    ./mvnw -B -Dgpg.skip=true -Dtest=ApiSurfaceTest clean test
+
+# Regenerate api/jfalkordb.api after a reviewed API change (ours or a dependency's); commit the result
+# so the change is reviewed in the PR diff. `clean` first, so classes of deleted sources can't linger.
+api-surface-update:
+    ./mvnw -B -Dgpg.skip=true -Dtest=ApiSurfaceTest -Dapi.surface.update=true clean test
+
+# Fail when api/jfalkordb.api breaks code compiled against <base_ref>'s, even when a dependency bump is
+# the cause: a removed or changed line (a member, supertype or declaration callers rely on), or a new
+# abstract method on an existing exported interface or abstract class (implementations break; japicmp fails on
+# that too). Other additions and deprecations pass. Approve a reviewed break by passing `allow` as the second argument,
+# which the CI `api-diff` job does when the PR has the `breaking-change` label (the same approval as
+# japicmp, so the title also needs a `!`). Compares committed snapshots only; `just api-surface` checks
+# the snapshot matches the code. e.g. `just api-surface-breaks origin/master`.
+api-surface-breaks base_ref approval="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! git rev-parse --verify --quiet "{{base_ref}}^{commit}" >/dev/null; then
+        echo "{{base_ref}} is not a commit here (a typo, or a shallow checkout without it?)." >&2
+        exit 1
+    fi
+    if ! git cat-file -e "{{base_ref}}:api/jfalkordb.api" 2>/dev/null; then
+        echo "{{base_ref}} has no api/jfalkordb.api yet; nothing to compare against."
+        exit 0
+    fi
+    base="$(mktemp)"
+    trap 'rm -f "$base"' EXIT
+    git show "{{base_ref}}:api/jfalkordb.api" > "$base"
+    ./mvnw -B -q -Dgpg.skip=true -DskipTests test-compile
+    java -cp target/test-classes:target/classes com.falkordb.ApiSurface --breaks "$base" api/jfalkordb.api {{approval}}
+
 # Spellcheck the Markdown docs (CI gate). Needs `pyspelling` + `aspell` (see CONTRIBUTING.md).
 spellcheck:
     pyspelling -c .github/spellcheck-settings.yml -n Markdown
