@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.16.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.15.0...v0.16.0) (2026-11-11)
+
+
+### ⚠ BREAKING CHANGES
+
+* Driver.close(), GraphPipeline.close() and GraphTransaction.close() no longer declare IOException. Code that catches IOException around them, with nothing else in the try throwing it, no longer compiles ("exception IOException is never thrown in body of corresponding try statement"). That includes try (Driver d = ...) { ... } catch (IOException e), which was the only way to use try-with-resources with these types until now. Remove the catch, or catch a broader exception. A class implementing one of these interfaces whose close() declares throws IOException must drop the throws clause. A Mockito stub such as doThrow(new IOException()).when(driver).close() now fails with "Checked exception is invalid for this method": throw an unchecked exception instead. Compiled code keeps working: the change is binary compatible.
+* Query parameter names that aren't Cypher identifiers, such as `1`, `a b` or `é`, used to make the query methods throw IllegalArgumentException; they are now backtick-quoted and sent. Names that are still rejected (empty, containing a backtick, a NUL character or an unpaired surrogate, or a null key) throw IllegalArgumentException with new messages. On FalkorDB 4.x the query text must refer to such a name quoted, as `` $`1` ``.
+
+### Features
+
+* add type-checked Record.getValue overloads, deprecate the unchecked ones ([#523](https://github.com/FalkorDB/JFalkorDB/issues/523)) ([557e416](https://github.com/FalkorDB/JFalkorDB/commit/557e416776e9710c7ac633f0d5aab881b061f90a))
+
+
+### Bug Fixes
+
+* accept query parameter names that aren't Cypher identifiers ([#519](https://github.com/FalkorDB/JFalkorDB/issues/519)) ([1ee2fd1](https://github.com/FalkorDB/JFalkorDB/commit/1ee2fd126dcb58e84770db1cb916edae0b0615a5))
+* correct the public API's nullability where null actually occurs ([#524](https://github.com/FalkorDB/JFalkorDB/issues/524)) ([4f5b973](https://github.com/FalkorDB/JFalkorDB/commit/4f5b973b264b38b38460d7dee7e9f22d590a8a02))
+* let Driver, GraphPipeline and GraphTransaction close without a checked exception ([#522](https://github.com/FalkorDB/JFalkorDB/issues/522)) ([9fdd19f](https://github.com/FalkorDB/JFalkorDB/commit/9fdd19f12735fd2314809740a02eb05ea87dd86d))
+
+
+### Performance Improvements
+
+* copy literal runs when encoding string query parameters ([#520](https://github.com/FalkorDB/JFalkorDB/issues/520)) ([f145e1f](https://github.com/FalkorDB/JFalkorDB/commit/f145e1f1d9da9dd42210df3628dd7ae89c80a7ab))
+
 ## [0.15.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.14.0...v0.15.0) (2026-11-03)
 
 
