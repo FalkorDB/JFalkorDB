@@ -14,6 +14,11 @@ import redis.clients.jedis.Response;
  * caller would never see the error. This response's builder keeps what decoding threw, and throws it on to Jedis
  * inside a {@link QueuedReplyFailure}, the only kind of exception Jedis' batch loops keep in place of a reply.
  *
+ * <p>Only a {@code RuntimeException} is kept; an {@code Error} propagates as before. A Jedis {@code Response} given
+ * this one with {@code setDependency} doesn't decode it first: Jedis reads the dependency's private state, and only
+ * the response Jedis queued is set. Jedis itself never sets a dependency, and the reply is still decoded, and its
+ * failure thrown, by this response's own {@link #get()}.
+ *
  * @param <T> the decoded reply
  */
 final class QueuedReply<T> extends Response<T> {

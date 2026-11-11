@@ -235,7 +235,7 @@ public interface GraphPipeline
      * <p>An element is {@code null} where that command's reply is nil, such as a pipelined {@code get} of a
      * missing key; a command that failed has its exception, a {@code JedisDataException} such as a
      * {@link com.falkordb.exceptions.GraphException}, as its element instead of throwing it. So does a graph reply
-     * that failed to decode, whatever it threw, such as the failure of a lookup that decoding needed.
+     * that failed to decode with a {@code RuntimeException}, such as the failure of a lookup that decoding needed.
      * @return A list of all the responses in the order you executed them, whose elements may be {@code null}.
      */
     List<@Nullable Object> syncAndReturnAll();

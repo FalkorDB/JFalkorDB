@@ -220,7 +220,7 @@ public interface GraphTransaction
      * element is {@code null} where that command's reply is nil, such as a queued {@code get} of a missing key; a
      * command that failed has its exception, a {@code JedisDataException} such as a
      * {@link com.falkordb.exceptions.GraphException}, as its element instead of throwing it. So does a graph reply
-     * that failed to decode, whatever it threw, such as the failure of a lookup that decoding needed.
+     * that failed to decode with a {@code RuntimeException}, such as the failure of a lookup that decoding needed.
      * @return a list of the executed transaction commands answers, whose elements may be {@code null}, in case of
      *     successful transaction, null otherwise
      */
