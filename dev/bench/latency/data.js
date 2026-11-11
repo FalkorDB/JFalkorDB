@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794373159734,
+  "lastUpdate": 1794374074669,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -19607,6 +19607,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 71213.453,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9fdd19f12735fd2314809740a02eb05ea87dd86d",
+          "message": "fix!: let Driver, GraphPipeline and GraphTransaction close without a checked exception (#522)\n\n* fix!: let Driver, GraphPipeline and GraphTransaction close without a checked exception\n\nDriver, GraphPipeline and GraphTransaction extended Closeable without\noverriding close(), so they inherited `close() throws IOException`, and\n`try (Driver d = FalkorDB.driver()) {}` didn't compile without a catch\n(IOException). Graph already overrode it. Each now declares `void close()`\nwith no throws clause; their implementations never threw one.\n\nThe examples no longer declare `throws Exception` / `throws IOException`\njust to close a driver. README and llms.txt close the driver with\ntry-with-resources, and AsyncFalkorDB documents that an AsyncGraph owns\nnothing: the caller closes the executor, then the driver.\n\nRefs #400\n\nBREAKING CHANGE: Driver.close(), GraphPipeline.close() and GraphTransaction.close() no longer declare IOException. Code that catches IOException around them, with nothing else in the try throwing it, no longer compiles (\"exception IOException is never thrown in body of corresponding try statement\"). That includes try (Driver d = ...) { ... } catch (IOException e), which was the only way to use try-with-resources with these types until now. Remove the catch, or catch a broader exception. A class implementing one of these interfaces whose close() declares throws IOException must drop the throws clause. A Mockito stub such as doThrow(new IOException()).when(driver).close() now fails with \"Checked exception is invalid for this method\": throw an unchecked exception instead. Compiled code keeps working: the change is binary compatible.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: qualify the executor-close and Driver.close() notes\n\nExecutorService.close() drops the queued tasks when the closing thread is\ninterrupted, and llms.txt pins a release whose Driver.close() still\ndeclares IOException.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: say that an interrupted executor close still waits for running queries\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-11T07:12:07+02:00",
+          "tree_id": "14832e50fdd52bd9240516fc7a8762795f05ef4c",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/9fdd19f12735fd2314809740a02eb05ea87dd86d"
+        },
+        "date": 1794374073565,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 107.272,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 129.365,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 151.066,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 140.812,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 173.3,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 193.3,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 200.081,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 309.965,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 381.042,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 333.04,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 556.026,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 687.241,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 384.459,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 3561.383,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 7919.402,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 391.628,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 10226.314,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 23246.815,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 385.819,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 23499.304,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 53760.831,
             "unit": "us"
           }
         ]
