@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794296525143,
+  "lastUpdate": 1794372965542,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -19349,6 +19349,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 71275.48,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4f5b973b264b38b38460d7dee7e9f22d590a8a02",
+          "message": "fix: correct the public API's nullability where null actually occurs (#524)\n\n* fix: correct the public API's nullability where null actually occurs\n\nThe public packages are @NullMarked, so an unannotated type already means non-null. This fixes the\nplaces where that default was wrong:\n\n- equals(Object) on GraphEntity, Node, Edge, Path, Point and Property takes @Nullable Object, as\n  Object.equals does.\n- Every query params map (Graph, AsyncGraph, GraphPipeline, GraphTransaction) is\n  Map<String, @Nullable Object>: a null value is documented and sent as Cypher null.\n- GraphPipeline.syncAndReturnAll() and GraphTransaction.exec() hold null for a nil reply.\n- FalkorDB.driver(host, port, user, password) takes null for either credential.\n- Javadoc: nulls inside map/list values (Record), null rejection (AsyncFalkorDB.wrap, Point).\n\nTests pin each annotation by reflection together with the runtime null it describes. Error Prone's\nEqualsMissingNullable now fails `just lint` for an unannotated equals in @NullMarked code.\nNo runtime behaviour changes.\n\nRefs #400\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: WATCH the key in the aborted-transaction test\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-11T06:54:06+02:00",
+          "tree_id": "65c22a63f99a97d03b3db3a0cf9c55bacdb198a0",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/4f5b973b264b38b38460d7dee7e9f22d590a8a02"
+        },
+        "date": 1794372964733,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 138.004,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 186.134,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 233.004,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 166.455,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 208.111,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 231.4,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 257.22,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 397.165,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 491.144,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 434.33,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 721.745,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 895.58,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 513.541,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 4801.625,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 10604.109,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 512.976,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 13566.8,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 30218.441,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 509.377,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 31472.171,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 75853.91,
             "unit": "us"
           }
         ]
