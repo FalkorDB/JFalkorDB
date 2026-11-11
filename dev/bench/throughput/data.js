@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794296527593,
+  "lastUpdate": 1794372967280,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -8849,6 +8849,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11495,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4f5b973b264b38b38460d7dee7e9f22d590a8a02",
+          "message": "fix: correct the public API's nullability where null actually occurs (#524)\n\n* fix: correct the public API's nullability where null actually occurs\n\nThe public packages are @NullMarked, so an unannotated type already means non-null. This fixes the\nplaces where that default was wrong:\n\n- equals(Object) on GraphEntity, Node, Edge, Path, Point and Property takes @Nullable Object, as\n  Object.equals does.\n- Every query params map (Graph, AsyncGraph, GraphPipeline, GraphTransaction) is\n  Map<String, @Nullable Object>: a null value is documented and sent as Cypher null.\n- GraphPipeline.syncAndReturnAll() and GraphTransaction.exec() hold null for a nil reply.\n- FalkorDB.driver(host, port, user, password) takes null for either credential.\n- Javadoc: nulls inside map/list values (Record), null rejection (AsyncFalkorDB.wrap, Point).\n\nTests pin each annotation by reflection together with the runtime null it describes. Error Prone's\nEqualsMissingNullable now fails `just lint` for an unannotated equals in @NullMarked code.\nNo runtime behaviour changes.\n\nRefs #400\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: WATCH the key in the aborted-transaction test\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-11T06:54:06+02:00",
+          "tree_id": "65c22a63f99a97d03b3db3a0cf9c55bacdb198a0",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/4f5b973b264b38b38460d7dee7e9f22d590a8a02"
+        },
+        "date": 1794372967237,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 4676.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 8087.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 11047,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 14123.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 13192,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 13093,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 13019.333,
             "unit": "ops/s"
           }
         ]
