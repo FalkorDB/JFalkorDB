@@ -77,13 +77,17 @@ public final class FalkorDB {
     /**
      * Creates a new driver instance
      *
+     * <p>{@code null} means "none" for either credential: a {@code null} {@code user} authenticates with the
+     * password only (as the {@code default} user), and a {@code null} {@code password} sends no credentials at
+     * all, so a {@code user} given without a password is ignored.
+     *
      * @param host     host name
      * @param port     port number
-     * @param user     username
-     * @param password password
+     * @param user     username, or {@code null} for password-only authentication
+     * @param password password, or {@code null} for no authentication
      * @return a new driver instance
      */
-    public static Driver driver(String host, int port, String user, final String password) {
+    public static Driver driver(String host, int port, @Nullable String user, final @Nullable String password) {
         return DriverImpl.connect(host, port, user, password, SentinelOptions.autoDetect());
     }
 

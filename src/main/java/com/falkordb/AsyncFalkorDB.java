@@ -33,6 +33,7 @@ public final class AsyncFalkorDB {
      * @param graph    the synchronous graph to wrap (typically {@code driver.graph(id)})
      * @param executor the executor each operation runs on (e.g. a virtual-thread executor on JDK 21+)
      * @return an asynchronous view over {@code graph}
+     * @throws NullPointerException if {@code graph} or {@code executor} is null
      */
     public static AsyncGraph wrap(GraphContextGenerator graph, Executor executor) {
         return new AsyncGraphImpl(graph, executor);

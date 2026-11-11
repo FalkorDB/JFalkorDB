@@ -20,6 +20,10 @@ public interface Record {
      * value stays untyped (assigned to {@code Object}, or passed straight on). Check the column's
      * {@link Header#getSchemaTypes() schema type} if you cannot rely on the query shape.
      *
+     * <p>Nullness inside a value is unchecked too: a map or list value can hold {@code null} values or elements,
+     * as {@code RETURN {a: null}} and {@code RETURN [1, null]} do, so read one as, for example, a
+     * {@code Map<String, @Nullable Object>}.
+     *
      * @param index field index
      * @param <T> return value type, unchecked
      *
