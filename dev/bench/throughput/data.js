@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794373161532,
+  "lastUpdate": 1794374076529,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -8967,6 +8967,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11797,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9fdd19f12735fd2314809740a02eb05ea87dd86d",
+          "message": "fix!: let Driver, GraphPipeline and GraphTransaction close without a checked exception (#522)\n\n* fix!: let Driver, GraphPipeline and GraphTransaction close without a checked exception\n\nDriver, GraphPipeline and GraphTransaction extended Closeable without\noverriding close(), so they inherited `close() throws IOException`, and\n`try (Driver d = FalkorDB.driver()) {}` didn't compile without a catch\n(IOException). Graph already overrode it. Each now declares `void close()`\nwith no throws clause; their implementations never threw one.\n\nThe examples no longer declare `throws Exception` / `throws IOException`\njust to close a driver. README and llms.txt close the driver with\ntry-with-resources, and AsyncFalkorDB documents that an AsyncGraph owns\nnothing: the caller closes the executor, then the driver.\n\nRefs #400\n\nBREAKING CHANGE: Driver.close(), GraphPipeline.close() and GraphTransaction.close() no longer declare IOException. Code that catches IOException around them, with nothing else in the try throwing it, no longer compiles (\"exception IOException is never thrown in body of corresponding try statement\"). That includes try (Driver d = ...) { ... } catch (IOException e), which was the only way to use try-with-resources with these types until now. Remove the catch, or catch a broader exception. A class implementing one of these interfaces whose close() declares throws IOException must drop the throws clause. A Mockito stub such as doThrow(new IOException()).when(driver).close() now fails with \"Checked exception is invalid for this method\": throw an unchecked exception instead. Compiled code keeps working: the change is binary compatible.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: qualify the executor-close and Driver.close() notes\n\nExecutorService.close() drops the queued tasks when the closing thread is\ninterrupted, and llms.txt pins a release whose Driver.close() still\ndeclares IOException.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: say that an interrupted executor close still waits for running queries\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-11T07:12:07+02:00",
+          "tree_id": "14832e50fdd52bd9240516fc7a8762795f05ef4c",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/9fdd19f12735fd2314809740a02eb05ea87dd86d"
+        },
+        "date": 1794374076495,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 6126.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 9828.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 14218.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 18189,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 17468,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 17117,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 17273.333,
             "unit": "ops/s"
           }
         ]
