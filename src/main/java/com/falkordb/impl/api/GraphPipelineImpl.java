@@ -22,6 +22,11 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
     private final QueuedReplies replies;
     /** True while sync() or syncAndReturnAll() reads the replies, so none is outstanding on the connection. */
     private boolean draining;
+    /**
+     * True when the last sync() or syncAndReturnAll() failed. Jedis may then have read every reply and still hold
+     * responses it didn't build, so whether replies are outstanding on the connection can't be told.
+     */
+    private boolean readFailed;
 
     /**
      * Creates a new pipeline for a given graph.
@@ -50,6 +55,11 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
     /** How this pipeline decodes its replies; the context that created it watches it through this. */
     QueuedReplies replies() {
         return replies;
+    }
+
+    /** Whether the last sync() or syncAndReturnAll() failed, after which this pipeline's state is unknown. */
+    boolean readFailed() {
+        return readFailed;
     }
 
     /**
@@ -280,6 +290,21 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
     }
 
     /**
+     * Reads the replies still awaited, as {@link #sync()} does, unless the last sync() or syncAndReturnAll() failed:
+     * reading then could wait for replies that never come, since Jedis may have read every reply and still hold
+     * responses it didn't build. The connection is marked broken instead, so its pool destroys it rather than lend
+     * it again.
+     */
+    @Override
+    public void close() {
+        if (readFailed) {
+            connection.setBroken();
+            return;
+        }
+        super.close();
+    }
+
+    /**
      * Reads the replies to every command queued so far, without decoding them; each is decoded when its
      * {@code Response} is read. A {@link #deleteGraph()} that ran clears the schema cache now.
      */
@@ -292,6 +317,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
             read = true;
         } finally {
             draining = false;
+            readFailed = !read;
             if (read) {
                 replies.read();
             } else {
@@ -314,6 +340,7 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
             return results;
         } finally {
             draining = false;
+            readFailed = !read;
             if (read) {
                 replies.read();
             } else {

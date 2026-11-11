@@ -210,6 +210,59 @@ public class TransactionIT {
     }
 
     @Test
+    public void testClosingAContextMidTransactionReturnsACleanConnection() {
+        api.query("CREATE (:Person {name:'kept'})");
+        try (Driver driver = poolOfOne()) {
+            GraphContextGenerator graph = driver.graph("social");
+            try (GraphContext c = graph.getContext()) {
+                GraphTransaction transaction = c.multi();
+                transaction.query("CREATE (:Person {name:'discarded'})");
+            } // closed without exec() or discard()
+
+            // The pool's only connection again: its query must run, not be queued in the transaction.
+            try (GraphContext c = graph.getContext()) {
+                ResultSet resultSet = c.query("MATCH (n:Person) RETURN n.name");
+                Assertions.assertEquals(1, resultSet.size());
+                Assertions.assertEquals("kept", resultSet.iterator().next().getString(0));
+            }
+        }
+    }
+
+    @Test
+    public void testAKeyTheContextWatchedIsUnwatchedWhenItCloses() {
+        // A guard: the pool unwatches the key when the connection comes back, so close() sends no UNWATCH itself.
+        api.query("CREATE (:Person {name:'a'})");
+        try (Driver driver = poolOfOne()) {
+            GraphContextGenerator graph = driver.graph("social");
+            try (GraphContext c = graph.getContext()) {
+                c.watch("social");
+            }
+            api.query("CREATE (:Person {name:'b'})"); // changes the key, on another connection
+
+            // The pool's only connection again: a WATCH left on it would abort this transaction.
+            try (GraphContext c = graph.getContext()) {
+                GraphTransaction transaction = c.multi();
+                transaction.query("MATCH (n:Person) RETURN count(n)");
+                List<Object> results = transaction.exec();
+                Assertions.assertNotNull(results, "a WATCH from the closed context aborted the transaction");
+                Long nodes = ((ResultSet) results.get(0)).iterator().next().getValue(0);
+                Assertions.assertEquals(2L, nodes.longValue());
+            }
+        }
+    }
+
+    /** A driver whose pool has one connection, so the next context gets the connection the last one closed. */
+    private static Driver poolOfOne() {
+        return FalkorDB.builder()
+                .host(TestServer.host())
+                .port(TestServer.port())
+                .poolMaxTotal(1)
+                .poolMaxIdle(1)
+                .poolMaxWait(Duration.ofSeconds(5))
+                .build();
+    }
+
+    @Test
     public void testAnInvalidProcedureCallQueuesNothing() {
         api.query("CREATE (:Person)");
         try (GraphContext c = api.getContext()) {
