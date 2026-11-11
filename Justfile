@@ -78,6 +78,10 @@ api-surface-update:
 api-surface-breaks base_ref approval="":
     #!/usr/bin/env bash
     set -euo pipefail
+    if ! git rev-parse --verify --quiet "{{base_ref}}^{commit}" >/dev/null; then
+        echo "{{base_ref}} is not a commit here (a typo, or a shallow checkout without it?)." >&2
+        exit 1
+    fi
     if ! git cat-file -e "{{base_ref}}:api/jfalkordb.api" 2>/dev/null; then
         echo "{{base_ref}} has no api/jfalkordb.api yet; nothing to compare against."
         exit 0
