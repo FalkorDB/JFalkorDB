@@ -19,8 +19,8 @@ package com.falkordb;
  * of the connection gets it clean: a transaction still open is discarded, and the replies a pipeline still awaits
  * are read, which waits for them to arrive. A {@code Response} of a transaction discarded this way can't be read.
  * If more than one transaction or pipeline still awaits replies, or ending one fails, the connection is closed
- * instead of being returned to the pool. Like every other call on the context, close it on the thread that uses
- * the context.
+ * instead of being returned to the pool, and the {@code Response}s still waiting for its replies can't be read
+ * either. Like every other call on the context, close it on the thread that uses the context.
  */
 public interface GraphContext extends Graph {
 

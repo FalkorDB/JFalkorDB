@@ -35,8 +35,8 @@ import redis.clients.jedis.commands.RedisModulePipelineCommands;
  *
  * <p>Call {@link #sync()}, {@link #syncAndReturnAll()} or {@link #close()} before dropping a pipeline that has
  * queued commands. Their replies stay unread on the context's connection, and the next command sent on it, by the
- * context or by a schema lookup, reads one of them as its own. Closing the context reads the replies its pipelines
- * still await, so the connection goes back to the pool clean.
+ * context or by a schema lookup, reads one of them as its own. Closing the context reads them, when this pipeline
+ * is the only one of the context's pipelines and transactions that awaits replies (see {@link GraphContext}).
  *
  * <p>A {@link com.falkordb.exceptions.GraphException} while decoding a reply in {@link #syncAndReturnAll()}
  * becomes that reply's element of the returned list, like an error reply. Jedis does not keep it, so reading

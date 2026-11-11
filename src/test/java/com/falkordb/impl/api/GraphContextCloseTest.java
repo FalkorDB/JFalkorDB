@@ -3,6 +3,7 @@ package com.falkordb.impl.api;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.falkordb.Driver;
@@ -285,9 +286,12 @@ class GraphContextCloseTest {
      * context that holds it only weakly loses it here.
      */
     private static void collectUnlessHeld(WeakReference<?> dropped) {
-        for (int i = 0; i < 5 && dropped.get() != null; i++) {
+        // Without a collection, a context that held the batch only weakly would pass too: make sure one ran.
+        WeakReference<Object> unreachable = new WeakReference<>(new Object());
+        for (int i = 0; i < 10 && (unreachable.get() != null || dropped.get() != null); i++) {
             System.gc();
         }
+        assertNull(unreachable.get(), "no garbage collection ran, so this test would prove nothing");
     }
 
     /**
