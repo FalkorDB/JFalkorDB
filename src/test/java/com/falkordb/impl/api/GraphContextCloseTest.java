@@ -12,16 +12,21 @@ import com.falkordb.GraphContext;
 import com.falkordb.GraphPipeline;
 import com.falkordb.GraphTransaction;
 import com.falkordb.ResultSet;
+import com.falkordb.impl.graph_cache.GraphCache;
 import java.lang.ref.WeakReference;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Response;
 
 /**
@@ -44,6 +49,8 @@ class GraphContextCloseTest {
 
     private FakeRedisServer server;
     private Driver driver;
+    /** Lends the pool's only connection to the next borrower. */
+    private Supplier<Jedis> nextBorrower;
 
     @BeforeEach
     void setUp() {
@@ -60,6 +67,7 @@ class GraphContextCloseTest {
                 .poolMaxTotal(1)
                 .poolMaxIdle(1)
                 .build();
+        nextBorrower = driver::getConnection;
     }
 
     @AfterEach
@@ -132,6 +140,41 @@ class GraphContextCloseTest {
     }
 
     @Test
+    void closingEndsAnEarlierBatchUsedAgainAfterALaterOneWasCreated() {
+        GraphContext context = driver.graph("g").getContext();
+        GraphPipeline earlier = context.pipelined();
+        earlier.set("key", "value");
+        earlier.sync();
+        GraphPipeline later = context.pipelined(); // the earlier one has nothing pending now
+        WeakReference<GraphPipeline> dropped = queueAndDrop(earlier);
+        earlier = null; // dropped: an exception skipped its sync()
+        collectUnlessHeld(dropped);
+        context.close();
+
+        assertNextBorrowerGetsTheSameCleanConnection();
+        assertNotNull(later);
+    }
+
+    @Test
+    void closingDropsTheConnectionIfAnOlderBatchWasCollected() {
+        try (JedisPool pool = new JedisPool(poolOfOne(), "127.0.0.1", server.port())) {
+            nextBorrower = pool::getResource;
+            CountingCache cache = new CountingCache();
+            GraphContextImpl context = new GraphContextImpl(pool.getResource(), cache, "g");
+            WeakReference<GraphPipeline> dropped = unsyncedPipeline(context);
+            for (int i = 0; i < GraphContextImpl.HELD_BATCHES; i++) {
+                context.pipelined(); // the dropped pipeline is no longer among the ones the context holds
+            }
+            collect(dropped);
+            context.close();
+
+            // The context can't know what the collected pipeline left on the connection, so the pool drops it.
+            assertNextBorrowerGetsANewCleanConnection();
+            assertEquals(1, cache.clears, "the collected pipeline may have deleted the graph");
+        }
+    }
+
+    @Test
     void closingWithSeveralBatchesAwaitingRepliesDropsTheConnection() {
         GraphContext context = driver.graph("g").getContext();
         GraphPipeline pipeline = context.pipelined();
@@ -162,6 +205,25 @@ class GraphContextCloseTest {
         assertEquals(1, created.get().getStatistics().nodesCreated());
         assertFalse(connections.get(0).watching, "close() must UNWATCH what the transaction watched");
         assertNextBorrowerGetsTheSameCleanConnection();
+    }
+
+    @Test
+    void closingWithSeveralBatchesAwaitingRepliesClearsTheCacheIfOneQueuedADelete() {
+        try (JedisPool pool = new JedisPool(poolOfOne(), "127.0.0.1", server.port())) {
+            nextBorrower = pool::getResource;
+            CountingCache cache = new CountingCache();
+            GraphContextImpl context = new GraphContextImpl(pool.getResource(), cache, "g");
+            GraphPipeline pipeline = context.pipelined();
+            pipeline.deleteGraph(); // sent: it may run, but its reply is never read
+            GraphTransaction transaction = context.multi();
+            transaction.set("key", "value");
+            context.close();
+
+            assertEquals(1, cache.clears, "the abandoned delete may have run");
+            assertNextBorrowerGetsANewCleanConnection();
+            assertNotNull(pipeline);
+            assertNotNull(transaction);
+        }
     }
 
     @Test
@@ -260,7 +322,7 @@ class GraphContextCloseTest {
     }
 
     private void assertNextBorrowerGetsACleanConnection() {
-        try (Jedis next = driver.getConnection()) {
+        try (Jedis next = nextBorrower.get()) {
             assertEquals("next", next.echo("next"), "the next borrower read a reply that wasn't its own");
         }
         ConnectionState latest = connections.get(connections.size() - 1);
@@ -279,6 +341,39 @@ class GraphContextCloseTest {
         GraphPipeline pipeline = context.pipelined();
         pipeline.set("key", "value");
         return new WeakReference<>(pipeline);
+    }
+
+    /** Queues a command on {@code pipeline}, and keeps only a weak reference to it. */
+    private static WeakReference<GraphPipeline> queueAndDrop(GraphPipeline pipeline) {
+        pipeline.set("key", "value");
+        return new WeakReference<>(pipeline);
+    }
+
+    /** Collects what {@code dropped} refers to, which nothing holds any more. */
+    private static void collect(WeakReference<?> dropped) {
+        for (int i = 0; i < 10 && dropped.get() != null; i++) {
+            System.gc();
+        }
+        assertNull(dropped.get(), "the dropped batch wasn't collected, so this test would prove nothing");
+    }
+
+    private static GenericObjectPoolConfig<Jedis> poolOfOne() {
+        GenericObjectPoolConfig<Jedis> config = new GenericObjectPoolConfig<>();
+        config.setMaxTotal(1);
+        config.setMaxIdle(1);
+        config.setMaxWait(Duration.ofSeconds(5));
+        return config;
+    }
+
+    /** A cache that counts how often it is cleared. */
+    private static final class CountingCache extends GraphCache {
+        int clears;
+
+        @Override
+        public void clear() {
+            clears++;
+            super.clear();
+        }
     }
 
     /**

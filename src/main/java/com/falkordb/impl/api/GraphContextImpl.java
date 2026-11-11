@@ -11,12 +11,15 @@ import com.falkordb.impl.graph_cache.GraphCache;
 import com.falkordb.impl.resultset.ResultSetImpl;
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisDataException;
@@ -48,23 +51,25 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      * drops don't accumulate.
      */
     private final Set<QueuedReplies> connectionUsers = Collections.newSetFromMap(new WeakHashMap<>());
+    /** How many of the latest pipelines and transactions created on a context it holds strongly. */
+    static final int HELD_BATCHES = 128;
     /**
-     * The pipeline or transaction created last, which {@link #close()} ends so the connection goes back clean. Held
-     * strongly, so it can't be collected before then: the one usually left open is the latest, dropped when an
-     * exception skips its sync or exec.
+     * Every pipeline and transaction created on this context's connection, which {@link #close()} ends so the
+     * connection goes back clean. Held weakly: the latest ones are also in {@link #heldBatches}.
      */
-    private @Nullable Closeable latestBatch;
+    private final Set<Closeable> batches = Collections.newSetFromMap(new WeakHashMap<>());
     /**
-     * The ones created before it, which {@link #close()} ends too. Held weakly, so the ones a caller drops don't
-     * accumulate on a long-lived context.
+     * The latest {@value #HELD_BATCHES} of them, held strongly, so a caller that drops one, say when an exception
+     * skips its sync or exec, can't have it collected before {@link #close()} ends it. A batch can be used again
+     * at any time, so whether one still has something on the connection can only be told at close. Older ones
+     * are held only weakly, so a long-lived context doesn't accumulate them.
      */
-    private final Set<Closeable> earlierBatches = Collections.newSetFromMap(new WeakHashMap<>());
+    private final Deque<Closeable> heldBatches = new ArrayDeque<>();
     /**
-     * The earlier ones that still awaited replies when the latest was created, held strongly too: dropping one of
-     * those is the misuse {@link #close()} has to clean up after, so it must not be collected first. The ones that
-     * had nothing left aren't held, so they don't accumulate.
+     * How many batches were created, which tells {@link #close()} whether one of them was collected. Atomic, like
+     * {@link #closed}, because {@code close()} may run on another thread.
      */
-    private final List<Closeable> unfinishedBatches = new ArrayList<>();
+    private final AtomicInteger createdBatches = new AtomicInteger();
 
     private final AtomicBoolean closed = new AtomicBoolean();
 
@@ -340,25 +345,19 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
 
     /** Records a pipeline or transaction created on this context's connection, for {@link #close()} to end. */
     private void track(Closeable batch) {
-        Closeable previous = latestBatch;
-        if (previous != null) {
-            earlierBatches.add(previous);
+        batches.add(batch);
+        heldBatches.addLast(batch);
+        if (heldBatches.size() > HELD_BATCHES) {
+            heldBatches.removeFirst();
         }
-        unfinishedBatches.clear();
-        for (Closeable earlier : earlierBatches) {
-            if (awaitsReplies(earlier)) {
-                unfinishedBatches.add(earlier);
-            }
-        }
-        latestBatch = batch;
+        createdBatches.incrementAndGet();
     }
 
-    /** Whether a pipeline or transaction created here has sent commands whose replies it hasn't read yet. */
-    private static boolean awaitsReplies(Closeable batch) {
-        QueuedReplies replies = batch instanceof GraphPipelineImpl
+    /** How a pipeline or transaction created here decodes its replies, and whether it awaits any. */
+    private static QueuedReplies repliesOf(Closeable batch) {
+        return batch instanceof GraphPipelineImpl
                 ? ((GraphPipelineImpl) batch).replies()
                 : ((GraphTransactionImpl) batch).replies();
-        return replies.awaitsReplies();
     }
 
     /**
@@ -470,29 +469,40 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      * awaits, without decoding them. One that has nothing left sends nothing.
      *
      * <p>The one that awaits replies is ended first, so the replies on the connection are its own when it reads
-     * them. If several await replies, theirs are interleaved on the connection, and a transaction's may be queued
-     * inside another's {@code MULTI}: no order would hand each its own, so none is read, and the connection is
-     * marked broken instead. So it is when ending one fails, after which what is left on the connection is unknown.
-     * The pool then destroys the connection instead of lending it again, and this returns normally, as the pool
-     * does when its own reset fails.
+     * them. The connection is instead marked broken, without reading anything, when what is on it can't be told
+     * apart:
+     *
+     * <ul>
+     *   <li>several await replies: theirs are interleaved, and a transaction's may be queued inside another's
+     *       {@code MULTI}, so no order hands each its own. Their deletes may have run, so the replies are marked
+     *       unknown, which clears the schema cache if one of them queued a delete;
+     *   <li>a batch older than the ones {@link #heldBatches} holds was collected, after it may have sent commands
+     *       or a delete: the schema cache is cleared in case one ran.
+     * </ul>
+     *
+     * <p>So it is when ending one fails, after which what is left on the connection is unknown. The pool then
+     * destroys the connection instead of lending it again, and this returns normally, as the pool does when its
+     * own reset fails.
      */
     private void endBatches() {
-        List<Closeable> open = new ArrayList<>(earlierBatches);
-        Closeable latest = latestBatch;
-        if (latest != null) {
-            open.add(latest);
-        }
-        earlierBatches.clear();
-        unfinishedBatches.clear();
-        latestBatch = null;
+        List<Closeable> open = new ArrayList<>(batches); // the ones not collected
+        boolean collected = open.size() < createdBatches.getAndSet(0);
+        batches.clear();
+        heldBatches.clear();
 
         List<Closeable> ordered = new ArrayList<>(open.size());
         for (Closeable batch : open) {
-            if (awaitsReplies(batch)) {
+            if (repliesOf(batch).awaitsReplies()) {
                 ordered.add(batch);
             }
         }
-        if (ordered.size() > 1) {
+        if (collected || ordered.size() > 1) {
+            for (Closeable abandoned : ordered) {
+                repliesOf(abandoned).unknown();
+            }
+            if (collected) {
+                cache.clear();
+            }
             connection.getConnection().setBroken();
             return;
         }
