@@ -100,12 +100,23 @@ loadScripts(document, 'script');</script>
  to fan a blocking graph out over many virtual threads:
 
  <pre><code>
- Driver driver = FalkorDB.driver();
- ExecutorService pool = Executors.newVirtualThreadPerTaskExecutor(); // JDK 21+
- AsyncGraph async = AsyncFalkorDB.wrap(driver.graph("social"), pool);
- CompletableFuture&lt;ResultSet&gt; f = async.query("MATCH (n) RETURN count(n)");
- // ... on shutdown: drain outstanding futures, then pool.shutdown() and driver.close()
- </code></pre></div>
+ try (Driver driver = FalkorDB.driver();
+         ExecutorService vthreads = Executors.newVirtualThreadPerTaskExecutor()) { // JDK 21+
+     AsyncGraph async = AsyncFalkorDB.wrap(driver.graph("social"), vthreads);
+     CompletableFuture&lt;ResultSet&gt; f = async.query("MATCH (n) RETURN count(n)");
+     // ...
+ } // closes the executor first, which waits for its queued queries, then the driver
+ </code></pre>
+
+ <p>If the closing thread is interrupted while it waits, <code>ExecutorService.close()</code> drops the queued
+ operations that haven't started: they never run, and their futures never complete. It still waits for the
+ running ones, so a blocking query holds up closing until it ends or times out.
+
+ <p>An <a href="AsyncGraph.html" title="interface in com.falkordb"><code>AsyncGraph</code></a> owns nothing, so there is nothing to close on it: the caller keeps ownership of the
+ graph, its driver and the executor, and closes them. Shut the executor down first, so that no queued
+ operation runs on a closed driver, then close the driver. Before JDK 19 an <code>ExecutorService</code> isn't
+ <code>AutoCloseable</code>, so call <code>shutdown()</code> and <code>awaitTermination(...)</code> before closing the
+ driver.</div>
 </section>
 <section class="summary">
 <ul class="summary-list">

@@ -160,8 +160,21 @@ loadScripts(document, 'script');</script>
 <div class="block">If object is in transaction mode,
  flushes all previously queued commands in a transaction and restores the connection state to normal</div>
 </dd>
+<dt><a href="com/falkordb/Driver.html#close()" class="member-name-link">close()</a> - Method in interface com.falkordb.<a href="com/falkordb/Driver.html" title="interface in com.falkordb">Driver</a></dt>
+<dd>
+<div class="block">Closes the driver and releases its pooled connections.</div>
+</dd>
 <dt><a href="com/falkordb/Graph.html#close()" class="member-name-link">close()</a> - Method in interface com.falkordb.<a href="com/falkordb/Graph.html" title="interface in com.falkordb">Graph</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="com/falkordb/GraphPipeline.html#close()" class="member-name-link">close()</a> - Method in interface com.falkordb.<a href="com/falkordb/GraphPipeline.html" title="interface in com.falkordb">GraphPipeline</a></dt>
+<dd>
+<div class="block">Sends the queued commands and reads their replies, as <a href="com/falkordb/GraphPipeline.html#sync()"><code>GraphPipeline.sync()</code></a> does.</div>
+</dd>
+<dt><a href="com/falkordb/GraphTransaction.html#close()" class="member-name-link">close()</a> - Method in interface com.falkordb.<a href="com/falkordb/GraphTransaction.html" title="interface in com.falkordb">GraphTransaction</a></dt>
+<dd>
+<div class="block">Discards the transaction if it is still open, that is unless <a href="com/falkordb/GraphTransaction.html#exec()"><code>GraphTransaction.exec()</code></a> or <a href="com/falkordb/GraphTransaction.html#discard()"><code>GraphTransaction.discard()</code></a> has
+ ended it.</div>
+</dd>
 <dt><a href="com/falkordb/FalkorDB.Builder.html#cluster(java.lang.String...)" class="member-name-link">cluster(String...)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
 <dd>
 <div class="block">Connects to a Redis Cluster through the given startup nodes, without probing.</div>
