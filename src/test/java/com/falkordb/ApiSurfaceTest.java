@@ -174,6 +174,94 @@ class ApiSurfaceTest {
                 members(ApiSurface.describe(Marked.class, false), "extends ", "supertype "));
     }
 
+    @SuppressWarnings("rawtypes")
+    public interface RawMarked extends Marker {}
+
+    public interface ObjectMarked extends Marker<Object> {}
+
+    @Test
+    void keepsARawSupertypeRaw() {
+        // A RawMarked converts to a Marker<String> (unchecked), an ObjectMarked doesn't: a dependency
+        // going from one to the other must change the line.
+        assertEquals(
+                Arrays.asList("supertype com.falkordb.ApiSurfaceTest$Marker"),
+                members(ApiSurface.describe(RawMarked.class, false), "supertype "));
+        assertEquals(
+                Arrays.asList("supertype com.falkordb.ApiSurfaceTest$Marker<java.lang.Object>"),
+                members(ApiSurface.describe(ObjectMarked.class, false), "supertype "));
+    }
+
+    public static class Outer<T> {
+        public class Inner {
+            public T get() {
+                return null;
+            }
+        }
+    }
+
+    public static class StringInner extends Outer<String>.Inner {
+        public StringInner(Outer<String> outer) {
+            outer.super();
+        }
+    }
+
+    public static class InheritsStringInner extends StringInner {
+        public InheritsStringInner(Outer<String> outer) {
+            super(outer);
+        }
+    }
+
+    @Test
+    void resolvesTheTypeArgumentsOfAnOuterClass() {
+        // get() returns Outer's T, which StringInner supplies through Outer<String>.Inner: callers
+        // expecting a String break if that becomes Outer<Integer>.Inner.
+        String description = ApiSurface.describe(InheritsStringInner.class, false);
+        assertEquals(
+                Arrays.asList(
+                        "supertype com.falkordb.ApiSurfaceTest$Outer<java.lang.String>$Inner",
+                        "supertype com.falkordb.ApiSurfaceTest$StringInner"),
+                members(description, "supertype "));
+        assertEquals(
+                Arrays.asList("method public java.lang.String get() // erased: java.lang.Object get()"),
+                members(description, "method "));
+    }
+
+    public static class Holder {
+        @SuppressWarnings("ClassCanBeStatic") // inner on purpose: the constructor takes the outer instance
+        public class Values {
+            public Values(List<String> values) {}
+        }
+    }
+
+    @Test
+    void keepsTheGenericParametersOfAnInnerClassConstructor() {
+        assertEquals(
+                Arrays.asList("constructor public com.falkordb.ApiSurfaceTest$Holder$Values("
+                        + "com.falkordb.ApiSurfaceTest$Holder, java.util.List<java.lang.String>)"),
+                members(ApiSurface.describe(Holder.Values.class, false), "constructor "));
+    }
+
+    public interface Root {
+        int VALUE = 1;
+    }
+
+    public interface Left extends Root {
+        int VALUE = 2;
+    }
+
+    public interface Right extends Root {}
+
+    public interface Diamond extends Left, Right {}
+
+    @Test
+    void aFieldHiddenOnOneInheritancePathIsStillInheritedOnAnother() {
+        // Diamond.VALUE doesn't compile: Left.VALUE hides Root.VALUE only along Left, and Right still
+        // passes Root.VALUE down.
+        assertEquals(
+                Arrays.asList("field public static final int VALUE // ambiguous: 2 declarations"),
+                members(ApiSurface.describe(Diamond.class, false), "field "));
+    }
+
     public static class Base {
         public int value;
     }

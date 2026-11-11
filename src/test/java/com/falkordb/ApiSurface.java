@@ -482,12 +482,27 @@ final class ApiSurface {
      * java.lang.Iterable<com.falkordb.Record>}: assignability depends on them, not just on the class.
      */
     private static String supertypeAsSeenFrom(Class<?> supertype, Map<TypeVariable<?>, Type> arguments) {
-        TypeVariable<?>[] variables = supertype.getTypeParameters();
-        if (variables.length == 0) {
-            return supertype.getName();
+        String name = supertype.getName();
+        Class<?> outer = supertype.getDeclaringClass();
+        if (isInner(supertype)) {
+            // An inner class sees its outer class's type variables, so those arguments count too.
+            String owner = supertypeAsSeenFrom(outer, arguments);
+            if (!owner.equals(outer.getName())) {
+                name = owner + "$" + supertype.getSimpleName();
+            }
         }
-        return supertype.getName()
-                + Arrays.stream(variables).map(v -> type(v, arguments)).collect(Collectors.joining(", ", "<", ">"));
+        TypeVariable<?>[] variables = supertype.getTypeParameters();
+        // Raw is not the same as erased arguments: a raw Marker converts to a Marker<String>, a
+        // Marker<Object> doesn't.
+        if (variables.length == 0 || Arrays.stream(variables).allMatch(v -> arguments.get(v) instanceof Erased)) {
+            return name;
+        }
+        return name + Arrays.stream(variables).map(v -> type(v, arguments)).collect(Collectors.joining(", ", "<", ">"));
+    }
+
+    /** A non-static member class, whose instances belong to an instance of the class around it. */
+    private static boolean isInner(Class<?> type) {
+        return type.getDeclaringClass() != null && !type.isInterface() && !Modifier.isStatic(type.getModifiers());
     }
 
     private static List<Type> directSupertypes(Class<?> type) {
@@ -509,18 +524,27 @@ final class ApiSurface {
             if (supertype instanceof ParameterizedType) {
                 ParameterizedType p = (ParameterizedType) supertype;
                 raw = (Class<?>) p.getRawType();
-                TypeVariable<?>[] variables = raw.getTypeParameters();
-                Type[] actual = p.getActualTypeArguments();
-                for (int i = 0; i < variables.length; i++) {
-                    arguments.putIfAbsent(variables[i], actual[i]);
+                // Outer<String>.Inner supplies Outer's T as well as Inner's own type variables.
+                for (Type owner = p;
+                        owner instanceof ParameterizedType;
+                        owner = ((ParameterizedType) owner).getOwnerType()) {
+                    ParameterizedType q = (ParameterizedType) owner;
+                    TypeVariable<?>[] variables = ((Class<?>) q.getRawType()).getTypeParameters();
+                    Type[] actual = q.getActualTypeArguments();
+                    for (int i = 0; i < variables.length; i++) {
+                        arguments.putIfAbsent(variables[i], actual[i]);
+                    }
                 }
             } else {
                 raw = (Class<?>) supertype;
-                // Inherited through a raw reference, a generic supertype's members are erased: print
-                // its type variables as their erasure, so that a change of bound (a change of the JVM
-                // signature callers are compiled against) shows.
-                for (TypeVariable<?> variable : raw.getTypeParameters()) {
-                    arguments.putIfAbsent(variable, erasure(variable, Collections.emptyMap()));
+                // Inherited through a raw reference, a generic supertype's members are erased (an inner
+                // class's outer type variables too): print its type variables as their erasure, so
+                // that a change of bound (a change of the JVM signature callers are compiled against)
+                // shows.
+                for (Class<?> c = raw; c != null; c = isInner(c) ? c.getDeclaringClass() : null) {
+                    for (TypeVariable<?> variable : c.getTypeParameters()) {
+                        arguments.putIfAbsent(variable, new Erased(erasure(variable, Collections.emptyMap())));
+                    }
                 }
             }
             if (visited.add(raw) && !isJdk(raw)) {
@@ -553,33 +577,60 @@ final class ApiSurface {
         }
         List<Method> result = new ArrayList<>();
         for (List<Method> candidates : bySignature.values()) {
-            result.addAll(mostSpecific(candidates, true));
+            result.addAll(mostSpecific(candidates));
         }
         return result;
     }
 
-    /** The public/protected fields {@code type} has once hiding is resolved. */
+    /**
+     * The public/protected fields {@code type} has once hiding is resolved, leaving out what JDK types
+     * declare (those can't change with a dependency and differ between JDK versions).
+     */
     private static List<Field> fields(Class<?> type) {
-        Map<String, List<Field>> byName = new TreeMap<>();
-        for (Class<?> owner : hierarchy(type)) {
-            for (Field field : owner.getDeclaredFields()) {
-                // Every field takes part in hiding, whatever its access: a private field in a
-                // superclass hides the same-named fields above it, so callers lose them.
-                if (!field.isSynthetic()) {
-                    byName.computeIfAbsent(field.getName(), k -> new ArrayList<>())
-                            .add(field);
-                }
-            }
-        }
         List<Field> result = new ArrayList<>();
-        for (List<Field> candidates : byName.values()) {
-            for (Field field : mostSpecific(candidates, false)) {
-                if (isVisible(field.getModifiers())) {
-                    result.add(field);
-                }
+        for (Field field : fieldMembers(type, new HashMap<>())) {
+            if (isVisible(field.getModifiers()) && !isJdk(field.getDeclaringClass())) {
+                result.add(field);
             }
         }
         return result;
+    }
+
+    /**
+     * The fields {@code type} declares plus those it inherits along each path: a declaration hides the
+     * same-named fields of its own supertypes only, so in a diamond a field hidden on one path still
+     * comes down the other. Every field takes part in hiding, whatever its access: a private field in a
+     * superclass hides the same-named fields above it, so callers lose them. Like {@link
+     * #allSupertypes}, a JDK type is not climbed.
+     */
+    private static Set<Field> fieldMembers(Class<?> type, Map<Class<?>, Set<Field>> memo) {
+        Set<Field> cached = memo.get(type);
+        if (cached != null) {
+            return cached;
+        }
+        Set<Field> members = new LinkedHashSet<>();
+        Set<String> declared = new HashSet<>();
+        for (Field field : type.getDeclaredFields()) {
+            if (!field.isSynthetic()) {
+                members.add(field);
+                declared.add(field.getName());
+            }
+        }
+        if (!isJdk(type)) {
+            List<Class<?>> parents = new ArrayList<>(Arrays.asList(type.getInterfaces()));
+            if (type.getSuperclass() != null && type.getSuperclass() != Object.class) {
+                parents.add(type.getSuperclass());
+            }
+            for (Class<?> parent : parents) {
+                for (Field field : fieldMembers(parent, memo)) {
+                    if (!declared.contains(field.getName())) {
+                        members.add(field);
+                    }
+                }
+            }
+        }
+        memo.put(type, members);
+        return members;
     }
 
     /** {@code type} and every supertype, JDK ones included so that they can override or hide. */
@@ -591,13 +642,13 @@ final class ApiSurface {
     }
 
     /**
-     * Drops the members another candidate overrides or hides (by declaring-type assignability, so
-     * diamonds resolve), then, for methods, lets a class declaration win over interface ones, then drops what JDK
-     * types declare: those can't change with a dependency and differ between JDK versions.
+     * Drops the methods another candidate overrides (by declaring-type assignability, so diamonds
+     * resolve), then lets a class declaration win over interface ones, then drops what JDK types
+     * declare: those can't change with a dependency and differ between JDK versions.
      */
-    private static <M extends Member> List<M> mostSpecific(List<M> candidates, boolean classWins) {
-        List<M> kept = new ArrayList<>();
-        for (M candidate : candidates) {
+    private static List<Method> mostSpecific(List<Method> candidates) {
+        List<Method> kept = new ArrayList<>();
+        for (Method candidate : candidates) {
             Class<?> owner = candidate.getDeclaringClass();
             boolean overridden = candidates.stream()
                     .map(Member::getDeclaringClass)
@@ -606,9 +657,7 @@ final class ApiSurface {
                 kept.add(candidate);
             }
         }
-        // Only for methods: a field inherited from a superclass and one from an interface are both
-        // members, and naming either through this type is ambiguous.
-        if (classWins && kept.stream().anyMatch(m -> !m.getDeclaringClass().isInterface())) {
+        if (kept.stream().anyMatch(m -> !m.getDeclaringClass().isInterface())) {
             kept.removeIf(m -> m.getDeclaringClass().isInterface());
         }
         kept.removeIf(m -> isJdk(m.getDeclaringClass()));
@@ -649,9 +698,14 @@ final class ApiSurface {
 
     private static String constructor(Constructor<?> constructor, Map<TypeVariable<?>, Type> arguments) {
         Type[] parameters = constructor.getGenericParameterTypes();
-        if (parameters.length != constructor.getParameterTypes().length) {
+        Class<?>[] erased = constructor.getParameterTypes();
+        if (parameters.length == erased.length - 1 && isInner(constructor.getDeclaringClass())) {
             // An inner class constructor's generic signature can leave out the outer instance.
-            parameters = constructor.getParameterTypes();
+            List<Type> withOuter = new ArrayList<>(Collections.singletonList(erased[0]));
+            withOuter.addAll(Arrays.asList(parameters));
+            parameters = withOuter.toArray(new Type[0]);
+        } else if (parameters.length != erased.length) {
+            parameters = erased;
         }
         return "constructor " + modifiers(constructor, false)
                 + typeParametersWithSpace(constructor.getTypeParameters(), arguments)
@@ -758,6 +812,9 @@ final class ApiSurface {
             Type argument = arguments.get(type);
             return argument != null ? type(argument, arguments) : ((TypeVariable<?>) type).getName();
         }
+        if (type instanceof Erased) {
+            return type(((Erased) type).erasure, arguments);
+        }
         throw new IllegalArgumentException("Unknown kind of Type: " + type.getClass());
     }
 
@@ -781,7 +838,22 @@ final class ApiSurface {
         if (type instanceof WildcardType) {
             return erasure(((WildcardType) type).getUpperBounds()[0], arguments);
         }
+        if (type instanceof Erased) {
+            return ((Erased) type).erasure;
+        }
         throw new IllegalArgumentException("Unknown kind of Type: " + type.getClass());
+    }
+
+    /**
+     * What a type variable stands for when its class is inherited raw: members print it as its
+     * erasure, and the supertype line stays raw.
+     */
+    private static final class Erased implements Type {
+        final Class<?> erasure;
+
+        Erased(Class<?> erasure) {
+            this.erasure = erasure;
+        }
     }
 
     // --- comparing two snapshots ---
