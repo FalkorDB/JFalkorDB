@@ -34,6 +34,7 @@ com.falkordb.Driver
   type public interface com.falkordb.Driver
   extends java.io.Closeable
   supertype java.io.Closeable
+  method public abstract void close()
   method public abstract java.lang.String configGet(java.lang.String)
   method public default java.util.Map<java.lang.String, java.lang.String> configGetAll()
   method public abstract boolean configSet(java.lang.String, java.lang.Object)
@@ -343,6 +344,7 @@ com.falkordb.GraphPipeline
   method public abstract redis.clients.jedis.Response<java.lang.String> cfReserve(java.lang.String, long)
   method public abstract redis.clients.jedis.Response<java.lang.String> cfReserve(java.lang.String, long, redis.clients.jedis.bloom.CFReserveParams)
   method public abstract redis.clients.jedis.Response<java.util.Map$Entry<java.lang.Long, byte[]>> cfScanDump(java.lang.String, long)
+  method public abstract void close()
   method public abstract redis.clients.jedis.Response<java.util.List<java.lang.Long>> cmsIncrBy(java.lang.String, java.util.Map<java.lang.String, java.lang.Long>)
   method public abstract redis.clients.jedis.Response<java.util.Map<java.lang.String, java.lang.Object>> cmsInfo(java.lang.String)
   method public abstract redis.clients.jedis.Response<java.lang.String> cmsInitByDim(java.lang.String, long, long)
@@ -1481,6 +1483,7 @@ com.falkordb.GraphTransaction
   method public abstract redis.clients.jedis.Response<java.lang.String> cfReserve(java.lang.String, long, redis.clients.jedis.bloom.CFReserveParams)
   method public abstract redis.clients.jedis.Response<java.util.Map$Entry<java.lang.Long, byte[]>> cfScanDump(java.lang.String, long)
   method public abstract void clear()
+  method public abstract void close()
   method public abstract redis.clients.jedis.Response<java.util.List<java.lang.Long>> cmsIncrBy(java.lang.String, java.util.Map<java.lang.String, java.lang.Long>)
   method public abstract redis.clients.jedis.Response<java.util.Map<java.lang.String, java.lang.Object>> cmsInfo(java.lang.String)
   method public abstract redis.clients.jedis.Response<java.lang.String> cmsInitByDim(java.lang.String, long, long)
@@ -2446,8 +2449,10 @@ com.falkordb.Record
   method public abstract boolean containsKey(java.lang.String)
   method public abstract java.lang.String getString(int)
   method public abstract java.lang.String getString(java.lang.String)
-  method public abstract <T> T getValue(int)
-  method public abstract <T> T getValue(java.lang.String)
+  method @Deprecated public abstract <T> T getValue(int)
+  method @Deprecated public abstract <T> T getValue(java.lang.String)
+  method public default <T> T getValue(int, java.lang.Class<T>)
+  method public default <T> T getValue(java.lang.String, java.lang.Class<T>)
   method public abstract java.util.List<java.lang.String> keys()
   method public abstract int size()
   method public abstract java.util.List<java.lang.Object> values()
