@@ -192,9 +192,11 @@ class ApiSurfaceTest {
     }
 
     public static class Outer<T> {
+        T value;
+
         public class Inner {
             public T get() {
-                return null;
+                return value;
             }
         }
     }
@@ -227,9 +229,12 @@ class ApiSurfaceTest {
     }
 
     public static class Holder {
-        @SuppressWarnings("ClassCanBeStatic") // inner on purpose: the constructor takes the outer instance
+        List<String> values;
+
         public class Values {
-            public Values(List<String> values) {}
+            public Values(List<String> values) {
+                Holder.this.values = values;
+            }
         }
     }
 
@@ -243,10 +248,14 @@ class ApiSurfaceTest {
 
     public interface Root {
         int VALUE = 1;
+
+        int root();
     }
 
     public interface Left extends Root {
         int VALUE = 2;
+
+        int left();
     }
 
     public interface Right extends Root {}
