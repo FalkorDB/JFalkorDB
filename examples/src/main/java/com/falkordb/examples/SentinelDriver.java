@@ -5,7 +5,6 @@ import com.falkordb.FalkorDB;
 import com.falkordb.GraphContextGenerator;
 import com.falkordb.Record;
 import com.falkordb.ResultSet;
-import java.io.IOException;
 import java.util.UUID;
 
 /**
@@ -44,7 +43,7 @@ public final class SentinelDriver {
 
     private SentinelDriver() {}
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         String host = args.length > 0 ? args[0] : "localhost";
         int port = args.length > 1 ? Integer.parseInt(args[1]) : 6379;
 
@@ -58,7 +57,7 @@ public final class SentinelDriver {
      * The headline case: an ordinary factory call that works out for itself whether {@code
      * host:port} is a Sentinel or a FalkorDB server.
      */
-    private static void queryThroughAutoDetectedEndpoint(String host, int port) throws IOException {
+    private static void queryThroughAutoDetectedEndpoint(String host, int port) {
         System.out.println("Connecting to " + host + ":" + port + " (Sentinel or server - detected automatically)");
 
         try (Driver driver = FalkorDB.driver(host, port)) {
@@ -82,7 +81,7 @@ public final class SentinelDriver {
     }
 
     /** Naming the deployment, which is obligatory when a Sentinel monitors more than one master. */
-    private static void showExplicitSentinelConfiguration() throws IOException {
+    private static void showExplicitSentinelConfiguration() {
         try (Driver driver = FalkorDB.builder()
                 .sentinel("mymaster", "sentinel-a:26379", "sentinel-b:26379", "sentinel-c:26379")
                 .build()) {
@@ -92,7 +91,7 @@ public final class SentinelDriver {
     }
 
     /** {@code credentials(...)} authenticates the master; the Sentinels can differ. */
-    private static void showSeparateSentinelCredentials() throws IOException {
+    private static void showSeparateSentinelCredentials() {
         try (Driver driver = FalkorDB.builder()
                 .sentinel("mymaster", "sentinel-a:26379")
                 .credentials("app-user", "app-password")
@@ -104,7 +103,7 @@ public final class SentinelDriver {
     }
 
     /** Auto-detection costs one {@code INFO} on the first connection; this skips it. */
-    private static void showAutoDetectionTurnedOff() throws IOException {
+    private static void showAutoDetectionTurnedOff() {
         try (Driver driver =
                 FalkorDB.builder().host("db.example.com").autoDetectSentinel(false).build()) {
             System.out.println("Built a driver that connects directly, without probing for a Sentinel: "

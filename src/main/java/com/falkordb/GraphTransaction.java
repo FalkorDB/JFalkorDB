@@ -236,4 +236,14 @@ public interface GraphTransaction
      * @return "OK" if the transaction was successfully discarded, otherwise an exception is thrown
      */
     String discard();
+
+    /**
+     * Discards the transaction if it is still open, that is unless {@link #exec()} or {@link #discard()} has
+     * ended it. The connection of the context that created the transaction stays open.
+     *
+     * <p>Unlike {@link Closeable#close()}, this throws no checked exception, so a transaction opened in a
+     * try-with-resources statement needs no {@code catch (IOException)}.
+     */
+    @Override
+    void close();
 }
