@@ -228,6 +228,42 @@ class ApiSurfaceTest {
                 members(description, "method "));
     }
 
+    public static class Pair<A, B> {
+        public A first() {
+            return null;
+        }
+
+        public class Same extends Pair<A, B> {
+            public Pair<A, B> outer() {
+                return Pair.this;
+            }
+        }
+
+        public class Swapped extends Pair<B, A> {
+            public Pair<A, B> outer() {
+                return Pair.this;
+            }
+        }
+    }
+
+    @Test
+    void anInnerClassExtendingItsOuterClassSubstitutesOnce() {
+        // Inside Pair, A and B are the outer instance's; through the supertype they are Pair's own.
+        // So Same.first() returns A and Swapped.first() returns B, while what Swapped declares itself
+        // keeps its A and B. Neither recurses forever.
+        assertEquals(
+                Arrays.asList(
+                        "method public A first()", "method public com.falkordb.ApiSurfaceTest$Pair<A, B> outer()"),
+                members(ApiSurface.describe(Pair.Same.class, false), "method "));
+        assertEquals(
+                Arrays.asList(
+                        "extends com.falkordb.ApiSurfaceTest$Pair<B, A>",
+                        "supertype com.falkordb.ApiSurfaceTest$Pair<B, A>",
+                        "method public B first()",
+                        "method public com.falkordb.ApiSurfaceTest$Pair<A, B> outer()"),
+                members(ApiSurface.describe(Pair.Swapped.class, false), "extends ", "supertype ", "method "));
+    }
+
     public static class Holder {
         public class Values {
             private final List<String> values;

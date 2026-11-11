@@ -371,15 +371,17 @@ final class ApiSurface {
      */
     static String describe(Class<?> type, boolean reachable) {
         Map<TypeVariable<?>, Type> arguments = typeArguments(type);
+        // What type itself declares names its type variables as they are.
+        Map<TypeVariable<?>, Type> own = declaredIn(arguments);
         List<Line> lines = new ArrayList<>();
         lines.add(new Line(DECLARATION, "", declaration(type)));
         String extendsWord = type.isInterface() ? "extends " : "implements ";
         Type superclass = type.getGenericSuperclass();
         if (superclass != null && superclass != Object.class) {
-            lines.add(new Line(SUPERTYPE, "0", "extends " + type(superclass, arguments)));
+            lines.add(new Line(SUPERTYPE, "0", "extends " + type(superclass, own)));
         }
         for (Type supertype : type.getGenericInterfaces()) {
-            lines.add(new Line(SUPERTYPE, "1", extendsWord + type(supertype, arguments)));
+            lines.add(new Line(SUPERTYPE, "1", extendsWord + type(supertype, own)));
         }
         for (Class<?> supertype : allSupertypes(type)) {
             lines.add(new Line(SUPERTYPE, "2", "supertype " + supertypeAsSeenFrom(supertype, arguments)));
@@ -393,19 +395,23 @@ final class ApiSurface {
                 lines.add(new Line(
                         FIELD,
                         field.getName(),
-                        field(field, arguments) + (count > 1 ? " // ambiguous: " + count + " declarations" : "")));
+                        field(field, field.getDeclaringClass() == type ? own : arguments)
+                                + (count > 1 ? " // ambiguous: " + count + " declarations" : "")));
             }
         }
         if (!reachable) {
             for (Constructor<?> constructor : type.getDeclaredConstructors()) {
                 if (!constructor.isSynthetic() && isVisible(constructor.getModifiers())) {
-                    lines.add(new Line(CONSTRUCTOR, "", constructor(constructor, arguments)));
+                    lines.add(new Line(CONSTRUCTOR, "", constructor(constructor, own)));
                 }
             }
         }
         for (Method method : methods(type, arguments)) {
             if (!reachable || isPublicInstance(method)) {
-                lines.add(new Line(METHOD, method.getName(), method(method, arguments)));
+                lines.add(new Line(
+                        METHOD,
+                        method.getName(),
+                        method(method, method.getDeclaringClass() == type ? own : arguments)));
             }
         }
         lines.sort(Comparator.<Line>comparingInt(l -> l.category)
@@ -500,6 +506,13 @@ final class ApiSurface {
         return name + Arrays.stream(variables).map(v -> type(v, arguments)).collect(Collectors.joining(", ", "<", ">"));
     }
 
+    /** {@code arguments} without what a supertype supplies for the type variables in scope (see {@link Bound}). */
+    private static Map<TypeVariable<?>, Type> declaredIn(Map<TypeVariable<?>, Type> arguments) {
+        Map<TypeVariable<?>, Type> own = new HashMap<>(arguments);
+        own.values().removeIf(argument -> argument instanceof Bound);
+        return own;
+    }
+
     /** A non-static member class, whose instances belong to an instance of the class around it. */
     private static boolean isInner(Class<?> type) {
         return type.getDeclaringClass() != null && !type.isInterface() && !Modifier.isStatic(type.getModifiers());
@@ -516,6 +529,12 @@ final class ApiSurface {
     /** The type arguments {@code type} supplies, directly or indirectly, to each generic supertype. */
     private static Map<TypeVariable<?>, Type> typeArguments(Class<?> type) {
         Map<TypeVariable<?>, Type> arguments = new HashMap<>();
+        // The type variables in scope in type's own declaration: an inner class extending its generic
+        // outer class (class Inner extends Outer<T>) supplies Outer's T in terms of that same T.
+        Set<TypeVariable<?>> scope = new HashSet<>();
+        for (Class<?> c = type; c != null; c = isInner(c) ? c.getDeclaringClass() : null) {
+            scope.addAll(Arrays.asList(c.getTypeParameters()));
+        }
         List<Type> work = new ArrayList<>(directSupertypes(type));
         Set<Class<?>> visited = new HashSet<>();
         while (!work.isEmpty()) {
@@ -532,7 +551,8 @@ final class ApiSurface {
                     TypeVariable<?>[] variables = ((Class<?>) q.getRawType()).getTypeParameters();
                     Type[] actual = q.getActualTypeArguments();
                     for (int i = 0; i < variables.length; i++) {
-                        arguments.putIfAbsent(variables[i], actual[i]);
+                        arguments.putIfAbsent(
+                                variables[i], scope.contains(variables[i]) ? new Bound(actual[i], scope) : actual[i]);
                     }
                 }
             } else {
@@ -568,9 +588,10 @@ final class ApiSurface {
                 }
                 // Keyed on the parameters as this type sees them, so that an override of a method
                 // of a generic supertype (set(Long) for set(T)) is recognised as one.
+                Map<TypeVariable<?>, Type> seenFrom = owner == type ? declaredIn(arguments) : arguments;
                 String key = method.getName()
                         + Arrays.stream(method.getGenericParameterTypes())
-                                .map(p -> erasure(p, arguments).getName())
+                                .map(p -> erasure(p, seenFrom).getName())
                                 .collect(Collectors.joining(",", "(", ")"));
                 bySignature.computeIfAbsent(key, k -> new ArrayList<>()).add(method);
             }
@@ -815,6 +836,10 @@ final class ApiSurface {
         if (type instanceof Erased) {
             return type(((Erased) type).erasure, arguments);
         }
+        if (type instanceof Bound) {
+            Bound bound = (Bound) type;
+            return type(bound.argument, bound.outside(arguments));
+        }
         throw new IllegalArgumentException("Unknown kind of Type: " + type.getClass());
     }
 
@@ -841,6 +866,10 @@ final class ApiSurface {
         if (type instanceof Erased) {
             return ((Erased) type).erasure;
         }
+        if (type instanceof Bound) {
+            Bound bound = (Bound) type;
+            return erasure(bound.argument, bound.outside(arguments));
+        }
         throw new IllegalArgumentException("Unknown kind of Type: " + type.getClass());
     }
 
@@ -853,6 +882,28 @@ final class ApiSurface {
 
         Erased(Class<?> erasure) {
             this.erasure = erasure;
+        }
+    }
+
+    /**
+     * What a type variable in scope in the described type's declaration stands for through a supertype.
+     * It is substituted once, where a member's signature names it: the argument it stands for names
+     * the scope's own variables, which stay as they are (substituting them again would loop, or, for
+     * class Swapped extends Pair<B, A>, swap them back).
+     */
+    private static final class Bound implements Type {
+        final Type argument;
+        final Set<TypeVariable<?>> scope;
+
+        Bound(Type argument, Set<TypeVariable<?>> scope) {
+            this.argument = argument;
+            this.scope = scope;
+        }
+
+        Map<TypeVariable<?>, Type> outside(Map<TypeVariable<?>, Type> arguments) {
+            Map<TypeVariable<?>, Type> rest = new HashMap<>(arguments);
+            rest.keySet().removeAll(scope);
+            return rest;
         }
     }
 
