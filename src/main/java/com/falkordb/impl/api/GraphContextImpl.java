@@ -9,6 +9,9 @@ import com.falkordb.exceptions.GraphException;
 import com.falkordb.impl.Utils;
 import com.falkordb.impl.graph_cache.GraphCache;
 import com.falkordb.impl.resultset.ResultSetImpl;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -45,6 +48,23 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      * drops don't accumulate.
      */
     private final Set<QueuedReplies> connectionUsers = Collections.newSetFromMap(new WeakHashMap<>());
+    /**
+     * The pipeline or transaction created last, which {@link #close()} ends so the connection goes back clean. Held
+     * strongly, so it can't be collected before then: the one usually left open is the latest, dropped when an
+     * exception skips its sync or exec.
+     */
+    private @Nullable Closeable latestBatch;
+    /**
+     * The ones created before it, which {@link #close()} ends too. Held weakly, so the ones a caller drops don't
+     * accumulate on a long-lived context.
+     */
+    private final Set<Closeable> earlierBatches = Collections.newSetFromMap(new WeakHashMap<>());
+    /**
+     * The earlier ones that still awaited replies when the latest was created, held strongly too: dropping one of
+     * those is the misuse {@link #close()} has to clean up after, so it must not be collected first. The ones that
+     * had nothing left aren't held, so they don't accumulate.
+     */
+    private final List<Closeable> unfinishedBatches = new ArrayList<>();
 
     private final AtomicBoolean closed = new AtomicBoolean();
 
@@ -285,10 +305,12 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public GraphTransaction multi() {
+        checkOpen();
         GraphTransactionImpl transaction =
                 new GraphTransactionImpl(connection.getConnection(), this::decodeQueued, this.cache, this.graphId);
         transaction.multi();
         connectionUsers.add(transaction.replies());
+        track(transaction);
         return transaction;
     }
 
@@ -298,10 +320,45 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public GraphPipeline pipelined() {
+        checkOpen();
         GraphPipelineImpl pipeline =
                 new GraphPipelineImpl(connection.getConnection(), this::decodeQueued, this.cache, this.graphId);
         connectionUsers.add(pipeline.replies());
+        track(pipeline);
         return pipeline;
+    }
+
+    /**
+     * After {@link #close()} the connection may already be lent to another borrower, so a pipeline or transaction
+     * must not be created on it.
+     */
+    private void checkOpen() {
+        if (closed.get()) {
+            throw new IllegalStateException("the context is closed");
+        }
+    }
+
+    /** Records a pipeline or transaction created on this context's connection, for {@link #close()} to end. */
+    private void track(Closeable batch) {
+        Closeable previous = latestBatch;
+        if (previous != null) {
+            earlierBatches.add(previous);
+        }
+        unfinishedBatches.clear();
+        for (Closeable earlier : earlierBatches) {
+            if (awaitsReplies(earlier)) {
+                unfinishedBatches.add(earlier);
+            }
+        }
+        latestBatch = batch;
+    }
+
+    /** Whether a pipeline or transaction created here has sent commands whose replies it hasn't read yet. */
+    private static boolean awaitsReplies(Closeable batch) {
+        QueuedReplies replies = batch instanceof GraphPipelineImpl
+                ? ((GraphPipelineImpl) batch).replies()
+                : ((GraphTransactionImpl) batch).replies();
+        return replies.awaitsReplies();
     }
 
     /**
@@ -386,12 +443,71 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     /**
      * Releases the context's connection, returning it to its pool when it was borrowed from one.
      * This is the only method that releases the connection.
+     *
+     * <p>The next borrower must get the connection clean, so the pipelines and transactions created on it are
+     * ended first: a transaction still open is discarded, and the replies a pipeline still awaits are read. A key
+     * the context itself watched needs nothing here: the pool unwatches it when the connection comes back
+     * ({@code JedisPool.returnResource} calls {@code Jedis.resetState()}), and a connection that isn't pooled is
+     * disconnected.
      */
     @Override
     public void close() {
         // Once only: a second close() would hand the connection to the pool again.
         if (closed.compareAndSet(false, true)) {
-            this.connection.close();
+            try {
+                endBatches();
+            } finally {
+                this.connection.close();
+            }
+        }
+    }
+
+    /**
+     * Ends what the pipelines and transactions created on this context left on its connection, which Jedis' pool
+     * doesn't know about: they were built on the bare connection, not by {@code Jedis.multi()} or
+     * {@code Jedis.pipelined()}. Each one's own {@code close()} does it: a transaction still inside {@code MULTI}
+     * is discarded, one that watched keys after it ended unwatches them, and a pipeline reads the replies it still
+     * awaits, without decoding them. One that has nothing left sends nothing.
+     *
+     * <p>The one that awaits replies is ended first, so the replies on the connection are its own when it reads
+     * them. If several await replies, theirs are interleaved on the connection, and a transaction's may be queued
+     * inside another's {@code MULTI}: no order would hand each its own, so none is read, and the connection is
+     * marked broken instead. So it is when ending one fails, after which what is left on the connection is unknown.
+     * The pool then destroys the connection instead of lending it again, and this returns normally, as the pool
+     * does when its own reset fails.
+     */
+    private void endBatches() {
+        List<Closeable> open = new ArrayList<>(earlierBatches);
+        Closeable latest = latestBatch;
+        if (latest != null) {
+            open.add(latest);
+        }
+        earlierBatches.clear();
+        unfinishedBatches.clear();
+        latestBatch = null;
+
+        List<Closeable> ordered = new ArrayList<>(open.size());
+        for (Closeable batch : open) {
+            if (awaitsReplies(batch)) {
+                ordered.add(batch);
+            }
+        }
+        if (ordered.size() > 1) {
+            connection.getConnection().setBroken();
+            return;
+        }
+        for (Closeable batch : open) {
+            if (!ordered.contains(batch)) {
+                ordered.add(batch);
+            }
+        }
+        for (Closeable batch : ordered) {
+            try {
+                batch.close();
+            } catch (IOException | RuntimeException e) {
+                connection.getConnection().setBroken();
+                return;
+            }
         }
     }
 

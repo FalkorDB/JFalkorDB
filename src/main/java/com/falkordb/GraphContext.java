@@ -14,18 +14,27 @@ package com.falkordb;
  *     context.query("CREATE (:person {name: 'roi'})");
  * }
  * }</pre>
+ *
+ * <p>Closing the context also ends what its transactions and pipelines left on the connection, so the next user
+ * of the connection gets it clean: a transaction still open is discarded, and the replies a pipeline still awaits
+ * are read, which waits for them to arrive. A {@code Response} of a transaction discarded this way can't be read.
+ * If more than one transaction or pipeline still awaits replies, or ending one fails, the connection is closed
+ * instead of being returned to the pool. Like every other call on the context, close it on the thread that uses
+ * the context.
  */
 public interface GraphContext extends Graph {
 
     /**
      * Returns a Redis transactional object, over the connection context, with graph API capabilities
      * @return Redis transactional object, over the connection context, with graph API capabilities
+     * @throws IllegalStateException if the context is closed
      */
     GraphTransaction multi();
 
     /**
      * Returns a Redis pipeline object, over the connection context, with graph API capabilities
      * @return Redis pipeline object, over the connection context, with graph API capabilities
+     * @throws IllegalStateException if the context is closed
      */
     GraphPipeline pipelined();
 

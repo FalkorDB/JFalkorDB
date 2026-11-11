@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * A minimal in-process RESP server for unit tests: it parses each command into its words, hands them
@@ -26,14 +27,22 @@ import java.util.function.Function;
 final class FakeRedisServer implements AutoCloseable {
 
     private final ServerSocket server;
-    private final Function<List<String>, String> handler;
+    private final Supplier<? extends Function<List<String>, String>> handlers;
     private final List<List<String>> received = new CopyOnWriteArrayList<>();
     private final List<Socket> clients = new CopyOnWriteArrayList<>();
     private final Thread acceptor;
     private volatile boolean closed;
 
     FakeRedisServer(Function<List<String>, String> handler) {
-        this.handler = handler;
+        this(() -> handler);
+    }
+
+    /**
+     * A server that answers each connection with a handler of its own, from {@code handlers}, for state a connection
+     * keeps, such as {@code MULTI}.
+     */
+    FakeRedisServer(Supplier<? extends Function<List<String>, String>> handlers) {
+        this.handlers = handlers;
         try {
             this.server = new ServerSocket(0, 50, InetAddress.getByAddress(new byte[] {127, 0, 0, 1}));
         } catch (IOException e) {
@@ -129,6 +138,7 @@ final class FakeRedisServer implements AutoCloseable {
     }
 
     private void serve(Socket client) {
+        Function<List<String>, String> handler = handlers.get();
         try (InputStream in = new BufferedInputStream(client.getInputStream());
                 OutputStream out = client.getOutputStream()) {
             List<String> command;
