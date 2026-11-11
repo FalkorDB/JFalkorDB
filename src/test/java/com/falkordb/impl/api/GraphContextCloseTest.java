@@ -347,6 +347,32 @@ class GraphContextCloseTest {
         }
     }
 
+    /**
+     * A guard: a delete queued behind a reply that fails to decode may have run, whether {@code syncAndReturnAll()}
+     * throws (the failure escapes Jedis' loop, leaving the delete's response unbuilt) or keeps the failure in its
+     * result. Neither that nor {@code close()} may leave the schema cache as it was.
+     */
+    @Test
+    void aDeleteQueuedBehindAReplyThatFailsToDecodeClearsTheCache() {
+        try (JedisPool pool = new JedisPool(poolOfOne(), "127.0.0.1", server.port(), 0)) {
+            nextBorrower = pool::getResource;
+            CountingCache cache = new CountingCache();
+            GraphContextImpl context = new GraphContextImpl(pool.getResource(), cache, "g");
+            GraphPipeline pipeline = context.pipelined();
+            pipeline.query("RETURN 'malformed'"); // answered with an integer, which fails to decode
+            pipeline.deleteGraph(); // runs on the server
+            try {
+                pipeline.syncAndReturnAll();
+            } catch (RuntimeException failedPartWay) {
+                // the decode failure escaped; the delete's response was never built
+            }
+            assertTimeoutPreemptively(Duration.ofSeconds(10), context::close);
+
+            assertEquals(1, cache.clears, "the delete may have run");
+            assertNextBorrowerGetsACleanConnection();
+        }
+    }
+
     @Test
     void endingABatchThatFailsAfterReadingADeleteClearsTheCache() {
         try (JedisPool pool = new JedisPool(poolOfOne(), "127.0.0.1", server.port())) {
@@ -548,6 +574,9 @@ class GraphContextCloseTest {
                 case "PING":
                     return "+PONG\r\n";
                 case "GRAPH.QUERY":
+                    if (command.get(2).contains("malformed")) {
+                        return FakeRedisServer.integer(1); // where a graph reply belongs
+                    }
                     return command.get(2).startsWith("MATCH") ? NODE_REPLY : WRITE_REPLY;
                 default:
                     return FakeRedisServer.ok();
