@@ -31,6 +31,7 @@ loadScripts(document, 'script');</script>
 <li>Class</li>
 <li>Use</li>
 <li><a href="overview-tree.html">Tree</a></li>
+<li><a href="deprecated-list.html">Deprecated</a></li>
 <li class="nav-bar-cell1-rev">Index</li>
 <li><a href="help-doc.html#index">Help</a></li>
 </ul>
@@ -475,11 +476,31 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/falkordb/Record.html#getValue(int)" class="member-name-link">getValue(int)</a> - Method in interface com.falkordb.<a href="com/falkordb/Record.html" title="interface in com.falkordb">Record</a></dt>
 <dd>
-<div class="block">The value at the given field index</div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+<div class="deprecation-comment">since 0.16.0, and to be removed in 1.0.0, because <code>T</code> is unchecked. Use
+     <a href="com/falkordb/Record.html#getValue(int,java.lang.Class)"><code>Record.getValue(int, Class)</code></a>, which checks the type here and names the column when it
+     doesn't match: <code>String s = record.getValue(0)</code> becomes <code>String s =
+     record.getValue(0, String.class)</code>. For an untyped read use <code>getValue(index,
+     Object.class)</code> or <a href="com/falkordb/Record.html#values()"><code>Record.values()</code></a><code>.get(index)</code>.</div>
+</div>
+</dd>
+<dt><a href="com/falkordb/Record.html#getValue(int,java.lang.Class)" class="member-name-link">getValue(int, Class&lt;T&gt;)</a> - Method in interface com.falkordb.<a href="com/falkordb/Record.html" title="interface in com.falkordb">Record</a></dt>
+<dd>
+<div class="block">The value at the given field index, checked against <code>type</code></div>
 </dd>
 <dt><a href="com/falkordb/Record.html#getValue(java.lang.String)" class="member-name-link">getValue(String)</a> - Method in interface com.falkordb.<a href="com/falkordb/Record.html" title="interface in com.falkordb">Record</a></dt>
 <dd>
-<div class="block">The value at the given field</div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+<div class="deprecation-comment">since 0.16.0, and to be removed in 1.0.0, because <code>T</code> is unchecked. Use
+     <a href="com/falkordb/Record.html#getValue(java.lang.String,java.lang.Class)"><code>Record.getValue(String, Class)</code></a>, which checks the type here and names the column when it
+     doesn't match: <code>Node n = record.getValue("a")</code> becomes <code>Node n =
+     record.getValue("a", Node.class)</code>. For an untyped read use <code>getValue(key,
+     Object.class)</code>.</div>
+</div>
+</dd>
+<dt><a href="com/falkordb/Record.html#getValue(java.lang.String,java.lang.Class)" class="member-name-link">getValue(String, Class&lt;T&gt;)</a> - Method in interface com.falkordb.<a href="com/falkordb/Record.html" title="interface in com.falkordb">Record</a></dt>
+<dd>
+<div class="block">The value at the given field, checked against <code>type</code></div>
 </dd>
 <dt><a href="com/falkordb/AsyncGraph.html#graph()" class="member-name-link">graph()</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
 <dd>

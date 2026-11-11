@@ -31,6 +31,7 @@ loadScripts(document, 'script');</script>
 <li class="nav-bar-cell1-rev">Class</li>
 <li><a href="class-use/Record.html">Use</a></li>
 <li><a href="package-tree.html">Tree</a></li>
+<li><a href="../../deprecated-list.html">Deprecated</a></li>
 <li><a href="../../index-all.html">Index</a></li>
 <li><a href="../../help-doc.html#class">Help</a></li>
 </ul>
@@ -99,7 +100,7 @@ loadScripts(document, 'script');</script>
 <section class="method-summary" id="method-summary">
 <h2>Method Summary</h2>
 <div id="method-summary-table">
-<div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">All Methods</button><button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="table-tab">Instance Methods</button><button id="method-summary-table-tab3" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab3', 3)" class="table-tab">Abstract Methods</button></div>
+<div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">All Methods</button><button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="table-tab">Instance Methods</button><button id="method-summary-table-tab3" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab3', 3)" class="table-tab">Abstract Methods</button><button id="method-summary-table-tab5" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab5', 3)" class="table-tab">Default Methods</button><button id="method-summary-table-tab6" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab6', 3)" class="table-tab">Deprecated Methods</button></div>
 <div id="method-summary-table.tabpanel" role="tabpanel" aria-labelledby="method-summary-table-tab0">
 <div class="summary-table three-column-summary">
 <div class="table-header col-first">Modifier and Type</div>
@@ -120,15 +121,31 @@ loadScripts(document, 'script');</script>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
 <div class="block">The value at the given field (represented as String)</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>&lt;T&gt;&nbsp;@Nullable T</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#getValue(int)" class="member-name-link">getValue</a><wbr>(int&nbsp;index)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
-<div class="block">The value at the given field index</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>&lt;T&gt;&nbsp;@Nullable T</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#getValue(int)" class="member-name-link">getValue</a><wbr>(int&nbsp;index)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span>
+<div class="deprecation-comment">since 0.16.0, and to be removed in 1.0.0, because <code>T</code> is unchecked.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>&lt;T&gt;&nbsp;@Nullable T</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#getValue(java.lang.String)" class="member-name-link">getValue</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;key)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
-<div class="block">The value at the given field</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default &lt;T&gt;&nbsp;@Nullable T</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#getValue(int,java.lang.Class)" class="member-name-link">getValue</a><wbr>(int&nbsp;index,
+ <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html" title="class or interface in java.lang" class="external-link">Class</a>&lt;T&gt;&nbsp;type)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
+<div class="block">The value at the given field index, checked against <code>type</code></div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>&lt;T&gt;&nbsp;@Nullable T</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#getValue(java.lang.String)" class="member-name-link">getValue</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;key)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span>
+<div class="deprecation-comment">since 0.16.0, and to be removed in 1.0.0, because <code>T</code> is unchecked.</div>
+</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default &lt;T&gt;&nbsp;@Nullable T</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#getValue(java.lang.String,java.lang.Class)" class="member-name-link">getValue</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;key,
+ <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html" title="class or interface in java.lang" class="external-link">Class</a>&lt;T&gt;&nbsp;type)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
+<div class="block">The value at the given field, checked against <code>type</code></div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a><wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#keys()" class="member-name-link">keys</a>()</code></div>
@@ -162,7 +179,15 @@ loadScripts(document, 'script');</script>
 <li>
 <section class="detail" id="getValue(int)">
 <h3>getValue</h3>
-<div class="member-signature"><span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type">@Nullable T</span>&nbsp;<span class="element-name">getValue</span><wbr><span class="parameters">(int&nbsp;index)</span></div>
+<div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Deprecated.html" title="class or interface in java.lang" class="external-link">@Deprecated</a>
+</span><span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type">@Nullable T</span>&nbsp;<span class="element-name">getValue</span><wbr><span class="parameters">(int&nbsp;index)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+<div class="deprecation-comment">since 0.16.0, and to be removed in 1.0.0, because <code>T</code> is unchecked. Use
+     <a href="#getValue(int,java.lang.Class)"><code>getValue(int, Class)</code></a>, which checks the type here and names the column when it
+     doesn't match: <code>String s = record.getValue(0)</code> becomes <code>String s =
+     record.getValue(0, String.class)</code>. For an untyped read use <code>getValue(index,
+     Object.class)</code> or <a href="#values()"><code>values()</code></a><code>.get(index)</code>.</div>
+</div>
 <div class="block">The value at the given field index
 
  <p><code>T</code> is inferred from the assignment, never checked: the cast is unchecked and erased,
@@ -187,7 +212,15 @@ loadScripts(document, 'script');</script>
 <li>
 <section class="detail" id="getValue(java.lang.String)">
 <h3>getValue</h3>
-<div class="member-signature"><span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type">@Nullable T</span>&nbsp;<span class="element-name">getValue</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;key)</span></div>
+<div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Deprecated.html" title="class or interface in java.lang" class="external-link">@Deprecated</a>
+</span><span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type">@Nullable T</span>&nbsp;<span class="element-name">getValue</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;key)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+<div class="deprecation-comment">since 0.16.0, and to be removed in 1.0.0, because <code>T</code> is unchecked. Use
+     <a href="#getValue(java.lang.String,java.lang.Class)"><code>getValue(String, Class)</code></a>, which checks the type here and names the column when it
+     doesn't match: <code>Node n = record.getValue("a")</code> becomes <code>Node n =
+     record.getValue("a", Node.class)</code>. For an untyped read use <code>getValue(key,
+     Object.class)</code>.</div>
+</div>
 <div class="block">The value at the given field
 
  <p><code>T</code> is unchecked, exactly as in <a href="#getValue(int)"><code>getValue(int)</code></a>: a wrong type surfaces as a
@@ -201,6 +234,78 @@ loadScripts(document, 'script');</script>
 <dd>the value at the field, or <code>null</code> if the stored value is null</dd>
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the record has no column with that key</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="getValue(int,java.lang.Class)">
+<h3>getValue</h3>
+<div class="member-signature"><span class="modifiers">default</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type">@Nullable T</span>&nbsp;<span class="element-name">getValue</span><wbr><span class="parameters">(int&nbsp;index,
+ <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html" title="class or interface in java.lang" class="external-link">Class</a>&lt;T&gt;&nbsp;type)</span></div>
+<div class="block">The value at the given field index, checked against <code>type</code>
+
+ <p>Unlike <a href="#getValue(int)"><code>getValue(int)</code></a>, the type is checked here: a value of another type throws a
+ <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/ClassCastException.html" title="class or interface in java.lang" class="external-link"><code>ClassCastException</code></a> from this call, naming the column, the value's class and <code>
+ type</code>, even if you then assign the result to <code>Object</code>. A null value is returned as
+ <code>null</code>, whatever the type.
+
+ <ul>
+   <li>The value must be an instance of <code>type</code>, so a supertype matches (<code>
+       GraphEntity.class</code> for a node, <code>Object.class</code> for anything). Nothing is converted:
+       FalkorDB integers decode as <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html" title="class or interface in java.lang" class="external-link"><code>Long</code></a> and floats as <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Double.html" title="class or interface in java.lang" class="external-link"><code>Double</code></a>, so asking for
+       <code>Integer.class</code> on an integer column throws.
+   <li>A primitive class stands for its wrapper: <code>long.class</code> reads a <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html" title="class or interface in java.lang" class="external-link"><code>Long</code></a>. The
+       result is still <code>null</code> for a null value, so <code>long n = record.getValue(0,
+       long.class)</code> throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/NullPointerException.html" title="class or interface in java.lang" class="external-link"><code>NullPointerException</code></a> when unboxing a null column.
+   <li>Only the raw class is checked: <code>List&lt;?&gt; l = record.getValue(0, List.class)</code> checks
+       that the value is a list, not what its elements are.
+ </ul>
+
+ <p>An index out of range fails exactly as <a href="#getValue(int)"><code>getValue(int)</code></a> does.</div>
+<dl class="notes">
+<dt>Type Parameters:</dt>
+<dd><code>T</code> - return value type</dd>
+<dt>Parameters:</dt>
+<dd><code>index</code> - field index</dd>
+<dd><code>type</code> - the class the value must be an instance of; a primitive class stands for its
+     wrapper</dd>
+<dt>Returns:</dt>
+<dd>the value at the field, or <code>null</code> if the stored value is null</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/ClassCastException.html" title="class or interface in java.lang" class="external-link">ClassCastException</a></code> - if the value is not null and not an instance of <code>type</code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/NullPointerException.html" title="class or interface in java.lang" class="external-link">NullPointerException</a></code> - if <code>type</code> is null</dd>
+<dt>Since:</dt>
+<dd>0.16.0</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="getValue(java.lang.String,java.lang.Class)">
+<h3>getValue</h3>
+<div class="member-signature"><span class="modifiers">default</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type">@Nullable T</span>&nbsp;<span class="element-name">getValue</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;key,
+ <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Class.html" title="class or interface in java.lang" class="external-link">Class</a>&lt;T&gt;&nbsp;type)</span></div>
+<div class="block">The value at the given field, checked against <code>type</code>
+
+ <p>The type is checked exactly as in <a href="#getValue(int,java.lang.Class)"><code>getValue(int, Class)</code></a>: a non-null value that is
+ not an instance of <code>type</code> throws a <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/ClassCastException.html" title="class or interface in java.lang" class="external-link"><code>ClassCastException</code></a> from this call, naming the
+ column, the value's class and <code>type</code>; a primitive class stands for its wrapper; a null
+ value is returned as <code>null</code>. An unknown key fails exactly as <a href="#getValue(java.lang.String)"><code>getValue(String)</code></a>
+ does.</div>
+<dl class="notes">
+<dt>Type Parameters:</dt>
+<dd><code>T</code> - return value type</dd>
+<dt>Parameters:</dt>
+<dd><code>key</code> - header key</dd>
+<dd><code>type</code> - the class the value must be an instance of; a primitive class stands for its
+     wrapper</dd>
+<dt>Returns:</dt>
+<dd>the value at the field, or <code>null</code> if the stored value is null</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if the record has no column with that key</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/ClassCastException.html" title="class or interface in java.lang" class="external-link">ClassCastException</a></code> - if the value is not null and not an instance of <code>type</code></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/NullPointerException.html" title="class or interface in java.lang" class="external-link">NullPointerException</a></code> - if <code>type</code> is null</dd>
+<dt>Since:</dt>
+<dd>0.16.0</dd>
 </dl>
 </section>
 </li>
@@ -256,7 +361,7 @@ loadScripts(document, 'script');</script>
 
  <p>A NULL column deserializes to <code>null</code>, so the returned list may contain null elements
  — hence <code>List&lt;@Nullable Object&gt;</code> rather than <code>List&lt;Object&gt;</code>. Null-check an element
- before dereferencing it, as you would the <a href="#getValue(int)"><code>getValue(int)</code></a> of that column.</div>
+ before dereferencing it, as you would the <a href="#getValue(int,java.lang.Class)"><code>getValue(int, Class)</code></a> of that column.</div>
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>list of the record values, whose elements may be <code>null</code></dd>
