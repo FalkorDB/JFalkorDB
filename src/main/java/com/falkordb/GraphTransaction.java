@@ -86,7 +86,7 @@ public interface GraphTransaction
      * @param params parameters map. Must not be {@code null}.
      * @return  a response which builds the result set with the query answer.
      */
-    Response<ResultSet> query(String query, Map<String, Object> params);
+    Response<ResultSet> query(String query, Map<String, @Nullable Object> params);
 
     /**
      * Executes a cypher read-only query with parameters.
@@ -94,7 +94,7 @@ public interface GraphTransaction
      * @param params parameters map.
      * @return  a response which builds the result set with the query answer.
      */
-    Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params);
+    Response<ResultSet> readOnlyQuery(String query, Map<String, @Nullable Object> params);
 
     /**
      * Executes a cypher query with parameters and timeout. The timeout works as for {@link #query(String,
@@ -105,7 +105,7 @@ public interface GraphTransaction
      * @return  a response which builds the result set with the query answer.
      * @throws IllegalArgumentException if {@code timeout} is negative; nothing is queued then
      */
-    Response<ResultSet> query(String query, Map<String, Object> params, long timeout);
+    Response<ResultSet> query(String query, Map<String, @Nullable Object> params, long timeout);
 
     /**
      * Executes a cypher read-only query with parameters and timeout. The timeout works as for {@link
@@ -116,7 +116,7 @@ public interface GraphTransaction
      * @return  a response which builds the result set with the query answer.
      * @throws IllegalArgumentException if {@code timeout} is negative; nothing is queued then
      */
-    Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params, long timeout);
+    Response<ResultSet> readOnlyQuery(String query, Map<String, @Nullable Object> params, long timeout);
 
     /**
      * Invokes stored procedures without arguments
@@ -177,7 +177,7 @@ public interface GraphTransaction
      * @param params parameters map
      * @return a response which builds result set with execution plan and performance metrics
      */
-    Response<ResultSet> profile(String query, Map<String, Object> params);
+    Response<ResultSet> profile(String query, Map<String, @Nullable Object> params);
 
     // Disabled due to bug in FalkorDB caused by using transactions in conjunction with graph copy
     /**
@@ -210,14 +210,20 @@ public interface GraphTransaction
      *     {@link com.falkordb.exceptions.GraphException} each time it is called if the plan holds an error, and
      *     Jedis' {@code JedisDataException} if the server rejected the command.
      */
-    Response<List<String>> explain(String query, Map<String, Object> params);
+    Response<List<String>> explain(String query, Map<String, @Nullable Object> params);
 
     /**
      * executes the transaction
-     * @return a list of the executed transaction commands answers, in case of successful transaction, null otherwise
+     *
+     * <p>The list is {@code null} when the transaction was aborted, because a key it {@code WATCH}ed changed. An
+     * element is {@code null} where that command's reply is nil, such as a queued {@code get} of a missing key; a
+     * command that failed has its exception, a {@code JedisDataException} such as a
+     * {@link com.falkordb.exceptions.GraphException}, as its element instead of throwing it.
+     * @return a list of the executed transaction commands answers, whose elements may be {@code null}, in case of
+     *     successful transaction, null otherwise
      */
     @Nullable
-    List<Object> exec();
+    List<@Nullable Object> exec();
 
     /**
      * If object is in transaction mode,

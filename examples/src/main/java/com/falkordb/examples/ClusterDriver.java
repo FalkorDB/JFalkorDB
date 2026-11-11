@@ -80,7 +80,7 @@ public final class ClusterDriver {
                 for (GraphContextGenerator graph : graphs) {
                     ResultSet people = graph.readOnlyQuery("MATCH (p:Person) RETURN p.name, p.age");
                     for (Record record : people) {
-                        System.out.println(record.getString("p.name") + " is " + record.getValue("p.age"));
+                        System.out.println(record.getString("p.name") + " is " + record.getValue("p.age", Long.class));
                     }
                 }
             } finally {

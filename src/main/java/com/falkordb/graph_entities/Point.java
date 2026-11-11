@@ -2,6 +2,7 @@ package com.falkordb.graph_entities;
 
 import java.util.List;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This class represents a (geographical) point in the graph.
@@ -48,7 +49,7 @@ public final class Point {
      * Creates a point from a two-element {@code [latitude, longitude]} list.
      *
      * @param values {@code [latitude, longitude]}
-     * @throws IllegalArgumentException if {@code values} is not exactly two finite doubles
+     * @throws IllegalArgumentException if {@code values} is null, or is not exactly two finite, non-null doubles
      */
     public Point(List<Double> values) {
         if (values == null || values.size() != 2) {
@@ -80,7 +81,7 @@ public final class Point {
     }
 
     @Override
-    public boolean equals(Object other) {
+    public boolean equals(@Nullable Object other) {
         if (this == other) {
             return true;
         }

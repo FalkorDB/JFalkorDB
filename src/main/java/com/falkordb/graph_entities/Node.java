@@ -3,6 +3,7 @@ package com.falkordb.graph_entities;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.jspecify.annotations.Nullable;
 
 /**
  * * A class represent an node (graph entity). In addition to the base class id and properties, a node has labels.
@@ -71,7 +72,7 @@ public class Node extends GraphEntity {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) return true;
         if (!(o instanceof Node)) return false;
         if (!super.equals(o)) return false;

@@ -3,6 +3,7 @@ package com.falkordb;
 import java.io.Closeable;
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.commands.PipelineBinaryCommands;
 import redis.clients.jedis.commands.PipelineCommands;
@@ -100,7 +101,7 @@ public interface GraphPipeline
      * @param params parameters map. Must not be {@code null}.
      * @return  a response which builds the result set with the query answer.
      */
-    Response<ResultSet> query(String query, Map<String, Object> params);
+    Response<ResultSet> query(String query, Map<String, @Nullable Object> params);
 
     /**
      * Executes a cypher read-only query with parameters.
@@ -108,7 +109,7 @@ public interface GraphPipeline
      * @param params parameters map.
      * @return  a response which builds the result set with the query answer.
      */
-    Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params);
+    Response<ResultSet> readOnlyQuery(String query, Map<String, @Nullable Object> params);
 
     /**
      * Executes a cypher query with parameters and timeout. The timeout works as for {@link #query(String,
@@ -119,7 +120,7 @@ public interface GraphPipeline
      * @return  a response which builds the result set with the query answer.
      * @throws IllegalArgumentException if {@code timeout} is negative; nothing is queued then
      */
-    Response<ResultSet> query(String query, Map<String, Object> params, long timeout);
+    Response<ResultSet> query(String query, Map<String, @Nullable Object> params, long timeout);
 
     /**
      * Executes a cypher read-only query with parameters and timeout. The timeout works as for {@link
@@ -130,7 +131,7 @@ public interface GraphPipeline
      * @return  a response which builds the result set with the query answer.
      * @throws IllegalArgumentException if {@code timeout} is negative; nothing is queued then
      */
-    Response<ResultSet> readOnlyQuery(String query, Map<String, Object> params, long timeout);
+    Response<ResultSet> readOnlyQuery(String query, Map<String, @Nullable Object> params, long timeout);
 
     /**
      * Invokes stored procedures without arguments
@@ -191,7 +192,7 @@ public interface GraphPipeline
      * @param params parameters map
      * @return a response which builds result set with execution plan and performance metrics
      */
-    Response<ResultSet> profile(String query, Map<String, Object> params);
+    Response<ResultSet> profile(String query, Map<String, @Nullable Object> params);
 
     /**
      * Copies the graph
@@ -224,15 +225,18 @@ public interface GraphPipeline
      *     {@link com.falkordb.exceptions.GraphException} each time it is called if the plan holds an error, and
      *     Jedis' {@code JedisDataException} if the server rejected the command.
      */
-    Response<List<String>> explain(String query, Map<String, Object> params);
+    Response<List<String>> explain(String query, Map<String, @Nullable Object> params);
 
     /**
      * Synchronize pipeline by reading and decoding all responses. The pipeline can be used again afterwards.
      * Whenever possible try to avoid using this version and use Pipeline.sync() as it won't go through all the
      * responses and generate the right response type (usually it is a waste of time).
-     * @return A list of all the responses in the order you executed them.
+     * <p>An element is {@code null} where that command's reply is nil, such as a pipelined {@code get} of a
+     * missing key; a command that failed has its exception, a {@code JedisDataException} such as a
+     * {@link com.falkordb.exceptions.GraphException}, as its element instead of throwing it.
+     * @return A list of all the responses in the order you executed them, whose elements may be {@code null}.
      */
-    List<Object> syncAndReturnAll();
+    List<@Nullable Object> syncAndReturnAll();
 
     /**
      * Synchronize pipeline by reading all responses. The pipeline can be used again afterwards. In order to

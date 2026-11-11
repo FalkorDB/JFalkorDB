@@ -98,8 +98,8 @@ public class GraphExample {
             // iterate over result set       
             for(Record record: resultSet) {
                 // get values
-                Node n = record.getValue("a");
-                Edge e =  record.getValue("r");
+                Node n = record.getValue("a", Node.class);
+                Edge e = record.getValue("r", Edge.class);
 
                 //print record
                 System.out.println("Node: " + n + ", Edge: " + e);
@@ -107,7 +107,7 @@ public class GraphExample {
 
             resultSet = graph.query("MATCH p = (:person)-[:knows]->(:person) RETURN p");
             for(Record record: resultSet) {
-                Path p = record.getValue("p");
+                Path p = record.getValue("p", Path.class);
 
                 // More path API at Javadoc.
                 System.out.println(p.nodeCount());
