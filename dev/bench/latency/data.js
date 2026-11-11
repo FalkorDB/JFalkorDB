@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794372965542,
+  "lastUpdate": 1794373159734,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -19478,6 +19478,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 75853.91,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "557e416776e9710c7ac633f0d5aab881b061f90a",
+          "message": "feat: add type-checked Record.getValue overloads, deprecate the unchecked ones (#523)\n\n* feat: add type-checked Record.getValue overloads, deprecate the unchecked ones\n\nRecord.getValue(int) and getValue(String) declare a type parameter that\nappears only in the return type, so the cast is erased and the compiler\nputs the checkcast in the caller's frame. A wrong type throws\nClassCastException in user code, or never, while the value stays untyped.\n\nAdd getValue(int, Class<T>) and getValue(String, Class<T>) as default\nmethods on Record, so existing implementers keep compiling. They look the\nvalue up through the existing methods, so an unknown index or key fails\nexactly as before. A null value is returned as null. A non-null value of\nanother type throws ClassCastException from the client, naming the\ncolumn's index and name, the value's class and the requested class, with\na hint that FalkorDB integers decode as Long and floats as Double when a\nnumeric type was asked for. A primitive class stands for its wrapper\n(long.class reads a Long); nothing is converted. A null type throws\nNullPointerException before the lookup.\n\nDeprecate the unchecked forms (removal planned for 1.0.0) and move the\nexamples and README snippet to the checked overloads. The tests keep\nusing the deprecated forms, including the #390 pin test, since they stay\nsupported until 1.0.0.\n\nRefs #400\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: cover a negative index an odd Record accepts\n\nCodecov flagged the index >= 0 guard in the type-mismatch message as a\npartial branch: RecordImpl rejects a negative index before the check, but\nan implementer whose getValue(int) counts from the end does not.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: document the methods this change touches\n\nCodeRabbit's docstring-coverage pre-merge check reported 37.5% against\nits 80% threshold. Turn the tests' leading comments into Javadoc and\ndocument the remaining touched methods.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: document the two example main methods this change touches\n\nCodeRabbit's docstring-coverage check counted QuickStart.main and\nEnvironmentConfiguredDriver.main, whose result-reading lines now use the\nchecked getValue, and reported 75% against its 80% threshold.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-11T06:56:54+02:00",
+          "tree_id": "8e1be424995a8ded05e9aa51fcda74b13ce5d101",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/557e416776e9710c7ac633f0d5aab881b061f90a"
+        },
+        "date": 1794373159048,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 175.948,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 209.131,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 229.248,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 209.09,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 251.074,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 282.056,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 294.861,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 472.534,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 591.673,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 484.103,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 805.453,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1000.637,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 572.777,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5203.543,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 10834.597,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 576.034,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 14853.625,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 30947.702,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 571.096,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 33611.153,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 71213.453,
             "unit": "us"
           }
         ]
