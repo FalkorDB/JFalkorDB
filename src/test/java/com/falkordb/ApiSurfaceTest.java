@@ -229,11 +229,19 @@ class ApiSurfaceTest {
     }
 
     public static class Holder {
-        List<String> values;
-
         public class Values {
+            private final List<String> values;
+
             public Values(List<String> values) {
-                Holder.this.values = values;
+                this.values = values;
+            }
+
+            public List<String> values() {
+                return values;
+            }
+
+            public Holder holder() {
+                return Holder.this;
             }
         }
     }
