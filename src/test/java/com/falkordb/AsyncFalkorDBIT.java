@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.falkordb.exceptions.GraphException;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import redis.clients.jedis.exceptions.JedisDataException;
 
 /**
  * System tests for {@link AsyncFalkorDB} against a real FalkorDB server (via {@link TestServer}).
@@ -76,7 +78,15 @@ public class AsyncFalkorDBIT {
         CompletableFuture<ResultSet> future = async.query("THIS IS NOT CYPHER");
 
         ExecutionException failure = assertThrows(ExecutionException.class, () -> future.get(30, TimeUnit.SECONDS));
-        assertTrue(failure.getCause() instanceof RuntimeException, "server error should surface as the cause");
+        // the server's syntax error, not some other failure (a connection error, a client-side check)
+        assertTrue(
+                failure.getCause() instanceof GraphException, "server error should surface as the cause: " + failure);
+        assertTrue(
+                failure.getCause().getCause() instanceof JedisDataException,
+                String.valueOf(failure.getCause().getCause()));
+        assertTrue(
+                failure.getCause().getMessage().contains("Invalid input"),
+                failure.getCause().getMessage());
     }
 
     @Test

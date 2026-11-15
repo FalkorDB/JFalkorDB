@@ -1,7 +1,5 @@
 package com.falkordb;
 
-import static org.junit.jupiter.api.Assertions.fail;
-
 import com.falkordb.Statistics.Label;
 import com.falkordb.exceptions.GraphException;
 import com.falkordb.graph_entities.*;
@@ -18,6 +16,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import redis.clients.jedis.exceptions.JedisDataException;
 
 public class GraphAPIIT {
 
@@ -99,11 +98,7 @@ public class GraphAPIIT {
         Iterator<Record> iterator = resultSet.iterator();
         Assertions.assertFalse(iterator.hasNext());
 
-        try {
-            iterator.next();
-            fail("Expected NoSuchElementException was not thrown.");
-        } catch (NoSuchElementException ignored) {
-        }
+        Assertions.assertThrows(NoSuchElementException.class, iterator::next);
     }
 
     @Test
@@ -200,11 +195,14 @@ public class GraphAPIIT {
         Assertions.assertNotNull(createNonExistingIndexResult.getStatistics().getStringValue(Label.INDICES_ADDED));
         Assertions.assertEquals(1, createNonExistingIndexResult.getStatistics().indicesAdded());
 
-        try {
-            client.query("CREATE INDEX ON :person(age)");
-            fail("Expected Exception was not thrown.");
-        } catch (Exception e) {
-        }
+        // the server refuses a second index on the same attribute
+        GraphException duplicateIndex =
+                Assertions.assertThrows(GraphException.class, () -> client.query("CREATE INDEX ON :person(age)"));
+        Assertions.assertTrue(
+                duplicateIndex.getCause() instanceof JedisDataException, String.valueOf(duplicateIndex.getCause()));
+        Assertions.assertTrue(
+                duplicateIndex.getMessage().contains("Attribute 'age' is already indexed"),
+                duplicateIndex.getMessage());
 
         ResultSet deleteExistingIndexResult = client.query("DROP INDEX ON :person(age)");
         Assertions.assertFalse(deleteExistingIndexResult.iterator().hasNext());
@@ -1131,13 +1129,11 @@ public class GraphAPIIT {
     @Test
     public void testSimpleReadOnlyWithTimeOut() {
         client.query("CREATE (:person{name:'filipe',age:30})");
-        try {
-            client.readOnlyQuery("WITH 1000000 as n RETURN reduce(f = 1, x IN range(1, n) | f * x) AS result", 1L);
-
-            fail("Expected Timeout Exception was not thrown.");
-        } catch (GraphException e) {
-            Assertions.assertTrue(e.getMessage().contains("Query timed out"));
-        }
+        GraphException timeout = Assertions.assertThrows(
+                GraphException.class,
+                () -> client.readOnlyQuery(
+                        "WITH 1000000 as n RETURN reduce(f = 1, x IN range(1, n) | f * x) AS result", 1L));
+        Assertions.assertTrue(timeout.getMessage().contains("Query timed out"), timeout.getMessage());
     }
 
     @Test

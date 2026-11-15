@@ -52,10 +52,10 @@ public class ConfigIT {
 
     @Test
     public void testConfigGetInvalidParameter() {
-        // Attempting to get an invalid config parameter should throw a JedisDataException
-        Assertions.assertThrows(JedisDataException.class, () -> {
-            driver.configGet("INVALID_CONFIG_PARAM_XYZ");
-        });
+        // Attempting to get an invalid config parameter should throw the server's error, not a client-side one
+        JedisDataException e =
+                Assertions.assertThrows(JedisDataException.class, () -> driver.configGet("INVALID_CONFIG_PARAM_XYZ"));
+        Assertions.assertTrue(e.getMessage().contains("Unknown configuration field"), e.getMessage());
     }
 
     @Test
