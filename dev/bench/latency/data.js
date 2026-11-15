@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794720614530,
+  "lastUpdate": 1794722756297,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -20252,6 +20252,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 50662.343,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "09f8921b84d39227a0cd91468365ba72c43b8a27",
+          "message": "fix!: detect Sentinel and cluster on Valkey, which reports server_mode (#532)\n\nValkey's INFO server names the mode field server_mode instead of\nredis_mode unless extended-redis-compatibility is on (default off), and\nfalkordb/falkordb:edge now runs on Valkey 9.1.2. Sentinel and cluster\nauto-detection only looked for redis_mode, so on Valkey a cluster seed got\na direct connection (MOVED on graphs owned elsewhere) and a Sentinel was\nsent graph queries (ERR unknown command 'graph.QUERY').\n\nRead the mode from either field in a shared ServerMode helper, and split\nthe network half of Sentinels.detect into probeMasterName so Sentinel\ndetection can be tested against a fake server.\n\nBREAKING CHANGE: an endpoint that reports server_mode:cluster or\nserver_mode:sentinel is now auto-detected as a cluster node or a Sentinel\nand routed accordingly, where it used to get a plain direct connection.\nPass autoDetectCluster(false) / autoDetectSentinel(false) to keep the old\nbehaviour.\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-15T08:04:01+02:00",
+          "tree_id": "3493518f0123d8fb65c41ed268ae0a2fd30f2b75",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/09f8921b84d39227a0cd91468365ba72c43b8a27"
+        },
+        "date": 1794722755333,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 116.126,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 153.572,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 182.699,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 128.584,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 169.292,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 272.021,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 174.085,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 281.396,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 355.421,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 293.595,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 496.105,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 626.456,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 341.176,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 3051.632,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 6814.109,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 341.257,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 8657.892,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 20374.352,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 338.186,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 20830.195,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 47328.677,
             "unit": "us"
           }
         ]
