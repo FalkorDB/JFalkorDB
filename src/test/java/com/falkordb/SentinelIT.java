@@ -229,10 +229,15 @@ public class SentinelIT {
         } catch (NumberFormatException e) {
             throw new IllegalStateException("unexpected Sentinel reply (invalid port): " + address, e);
         }
+        if (masterPort < 1 || masterPort > 65535) {
+            throw new IllegalStateException("unexpected Sentinel reply (port out of range): " + address);
+        }
+        InetSocketAddress master = new InetSocketAddress(lines[0], masterPort);
 
+        // Only a failure to connect means "unreachable"; anything else is a bug and propagates.
         try (Socket socket = new Socket()) {
-            socket.connect(new InetSocketAddress(lines[0], masterPort), (int) REACHABILITY_TIMEOUT.toMillis());
-        } catch (IOException | RuntimeException unreachable) {
+            socket.connect(master, (int) REACHABILITY_TIMEOUT.toMillis());
+        } catch (IOException unreachable) {
             String message = "the Sentinel-reported master address " + lines[0] + ":" + masterPort
                     + " is not routable from this host";
             // On the GitHub Actions runners (Linux, local Docker) the address is always routable, so there an
