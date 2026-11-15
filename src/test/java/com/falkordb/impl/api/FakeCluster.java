@@ -7,7 +7,8 @@ import redis.clients.jedis.util.JedisClusterCRC16;
 
 /**
  * A cluster of {@link FakeRedisServer}s: each node answers {@code CLUSTER SLOTS} with the current slot
- * layout, {@code INFO} with {@code redis_mode:cluster} and {@code ECHO} with its own index, which is how
+ * layout, {@code INFO} with {@code redis_mode:cluster} (or Valkey's {@code server_mode:cluster}, see {@link
+ * #reportModeAs}) and {@code ECHO} with its own index, which is how
  * the tests tell which node a connection landed on. Everything else goes to {@code extra}, which
  * returns {@code null} to fall back to {@code +OK}.
  */
@@ -22,6 +23,8 @@ final class FakeCluster implements AutoCloseable {
 
     private volatile boolean refuseSlotQueries;
 
+    private volatile String modeField = "redis_mode";
+
     FakeCluster(int size, BiFunction<Integer, List<String>, String> extra) {
         ownerOfHalf = new int[] {0, Math.min(1, size - 1)};
         for (int i = 0; i < size; i++) {
@@ -35,7 +38,7 @@ final class FakeCluster implements AutoCloseable {
             return refuseSlotQueries ? FakeRedisServer.error("ERR not now") : slotsReply();
         }
         if (FakeRedisServer.startsWith(command, "INFO")) {
-            return FakeRedisServer.bulk("# Server\r\nredis_mode:cluster\r\n");
+            return FakeRedisServer.bulk("# Server\r\n" + modeField + ":cluster\r\n");
         }
         if (FakeRedisServer.startsWith(command, "PING")) {
             return "+PONG\r\n";
@@ -55,6 +58,14 @@ final class FakeCluster implements AutoCloseable {
     /** Answer {@code CLUSTER SLOTS} with an error, so the driver cannot relearn the layout. */
     void refuseSlotQueries(boolean value) {
         refuseSlotQueries = value;
+    }
+
+    /**
+     * Name the mode field of the {@code INFO} reply: {@code redis_mode}, as Redis does (the default), or {@code
+     * server_mode}, as Valkey does.
+     */
+    void reportModeAs(String field) {
+        modeField = field;
     }
 
     /** Report nodes with an empty host, as a cluster behind a proxy does. */

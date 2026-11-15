@@ -24,7 +24,8 @@ import redis.clients.jedis.util.Pool;
  * <p>The auto-detection in {@link #detect} mirrors what the other FalkorDB clients do (falkordb-py,
  * falkordb-go and falkordb-ts all probe {@code INFO server} for {@code redis_mode:sentinel}, then
  * take the single master reported by {@code SENTINEL MASTERS}), so pointing any FalkorDB client at a
- * Sentinel behaves the same way in every language.
+ * Sentinel behaves the same way in every language. A Valkey Sentinel reports {@code
+ * server_mode:sentinel} instead, which is recognised too (see {@link ServerMode}).
  *
  * <p>Detection is deliberately best-effort. Driver creation performs no I/O — the pool, and so this
  * probe, is resolved on first use — so a probe that cannot reach the endpoint, or that is refused
@@ -35,9 +36,7 @@ import redis.clients.jedis.util.Pool;
  */
 final class Sentinels {
 
-    /** The {@code INFO server} field identifying the server's mode, and the value Sentinel reports. */
-    private static final String REDIS_MODE_FIELD = "redis_mode:";
-
+    /** The mode a Sentinel reports in {@code INFO server}. */
     private static final String SENTINEL_MODE = "sentinel";
 
     /** The {@code SENTINEL MASTERS} reply field holding a monitored master's name. */
@@ -68,6 +67,33 @@ final class Sentinels {
             GenericObjectPoolConfig<Jedis> poolConfig,
             JedisClientConfig dataConfig,
             JedisClientConfig sentinelConfig) {
+        String masterName = probeMasterName(seed, probeConfig);
+        return masterName == null
+                ? null
+                : pool(masterName, Collections.singleton(seed), poolConfig, dataConfig, sentinelConfig);
+    }
+
+    /**
+     * Probes {@code seed} and, if it is a Sentinel, returns the name of the one master it monitors.
+     * This is the network half of {@link #detect}, split out so it can be tested against a fake
+     * server without building a {@link JedisSentinelPool}.
+     *
+     * <p>Falls back with {@code null} when the probe tells us nothing: the connection cannot be
+     * opened (or authenticating it fails), {@code INFO} fails or is refused, the endpoint reports
+     * another mode, or the connection is lost while asking for the masters. Once the endpoint has
+     * named itself a Sentinel, any other failure of {@code SENTINEL MASTERS} — an ACL refusing it,
+     * say — propagates, since a direct connection would fail on every graph command anyway.
+     *
+     * @param seed        the endpoint to probe
+     * @param probeConfig client config for the probe; must carry a bounded read timeout
+     * @return the monitored master's name, or {@code null} when {@code seed} is not a Sentinel or
+     *     could not be probed
+     * @throws IllegalStateException if {@code seed} is a Sentinel but monitors anything other than
+     *     exactly one master
+     * @throws JedisException if {@code seed} is a Sentinel but {@code SENTINEL MASTERS} fails other
+     *     than by losing the connection
+     */
+    static @Nullable String probeMasterName(HostAndPort seed, JedisClientConfig probeConfig) {
         Jedis probe;
         try {
             // Opened outside the guarded region below because Jedis authenticates while constructing,
@@ -101,7 +127,7 @@ final class Sentinels {
         } finally {
             probe.close();
         }
-        return pool(soleMasterName(masters), Collections.singleton(seed), poolConfig, dataConfig, sentinelConfig);
+        return soleMasterName(masters);
     }
 
     /**
@@ -124,27 +150,16 @@ final class Sentinels {
     }
 
     /**
-     * Reads the {@code redis_mode} field of an {@code INFO server} reply. Parsed line-wise rather than
-     * with {@code contains("redis_mode:sentinel")} so that a value merely appearing somewhere else in
-     * the reply — a {@code config_file} path containing the word, say — cannot be mistaken for the
-     * mode. Redis separates INFO lines with CRLF; LF is accepted too so the parsing does not depend on
-     * it.
+     * Reads the mode field of an {@code INFO server} reply ({@code redis_mode} on Redis, {@code
+     * server_mode} on Valkey); see {@link ServerMode#of}. Parsed line-wise rather than with {@code
+     * contains("redis_mode:sentinel")} so that a value merely appearing somewhere else in the reply —
+     * a {@code config_file} path containing the word, say — cannot be mistaken for the mode.
      *
      * @param info an {@code INFO server} reply, or {@code null}
-     * @return {@code true} if the reply reports {@code redis_mode:sentinel}
+     * @return {@code true} if the reply reports Sentinel mode
      */
     static boolean isSentinelInfo(@Nullable String info) {
-        if (info == null) {
-            return false;
-        }
-        for (String line : info.split("\r\n|\n|\r", -1)) {
-            String trimmed = line.trim();
-            if (trimmed.startsWith(REDIS_MODE_FIELD)) {
-                return SENTINEL_MODE.equalsIgnoreCase(
-                        trimmed.substring(REDIS_MODE_FIELD.length()).trim());
-            }
-        }
-        return false;
+        return SENTINEL_MODE.equalsIgnoreCase(ServerMode.of(info));
     }
 
     /**

@@ -90,6 +90,41 @@ class DriverImplClusterTest {
     }
 
     @Test
+    void aValkeySeedThatReportsServerModeClusterIsTreatedAsACluster() {
+        // Valkey reports server_mode, not redis_mode. Sentinel detection is left on, as it is by
+        // default, so the Sentinel probe sees the cluster first, declines it, and the cluster probe
+        // takes over: the order a real driver runs them in.
+        cluster = new FakeCluster(2, DriverImplClusterTest::queryReply);
+        cluster.reportModeAs("server_mode");
+        driver = DriverImpl.connect(
+                "127.0.0.1",
+                cluster.node(0).port(),
+                null,
+                null,
+                SentinelOptions.autoDetect(),
+                ClusterOptions.autoDetect());
+
+        driver.graph(FakeCluster.lowGraph()).query("CREATE ()");
+        driver.graph(FakeCluster.highGraph()).query("CREATE ()");
+
+        assertEquals(1, graphQueries(cluster.node(0)));
+        assertEquals(1, graphQueries(cluster.node(1)), "the graph owned by the other node was routed there");
+        assertEquals(0, cluster.node(0).count("SENTINEL"), "a cluster node is not mistaken for a Sentinel");
+    }
+
+    @Test
+    void aDatabaseIndexIsRejectedWhenTheEndpointIsAValkeyCluster() {
+        cluster = new FakeCluster(1, DriverImplClusterTest::queryReply);
+        cluster.reportModeAs("server_mode");
+        driver = DriverImpl.connect(
+                java.net.URI.create("redis://127.0.0.1:" + cluster.node(0).port() + "/3"),
+                SentinelOptions.disabled(),
+                ClusterOptions.autoDetect());
+
+        assertThrows(IllegalArgumentException.class, () -> driver.graph("g").query("CREATE ()"));
+    }
+
+    @Test
     void aFailedTopologyRefreshDoesNotHideTheOriginalFailure() {
         cluster = new FakeCluster(1, DriverImplClusterTest::queryReply);
         connectToSeed(cluster.node(0), ClusterOptions.autoDetect());
@@ -117,6 +152,24 @@ class DriverImplClusterTest {
 
         assertEquals(1, graphQueries(standalone));
         assertEquals(0, standalone.count("CLUSTER"));
+    }
+
+    @Test
+    void aValkeyStandaloneSeedKeepsTheDirectConnection() {
+        standalone = new FakeRedisServer(c -> {
+            if (FakeRedisServer.startsWith(c, "INFO")) {
+                return FakeRedisServer.bulk(ServerModeTest.valkeyInfo("standalone"));
+            }
+            return FakeRedisServer.startsWith(c, "GRAPH.QUERY") ? WRITE_REPLY : FakeRedisServer.ok();
+        });
+        driver = DriverImpl.connect(
+                "127.0.0.1", standalone.port(), null, null, SentinelOptions.autoDetect(), ClusterOptions.autoDetect());
+
+        driver.graph("g").query("CREATE ()");
+
+        assertEquals(1, graphQueries(standalone));
+        assertEquals(0, standalone.count("CLUSTER"));
+        assertEquals(0, standalone.count("SENTINEL"));
     }
 
     @Test
