@@ -109,7 +109,7 @@ public class UdfIT {
         String script = "function testFunc() { return 'hello'; } falkor.register('testFunc', testFunc);";
 
         // Load a UDF library
-        driver.udfLoad(libraryName, script, false);
+        Assertions.assertTrue(driver.udfLoad(libraryName, script, false), "the library should be loaded");
 
         // List all UDF libraries
         List<Object> libraries = driver.udfList();
@@ -123,8 +123,8 @@ public class UdfIT {
         String script = "function testFunc() { return 'hello'; } falkor.register('testFunc', testFunc);";
 
         // Load a UDF library, and another one the filter must leave out
-        driver.udfLoad(libraryName, script, false);
-        driver.udfLoad("TestLibOther", script, false);
+        Assertions.assertTrue(driver.udfLoad(libraryName, script, false), "the library should be loaded");
+        Assertions.assertTrue(driver.udfLoad("TestLibOther", script, false), "the second library should be loaded");
 
         // List specific UDF library
         List<Object> libraries = driver.udfList(libraryName, false);
@@ -141,7 +141,7 @@ public class UdfIT {
         String script = "function testFunc() { return 'hello'; } falkor.register('testFunc', testFunc);";
 
         // Load a UDF library
-        driver.udfLoad(libraryName, script, false);
+        Assertions.assertTrue(driver.udfLoad(libraryName, script, false), "the library should be loaded");
 
         // List UDF libraries with code
         List<Object> libraries = driver.udfList(null, true);
@@ -156,7 +156,9 @@ public class UdfIT {
         String script = "function testFunc() { return 'hello'; } falkor.register('testFunc', testFunc);";
 
         // Load a UDF library
-        driver.udfLoad(libraryName, script, false);
+        Assertions.assertTrue(driver.udfLoad(libraryName, script, false), "the library should be loaded");
+
+        Assertions.assertTrue(libraryNames(driver.udfList()).contains(libraryName), "the library should be listed");
 
         // Flush all libraries
         boolean result = driver.udfFlush();
@@ -175,7 +177,7 @@ public class UdfIT {
         String script = "function testFunc() { return 'hello'; } falkor.register('testFunc', testFunc);";
 
         // Load a UDF library
-        driver.udfLoad(libraryName, script, false);
+        Assertions.assertTrue(driver.udfLoad(libraryName, script, false), "the library should be loaded");
         Assertions.assertTrue(libraryNames(driver.udfList()).contains(libraryName), "the library should be loaded");
 
         // Delete the library

@@ -223,7 +223,12 @@ public class SentinelIT {
         String[] lines = address.trim().split("\\s+", -1);
         assertTrue(lines.length >= 2, "unexpected Sentinel reply: " + address);
         // Parsed outside the reachability check, so a malformed reply fails rather than reading as "unreachable".
-        int masterPort = Integer.parseInt(lines[1]);
+        int masterPort;
+        try {
+            masterPort = Integer.parseInt(lines[1]);
+        } catch (NumberFormatException e) {
+            throw new IllegalStateException("unexpected Sentinel reply (invalid port): " + address, e);
+        }
 
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(lines[0], masterPort), (int) REACHABILITY_TIMEOUT.toMillis());
