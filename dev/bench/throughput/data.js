@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794722758080,
+  "lastUpdate": 1794742920931,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -9321,6 +9321,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 19146,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cea85e02e882a899f216387bc621836c529199b4",
+          "message": "test: make tests that could not fail assert the expected error (#533)\n\n* test: make tests that could not fail assert the expected error\n\nSeveral tests passed whatever the client did:\n- GraphErrorIT.testExceptionFlow/testContextExceptionFlow asserted only\n  inside a catch, with nothing guaranteeing the query threw.\n- GraphAPIIT.testIndex accepted any exception for a duplicate index.\n- SentinelIT.autoDetectionCanBeTurnedOff, AsyncFalkorDBIT and ConfigIT\n  accepted any RuntimeException/JedisDataException, so a connection\n  failure or a client-side error passed.\n- UdfIT's list/flush/delete tests only checked the reply was non-null.\n- SentinelIT skipped its data-path tests when the master was unroutable,\n  even on the GitHub Actions runners, where it always is routable.\n\nEach now asserts the specific exception, its server-error cause and its\nmessage (or the listed libraries), and SentinelIT fails instead of\nskipping on GitHub Actions. testCreateNode and\ntestSimpleReadOnlyWithTimeOut move to assertThrows for the same idiom.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: check UDF preconditions and report a malformed Sentinel port clearly\n\nAssert every UDF load in UdfIT succeeds and that the flushed library was\nlisted before the flush, so the post-flush and name-filter checks cannot\npass vacuously. Report a non-numeric port in the Sentinel's master\naddress as an IllegalStateException naming the reply.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: treat only a failed connect as an unreachable Sentinel master\n\nReject an out-of-range port in the Sentinel's reply and build the\naddress before the reachability check, which now catches only the\nIOException of a failed connect, so a malformed reply can never be\nmistaken for an unroutable master and skipped.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-15T13:39:36+02:00",
+          "tree_id": "f6bc3823731a54a1a2c83162c637fcc97bec4b6c",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/cea85e02e882a899f216387bc621836c529199b4"
+        },
+        "date": 1794742920895,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 6064.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 9750.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 14134,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 18184,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 16892,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 16610,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 16818.667,
             "unit": "ops/s"
           }
         ]
