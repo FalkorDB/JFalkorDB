@@ -38,6 +38,21 @@ class ClustersTest {
     }
 
     @Test
+    void recognisesValkeyClusterMode() {
+        // Valkey names the field server_mode unless extended-redis-compatibility is on (default off).
+        assertTrue(Clusters.isClusterInfo(ServerModeTest.valkeyInfo("cluster")));
+        assertTrue(Clusters.isClusterInfo("server_mode:CLUSTER"));
+        assertTrue(Clusters.isClusterInfo("# Server\nserver_mode: cluster \n"));
+    }
+
+    @Test
+    void otherValkeyModesAreNotACluster() {
+        assertFalse(Clusters.isClusterInfo(ServerModeTest.valkeyInfo("standalone")));
+        assertFalse(Clusters.isClusterInfo(ServerModeTest.valkeyInfo("sentinel")));
+        assertFalse(Clusters.isClusterInfo("config_file:/etc/server_mode:cluster.conf\r\nserver_mode:standalone\r\n"));
+    }
+
+    @Test
     void aClusterWordElsewhereInTheReplyIsNotTheMode() {
         assertFalse(Clusters.isClusterInfo("config_file:/etc/redis_mode:cluster.conf\r\nredis_mode:standalone\r\n"));
         assertFalse(Clusters.isClusterInfo("cluster_enabled:1\r\n"));
@@ -224,6 +239,25 @@ class ClustersTest {
                 : FakeRedisServer.ok())) {
             assertTrue(Clusters.detect(new HostAndPort("127.0.0.1", node.port()), probe()));
             assertEquals(1, node.count("INFO", "server"));
+        }
+    }
+
+    @Test
+    void detectsAValkeyClusterNode() {
+        try (FakeRedisServer node = new FakeRedisServer(c -> FakeRedisServer.startsWith(c, "INFO")
+                ? FakeRedisServer.bulk(ServerModeTest.valkeyInfo("cluster"))
+                : FakeRedisServer.ok())) {
+            assertTrue(Clusters.detect(new HostAndPort("127.0.0.1", node.port()), probe()));
+            assertEquals(1, node.count("INFO", "server"));
+        }
+    }
+
+    @Test
+    void aValkeyStandaloneServerIsNotACluster() {
+        try (FakeRedisServer node = new FakeRedisServer(c -> FakeRedisServer.startsWith(c, "INFO")
+                ? FakeRedisServer.bulk(ServerModeTest.valkeyInfo("standalone"))
+                : FakeRedisServer.ok())) {
+            assertFalse(Clusters.detect(new HostAndPort("127.0.0.1", node.port()), probe()));
         }
     }
 
