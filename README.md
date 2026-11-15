@@ -242,8 +242,8 @@ hashing its name. Point the driver at any node of the cluster and it learns the 
 every command to the node that owns the graph, so no query is answered with a `MOVED` redirect.
 
 Nothing needs configuring in the common case. Every factory method probes the endpoint it is given,
-and if that endpoint is a cluster node (`redis_mode:cluster`) the driver switches to cluster mode on
-its own, as the Python client does:
+and if that endpoint is a cluster node (`redis_mode:cluster`, or `server_mode:cluster` on Valkey) the
+driver switches to cluster mode on its own, as the Python client does:
 
 ```java
 // node-a is one node of a cluster; the driver finds the others

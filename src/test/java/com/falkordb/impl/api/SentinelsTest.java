@@ -3,6 +3,7 @@ package com.falkordb.impl.api;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertLinesMatch;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -15,13 +16,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
+import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.exceptions.JedisDataException;
 
 /**
- * Unit tests for {@link Sentinels} — the pure half of Sentinel support: recognising a Sentinel from
- * its {@code INFO server} reply, picking the master out of a {@code SENTINEL MASTERS} reply, and
- * parsing {@code host:port} addresses. No server is required; the probe itself is covered end-to-end
- * by {@code SentinelIT}.
+ * Unit tests for {@link Sentinels}: recognising a Sentinel from its {@code INFO server} reply, picking
+ * the master out of a {@code SENTINEL MASTERS} reply, parsing {@code host:port} addresses, and the
+ * probe ({@link Sentinels#probeMasterName}) against a {@link FakeRedisServer}. No real server is
+ * required; building the failover-aware pool is covered end-to-end by {@code SentinelIT}.
  */
 class SentinelsTest {
 
@@ -39,6 +42,21 @@ class SentinelsTest {
     void rejectsStandaloneAndClusterModes() {
         assertFalse(Sentinels.isSentinelInfo(infoWithMode("standalone")));
         assertFalse(Sentinels.isSentinelInfo(infoWithMode("cluster")));
+    }
+
+    @Test
+    void recognisesValkeySentinelMode() {
+        // Valkey names the field server_mode unless extended-redis-compatibility is on (default off).
+        assertTrue(Sentinels.isSentinelInfo(ServerModeTest.valkeyInfo("sentinel")));
+        assertTrue(Sentinels.isSentinelInfo("# Server\nserver_mode:SENTINEL\n"));
+    }
+
+    @Test
+    void rejectsValkeyStandaloneAndClusterModes() {
+        assertFalse(Sentinels.isSentinelInfo(ServerModeTest.valkeyInfo("standalone")));
+        assertFalse(Sentinels.isSentinelInfo(ServerModeTest.valkeyInfo("cluster")));
+        assertFalse(
+                Sentinels.isSentinelInfo("config_file:/etc/server_mode:sentinel.conf\r\nserver_mode:standalone\r\n"));
     }
 
     @Test
@@ -149,6 +167,108 @@ class SentinelsTest {
     void rejectsAnEmptyAddressList() {
         assertThrows(IllegalArgumentException.class, () -> Sentinels.parseAddresses(Collections.emptyList()));
         assertThrows(IllegalArgumentException.class, () -> Sentinels.parseAddresses(null));
+    }
+
+    // --- probeMasterName ---------------------------------------------------------------------------
+
+    private static DefaultJedisClientConfig probe() {
+        return DefaultJedisClientConfig.builder()
+                .connectionTimeoutMillis(1000)
+                .socketTimeoutMillis(2000)
+                .autoNegotiateProtocol(false)
+                .build();
+    }
+
+    /** The raw {@code SENTINEL MASTERS} reply for one master, as a Sentinel sends it over RESP2. */
+    private static final String ONE_MASTER = FakeRedisServer.array(FakeRedisServer.array(
+            FakeRedisServer.bulk("name"),
+            FakeRedisServer.bulk("mymaster"),
+            FakeRedisServer.bulk("ip"),
+            FakeRedisServer.bulk("127.0.0.1"),
+            FakeRedisServer.bulk("port"),
+            FakeRedisServer.bulk("6379")));
+
+    /** A fake endpoint answering {@code INFO} with {@code info} and {@code SENTINEL MASTERS} with {@code masters}. */
+    private static FakeRedisServer endpoint(String info, String masters) {
+        return new FakeRedisServer(c -> {
+            if (FakeRedisServer.startsWith(c, "INFO")) {
+                return FakeRedisServer.bulk(info);
+            }
+            if (FakeRedisServer.startsWith(c, "SENTINEL", "MASTERS")) {
+                return masters;
+            }
+            return FakeRedisServer.ok();
+        });
+    }
+
+    private static HostAndPort at(FakeRedisServer server) {
+        return new HostAndPort("127.0.0.1", server.port());
+    }
+
+    @Test
+    void aValkeySentinelYieldsTheMasterItMonitors() {
+        try (FakeRedisServer sentinel = endpoint(ServerModeTest.valkeyInfo("sentinel"), ONE_MASTER)) {
+            assertEquals("mymaster", Sentinels.probeMasterName(at(sentinel), probe()));
+            assertEquals(1, sentinel.count("INFO", "server"));
+            assertEquals(1, sentinel.count("SENTINEL", "MASTERS"));
+        }
+    }
+
+    @Test
+    void aRedisSentinelYieldsTheMasterItMonitors() {
+        try (FakeRedisServer sentinel = endpoint(ServerModeTest.redisInfo("sentinel"), ONE_MASTER)) {
+            assertEquals("mymaster", Sentinels.probeMasterName(at(sentinel), probe()));
+        }
+    }
+
+    @Test
+    void aValkeyDataNodeIsNotASentinelAndIsNeverAskedForMasters() {
+        for (String mode : Arrays.asList("standalone", "cluster")) {
+            try (FakeRedisServer node = endpoint(ServerModeTest.valkeyInfo(mode), ONE_MASTER)) {
+                assertNull(Sentinels.probeMasterName(at(node), probe()), mode);
+                assertEquals(0, node.count("SENTINEL"), mode);
+            }
+        }
+    }
+
+    @Test
+    void aRedisDataNodeIsNotASentinel() {
+        try (FakeRedisServer node = endpoint(ServerModeTest.redisInfo("standalone"), ONE_MASTER)) {
+            assertNull(Sentinels.probeMasterName(at(node), probe()));
+            assertEquals(0, node.count("SENTINEL"));
+        }
+    }
+
+    @Test
+    void anUnreachableEndpointIsNotASentinel() {
+        assertNull(Sentinels.probeMasterName(new HostAndPort("127.0.0.1", 1), probe()));
+    }
+
+    @Test
+    void anEndpointThatRefusesInfoIsNotASentinel() {
+        try (FakeRedisServer node = new FakeRedisServer(c -> FakeRedisServer.startsWith(c, "INFO")
+                ? FakeRedisServer.error("NOPERM this user has no permissions to run the 'info' command")
+                : FakeRedisServer.ok())) {
+            assertNull(Sentinels.probeMasterName(at(node), probe()));
+        }
+    }
+
+    @Test
+    void aSentinelMonitoringNoMasterIsReported() {
+        try (FakeRedisServer sentinel = endpoint(ServerModeTest.valkeyInfo("sentinel"), FakeRedisServer.array())) {
+            assertThrows(IllegalStateException.class, () -> Sentinels.probeMasterName(at(sentinel), probe()));
+        }
+    }
+
+    @Test
+    void aSentinelThatRefusesSentinelMastersIsReportedNotIgnored() {
+        // Once the endpoint has said it is a Sentinel, a direct connection would fail on every graph
+        // command, so a refusal propagates rather than falling back.
+        try (FakeRedisServer sentinel = endpoint(
+                ServerModeTest.valkeyInfo("sentinel"),
+                FakeRedisServer.error("NOPERM this user has no permissions to run the 'sentinel|masters' command"))) {
+            assertThrows(JedisDataException.class, () -> Sentinels.probeMasterName(at(sentinel), probe()));
+        }
     }
 
     /** Builds a {@code SENTINEL MASTERS}-shaped reply naming each given master. */
