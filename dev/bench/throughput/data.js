@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794720616496,
+  "lastUpdate": 1794722758080,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -9262,6 +9262,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 16222,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "09f8921b84d39227a0cd91468365ba72c43b8a27",
+          "message": "fix!: detect Sentinel and cluster on Valkey, which reports server_mode (#532)\n\nValkey's INFO server names the mode field server_mode instead of\nredis_mode unless extended-redis-compatibility is on (default off), and\nfalkordb/falkordb:edge now runs on Valkey 9.1.2. Sentinel and cluster\nauto-detection only looked for redis_mode, so on Valkey a cluster seed got\na direct connection (MOVED on graphs owned elsewhere) and a Sentinel was\nsent graph queries (ERR unknown command 'graph.QUERY').\n\nRead the mode from either field in a shared ServerMode helper, and split\nthe network half of Sentinels.detect into probeMasterName so Sentinel\ndetection can be tested against a fake server.\n\nBREAKING CHANGE: an endpoint that reports server_mode:cluster or\nserver_mode:sentinel is now auto-detected as a cluster node or a Sentinel\nand routed accordingly, where it used to get a plain direct connection.\nPass autoDetectCluster(false) / autoDetectSentinel(false) to keep the old\nbehaviour.\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-15T08:04:01+02:00",
+          "tree_id": "3493518f0123d8fb65c41ed268ae0a2fd30f2b75",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/09f8921b84d39227a0cd91468365ba72c43b8a27"
+        },
+        "date": 1794722758040,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 5731.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 10236.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 15582.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 20061,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 19221,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 19226,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 19146,
             "unit": "ops/s"
           }
         ]
