@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.exceptions.JedisException;
 
 public class GraphErrorIT {
@@ -60,24 +61,20 @@ public class GraphErrorIT {
 
     @Test
     public void testExceptionFlow() {
+        // A query that causes a compile-time error
+        assertServerTypeMismatch(assertThrows(GraphException.class, () -> api.query("RETURN toUpper(5)")));
 
-        try {
-            // Issue a query that causes a compile-time error
-            api.query("RETURN toUpper(5)");
-        } catch (Exception e) {
-            Assertions.assertEquals(GraphException.class, e.getClass());
-            Assertions.assertTrue(e.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
-        }
+        // On general api usage, user should get a new connection, which reports the next error just the same
+        assertServerTypeMismatch(
+                assertThrows(GraphException.class, () -> api.query("MATCH (p:person) RETURN toUpper(p.mixed_prop)")));
+    }
 
-        // On general api usage, user should get a new connection
-
-        try {
-            // Issue a query that causes a compile-time error
-            api.query("MATCH (p:person) RETURN toUpper(p.mixed_prop)");
-        } catch (Exception e) {
-            Assertions.assertEquals(GraphException.class, e.getClass());
-            Assertions.assertTrue(e.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
-        }
+    /** The error is the server's type-mismatch reply, not a client-side failure that happens to be a GraphException. */
+    private static void assertServerTypeMismatch(GraphException exception) {
+        assertTrue(exception.getCause() instanceof JedisDataException, String.valueOf(exception.getCause()));
+        assertTrue(
+                exception.getMessage().contains("Type mismatch: expected String or Null but was Integer"),
+                exception.getMessage());
     }
 
     @Test
@@ -122,24 +119,12 @@ public class GraphErrorIT {
     public void testContextExceptionFlow() {
 
         try (GraphContext c = api.getContext()) {
-            try {
-                // Issue a query that causes a compile-time error
-                c.query("RETURN toUpper(5)");
-            } catch (Exception e) {
-                Assertions.assertEquals(GraphException.class, e.getClass());
-                Assertions.assertTrue(
-                        e.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
-            }
+            // A query that causes a compile-time error
+            assertServerTypeMismatch(assertThrows(GraphException.class, () -> c.query("RETURN toUpper(5)")));
 
-            // On contexted api usage, connection should stay open
-            try {
-                // Issue a query that causes a compile-time error
-                c.query("MATCH (p:person) RETURN toUpper(p.mixed_prop)");
-            } catch (Exception e) {
-                Assertions.assertEquals(GraphException.class, e.getClass());
-                Assertions.assertTrue(
-                        e.getMessage().contains("Type mismatch: expected String or Null but was Integer"));
-            }
+            // On contexted api usage, connection should stay open and report the next error just the same
+            assertServerTypeMismatch(
+                    assertThrows(GraphException.class, () -> c.query("MATCH (p:person) RETURN toUpper(p.mixed_prop)")));
         }
     }
 

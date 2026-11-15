@@ -3,7 +3,9 @@ package com.falkordb;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import com.falkordb.exceptions.GraphException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -21,6 +23,7 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.utility.DockerImageName;
+import redis.clients.jedis.exceptions.JedisDataException;
 
 /**
  * Connects through a real Redis Sentinel deployment.
@@ -167,7 +170,10 @@ public class SentinelIT {
                 .autoDetectSentinel(false)
                 .build()) {
             try (Graph graph = driver.graph("sentinel-it-optout")) {
-                assertThrows(RuntimeException.class, () -> graph.query("CREATE (:N {v:1})"));
+                // The Sentinel's own refusal, not some other failure such as an unreachable endpoint.
+                GraphException refused = assertThrows(GraphException.class, () -> graph.query("CREATE (:N {v:1})"));
+                assertTrue(refused.getCause() instanceof JedisDataException, String.valueOf(refused.getCause()));
+                assertTrue(refused.getMessage().contains("unknown command"), refused.getMessage());
             }
         }
     }
@@ -204,7 +210,8 @@ public class SentinelIT {
      * the host on Linux (where CI runs this for real) but not through the VM that backs Docker Desktop
      * on macOS or Windows, where no amount of port mapping helps because the address comes from the
      * Sentinel rather than from Testcontainers. Rather than silently passing a test that never
-     * connected, skip when the address cannot be reached.
+     * connected, skip when the address cannot be reached -- except on GitHub Actions, where it always
+     * can be, so an unreachable master fails instead of quietly skipping the tests in CI.
      */
     private static void assumeMasterIsReachableFromHere() {
         String address;
@@ -215,14 +222,27 @@ public class SentinelIT {
         }
         String[] lines = address.trim().split("\\s+", -1);
         assertTrue(lines.length >= 2, "unexpected Sentinel reply: " + address);
+        // Parsed outside the reachability check, so a malformed reply fails rather than reading as "unreachable".
+        int masterPort = Integer.parseInt(lines[1]);
 
         try (Socket socket = new Socket()) {
-            socket.connect(
-                    new InetSocketAddress(lines[0], Integer.parseInt(lines[1])), (int) REACHABILITY_TIMEOUT.toMillis());
+            socket.connect(new InetSocketAddress(lines[0], masterPort), (int) REACHABILITY_TIMEOUT.toMillis());
         } catch (IOException | RuntimeException unreachable) {
-            Assumptions.abort("the Sentinel-reported master address " + lines[0] + ":" + lines[1]
-                    + " is not routable from this host (expected on Docker Desktop; CI runs this on Linux)");
+            String message = "the Sentinel-reported master address " + lines[0] + ":" + masterPort
+                    + " is not routable from this host";
+            // On the GitHub Actions runners (Linux, local Docker) the address is always routable, so there an
+            // unroutable master is a real failure, not an environment to skip: skipping would leave CI green
+            // with the Sentinel tests never having connected.
+            if (runsOnGitHubActions()) {
+                fail(message + " (it always is on the GitHub Actions runners)", unreachable);
+            }
+            Assumptions.abort(message + " (expected on Docker Desktop; CI runs this on Linux)");
         }
+    }
+
+    /** GitHub Actions sets {@code GITHUB_ACTIONS=true} on its runners, where every workflow runs this suite. */
+    private static boolean runsOnGitHubActions() {
+        return "true".equals(System.getenv("GITHUB_ACTIONS"));
     }
 
     private static void awaitMonitoredMaster() throws Exception {

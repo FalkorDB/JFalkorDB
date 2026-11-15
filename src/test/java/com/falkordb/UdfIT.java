@@ -1,10 +1,14 @@
 package com.falkordb;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import redis.clients.jedis.util.SafeEncoder;
 
 public class UdfIT {
 
@@ -110,6 +114,7 @@ public class UdfIT {
         // List all UDF libraries
         List<Object> libraries = driver.udfList();
         Assertions.assertNotNull(libraries, "UDF list should not be null");
+        Assertions.assertTrue(libraryNames(libraries).contains(libraryName), "UDF list should name " + libraryName);
     }
 
     @Test
@@ -117,12 +122,17 @@ public class UdfIT {
         String libraryName = "TestLibSpecific";
         String script = "function testFunc() { return 'hello'; } falkor.register('testFunc', testFunc);";
 
-        // Load a UDF library
+        // Load a UDF library, and another one the filter must leave out
         driver.udfLoad(libraryName, script, false);
+        driver.udfLoad("TestLibOther", script, false);
 
         // List specific UDF library
         List<Object> libraries = driver.udfList(libraryName, false);
         Assertions.assertNotNull(libraries, "UDF list should not be null");
+        Assertions.assertEquals(
+                Collections.singletonList(libraryName),
+                libraryNames(libraries),
+                "UDF list filtered by name should list only that library");
     }
 
     @Test
@@ -136,6 +146,8 @@ public class UdfIT {
         // List UDF libraries with code
         List<Object> libraries = driver.udfList(null, true);
         Assertions.assertNotNull(libraries, "UDF list should not be null");
+        Assertions.assertTrue(libraryNames(libraries).contains(libraryName), "UDF list should name " + libraryName);
+        Assertions.assertTrue(strings(libraries).contains(script), "UDF list WITHCODE should include the code");
     }
 
     @Test
@@ -153,6 +165,8 @@ public class UdfIT {
         // Verify libraries are flushed
         List<Object> libraries = driver.udfList();
         Assertions.assertNotNull(libraries, "UDF list should not be null");
+        Assertions.assertEquals(
+                Collections.emptyList(), libraryNames(libraries), "no UDF library should be left after a flush");
     }
 
     @Test
@@ -162,10 +176,13 @@ public class UdfIT {
 
         // Load a UDF library
         driver.udfLoad(libraryName, script, false);
+        Assertions.assertTrue(libraryNames(driver.udfList()).contains(libraryName), "the library should be loaded");
 
         // Delete the library
         boolean result = driver.udfDelete(libraryName);
         Assertions.assertTrue(result, "UDF library should be deleted successfully");
+        Assertions.assertFalse(
+                libraryNames(driver.udfList()).contains(libraryName), "the deleted library should no longer be listed");
     }
 
     @Test
@@ -185,5 +202,38 @@ public class UdfIT {
         // List all libraries
         List<Object> libraries = driver.udfList();
         Assertions.assertNotNull(libraries, "UDF list should not be null");
+        Assertions.assertTrue(
+                libraryNames(libraries).containsAll(Arrays.asList(lib1Name, lib2Name)),
+                "UDF list should name both libraries: " + libraryNames(libraries));
+    }
+
+    /**
+     * The library names in a {@code GRAPH.UDF LIST} reply. Each library is a flat list of field/value pairs, one of
+     * them {@code library_name}.
+     */
+    private static List<String> libraryNames(List<Object> libraries) {
+        List<String> names = new ArrayList<>();
+        for (Object library : libraries) {
+            List<String> fields = strings(library);
+            int index = fields.indexOf("library_name");
+            Assertions.assertTrue(index >= 0 && index + 1 < fields.size(), "library without a name: " + fields);
+            names.add(fields.get(index + 1));
+        }
+        return names;
+    }
+
+    /** Every scalar in a reply, depth first, with bulk strings decoded. */
+    private static List<String> strings(Object reply) {
+        List<String> strings = new ArrayList<>();
+        if (reply instanceof List<?>) {
+            for (Object element : (List<?>) reply) {
+                strings.addAll(strings(element));
+            }
+        } else if (reply instanceof byte[]) {
+            strings.add(SafeEncoder.encode((byte[]) reply));
+        } else if (reply != null) {
+            strings.add(reply.toString());
+        }
+        return strings;
     }
 }
