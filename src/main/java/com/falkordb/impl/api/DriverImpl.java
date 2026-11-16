@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import javax.net.ssl.SSLContext;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.DefaultJedisClientConfig;
@@ -45,8 +46,8 @@ public class DriverImpl implements Driver {
      * with a read timeout while the server keeps executing the query - so retrying could
      * duplicate writes. Query duration is governed by the server's TIMEOUT /
      * TIMEOUT_DEFAULT configuration (or a per-query timeout) instead, matching the other
-     * FalkorDB clients. To use a different socket timeout, build your own pool and pass
-     * it to {@link #DriverImpl(Pool)}. Also the default socket timeout applied by {@link #create}
+     * FalkorDB clients. To use a different socket timeout, set {@code socketTimeout} on
+     * {@code com.falkordb.FalkorDB.builder()}. Also the default socket timeout applied by {@link #create}
      * when the caller does not specify one.
      */
     public static final int DEFAULT_SOCKET_TIMEOUT_MILLIS = 0;
@@ -190,6 +191,7 @@ public class DriverImpl implements Driver {
                         JedisURIHelper.getUser(uri),
                         JedisURIHelper.getPassword(uri),
                         JedisURIHelper.isRedisSSLScheme(uri),
+                        null,
                         DEFAULT_CONNECTION_TIMEOUT_MILLIS,
                         DEFAULT_SOCKET_TIMEOUT_MILLIS)
                 .database(JedisURIHelper.getDBIndex(uri))
@@ -319,7 +321,7 @@ public class DriverImpl implements Driver {
             requireNoDatabase(dataConfig);
             return new ClusterConnections(Collections.singleton(seed), poolConfig, clusterNodeConfig(dataConfig));
         }
-        return new Connections.Single(new JedisPool(poolConfig, seed, dataConfig));
+        return new Connections.Single(JedisPools.direct(poolConfig, seed, dataConfig));
     }
 
     private static void requireNoDatabase(DefaultJedisClientConfig dataConfig) {
@@ -335,12 +337,8 @@ public class DriverImpl implements Driver {
      * SELECT} for any non-zero index on every connection it opens, which the cluster would reject.
      */
     static DefaultJedisClientConfig clusterNodeConfig(DefaultJedisClientConfig dataConfig) {
-        return buildClientConfig(
-                dataConfig.getUser(),
-                dataConfig.getPassword(),
-                dataConfig.getSslOptions() != null,
-                dataConfig.getConnectionTimeoutMillis(),
-                dataConfig.getSocketTimeoutMillis());
+        return derivedConfig(
+                dataConfig, dataConfig.getUser(), dataConfig.getPassword(), dataConfig.getSocketTimeoutMillis());
     }
 
     /**
@@ -350,11 +348,10 @@ public class DriverImpl implements Driver {
      * replaced by {@link #DEFAULT_CLUSTER_PROBE_TIMEOUT_MILLIS}.
      */
     static DefaultJedisClientConfig clusterProbeConfig(DefaultJedisClientConfig dataConfig) {
-        return buildClientConfig(
+        return derivedConfig(
+                dataConfig,
                 dataConfig.getUser(),
                 dataConfig.getPassword(),
-                dataConfig.getSslOptions() != null,
-                dataConfig.getConnectionTimeoutMillis(),
                 dataConfig.getSocketTimeoutMillis() > 0
                         ? dataConfig.getSocketTimeoutMillis()
                         : DEFAULT_CLUSTER_PROBE_TIMEOUT_MILLIS);
@@ -385,11 +382,10 @@ public class DriverImpl implements Driver {
         // Without Sentinel credentials, reuse the data ones as falkordb-go does, so the common
         // single-ACL deployment needs no extra configuration.
         boolean ownCredentials = sentinel.hasCredentials();
-        return buildClientConfig(
+        return derivedConfig(
+                dataConfig,
                 ownCredentials ? sentinel.user() : dataConfig.getUser(),
                 ownCredentials ? sentinel.password() : dataConfig.getPassword(),
-                dataConfig.getSslOptions() != null,
-                dataConfig.getConnectionTimeoutMillis(),
                 SENTINEL_SOCKET_TIMEOUT_MILLIS);
     }
 
@@ -406,12 +402,7 @@ public class DriverImpl implements Driver {
         int socketTimeoutMillis = dataConfig.getSocketTimeoutMillis() > 0
                 ? dataConfig.getSocketTimeoutMillis()
                 : DEFAULT_SENTINEL_PROBE_TIMEOUT_MILLIS;
-        return buildClientConfig(
-                base.getUser(),
-                base.getPassword(),
-                base.getSslOptions() != null,
-                base.getConnectionTimeoutMillis(),
-                socketTimeoutMillis);
+        return derivedConfig(base, base.getUser(), base.getPassword(), socketTimeoutMillis);
     }
 
     /**
@@ -569,6 +560,64 @@ public class DriverImpl implements Driver {
             Duration poolMaxWait,
             SentinelOptions sentinel,
             ClusterOptions cluster) {
+        if (poolMaxWait == null) {
+            throw new IllegalArgumentException("poolMaxWait must not be null");
+        }
+        return create(
+                host,
+                port,
+                user,
+                password,
+                0,
+                ssl,
+                null,
+                connectionTimeoutMillis,
+                socketTimeoutMillis,
+                PoolOptions.of(poolMaxTotal, poolMaxIdle, 0, poolMaxWait, false, false),
+                sentinel,
+                cluster);
+    }
+
+    /**
+     * Creates a driver from already-resolved connection settings, including the database, custom TLS and the
+     * full pool options. This is the overload {@code FalkorDB.builder()} actually calls; the shorter ones
+     * delegate here with the defaults for whatever they leave out.
+     *
+     * @param host                     server host (the seed endpoint, ignored when {@code sentinel} or
+     *                                 {@code cluster} is explicit, though still range-checked)
+     * @param port                     server port
+     * @param user                     username, or {@code null} for none
+     * @param password                 password, or {@code null} for none
+     * @param database                 database index; must be {@code 0} for a Redis Cluster
+     * @param ssl                      whether to connect over TLS
+     * @param tls                      custom TLS settings, or {@code null} for the defaults; requires
+     *                                 {@code ssl}
+     * @param connectionTimeoutMillis  connection (connect) timeout in milliseconds
+     * @param socketTimeoutMillis      socket (read) timeout in milliseconds ({@code 0} = no deadline)
+     * @param pool                     pool sizing and connection checks, applied to each cluster node's pool
+     *                                 separately
+     * @param sentinel                 how to treat the endpoint with respect to Sentinel
+     * @param cluster                  how to treat the endpoint with respect to Redis Cluster
+     * @return a new driver backed by the assembled connection source
+     * @throws IllegalArgumentException if {@code host} is null/blank, {@code port} is outside
+     *                                  {@code [1, 65535]}, {@code database} is negative, or non-zero with
+     *                                  explicit cluster nodes, a timeout is negative, {@code tls} is given
+     *                                  without {@code ssl}, {@code pool}, {@code sentinel} or {@code cluster}
+     *                                  is null, or Sentinel and cluster are both explicit
+     */
+    public static Driver create(
+            String host,
+            int port,
+            @Nullable String user,
+            @Nullable String password,
+            int database,
+            boolean ssl,
+            @Nullable TlsOptions tls,
+            int connectionTimeoutMillis,
+            int socketTimeoutMillis,
+            PoolOptions pool,
+            SentinelOptions sentinel,
+            ClusterOptions cluster) {
         if (host == null || host.trim().isEmpty()) {
             throw new IllegalArgumentException("host must not be null or blank");
         }
@@ -576,15 +625,11 @@ public class DriverImpl implements Driver {
         if (port < 1 || port > 65535) {
             throw new IllegalArgumentException("port must be in [1, 65535], but was " + port);
         }
-        if (poolMaxTotal < 1) {
-            throw new IllegalArgumentException("poolMaxTotal must be at least 1, but was " + poolMaxTotal);
+        if (database < 0) {
+            throw new IllegalArgumentException("database must not be negative, but was " + database);
         }
-        if (poolMaxIdle < 0) {
-            throw new IllegalArgumentException("poolMaxIdle must not be negative, but was " + poolMaxIdle);
-        }
-        if (poolMaxIdle > poolMaxTotal) {
-            throw new IllegalArgumentException(
-                    "poolMaxIdle (" + poolMaxIdle + ") must not exceed poolMaxTotal (" + poolMaxTotal + ")");
+        if (tls != null && !ssl) {
+            throw new IllegalArgumentException("custom TLS settings were given, but TLS is off");
         }
         if (connectionTimeoutMillis < 0) {
             throw new IllegalArgumentException(
@@ -594,8 +639,8 @@ public class DriverImpl implements Driver {
             throw new IllegalArgumentException(
                     "socketTimeoutMillis must not be negative, but was " + socketTimeoutMillis);
         }
-        if (poolMaxWait == null) {
-            throw new IllegalArgumentException("poolMaxWait must not be null");
+        if (pool == null) {
+            throw new IllegalArgumentException("pool must not be null");
         }
         if (sentinel == null) {
             throw new IllegalArgumentException("sentinel must not be null");
@@ -607,10 +652,16 @@ public class DriverImpl implements Driver {
             throw new IllegalArgumentException(
                     "a deployment is either a Redis Sentinel or a Redis Cluster: configure one of them, not both");
         }
+        if (cluster.isExplicit() && database != 0) {
+            throw new IllegalArgumentException(
+                    "a Redis Cluster has a single database, but database " + database + " was requested");
+        }
         HostAndPort seed = new HostAndPort(normalizedHost, port);
-        GenericObjectPoolConfig<Jedis> poolConfig = buildPoolConfig(poolMaxTotal, poolMaxIdle, poolMaxWait);
-        DefaultJedisClientConfig dataConfig =
-                buildClientConfig(user, password, ssl, connectionTimeoutMillis, socketTimeoutMillis);
+        GenericObjectPoolConfig<Jedis> poolConfig = pool.toPoolConfig();
+        DefaultJedisClientConfig dataConfig = buildClientConfigBuilder(
+                        user, password, ssl, tls, connectionTimeoutMillis, socketTimeoutMillis)
+                .database(database)
+                .build();
         return new DriverImpl(() -> resolveConnections(seed, poolConfig, dataConfig, sentinel, cluster));
     }
 
@@ -620,8 +671,50 @@ public class DriverImpl implements Driver {
      */
     static DefaultJedisClientConfig buildClientConfig(
             String user, String password, boolean ssl, int connectionTimeoutMillis, int socketTimeoutMillis) {
-        return buildClientConfigBuilder(user, password, ssl, connectionTimeoutMillis, socketTimeoutMillis)
+        return buildClientConfigBuilder(user, password, ssl, null, connectionTimeoutMillis, socketTimeoutMillis)
                 .build();
+    }
+
+    /**
+     * Builds a Jedis client config from resolved settings, custom TLS included. See {@link
+     * #buildClientConfigBuilder}.
+     */
+    static DefaultJedisClientConfig buildClientConfig(
+            @Nullable String user,
+            @Nullable String password,
+            boolean ssl,
+            @Nullable TlsOptions tls,
+            int connectionTimeoutMillis,
+            int socketTimeoutMillis) {
+        return buildClientConfigBuilder(user, password, ssl, tls, connectionTimeoutMillis, socketTimeoutMillis)
+                .build();
+    }
+
+    /**
+     * Builds a config derived from the data connections' one, for the Sentinels, the probes or the cluster
+     * nodes: the given credentials and read deadline, and the data config's connect timeout and TLS. No
+     * database index, which those connections must not {@code SELECT}.
+     *
+     * <p>The TLS settings are copied as they are rather than rebuilt from "is TLS on", so a custom {@code
+     * SSLContext}, {@code SSLParameters} or {@code HostnameVerifier} reaches every connection the driver opens.
+     * Deriving from a derived config gives the same TLS settings again.
+     */
+    @SuppressWarnings("deprecation") // the legacy TLS fields are the only ones that carry JDK TLS objects
+    private static DefaultJedisClientConfig derivedConfig(
+            DefaultJedisClientConfig dataConfig,
+            @Nullable String user,
+            @Nullable String password,
+            int socketTimeoutMillis) {
+        DefaultJedisClientConfig.Builder builder = buildClientConfigBuilder(
+                user, password, false, null, dataConfig.getConnectionTimeoutMillis(), socketTimeoutMillis);
+        if (dataConfig.getSslOptions() != null) {
+            builder.sslOptions(dataConfig.getSslOptions());
+        } else if (dataConfig.isSsl()) {
+            builder.ssl(true)
+                    .sslSocketFactory(dataConfig.getSslSocketFactory())
+                    .sslParameters(dataConfig.getSslParameters());
+        }
+        return builder.hostnameVerifier(dataConfig.getHostnameVerifier()).build();
     }
 
     /**
@@ -634,8 +727,14 @@ public class DriverImpl implements Driver {
      * parsing is written against those RESP2 shapes, so pinning the flag off keeps the wire protocol
      * explicit and keeps the warning out of our users' logs.
      */
+    @SuppressWarnings("deprecation") // the legacy TLS fields are the only ones that carry JDK TLS objects
     private static DefaultJedisClientConfig.Builder buildClientConfigBuilder(
-            String user, String password, boolean ssl, int connectionTimeoutMillis, int socketTimeoutMillis) {
+            @Nullable String user,
+            @Nullable String password,
+            boolean ssl,
+            @Nullable TlsOptions tls,
+            int connectionTimeoutMillis,
+            int socketTimeoutMillis) {
         DefaultJedisClientConfig.Builder builder = DefaultJedisClientConfig.builder()
                 .connectionTimeoutMillis(connectionTimeoutMillis)
                 .socketTimeoutMillis(socketTimeoutMillis)
@@ -646,8 +745,18 @@ public class DriverImpl implements Driver {
         if (password != null) {
             builder.password(password);
         }
-        if (ssl) {
+        if (tls != null && tls.replacesSocketFactory()) {
+            // SslOptions builds its SSLContext from keystore files and would override the parameters'
+            // endpoint identification, so a caller's own context or parameters need Jedis' legacy fields.
+            SSLContext context = tls.context();
+            builder.ssl(true)
+                    .sslSocketFactory(context == null ? null : context.getSocketFactory())
+                    .sslParameters(tls.parameters());
+        } else if (ssl) {
             builder.sslOptions(SslOptions.defaults());
+        }
+        if (tls != null) {
+            builder.hostnameVerifier(tls.hostnameVerifier());
         }
         return builder;
     }
@@ -658,11 +767,7 @@ public class DriverImpl implements Driver {
      * {@link Duration#ZERO} = fail fast when exhausted).
      */
     static GenericObjectPoolConfig<Jedis> buildPoolConfig(int maxTotal, int maxIdle, Duration maxWait) {
-        GenericObjectPoolConfig<Jedis> poolConfig = new GenericObjectPoolConfig<>();
-        poolConfig.setMaxTotal(maxTotal);
-        poolConfig.setMaxIdle(maxIdle);
-        poolConfig.setMaxWait(maxWait);
-        return poolConfig;
+        return PoolOptions.of(maxTotal, maxIdle, 0, maxWait, false, false).toPoolConfig();
     }
 
     /**
@@ -672,7 +777,14 @@ public class DriverImpl implements Driver {
      * Notice: might be changed in the future
      *
      * @param pool jedis pool to wrap
+     * @deprecated since 0.17.0, and to be removed in 0.18.0, because it exposes the Jedis transport. Build
+     *     the driver with {@code com.falkordb.FalkorDB.builder()}, which configures pool sizing ({@code
+     *     poolMaxTotal}, {@code poolMaxIdle}, {@code poolMinIdle}, {@code poolMaxWait}), connection checks
+     *     ({@code poolTestOnBorrow}, {@code poolTestWhileIdle}), timeouts, credentials, the database and TLS
+     *     ({@code sslContext}, {@code sslParameters}, {@code sslHostnameVerifier}). To share one pool between
+     *     components, share the {@link Driver}: it is thread-safe.
      */
+    @Deprecated
     public DriverImpl(Pool<Jedis> pool) {
         Connections connections = new Connections.Single(pool);
         this.poolFactory = () -> connections;
@@ -719,7 +831,7 @@ public class DriverImpl implements Driver {
      * A pool closed underneath us stays published — the driver is closed, so reporting that through
      * Jedis is the same thing that happens to a driver closed after being used.
      */
-    private Connections pool() {
+    Connections pool() {
         Connections existing = resolvedPool.get();
         if (existing != null) {
             return existing;
@@ -761,7 +873,11 @@ public class DriverImpl implements Driver {
     /**
      * Returns a connection to the database. In a Redis Cluster the connection is to an arbitrary
      * primary; use {@link #getConnection(String)} to reach the node that serves a particular graph.
+     *
+     * @deprecated since 0.17.0, and to be removed in 0.18.0 with {@link Driver#getConnection()}; see there
+     *     for the replacements.
      */
+    @Deprecated
     @Override
     public Jedis getConnection() {
         return pool().get(null);
