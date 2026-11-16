@@ -164,6 +164,7 @@ class ContextBatchTest {
         GraphException first = assertThrows(GraphException.class, failed::get);
         assertEquals("ERR failed on purpose", first.getMessage());
         assertEquals(GraphException.class, first.getClass(), "mapped as the rest of the API maps a server error");
+        assertNull(first.getCause(), "ExceptionMapping keeps the server's message, not Jedis' exception");
         assertSame(first, assertThrows(GraphException.class, failed::get));
         assertSame(first, results.get(0));
     }
