@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794747504187,
+  "lastUpdate": 1794814662529,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -9439,6 +9439,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 24459.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f495c2e9a32f34fac42a9cca0a5dd564e9757c4b",
+          "message": "fix: keep a reply that fails to decode in the batch result, and rethrow it on every get() (#529)\n\n* fix: keep a reply that fails to decode in the batch result, and rethrow it on every get()\n\nA graph reply in a pipeline or transaction that failed to decode was lost\nin two ways:\n\n- Jedis' Response forgets an exception its builder threw, so every get()\n  after the first returned null. syncAndReturnAll() and exec() make that\n  first get() themselves, so the caller's get() saw only null.\n- Jedis' syncAndReturnAll() and exec() loops catch only JedisDataException.\n  A lookup that decoding needs can fail with a pool-exhaustion\n  JedisException or a JedisConnectionException. That ended the loop part\n  way: every reply was lost, and a pipeline kept the responses it hadn't\n  reached queued after their replies were read, so the next sync() waited\n  for replies that never came.\n\nEvery graph reply builder (queries, profiles, deleteGraph, copyGraph,\nexplain) now keeps what decoding threw and throws it on inside\nQueuedReplyFailure, a package-private JedisDataException that Jedis' loops\nkeep in place of the reply. The Response handed to the caller rethrows the\noriginal on every get(), and syncAndReturnAll() / exec() put the original in\nthe returned list. A GraphException is seen exactly as before; only the\nforgotten and escaping cases change.\n\nRefs #400\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: say only a RuntimeException from decoding is kept, and that setDependency doesn't decode a graph reply first\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Barak Bar Orion <barak.bar@falkordb.com>\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-16T09:35:17+02:00",
+          "tree_id": "61be4f6d6e1a758578f4a429f13b00e6210b414d",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/f495c2e9a32f34fac42a9cca0a5dd564e9757c4b"
+        },
+        "date": 1794814662486,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3882.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6692.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9677.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 12653.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11912.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11780.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11827.333,
             "unit": "ops/s"
           }
         ]
