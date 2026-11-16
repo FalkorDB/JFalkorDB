@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794814662529,
+  "lastUpdate": 1794816109550,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -9498,6 +9498,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11827.333,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1998bb23902bfaaee495a2f58f8aa6517e0eac7d",
+          "message": "fix!: discard open transactions and drain pipelines when a context closes (#530)\n\n* fix!: discard open transactions and drain pipelines when a context closes\n\nGraphContext.close() only returned the connection to the pool. The context\nbuilds its transactions and pipelines on the bare connection, so Jedis'\nresetState() on return never sees them: a context closed with a transaction\nstill in MULTI, or a pipeline with unread replies, lent a dirty connection\nto the next borrower, whose commands were then queued or read someone\nelse's reply.\n\nclose() now ends each transaction and pipeline created on the context\nbefore returning the connection: it discards an open transaction (and\nunwatches keys a transaction watched after it ended) and reads the replies\na pipeline still awaits. When more than one awaits replies, or ending one\nfails, it marks the connection broken so the pool destroys it instead of\nlending it again. A key GraphContext.watch() watched is still unwatched by\nthe pool, so close() adds no UNWATCH.\n\nBREAKING CHANGE: GraphContext.multi() and pipelined() on a closed context\nnow throw IllegalStateException instead of building a batch on a\nconnection that may already be lent to another borrower.\n\nRefs #400\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: say when closing a context can't read pending replies, and check a GC ran in the tests\n\nGraphPipeline's Javadoc said closing the context always reads a pipeline's\npending replies; it does only when that pipeline is the only batch\nawaiting replies. GraphContext's Javadoc now also says the Responses still\nwaiting for a dropped connection's replies can't be read.\n\nThe tests that drop a batch and call System.gc() now assert that a\ncollection actually ran, so they can't pass without proving anything.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: keep close() clean when an earlier batch is reused, and clear the cache for abandoned deletes\n\nReview on #530 found that close() could still miss a batch. A pipeline that\nhad nothing pending when a newer batch was created was held only weakly,\nso if it got new commands and was then dropped, it could be collected\nbefore close() and leave its replies on the connection. Recomputing the\nstrongly held list in track() also briefly let go of unfinished batches.\n\nThe context now holds its latest 128 batches strongly and every batch\nweakly, and counts the batches it created. Whether a batch has something on\nthe connection can only be told at close, so the latest ones are ended as\nbefore. If an older one was collected, what it left on the connection is\nunknown: close() drops the connection and clears the schema cache, in case\nthe batch deleted the graph.\n\nWhen close() drops the connection because several batches await replies,\nit now marks their replies unknown, so a queued deleteGraph() that may have\nrun clears the cache as it does when a sync fails.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: don't let close() wait for replies a failed syncAndReturnAll() already read\n\nWhen building a reply in syncAndReturnAll() throws something other than a\nJedisDataException, Jedis has already read every reply but keeps the\nremaining responses queued. The pipeline then looked like it still awaited\nreplies, so close() called sync(), which waited for replies that never\ncome: forever, with the driver's default of no read deadline.\n\nGraphPipelineImpl now records whether its last sync() or\nsyncAndReturnAll() failed, and close() treats such a pipeline as one whose\nstate on the connection is unknown: it marks the connection broken without\nreading, so the pool destroys it.\n\nGraphContext's Javadoc says so, and now states plainly that only a batch\nolder than the context's latest 128 can be garbage-collected before close.\nAlso adds Javadoc to the test helpers this PR touches.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: don't let closing a failed pipeline wait, and clear the cache when ending a batch fails\n\nGraphPipeline.close() called sync() even after the pipeline's last read\nfailed, which could wait forever for replies Jedis had already read. A\npipeline closed in try-with-resources inside its context did that before\nthe context could drop the connection. It now marks the connection broken\ninstead of reading, so the pool destroys it.\n\nWhen ending a batch at context close throws after its replies were read,\nfor example on a delete's out-of-step reply, close() now also marks the\nbatch's replies unknown, so a delete that may have run clears the schema\ncache.\n\nclose() also no longer searches the list of batches for each one it ends,\nwhich was quadratic in the number of batches a long-lived context holds.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: guard that a delete queued behind a reply that fails to decode clears the cache\n\nAnswers Copilot's \"needs a closer look\" note on #530: whether a failed\nsyncAndReturnAll() followed by close() can leave stale schema names. It\ncan't. The failed read marks the replies unknown, and close() does again\nfor a pipeline it abandons; each alone clears the cache when a delete was\nqueued. The guard passes on this branch and on a merge with #529 (where\nthe failure is kept in the result instead of thrown), and fails only with\nboth calls removed.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: clear the cache for a delete whose reply fails to decode in an explicit sync\n\nCopilot found that an explicit pipeline.sync() whose GRAPH.DELETE reply\ncan't be decoded threw out of the bookkeeping before the schema cache\nwas cleared, and that closing the context then dropped the delete\nwithout clearing it. #529, merged into this branch, fixed it: the cache\nis cleared before the reply is decoded, and the decode failure stays in\nthe response. This pins it.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Barak Bar Orion <barak.bar@falkordb.com>\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-16T09:59:33+02:00",
+          "tree_id": "de60f24386280aaeb7513c92e6033d27e235e497",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/1998bb23902bfaaee495a2f58f8aa6517e0eac7d"
+        },
+        "date": 1794816109521,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 9129.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 15765.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 21790.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 23943.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 23965.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 24950,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 24714.667,
             "unit": "ops/s"
           }
         ]
