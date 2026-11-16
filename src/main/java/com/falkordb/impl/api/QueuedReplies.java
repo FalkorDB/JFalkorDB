@@ -77,14 +77,29 @@ final class QueuedReplies {
 
     /** A queued {@code GRAPH.DELETE}: its reply, the segment it ends, and the segment queued after it. */
     private static final class QueuedDelete {
-        final Response<String> reply;
+        final QueuedReply<String> reply;
         final Segment ended;
         final Segment next;
 
-        QueuedDelete(Response<String> reply, Segment ended, Segment next) {
+        QueuedDelete(QueuedReply<String> reply, Segment ended, Segment next) {
             this.reply = reply;
             this.ended = ended;
             this.next = next;
+        }
+
+        /**
+         * Whether the server rejected the delete, once its reply has been read. A reply without an error means the
+         * delete ran, even if it can't be decoded.
+         */
+        boolean rejected() {
+            try {
+                reply.queued().get();
+                return false;
+            } catch (QueuedReplyFailure undecodable) {
+                return false;
+            } catch (JedisDataException error) {
+                return true;
+            }
         }
 
         /** The delete didn't run: the replies of the segment it ended come from the graph the next segment has. */
@@ -97,14 +112,13 @@ final class QueuedReplies {
         }
     }
 
-    /** Builds a delete's reply: the delete ran, so it clears the live cache. */
-    private final class DeleteBuilder extends Builder<String> {
-        @Override
-        public String build(Object reply) {
-            String statistics = BuilderFactory.STRING.build(reply);
-            cache.clear();
-            return statistics;
-        }
+    /**
+     * Decodes a delete's reply. The server answered without an error, so the delete ran: the live cache is cleared
+     * before the statistics are decoded, which can fail.
+     */
+    private String deleted(Object reply) {
+        cache.clear();
+        return BuilderFactory.STRING.build(reply);
     }
 
     /**
@@ -128,18 +142,17 @@ final class QueuedReplies {
     }
 
     /**
-     * Returns the builder for a graph reply queued now. One builder per command, so that it decodes with the
-     * cache of the segment the command was queued in.
+     * Queues a graph command whose reply is a result set, decoded with the cache of the segment it is queued in. A
+     * reply that fails to decode fails every read of the returned response with the same exception, and is kept in
+     * place of the reply by {@code syncAndReturnAll()} and {@code exec()} (see {@link QueuedReply}).
+     *
+     * @param append queues the command with the builder it is given, and returns Jedis' response
+     * @return the response to hand to the caller
      */
-    Builder<ResultSet> resultSet() {
+    @SuppressWarnings("unchecked")
+    Response<ResultSet> queueResultSet(Function<Builder<ResultSet>, Response<ResultSet>> append) {
         Segment segment = current;
-        return new Builder<ResultSet>() {
-            @SuppressWarnings("unchecked")
-            @Override
-            public ResultSet build(Object reply) {
-                return decoder.apply((List<Object>) reply, segment.cache());
-            }
-        };
+        return QueuedReply.queue(reply -> decoder.apply((List<Object>) reply, segment.cache()), append);
     }
 
     /**
@@ -156,7 +169,7 @@ final class QueuedReplies {
         Segment ended = current;
         ended.frozen = deletes.isEmpty() ? cache.snapshot() : EMPTY;
         current = new Segment();
-        Response<String> reply = runDelete(send);
+        QueuedReply<String> reply = runDelete(send);
         deletes.add(new QueuedDelete(reply, ended, current));
         return reply;
     }
@@ -164,14 +177,15 @@ final class QueuedReplies {
     /**
      * Sends a {@code GRAPH.DELETE} that isn't queued, as a transaction does after {@code exec()}: its builder clears
      * the live cache once it ran. So does a failed send, after which the delete may have run. A delete the server
-     * rejects clears nothing: Jedis keeps the error in the response without building it.
+     * rejects clears nothing: Jedis keeps the error in the response without building it. A reply that can't be
+     * decoded fails every read of the response, like one that is queued.
      *
      * @param send sends the delete with the builder it is given, and returns its response
      * @return the response
      */
-    Response<String> runDelete(Function<Builder<String>, Response<String>> send) {
+    QueuedReply<String> runDelete(Function<Builder<String>, Response<String>> send) {
         try {
-            return send.apply(new DeleteBuilder());
+            return QueuedReply.queue(this::deleted, send);
         } catch (RuntimeException e) {
             cache.clear();
             throw e;
@@ -186,9 +200,7 @@ final class QueuedReplies {
      */
     void read() {
         for (QueuedDelete delete : deletes) {
-            try {
-                delete.reply.get();
-            } catch (JedisDataException failed) {
+            if (delete.rejected()) {
                 delete.didNotRun();
             }
         }

@@ -37,9 +37,10 @@ import redis.clients.jedis.commands.RedisModulePipelineCommands;
  * queued commands. Their replies stay unread on the context's connection, and the next command sent on it, by the
  * context or by a schema lookup, reads one of them as its own.
  *
- * <p>A {@link com.falkordb.exceptions.GraphException} while decoding a reply in {@link #syncAndReturnAll()}
- * becomes that reply's element of the returned list, like an error reply. Jedis does not keep it, so reading
- * the same {@code Response} again returns {@code null}.
+ * <p>A graph reply that fails to decode, with a {@link com.falkordb.exceptions.GraphException} or with the
+ * failure of a lookup that decoding needed, fails every {@code get()} of its {@code Response} with the same
+ * exception. In {@link #syncAndReturnAll()} that exception becomes the reply's element of the returned list, like
+ * an error reply, and the other replies are still returned.
  */
 public interface GraphPipeline
         extends PipelineCommands, PipelineBinaryCommands, RedisModulePipelineCommands, Closeable {
@@ -233,7 +234,8 @@ public interface GraphPipeline
      * responses and generate the right response type (usually it is a waste of time).
      * <p>An element is {@code null} where that command's reply is nil, such as a pipelined {@code get} of a
      * missing key; a command that failed has its exception, a {@code JedisDataException} such as a
-     * {@link com.falkordb.exceptions.GraphException}, as its element instead of throwing it.
+     * {@link com.falkordb.exceptions.GraphException}, as its element instead of throwing it. So does a graph reply
+     * that failed to decode with a {@code RuntimeException}, such as the failure of a lookup that decoding needed.
      * @return A list of all the responses in the order you executed them, whose elements may be {@code null}.
      */
     List<@Nullable Object> syncAndReturnAll();
