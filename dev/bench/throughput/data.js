@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794833073768,
+  "lastUpdate": 1794834991680,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -9616,6 +9616,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11854.333,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "42d4060efbb86db40235b9f4473398d0c19b9fe6",
+          "message": "feat: builder pool checks, minIdle, database and TLS hook; deprecate getConnection() and DriverImpl(Pool) (#536)\n\n* feat: builder pool checks, minIdle, database and TLS hook; deprecate getConnection() and DriverImpl(Pool)\n\nFalkorDB.builder() gains poolMinIdle, poolTestOnBorrow, poolTestWhileIdle,\ndatabase, sslContext, sslParameters and sslHostnameVerifier, all JDK-typed,\nso that it covers what a hand-built Jedis pool passed to DriverImpl(Pool)\nwas used for. Driver.getConnection() and DriverImpl(Pool) are deprecated\nfor removal in 0.18.0.\n\nPart of #400.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: move the README pool and TLS examples to FalkorDB.builder()\n\nRewrites the Configuring Connection Pool section around the builder,\nadds a migration table from JedisPoolConfig / DefaultJedisClientConfig\nsettings, updates the ConfiguredDriver example, and regenerates the API\nsnapshot.\n\nPart of #400.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: put getConnection()'s deprecation before its @return\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: reword a possessive the spellchecker rejects\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: bound opening pooled connections and copy SSLParameters\n\nOpening a pooled connection (TLS handshake, AUTH, CLIENT SETINFO, SELECT)\nnow waits at most the socket timeout, or 2 s when none is set, like the\nconnection check: commons-pool2 opens the poolMinIdle connections on the\none maintenance thread every pool in the JVM shares, and a server that\naccepts connections but never answers would otherwise stall it. A\nreconnect and the open connection keep the configured timeout.\n\nTlsOptions keeps its own copy of the caller's SSLParameters, so changing\nthem after build() can't get round the hostname-verification check.\n\nTests: a real failing JedisSentinelPool construction leaves no background\ntask; connection checks use FakeRedisServer's RESP parser; FakeServer\nno longer races close() against its acceptor. README: imports in each\nsnippet, TLS 1.2 in examples, the verifier exception, per-borrow cost,\nand what replaces testOnReturn.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-16T15:13:59+02:00",
+          "tree_id": "a96576ba2d5ca0742d29c81d61055699cd4e4af8",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/42d4060efbb86db40235b9f4473398d0c19b9fe6"
+        },
+        "date": 1794834991642,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 6236.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 9428.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 14410.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 18316,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 17199.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 17312.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 17174,
             "unit": "ops/s"
           }
         ]
