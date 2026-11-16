@@ -42,7 +42,13 @@ import redis.clients.jedis.commands.RedisModulePipelineCommands;
  * failure of a lookup that decoding needed, fails every {@code get()} of its {@code Response} with the same
  * exception. In {@link #syncAndReturnAll()} that exception becomes the reply's element of the returned list, like
  * an error reply, and the other replies are still returned.
+ *
+ * @deprecated Use {@link GraphContext.Pipeline}, from {@link GraphContext#pipeline()}. It has the same graph methods,
+ *     returns JFalkorDB's own {@link Reply} instead of Jedis' {@code Response}, and queues other Redis commands
+ *     with {@code sendCommand} instead of inheriting Jedis' command interfaces, so its API doesn't change when
+ *     Jedis does. This interface, with the thousand-odd methods it inherits from Jedis, is removed in 0.18.0.
  */
+@Deprecated
 public interface GraphPipeline
         extends PipelineCommands, PipelineBinaryCommands, RedisModulePipelineCommands, Closeable {
 

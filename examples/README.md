@@ -12,6 +12,7 @@ module (not part of the main reactor or the published artifact); it is compiled 
 | [`ConfiguredDriver`](src/main/java/com/falkordb/examples/ConfiguredDriver.java) | The full builder configuration surface — credentials, TLS, pool sizing, timeouts. |
 | [`EnvironmentConfiguredDriver`](src/main/java/com/falkordb/examples/EnvironmentConfiguredDriver.java) | The no-arg `FalkorDB.driver()` picking up `FALKORDB_URL` / `FALKORDB_HOST`+`FALKORDB_PORT` from the environment. |
 | [`SentinelDriver`](src/main/java/com/falkordb/examples/SentinelDriver.java) | Connecting through Redis Sentinel — auto-detection, naming a master explicitly, separate Sentinel credentials, and opting out. |
+| [`PipelineAndTransaction`](src/main/java/com/falkordb/examples/PipelineAndTransaction.java) | `GraphContext.pipeline()` and `transaction()`: graph queries and other Redis commands queued together, `Reply` results, `WATCH`. |
 | [`ClusterDriver`](src/main/java/com/falkordb/examples/ClusterDriver.java) | Connecting to a Redis Cluster — auto-detection, naming startup nodes, cluster-wide commands, and opting out. |
 
 ## Build

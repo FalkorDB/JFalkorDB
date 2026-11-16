@@ -66,7 +66,7 @@ import com.falkordb.graph_entities.Path;
 import com.falkordb.Graph;
 import com.falkordb.GraphContext;
 import com.falkordb.GraphContextGenerator;
-import com.falkordb.GraphTransaction;
+import com.falkordb.Reply;
 import com.falkordb.Record;
 import com.falkordb.ResultSet;
 import com.falkordb.FalkorDB;
@@ -121,17 +121,27 @@ public class GraphExample {
             try(GraphContext context = contextGraph.getContext()) {
                 context.query("CREATE (:person{name:'roi',age:32})");
                 context.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit') CREATE (a)-[:knows]->(b)");
-                // WATCH/MULTI/EXEC
+                // WATCH/MULTI/EXEC: the transaction doesn't run if the graph changed since watch()
                 context.watch("contextSocial");
 
-                GraphTransaction t = context.multi();
-                t.query("MATCH (a:person)-[r:knows]->(b:person{name:$name,age:$age}) RETURN a, r, b", params);
-                // support for Redis/Jedis native commands in transaction
-                t.set("x", "1");
-                t.get("x");
-                // get multi/exec results
-                List<Object> execResults =  t.exec();
-                System.out.println(execResults.toString());
+                GraphContext.Transaction t = context.transaction();
+                Reply<ResultSet> matched =
+                        t.query("MATCH (a:person)-[r:knows]->(b:person{name:$name,age:$age}) RETURN a, r, b", params);
+                // other Redis commands go in with sendCommand
+                t.sendCommand("SET", "x", "1");
+                Reply<Object> x = t.sendCommand("GET", "x");
+                // run the transaction; null if it was aborted
+                List<Object> execResults = t.exec();
+                if (execResults != null) {
+                    System.out.println(matched.get().size() + " matches, x = " + x.get());
+                }
+
+                // a pipeline sends its commands at once and reads the replies together
+                GraphContext.Pipeline p = context.pipeline();
+                Reply<ResultSet> created = p.query("CREATE (:person{name:'dana',age:28})");
+                Reply<Object> visits = p.sendCommand("INCR", "visits");
+                p.sync();
+                System.out.println(created.get().getStatistics().nodesCreated() + " node, " + visits.get() + " visits");
 
                 context.deleteGraph();
             }
@@ -139,6 +149,36 @@ public class GraphExample {
     }
 }
 ```
+
+## Pipelines and transactions
+
+`GraphContext.pipeline()` and `GraphContext.transaction()` queue graph commands, and other Redis commands through
+`sendCommand`, on the context's connection. Each command returns a `Reply<T>`, read with `get()` once
+`sync()` or `exec()` has read it. Their API names no Jedis type, so it doesn't change when Jedis does.
+
+They replace `pipelined()` and `multi()`, whose `GraphPipeline` and `GraphTransaction` return Jedis'
+`Response<T>` and inherit about a thousand Jedis methods each. Those are deprecated, and removed in 0.18.0:
+
+| Before | After |
+| --- | --- |
+| `GraphPipeline p = context.pipelined();` | `GraphContext.Pipeline p = context.pipeline();` |
+| `GraphTransaction t = context.multi();` | `GraphContext.Transaction t = context.transaction();` |
+| `Response<ResultSet> r = p.query(...);` | `Reply<ResultSet> r = p.query(...);` |
+| `p.set("x", "1"); p.incr("x"); p.get("x");` | `p.sendCommand("SET", "x", "1"); p.sendCommand("INCR", "x"); p.sendCommand("GET", "x");` |
+| `t.discard()` returns `"OK"` | `t.discard()` returns nothing |
+
+The differences to look out for:
+
+- A reply to `sendCommand` comes back raw: a string as a `String` (`sendBinaryCommand` keeps it as `byte[]`), an
+  integer as a `Long`, an array as a `List`, nil as `null`. So `HGETALL` gives a `List` of fields and values,
+  not the `Map` Jedis' `hgetAll` built.
+- An error reply is a `GraphException`, where it was a `JedisDataException` (which `GraphException` still extends).
+- `sendCommand` refuses what would break the batch, the connection or the client's schema cache, such as
+  `MULTI`, `SELECT`, `CLIENT`, blocking commands, `GRAPH.*` commands and `DEL` of the graph's key. See its Javadoc.
+- While a pipeline awaits replies, or a transaction is open, the context runs no other command, and no other
+  pipeline or transaction starts on it: each throws `IllegalStateException` instead of reading another's reply.
+- A transaction is used once: nothing can be queued after `exec()` or `discard()`. A pipeline can't be used after
+  `close()`, or after a `sync()` that failed.
 
 ## Configuring the driver from the environment
 

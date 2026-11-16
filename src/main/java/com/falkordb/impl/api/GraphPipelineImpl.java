@@ -10,13 +10,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.*;
 import redis.clients.jedis.commands.ProtocolCommand;
 
 /**
  * This class is extending Jedis Pipeline
  */
-public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPipeline {
+@SuppressWarnings("deprecation") // implements the deprecated GraphPipeline until 0.18.0 removes it
+public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPipeline, GraphBatch {
 
     private final String graphId;
     private final QueuedReplies replies;
@@ -27,6 +29,12 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      * responses it didn't build, so whether replies are outstanding on the connection can't be told.
      */
     private boolean readFailed;
+    /** Why the last read failed, if it did. */
+    private @Nullable Throwable readFailure;
+    /** How many commands {@link #appendWithResponse} queued. */
+    private long appended;
+    /** How many of them have had their replies read. */
+    private long readUpTo;
 
     /**
      * Creates a new pipeline for a given graph.
@@ -70,11 +78,41 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
      * @param <T> the response type
      * @return the response
      */
-    protected <T> Response<T> appendWithResponse(
+    @Override
+    public <T> Response<T> appendWithResponse(
             ProtocolCommand protocolCommand, List<Object> arguments, Builder<T> builder) {
         CommandArguments commandArguments = new CommandArguments(protocolCommand);
         arguments.forEach(commandArguments::add);
-        return this.appendCommand(new CommandObject<>(commandArguments, builder));
+        Response<T> response = this.appendCommand(new CommandObject<>(commandArguments, builder));
+        appended++;
+        return response;
+    }
+
+    @Override
+    public String graphId() {
+        return graphId;
+    }
+
+    @Override
+    public long appended() {
+        return appended;
+    }
+
+    @Override
+    public long read() {
+        return readUpTo;
+    }
+
+    @Override
+    public @Nullable Throwable unreadCause() {
+        return readFailed ? readFailure : null;
+    }
+
+    @Override
+    public String unread() {
+        return readFailed
+                ? "reading the pipeline's replies failed, so this reply wasn't read"
+                : "this reply hasn't been read yet: call sync() or syncAndReturnAll() first";
     }
 
     /**
@@ -311,7 +349,11 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
         boolean read = false;
         try {
             super.sync();
+            readUpTo = appended;
             read = true;
+        } catch (RuntimeException | Error e) {
+            readFailure = e;
+            throw e;
         } finally {
             draining = false;
             readFailed = !read;
@@ -334,8 +376,12 @@ public class GraphPipelineImpl extends Pipeline implements com.falkordb.GraphPip
         try {
             List<Object> results = super.syncAndReturnAll();
             QueuedReplyFailure.unwrap(results);
+            readUpTo = appended;
             read = true;
             return results;
+        } catch (RuntimeException | Error e) {
+            readFailure = e;
+            throw e;
         } finally {
             draining = false;
             readFailed = !read;

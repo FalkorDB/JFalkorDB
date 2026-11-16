@@ -22,7 +22,8 @@ import redis.clients.jedis.exceptions.JedisDataException;
  * <p>A transaction is used once: {@code GraphContext.multi()} starts it, and {@link #exec()} or
  * {@link #discard()} ends it. Starting it again with {@code multi()} is not supported.
  */
-public class GraphTransactionImpl extends Transaction implements com.falkordb.GraphTransaction {
+@SuppressWarnings("deprecation") // implements the deprecated GraphTransaction until 0.18.0 removes it
+public class GraphTransactionImpl extends Transaction implements com.falkordb.GraphTransaction, GraphBatch {
 
     private final String graphId;
     private final QueuedReplies replies;
@@ -30,6 +31,30 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
     private boolean queuing = true;
     /** True while exec() reads and decodes the replies, so none is outstanding on the connection. */
     private boolean draining;
+    /** How the transaction ended, or {@link Outcome#QUEUING} until it does. */
+    private Outcome outcome = Outcome.QUEUING;
+    /** What made exec() or discard() fail, if one did. */
+    private @Nullable Throwable endedBy;
+    /** How many commands {@link #appendWithResponse} queued. */
+    private long appended;
+    /** How many of them have had their replies read: all of them once {@link #exec()} ran the transaction. */
+    private long readUpTo;
+
+    /** How a transaction ended, which tells why the reply to a command it queued can't be read. */
+    enum Outcome {
+        QUEUING("the transaction hasn't run yet: call exec() first"),
+        RAN("the command was queued after the transaction ran"),
+        ABORTED("the transaction was aborted, because a key it watched changed, so the command didn't run"),
+        DISCARDED("the transaction was discarded, so the command didn't run"),
+        REFUSED("the server refused the transaction (EXECABORT), so the command didn't run"),
+        FAILED("exec() or discard() failed, so whether the command ran is unknown");
+
+        final String unread;
+
+        Outcome(String unread) {
+            this.unread = unread;
+        }
+    }
 
     /**
      * Creates a new transaction for a given graph.
@@ -69,11 +94,44 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      * @param <T> the response type
      * @return the response
      */
-    protected <T> Response<T> appendWithResponse(
+    @Override
+    public <T> Response<T> appendWithResponse(
             ProtocolCommand protocolCommand, List<Object> arguments, Builder<T> builder) {
         CommandArguments commandArguments = new CommandArguments(protocolCommand);
         arguments.forEach(commandArguments::add);
-        return this.appendCommand(new CommandObject<>(commandArguments, builder));
+        Response<T> response = this.appendCommand(new CommandObject<>(commandArguments, builder));
+        appended++;
+        return response;
+    }
+
+    @Override
+    public String graphId() {
+        return graphId;
+    }
+
+    @Override
+    public long appended() {
+        return appended;
+    }
+
+    @Override
+    public long read() {
+        return readUpTo;
+    }
+
+    @Override
+    public @Nullable Throwable unreadCause() {
+        return endedBy;
+    }
+
+    @Override
+    public String unread() {
+        return outcome.unread;
+    }
+
+    /** Whether commands are still queued inside {@code MULTI}: neither {@link #exec()} nor {@link #discard()} ran. */
+    boolean queuing() {
+        return queuing;
     }
 
     /**
@@ -307,18 +365,26 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
             ran = true;
             return results;
         } catch (JedisDataException e) {
+            endedBy = e;
             // EXECABORT: a command failed to queue, so the server ran none of them. Any other error, such as EXEC
             // without MULTI after the server refused MULTI, can follow commands that ran as they were sent.
             refused = String.valueOf(e.getMessage()).startsWith("EXECABORT");
+            throw e;
+        } catch (RuntimeException | Error e) {
+            endedBy = e;
             throw e;
         } finally {
             draining = false;
             queuing = false;
             if (refused || (ran && results == null)) {
+                outcome = refused ? Outcome.REFUSED : Outcome.ABORTED;
                 replies.discarded(); // refused, or aborted because a watched key changed: nothing ran
             } else if (ran) {
+                outcome = Outcome.RAN;
+                readUpTo = appended;
                 replies.read();
             } else {
+                outcome = Outcome.FAILED;
                 replies.unknown(); // EXEC may have run before the connection failed
             }
         }
@@ -337,11 +403,16 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
             String reply = super.discard();
             dropped = true;
             return reply;
+        } catch (RuntimeException | Error e) {
+            endedBy = e;
+            throw e;
         } finally {
             queuing = false;
             if (dropped) {
+                outcome = Outcome.DISCARDED;
                 replies.discarded();
             } else {
+                outcome = Outcome.FAILED;
                 replies.unknown();
             }
         }

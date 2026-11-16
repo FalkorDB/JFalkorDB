@@ -33,6 +33,7 @@ import redis.clients.jedis.util.SafeEncoder;
  * <p>The context owns its connection for its whole lifetime: the connection stays bound to it even
  * after a command fails, and only {@link #close()} releases it.
  */
+@SuppressWarnings("deprecation") // implements GraphContext.multi() and pipelined() until 0.18.0 removes them
 public class GraphContextImpl extends AbstractGraph implements GraphContext {
 
     private final Jedis connection;
@@ -51,6 +52,11 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      * drops don't accumulate.
      */
     private final Set<QueuedReplies> connectionUsers = Collections.newSetFromMap(new WeakHashMap<>());
+    /**
+     * The ones created by {@link #pipeline()} and {@link #transaction()}, while one of which awaits replies the
+     * context runs no command of its own: it would read their reply as its own.
+     */
+    private final Set<QueuedReplies> strictUsers = Collections.newSetFromMap(new WeakHashMap<>());
     /** How many of the latest pipelines and transactions created on a context it holds strongly. */
     static final int HELD_BATCHES = 128;
     /**
@@ -140,6 +146,39 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
         }
     }
 
+    /**
+     * Throws if a pipeline or transaction other than {@code self} awaits replies on this context's connection: a
+     * command a {@link #pipeline()} or {@link #transaction()} sent now would be read as one of those replies, or
+     * land inside another transaction's {@code MULTI}.
+     *
+     * @param self the replies of the batch about to use the connection, or null for a batch about to be created
+     * @throws IllegalStateException if another batch awaits replies
+     */
+    void checkConnectionFree(@Nullable QueuedReplies self) {
+        for (QueuedReplies user : connectionUsers) {
+            if (user != self && user.awaitsReplies()) {
+                throw new IllegalStateException("another pipeline or transaction on this context awaits replies:"
+                        + " sync, exec or discard it first");
+            }
+        }
+    }
+
+    /**
+     * Throws if a {@link #pipeline()} or {@link #transaction()} awaits replies, before the context runs a command of
+     * its own, which would read one of those replies as its own. The deprecated {@link #pipelined()} and
+     * {@link #multi()} are left as they were.
+     *
+     * @throws IllegalStateException if one awaits replies
+     */
+    private void checkNoBatchAwaits() {
+        for (QueuedReplies user : strictUsers) {
+            if (user.awaitsReplies()) {
+                throw new IllegalStateException("a pipeline or transaction on this context awaits replies: sync,"
+                        + " exec or discard it before running a command on the context");
+            }
+        }
+    }
+
     /** Whether a pipeline or transaction opened on this context still awaits replies on the context's connection. */
     private boolean connectionAwaitsReplies() {
         for (QueuedReplies user : connectionUsers) {
@@ -199,6 +238,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     protected ResultSet sendQuery(String preparedQuery) {
+        checkNoBatchAwaits();
         askIfImporting();
         try {
             @SuppressWarnings("unchecked")
@@ -219,6 +259,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     protected ResultSet sendReadOnlyQuery(String preparedQuery) {
+        checkNoBatchAwaits();
         askIfImporting();
         try {
             @SuppressWarnings("unchecked")
@@ -240,6 +281,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     protected ResultSet sendQuery(String preparedQuery, long timeout) {
+        checkNoBatchAwaits();
         askIfImporting();
         try {
             @SuppressWarnings("unchecked")
@@ -266,6 +308,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     protected ResultSet sendReadOnlyQuery(String preparedQuery, long timeout) {
+        checkNoBatchAwaits();
         askIfImporting();
         try {
             @SuppressWarnings("unchecked")
@@ -291,6 +334,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     protected ResultSet sendProfile(String preparedQuery) {
+        checkNoBatchAwaits();
         askIfImporting();
         try {
             @SuppressWarnings("unchecked")
@@ -307,9 +351,61 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     /**
      * Creates a new GraphTransaction transactional object
      * @return new GraphTransaction
+     * @deprecated use {@link #transaction()}
      */
+    @Deprecated
     @Override
     public GraphTransaction multi() {
+        return newTransaction();
+    }
+
+    /**
+     * Creates a new GraphPipeline pipeline object
+     * @return new GraphPipeline
+     * @deprecated use {@link #pipeline()}
+     */
+    @Deprecated
+    @Override
+    public GraphPipeline pipelined() {
+        return newPipeline();
+    }
+
+    /**
+     * Starts a transaction on this context's connection: {@code MULTI} is sent now.
+     * @return the transaction
+     */
+    @Override
+    public Transaction transaction() {
+        checkOpen();
+        checkConnectionFree(null);
+        GraphTransactionImpl transaction = newTransaction();
+        strictUsers.add(transaction.replies());
+        return new ContextTransaction(transaction, this);
+    }
+
+    /**
+     * Starts a pipeline on this context's connection.
+     * @return the pipeline
+     */
+    @Override
+    public Pipeline pipeline() {
+        checkOpen();
+        checkConnectionFree(null);
+        GraphPipelineImpl pipeline = newPipeline();
+        strictUsers.add(pipeline.replies());
+        return new ContextPipeline(pipeline, this);
+    }
+
+    /** Whether {@link #close()} was called. */
+    boolean isClosed() {
+        return closed.get();
+    }
+
+    /**
+     * Creates a transaction on this context's connection, sends {@code MULTI}, and tracks it for {@link #close()}.
+     * The one implementation behind {@link #multi()} and {@link #transaction()}.
+     */
+    private GraphTransactionImpl newTransaction() {
         checkOpen();
         GraphTransactionImpl transaction =
                 new GraphTransactionImpl(connection.getConnection(), this::decodeQueued, this.cache, this.graphId);
@@ -320,11 +416,10 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     }
 
     /**
-     * Creates a new GraphPipeline pipeline object
-     * @return new GraphPipeline
+     * Creates a pipeline on this context's connection, and tracks it for {@link #close()}. The one implementation
+     * behind {@link #pipelined()} and {@link #pipeline()}.
      */
-    @Override
-    public GraphPipeline pipelined() {
+    private GraphPipelineImpl newPipeline() {
         checkOpen();
         GraphPipelineImpl pipeline =
                 new GraphPipelineImpl(connection.getConnection(), this::decodeQueued, this.cache, this.graphId);
@@ -367,6 +462,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public String watch(String... keys) {
+        checkNoBatchAwaits();
         return connection.watch(keys);
     }
 
@@ -376,6 +472,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public String unwatch() {
+        checkNoBatchAwaits();
         return connection.unwatch();
     }
 
@@ -387,6 +484,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public String copyGraph(String destinationGraphId) {
+        checkNoBatchAwaits();
         askIfImporting();
         Object response;
         try {
@@ -407,6 +505,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public String deleteGraph() {
+        checkNoBatchAwaits();
         askIfImporting();
         Object response;
         try {
@@ -429,6 +528,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     protected List<String> sendExplain(String preparedQuery) {
+        checkNoBatchAwaits();
         askIfImporting();
         try {
             return ExplainPlans.lines(connection.sendCommand(GraphCommand.EXPLAIN, graphId, preparedQuery));
