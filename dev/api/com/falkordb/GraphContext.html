@@ -106,7 +106,18 @@ extends <a href="Graph.html" title="interface in com.falkordb">Graph</a></span><
  try (GraphContext context = driver.graph("social").getContext()) {
      context.query("CREATE (:person {name: 'roi'})");
  }
- </code></pre></div>
+ </code></pre>
+
+ <p>Closing the context also ends what its transactions and pipelines left on the connection, so the next user
+ of the connection gets it clean: a transaction still open is discarded, and the replies a pipeline still awaits
+ are read, which waits for them to arrive. A <code>Response</code> of a transaction discarded this way can't be read.
+ If more than one transaction or pipeline still awaits replies, or ending one fails, the connection is closed
+ instead of being returned to the pool, and the <code>Response</code>s still waiting for its replies can't be read
+ either. The same happens when a pipeline's last <code>sync()</code> or <code>syncAndReturnAll()</code> failed, and when a
+ transaction or pipeline the caller dropped was garbage-collected before the context closed. The context holds
+ its latest 128 transactions and pipelines, so only an older one can be collected; what it left on the connection
+ is then unknown, and the graph's schema cache is cleared too, in case it deleted the graph. Like every other call
+ on the context, close it on the thread that uses the context.</div>
 </section>
 <section class="summary">
 <ul class="summary-list">
@@ -166,6 +177,8 @@ extends <a href="Graph.html" title="interface in com.falkordb">Graph</a></span><
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>Redis transactional object, over the connection context, with graph API capabilities</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link">IllegalStateException</a></code> - if the context is closed</dd>
 </dl>
 </section>
 </li>
@@ -177,6 +190,8 @@ extends <a href="Graph.html" title="interface in com.falkordb">Graph</a></span><
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>Redis pipeline object, over the connection context, with graph API capabilities</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link">IllegalStateException</a></code> - if the context is closed</dd>
 </dl>
 </section>
 </li>

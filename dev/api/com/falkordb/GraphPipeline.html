@@ -119,7 +119,8 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 
  <p>Call <a href="#sync()"><code>sync()</code></a>, <a href="#syncAndReturnAll()"><code>syncAndReturnAll()</code></a> or <a href="#close()"><code>close()</code></a> before dropping a pipeline that has
  queued commands. Their replies stay unread on the context's connection, and the next command sent on it, by the
- context or by a schema lookup, reads one of them as its own.
+ context or by a schema lookup, reads one of them as its own. Closing the context reads them, when this pipeline
+ is the only one of the context's pipelines and transactions that awaits replies (see <a href="GraphContext.html" title="interface in com.falkordb"><code>GraphContext</code></a>).
 
  <p>A graph reply that fails to decode, with a <a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a> or with the
  failure of a lookup that decoding needed, fails every <code>get()</code> of its <code>Response</code> with the same
