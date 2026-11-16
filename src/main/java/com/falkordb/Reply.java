@@ -19,7 +19,9 @@ import org.jspecify.annotations.Nullable;
 public interface Reply<T extends @Nullable Object> extends Supplier<T> {
 
     /**
-     * Returns the decoded reply. Every call returns the same value, or throws the same exception.
+     * Returns the decoded reply. Once the reply has been read, every call returns the same value, or throws the same
+     * exception: the server's error, or what decoding threw. An {@link IllegalStateException} for a reply that can't
+     * be read is a new one each time.
      *
      * @return the decoded reply; {@code null} only where the server's reply to a {@code sendCommand} or
      *     {@code sendBinaryCommand} is nil, such as a {@code GET} of a missing key

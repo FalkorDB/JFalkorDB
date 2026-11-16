@@ -22,6 +22,8 @@ final class ReplyImpl<T extends @Nullable Object> implements Reply<T> {
     private final boolean nullable;
     /** What the server's error reply became, the first time it was read, so every read throws the same one. */
     private @Nullable GraphException serverError;
+    /** An {@link Error} decoding threw, which Jedis forgets, so every read throws it again. */
+    private @Nullable Error decodeError;
 
     ReplyImpl(ContextBatch<?> batch, Response<T> response, long position, boolean nullable) {
         this.batch = batch;
@@ -39,14 +41,21 @@ final class ReplyImpl<T extends @Nullable Object> implements Reply<T> {
         if (position >= batch.read()) {
             throw new IllegalStateException(batch.unread(), batch.unreadCause());
         }
+        Error error = decodeError;
+        if (error != null) {
+            throw error;
+        }
         T reply;
         try {
             reply = response.get();
         } catch (JedisDataException e) {
             throw serverErrorOr(e);
+        } catch (Error e) {
+            decodeError = e; // Jedis builds a reply once, and would return null from now on
+            throw e;
         }
         if (reply == null && !nullable) {
-            // Jedis builds a reply once: decoding threw an Error the first time, and the reply is lost.
+            // Decoding threw an Error that this reply didn't see, inside the batch's own read.
             throw new IllegalStateException("the reply couldn't be decoded");
         }
         return reply;

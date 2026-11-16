@@ -115,6 +115,9 @@ final class CommandGuard {
             case "MIGRATE":
                 // MIGRATE host port key|"" db timeout [COPY] [REPLACE] [AUTH ...] [KEYS key ...]
                 return names(arguments, 2, 3, graphId) || afterKeys(arguments, graphId) ? DELETES_GRAPH : null;
+            case "SCRIPT":
+                // SCRIPT DEBUG YES|SYNC makes the connection's next EVAL start the Lua debugger
+                return !arguments.isEmpty() && word(arguments.get(0)).equals("DEBUG") ? CONNECTION_STATE : null;
             default:
                 return null;
         }
@@ -138,7 +141,12 @@ final class CommandGuard {
     /** Whether the graph's key is among the keys after {@code MIGRATE}'s {@code KEYS} option. */
     private static boolean afterKeys(List<?> arguments, String graphId) {
         for (int i = 5; i < arguments.size(); i++) {
-            if (word(arguments.get(i)).equals("KEYS")) {
+            String option = word(arguments.get(i));
+            if (option.equals("AUTH")) {
+                i++; // the password, which may be KEYS
+            } else if (option.equals("AUTH2")) {
+                i += 2; // the user and the password
+            } else if (option.equals("KEYS")) {
                 return names(arguments, i + 1, arguments.size(), graphId);
             }
         }

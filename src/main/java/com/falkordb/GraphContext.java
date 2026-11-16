@@ -107,7 +107,8 @@ public interface GraphContext extends Graph {
     /**
      * A pipeline on a {@link GraphContext}'s connection: commands are sent as they are queued, and their replies are
      * read together, by {@link #sync()}, {@link #syncAndReturnAll()} or {@link #close()}. Each command returns a
-     * {@link Reply}, which can be read once its reply has been. Get one with {@link GraphContext#pipeline()}:
+     * {@link Reply}, which can be read once its reply has been read off the connection. Get one with
+     * {@link GraphContext#pipeline()}:
      *
      * <pre>{@code
      * try (GraphContext context = graph.getContext()) {
@@ -341,10 +342,12 @@ public interface GraphContext extends Graph {
          *   <li>commands that delete or replace the graph's key behind that cache, which would then decode a new
          *       graph's replies with the old graph's names: {@code DEL}, {@code UNLINK}, {@code GETDEL}, {@code RENAME},
          *       {@code RENAMENX}, {@code MOVE}, {@code RESTORE} and {@code MIGRATE} of the graph's key, {@code COPY} to
-         *       it, and {@code FLUSHALL}, {@code FLUSHDB} and {@code SWAPDB}; delete the graph with {@link #deleteGraph()};
+         *       it, and {@code FLUSHALL}, {@code FLUSHDB} and {@code SWAPDB}; delete the graph with
+         *       {@link #deleteGraph()}. Other commands that write the graph's key aren't recognized: see below;
          *   <li>commands that change the connection's state, which outlives the context when the pool lends the
          *       connection on, or how its replies are framed: {@code AUTH}, {@code HELLO}, {@code SELECT},
-         *       {@code CLIENT}, {@code RESET}, {@code QUIT}, {@code READONLY}, {@code READWRITE}, {@code ASKING};
+         *       {@code CLIENT}, {@code RESET}, {@code QUIT}, {@code READONLY}, {@code READWRITE}, {@code ASKING},
+         *       {@code SCRIPT DEBUG};
          *   <li>commands that take the connection out of request and reply: {@code SUBSCRIBE}, {@code PSUBSCRIBE},
          *       {@code SSUBSCRIBE}, {@code UNSUBSCRIBE}, {@code PUNSUBSCRIBE}, {@code SUNSUBSCRIBE}, {@code MONITOR},
          *       {@code SYNC}, {@code PSYNC}, {@code REPLCONF};
@@ -392,10 +395,12 @@ public interface GraphContext extends Graph {
          *   <li>commands that delete or replace the graph's key behind that cache, which would then decode a new
          *       graph's replies with the old graph's names: {@code DEL}, {@code UNLINK}, {@code GETDEL}, {@code RENAME},
          *       {@code RENAMENX}, {@code MOVE}, {@code RESTORE} and {@code MIGRATE} of the graph's key, {@code COPY} to
-         *       it, and {@code FLUSHALL}, {@code FLUSHDB} and {@code SWAPDB}; delete the graph with {@link #deleteGraph()};
+         *       it, and {@code FLUSHALL}, {@code FLUSHDB} and {@code SWAPDB}; delete the graph with
+         *       {@link #deleteGraph()}. Other commands that write the graph's key aren't recognized: see below;
          *   <li>commands that change the connection's state, which outlives the context when the pool lends the
          *       connection on, or how its replies are framed: {@code AUTH}, {@code HELLO}, {@code SELECT},
-         *       {@code CLIENT}, {@code RESET}, {@code QUIT}, {@code READONLY}, {@code READWRITE}, {@code ASKING};
+         *       {@code CLIENT}, {@code RESET}, {@code QUIT}, {@code READONLY}, {@code READWRITE}, {@code ASKING},
+         *       {@code SCRIPT DEBUG};
          *   <li>commands that take the connection out of request and reply: {@code SUBSCRIBE}, {@code PSUBSCRIBE},
          *       {@code SSUBSCRIBE}, {@code UNSUBSCRIBE}, {@code PUNSUBSCRIBE}, {@code SUNSUBSCRIBE}, {@code MONITOR},
          *       {@code SYNC}, {@code PSYNC}, {@code REPLCONF};
@@ -424,8 +429,9 @@ public interface GraphContext extends Graph {
          * {@link Reply} is read. A {@link #deleteGraph()} that ran clears the schema cache now. The pipeline can
          * be used again afterwards, unless the read failed. Once the context is closed, which read the replies
          * the pipeline awaited, there is nothing to do.
-         * @throws IllegalStateException if the pipeline is closed or a read of it failed before, if another
-         *     pipeline or transaction on the context awaits replies, or if the context was closed before the
+         * @throws IllegalStateException if the pipeline is closed or a read of it failed before, if it awaits
+         *     replies while another pipeline or transaction on the context does too, or if the context was closed
+         *     before the
          *     replies this one awaits were read
          */
         void sync();
@@ -437,8 +443,9 @@ public interface GraphContext extends Graph {
          *     reply is nil, and the exception reading the reply throws, a
          *     {@link com.falkordb.exceptions.GraphException} or the failure of a lookup decoding needed, where the
          *     command failed or its reply can't be decoded. Unmodifiable
-         * @throws IllegalStateException if the pipeline is closed or a read of it failed before, if another
-         *     pipeline or transaction on the context awaits replies, or if the context was closed before the
+         * @throws IllegalStateException if the pipeline is closed or a read of it failed before, if it awaits
+         *     replies while another pipeline or transaction on the context does too, or if the context was closed
+         *     before the
          *     replies this one awaits were read
          */
         List<@Nullable Object> syncAndReturnAll();
@@ -679,22 +686,24 @@ public interface GraphContext extends Graph {
          * <ul>
          *   <li>commands this API runs itself: {@code MULTI}, {@code EXEC}, {@code DISCARD}, {@code WATCH} and
          *       {@code UNWATCH} (see {@link GraphContext#transaction()} and {@link GraphContext#watch(String...)}),
-         *       {@code WAIT}, which blocks, and every {@code GRAPH.*} command, whose
+         *       and every {@code GRAPH.*} command, whose
          *       reply only the graph methods decode, with the client's schema cache, which they keep up to date;
          *   <li>commands that delete or replace the graph's key behind that cache, which would then decode a new
          *       graph's replies with the old graph's names: {@code DEL}, {@code UNLINK}, {@code GETDEL}, {@code RENAME},
          *       {@code RENAMENX}, {@code MOVE}, {@code RESTORE} and {@code MIGRATE} of the graph's key, {@code COPY} to
-         *       it, and {@code FLUSHALL}, {@code FLUSHDB} and {@code SWAPDB}; delete the graph with {@link #deleteGraph()};
+         *       it, and {@code FLUSHALL}, {@code FLUSHDB} and {@code SWAPDB}; delete the graph with
+         *       {@link #deleteGraph()}. Other commands that write the graph's key aren't recognized: see below;
          *   <li>commands that change the connection's state, which outlives the context when the pool lends the
          *       connection on, or how its replies are framed: {@code AUTH}, {@code HELLO}, {@code SELECT},
-         *       {@code CLIENT}, {@code RESET}, {@code QUIT}, {@code READONLY}, {@code READWRITE}, {@code ASKING};
+         *       {@code CLIENT}, {@code RESET}, {@code QUIT}, {@code READONLY}, {@code READWRITE}, {@code ASKING},
+         *       {@code SCRIPT DEBUG};
          *   <li>commands that take the connection out of request and reply: {@code SUBSCRIBE}, {@code PSUBSCRIBE},
          *       {@code SSUBSCRIBE}, {@code UNSUBSCRIBE}, {@code PUNSUBSCRIBE}, {@code SUNSUBSCRIBE}, {@code MONITOR},
          *       {@code SYNC}, {@code PSYNC}, {@code REPLCONF};
          *   <li>blocking commands, which hold the connection in a pipeline, so that closing the context waits for
          *       them, and don't block inside {@code MULTI}: {@code BLPOP}, {@code BRPOP}, {@code BRPOPLPUSH},
          *       {@code BLMOVE}, {@code BLMPOP}, {@code BZPOPMIN}, {@code BZPOPMAX}, {@code BZMPOP}, {@code WAITAOF},
-         *       and {@code XREAD} or {@code XREADGROUP} with {@code BLOCK}.
+         *       {@code WAIT}, and {@code XREAD} or {@code XREADGROUP} with {@code BLOCK}.
          * </ul>
          *
          * <p>Some of these may be allowed in a later release, such as the {@code GRAPH.*} commands that don't touch a
@@ -730,22 +739,24 @@ public interface GraphContext extends Graph {
          * <ul>
          *   <li>commands this API runs itself: {@code MULTI}, {@code EXEC}, {@code DISCARD}, {@code WATCH} and
          *       {@code UNWATCH} (see {@link GraphContext#transaction()} and {@link GraphContext#watch(String...)}),
-         *       {@code WAIT}, which blocks, and every {@code GRAPH.*} command, whose
+         *       and every {@code GRAPH.*} command, whose
          *       reply only the graph methods decode, with the client's schema cache, which they keep up to date;
          *   <li>commands that delete or replace the graph's key behind that cache, which would then decode a new
          *       graph's replies with the old graph's names: {@code DEL}, {@code UNLINK}, {@code GETDEL}, {@code RENAME},
          *       {@code RENAMENX}, {@code MOVE}, {@code RESTORE} and {@code MIGRATE} of the graph's key, {@code COPY} to
-         *       it, and {@code FLUSHALL}, {@code FLUSHDB} and {@code SWAPDB}; delete the graph with {@link #deleteGraph()};
+         *       it, and {@code FLUSHALL}, {@code FLUSHDB} and {@code SWAPDB}; delete the graph with
+         *       {@link #deleteGraph()}. Other commands that write the graph's key aren't recognized: see below;
          *   <li>commands that change the connection's state, which outlives the context when the pool lends the
          *       connection on, or how its replies are framed: {@code AUTH}, {@code HELLO}, {@code SELECT},
-         *       {@code CLIENT}, {@code RESET}, {@code QUIT}, {@code READONLY}, {@code READWRITE}, {@code ASKING};
+         *       {@code CLIENT}, {@code RESET}, {@code QUIT}, {@code READONLY}, {@code READWRITE}, {@code ASKING},
+         *       {@code SCRIPT DEBUG};
          *   <li>commands that take the connection out of request and reply: {@code SUBSCRIBE}, {@code PSUBSCRIBE},
          *       {@code SSUBSCRIBE}, {@code UNSUBSCRIBE}, {@code PUNSUBSCRIBE}, {@code SUNSUBSCRIBE}, {@code MONITOR},
          *       {@code SYNC}, {@code PSYNC}, {@code REPLCONF};
          *   <li>blocking commands, which hold the connection in a pipeline, so that closing the context waits for
          *       them, and don't block inside {@code MULTI}: {@code BLPOP}, {@code BRPOP}, {@code BRPOPLPUSH},
          *       {@code BLMOVE}, {@code BLMPOP}, {@code BZPOPMIN}, {@code BZPOPMAX}, {@code BZMPOP}, {@code WAITAOF},
-         *       and {@code XREAD} or {@code XREADGROUP} with {@code BLOCK}.
+         *       {@code WAIT}, and {@code XREAD} or {@code XREADGROUP} with {@code BLOCK}.
          * </ul>
          *
          * <p>Some of these may be allowed in a later release, such as the {@code GRAPH.*} commands that don't touch a

@@ -92,10 +92,13 @@ abstract class ContextBatch<B extends GraphBatch> {
      */
     final List<@Nullable Object> readPending() {
         List<@Nullable Object> results = new ArrayList<>(pending.size());
-        for (ReplyImpl<?> reply : pending) {
-            results.add(reply.element());
+        try {
+            for (ReplyImpl<?> reply : pending) {
+                results.add(reply.element());
+            }
+        } finally {
+            pending.clear(); // read, even if decoding one threw an Error
         }
-        pending.clear();
         return Collections.unmodifiableList(results);
     }
 
@@ -114,6 +117,7 @@ abstract class ContextBatch<B extends GraphBatch> {
         checkQueuing();
         long position = batch.appended();
         Response<T> response = append.get();
+        context.hold(batch, replies); // not collected while it awaits the reply
         ReplyImpl<T> reply = new ReplyImpl<>(this, response, position, nullable);
         pending.add(reply);
         return reply;

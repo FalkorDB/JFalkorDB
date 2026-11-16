@@ -127,9 +127,10 @@ public class GraphExample {
                 GraphContext.Transaction t = context.transaction();
                 Reply<ResultSet> matched =
                         t.query("MATCH (a:person)-[r:knows]->(b:person{name:$name,age:$age}) RETURN a, r, b", params);
-                // other Redis commands go in with sendCommand
-                t.sendCommand("SET", "x", "1");
-                Reply<Object> x = t.sendCommand("GET", "x");
+                // other Redis commands go in with sendCommand; in a cluster, a key needs the graph's name as a
+                // hash tag to be on the graph's node
+                t.sendCommand("SET", "{contextSocial}x", "1");
+                Reply<Object> x = t.sendCommand("GET", "{contextSocial}x");
                 // run the transaction; null if it was aborted
                 List<Object> execResults = t.exec();
                 if (execResults != null) {
@@ -139,7 +140,7 @@ public class GraphExample {
                 // a pipeline sends its commands at once and reads the replies together
                 GraphContext.Pipeline p = context.pipeline();
                 Reply<ResultSet> created = p.query("CREATE (:person{name:'dana',age:28})");
-                Reply<Object> visits = p.sendCommand("INCR", "visits");
+                Reply<Object> visits = p.sendCommand("INCR", "{contextSocial}visits");
                 p.sync();
                 System.out.println(created.get().getStatistics().nodesCreated() + " node, " + visits.get() + " visits");
 
@@ -170,8 +171,9 @@ They replace `pipelined()` and `multi()`, whose `GraphPipeline` and `GraphTransa
 The differences to look out for:
 
 - A reply to `sendCommand` comes back raw: a string as a `String` (`sendBinaryCommand` keeps it as `byte[]`), an
-  integer as a `Long`, an array as a `List`, nil as `null`. So `HGETALL` gives a `List` of fields and values,
-  not the `Map` Jedis' `hgetAll` built.
+  integer as a `Long`, an array or a set as a `List`, nil as `null`. So `HGETALL` gives a `List` of fields and
+  values, not the `Map` Jedis' `hgetAll` built. On a connection that asks for RESP3 (`protocol=3` in its URI), a
+  map reply is a `LinkedHashMap` instead, except an empty one, which is an empty `List`.
 - An error reply is a `GraphException`, where it was a `JedisDataException` (which `GraphException` still extends).
 - `sendCommand` refuses what would break the batch, the connection or the client's schema cache, such as
   `MULTI`, `SELECT`, `CLIENT`, blocking commands, `GRAPH.*` commands and `DEL` of the graph's key. The full list is in the documentation of `sendCommand`.

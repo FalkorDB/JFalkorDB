@@ -510,6 +510,20 @@ class ContextBatchTest {
     }
 
     @Test
+    void aReadThatThrewAnErrorDoesntReturnItsRepliesAgain() {
+        try (redis.clients.jedis.JedisPool pool = new redis.clients.jedis.JedisPool("127.0.0.1", server.port())) {
+            GraphContextImpl failing = new GraphContextImpl(pool.getResource(), new FailingCache(), "g");
+            GraphContext.Pipeline pipeline = failing.pipeline();
+            pipeline.query("MATCH (n) RETURN n");
+            assertThrows(LookupFailed.class, pipeline::syncAndReturnAll); // read, then failed to decode
+
+            pipeline.sendCommand("SET", "k", "v");
+            assertEquals(Collections.singletonList("OK"), pipeline.syncAndReturnAll());
+            failing.close();
+        }
+    }
+
+    @Test
     void aReplyWhoseDecodingThrewAnErrorIsNeverNull() {
         try (redis.clients.jedis.JedisPool pool = new redis.clients.jedis.JedisPool("127.0.0.1", server.port())) {
             GraphContextImpl failing = new GraphContextImpl(pool.getResource(), new FailingCache(), "g");
@@ -517,11 +531,27 @@ class ContextBatchTest {
             Reply<ResultSet> node = pipeline.query("MATCH (n) RETURN n");
             pipeline.sync();
 
-            assertThrows(LookupFailed.class, node::get); // an Error, which decoding doesn't keep
-            IllegalStateException e = assertThrows(IllegalStateException.class, node::get);
-            assertEquals("the reply couldn't be decoded", e.getMessage());
+            LookupFailed first = assertThrows(LookupFailed.class, node::get); // an Error, which Jedis forgets
+            assertSame(first, assertThrows(LookupFailed.class, node::get));
             failing.close();
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    void aDroppedPipelineThatAwaitsRepliesIsntCollected() {
+        queueAndDropThePipeline();
+        for (int i = 0; i <= GraphContextImpl.HELD_BATCHES; i++) {
+            context.pipelined(); // the deprecated API may start batches: the dropped one is no longer among the latest
+        }
+        WeakReference<Object> unreachable = new WeakReference<>(new Object());
+        for (int i = 0; i < 10 && unreachable.get() != null; i++) {
+            System.gc();
+        }
+
+        // Collected, it would look done, and its reply would be read as the next batch's.
+        assertThrows(IllegalStateException.class, context::pipeline);
+        assertThrows(IllegalStateException.class, () -> context.query("CREATE ()"));
     }
 
     @Test
@@ -632,7 +662,9 @@ class ContextBatchTest {
                         "MIGRATE h 1 \"\" 0 0 KEYS a g",
                         "FLUSHALL",
                         "FLUSHDB",
-                        "SWAPDB 0 1")
+                        "SWAPDB 0 1",
+                        "SCRIPT DEBUG YES",
+                        "MIGRATE h 1 \"\" 0 0 AUTH2 u KEYS KEYS g")
                 .flatMap(command -> Stream.of(command, command.toLowerCase(Locale.ROOT)))
                 .flatMap(command -> Stream.of(Arguments.of(command, true), Arguments.of(command, false)));
     }
@@ -685,6 +717,8 @@ class ContextBatchTest {
                 "GRAPHS",
                 "MULTİ", // not MULTI for Redis, which folds ASCII letters only
                 "DEL other",
+                "SCRIPT FLUSH",
+                "MIGRATE h 1 \"\" 0 0 AUTH KEYS KEYS other", // a password named KEYS
                 "COPY g other",
                 "MIGRATE h 1 other 0 0",
                 "PING");

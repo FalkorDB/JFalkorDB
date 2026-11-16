@@ -1,6 +1,7 @@
 package com.falkordb.impl.api;
 
 import com.falkordb.ResultSet;
+import java.io.Closeable;
 import java.util.List;
 import java.util.Map;
 import org.jspecify.annotations.Nullable;
@@ -16,7 +17,7 @@ import redis.clients.jedis.commands.ProtocolCommand;
  * <p>Every command these methods queue is counted by {@link #appended()}, so a reply's position tells whether it
  * has been read.
  */
-interface GraphBatch {
+interface GraphBatch extends Closeable {
 
     Response<ResultSet> query(String query);
 

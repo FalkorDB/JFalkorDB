@@ -37,13 +37,15 @@ public final class PipelineAndTransaction {
 
         try (Driver driver = FalkorDB.builder().host(host).port(port).build()) {
             GraphContextGenerator graph = driver.graph("pipeline-example");
+            // Other keys carry the graph's name as a hash tag, so that in a cluster they are on the graph's node,
+            // which the context's connection is to.
             // A context keeps one connection, which its pipelines and transactions use.
             try (GraphContext context = graph.getContext()) {
                 // A pipeline sends each command as it is queued, and reads the replies together.
                 GraphContext.Pipeline pipeline = context.pipeline();
                 Reply<ResultSet> alice = pipeline.query("CREATE (:Person {name: 'Alice'})");
                 pipeline.query("CREATE (:Person {name: 'Bob'})");
-                Reply<Object> counter = pipeline.sendCommand("INCR", "pipeline-example-people"); // a Long
+                Reply<Object> counter = pipeline.sendCommand("INCR", "{pipeline-example}people"); // a Long
                 pipeline.sync();
                 System.out.println(alice.get().getStatistics().nodesCreated() + " node; counter at " + counter.get());
 
@@ -52,7 +54,7 @@ public final class PipelineAndTransaction {
                 GraphContext.Transaction transaction = context.transaction();
                 Reply<ResultSet> friends = transaction.query(
                         "MATCH (a:Person {name: 'Alice'}), (b:Person {name: 'Bob'}) CREATE (a)-[:KNOWS]->(b)");
-                transaction.sendCommand("INCR", "pipeline-example-people");
+                transaction.sendCommand("INCR", "{pipeline-example}people");
                 List<Object> results = transaction.exec();
                 if (results == null) {
                     System.out.println("Someone changed the graph since watch(): nothing ran");
@@ -62,7 +64,7 @@ public final class PipelineAndTransaction {
 
                 // Every Reply<?> from here on is read after sync(); try-with-resources syncs a pipeline too.
                 try (GraphContext.Pipeline cleanup = context.pipeline()) {
-                    cleanup.sendCommand("UNLINK", "pipeline-example-people");
+                    cleanup.sendCommand("UNLINK", "{pipeline-example}people");
                     cleanup.deleteGraph(); // DEL of the graph's key is refused: deleteGraph() keeps the cache right
                 }
             }

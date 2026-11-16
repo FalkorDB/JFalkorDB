@@ -15,7 +15,9 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -57,6 +59,12 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      * context runs no command of its own: it would read their reply as its own.
      */
     private final Set<QueuedReplies> strictUsers = Collections.newSetFromMap(new WeakHashMap<>());
+    /**
+     * Those of them that awaited replies when last checked, held strongly: one the caller dropped can't be collected
+     * while it awaits replies, so {@link #checkConnectionFree} and {@link #checkNoBatchAwaits} keep seeing it.
+     * Otherwise only the latest {@value #HELD_BATCHES} batches are held.
+     */
+    private final Map<QueuedReplies, Closeable> awaiting = new IdentityHashMap<>();
     /** How many of the latest pipelines and transactions created on a context it holds strongly. */
     static final int HELD_BATCHES = 128;
     /**
@@ -380,6 +388,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
         checkConnectionFree(null);
         GraphTransactionImpl transaction = newTransaction();
         strictUsers.add(transaction.replies());
+        hold(transaction, transaction.replies()); // MULTI awaits its reply
         return new ContextTransaction(transaction, this);
     }
 
@@ -394,6 +403,17 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
         GraphPipelineImpl pipeline = newPipeline();
         strictUsers.add(pipeline.replies());
         return new ContextPipeline(pipeline, this);
+    }
+
+    /**
+     * Holds a batch created by {@link #pipeline()} or {@link #transaction()} strongly while it awaits replies, and
+     * lets go of the ones that no longer do.
+     */
+    void hold(Closeable batch, QueuedReplies replies) {
+        awaiting.values().removeIf(held -> !repliesOf(held).awaitsReplies());
+        if (replies.awaitsReplies()) {
+            awaiting.put(replies, batch);
+        }
     }
 
     /** Whether {@link #close()} was called. */
@@ -556,6 +576,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             try {
                 endBatches();
             } finally {
+                awaiting.clear();
                 this.connection.close();
             }
         }
