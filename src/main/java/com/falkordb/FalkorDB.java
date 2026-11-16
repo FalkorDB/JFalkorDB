@@ -299,12 +299,12 @@ public final class FalkorDB {
          *
          * <pre>{@code
          * SSLParameters parameters = new SSLParameters();
-         * parameters.setProtocols(new String[] {"TLSv1.3"});
+         * parameters.setProtocols(new String[] {"TLSv1.2"}); // TLS 1.3 needs Java 8u261 or later
          * parameters.setEndpointIdentificationAlgorithm("HTTPS");
          * Driver driver = FalkorDB.builder().host("db.example.com").sslParameters(parameters).build();
          * }</pre>
          *
-         * <p>The object is read again each time a connection opens, so don't change it after {@link #build()}.
+         * <p>{@link #build()} keeps a copy, so changing the object afterwards has no effect on the driver.
          *
          * @param sslParameters the parameters for each TLS socket, or {@code null} to clear them
          * @return this builder
@@ -357,8 +357,10 @@ public final class FalkorDB {
          * Sets how many idle connections the pool keeps open, ready for use (default {@code 0}).
          *
          * <p>A background task tops the pool up every 30 seconds, starting 30 seconds after the driver's
-         * first use, since the pool is created then; building the driver still opens no connection. With a
-         * Redis Cluster it applies to each node's pool separately.
+         * first use, since the pool is created then; building the driver still opens no connection. Opening
+         * one waits at most the {@linkplain #socketTimeout(Duration) socket timeout}, or 2 seconds when none is
+         * set, for each reply of the connection setup, so a server that accepts connections but never answers
+         * can't hold up the task. With a Redis Cluster it applies to each node's pool separately.
          *
          * @param poolMinIdle idle connections to keep; must be non-negative and no greater than the pool's
          *                    {@code maxIdle}
@@ -374,9 +376,9 @@ public final class FalkorDB {
          * (default {@code false}).
          *
          * <p>It catches a connection the server or the network closed while it sat in the pool before a query
-         * is sent on it, at the cost of one extra round-trip every time a connection is borrowed, which is once
-         * per graph call. {@link #poolTestWhileIdle(boolean)} catches most of the same connections in the
-         * background instead.
+         * is sent on it, at the cost of one extra round-trip every time a connection is borrowed: at least once
+         * per graph call, and again each time a Redis Cluster redirect is retried. {@link
+         * #poolTestWhileIdle(boolean)} catches most of the same connections in the background instead.
          *
          * <p>The {@code PING} waits at most the {@linkplain #socketTimeout(Duration) socket timeout}, or 2
          * seconds when none is set.
@@ -392,7 +394,9 @@ public final class FalkorDB {
         /**
          * Checks idle connections with a {@code PING} in the background every 30 seconds, and closes the ones
          * that fail (default {@code false}), so that a connection the server or the network dropped while idle,
-         * for example after the server's idle {@code timeout} or a load balancer's, is not handed to a query.
+         * for example after the server's idle {@code timeout} or a load balancer's, is not handed to a query. A
+         * closed connection is replaced when the pool next needs one, or straight away when that brings the pool
+         * below {@link #poolMinIdle(int)}.
          *
          * <p>The {@code PING} waits at most the {@linkplain #socketTimeout(Duration) socket timeout}, or 2
          * seconds when none is set. Idle connections are never closed merely for having been idle; {@link

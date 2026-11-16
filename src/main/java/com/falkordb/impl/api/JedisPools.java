@@ -1,5 +1,8 @@
 package com.falkordb.impl.api;
 
+import java.io.IOException;
+import java.net.Socket;
+import java.net.SocketException;
 import java.time.Duration;
 import java.util.Set;
 import java.util.function.Function;
@@ -7,6 +10,8 @@ import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import redis.clients.jedis.Connection;
+import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.DefaultJedisSocketFactory;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisClientConfig;
@@ -14,6 +19,7 @@ import redis.clients.jedis.JedisFactory;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.Protocol;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 /**
  * Builds the connection pools the driver serves graph commands from: one per standalone server, per cluster
@@ -23,11 +29,13 @@ import redis.clients.jedis.Protocol;
  * connection checks or background task are switched on (see {@link PoolOptions}):
  *
  * <ul>
- *   <li>A connection check ({@code PING}) never waits longer than {@link #validationTimeoutMillis}. The
- *       driver's default socket timeout is "no deadline", which is right for graph queries but not for a
- *       check: commons-pool2 runs every pool's background checks on one thread shared by the whole JVM, so a
- *       {@code PING} on a half-open connection would stall them all, and {@code close()}, for as long as TCP
- *       takes to give up.
+ *   <li>Opening a pooled connection (the TLS handshake and the {@code AUTH}, {@code CLIENT SETINFO} and
+ *       {@code SELECT} replies) and checking one ({@code PING}) never wait longer than {@link
+ *       #validationTimeoutMillis} for a reply. The driver's default socket timeout is "no deadline", which is
+ *       right for graph queries but not here: commons-pool2 opens the {@code minIdle} connections and runs the
+ *       checks of every pool on one thread shared by the whole JVM, so a server that accepts connections but
+ *       never answers would stall all of them, and {@code close()}, for as long as TCP takes to give up.
+ *       Once a connection is open it gets the configured socket timeout back.
  *   <li>The background task starts only once the pool's constructor has returned. {@link JedisSentinelPool}
  *       starts it before it looks for the master, so a constructor that then fails, with every Sentinel down
  *       say, would leave a task behind that keeps opening connections, with the data credentials, to Jedis'
@@ -37,8 +45,8 @@ import redis.clients.jedis.Protocol;
 final class JedisPools {
 
     /**
-     * Longest a connection check waits for its reply when the driver has no socket timeout: Jedis' {@link
-     * Protocol#DEFAULT_TIMEOUT}, as for the Sentinel and cluster probes.
+     * Longest opening or checking a connection waits for a reply when the driver has no socket timeout: Jedis'
+     * {@link Protocol#DEFAULT_TIMEOUT}, as for the Sentinel and cluster probes.
      */
     static final int DEFAULT_VALIDATION_TIMEOUT_MILLIS = Protocol.DEFAULT_TIMEOUT;
 
@@ -107,8 +115,8 @@ final class JedisPools {
     }
 
     /**
-     * The read deadline for a connection check: the driver's socket timeout when one is set, otherwise {@link
-     * #DEFAULT_VALIDATION_TIMEOUT_MILLIS}.
+     * The read deadline while a pooled connection is opened or checked: the driver's socket timeout when one is
+     * set, otherwise {@link #DEFAULT_VALIDATION_TIMEOUT_MILLIS}.
      *
      * @param config the connections' client config
      * @return the deadline in milliseconds, always positive
@@ -119,16 +127,37 @@ final class JedisPools {
     }
 
     /**
-     * Jedis' connection factory with a read deadline on its connection check. Everything else, creating,
-     * authenticating and destroying connections, is Jedis' own.
+     * Jedis' connection factory with a read deadline on opening a connection and on its connection check.
+     * Everything else, authenticating, selecting the database and destroying connections, is Jedis' own.
      */
     static final class CheckedFactory extends JedisFactory {
 
         private final int validationTimeoutMillis;
+        private final int socketTimeoutMillis;
 
         CheckedFactory(HostAndPort node, JedisClientConfig config) {
-            super(node, config);
+            super(new BoundedSockets(node, config), config);
             this.validationTimeoutMillis = validationTimeoutMillis(config);
+            this.socketTimeoutMillis = config.getSocketTimeoutMillis();
+        }
+
+        @Override
+        public PooledObject<Jedis> makeObject() throws Exception {
+            PooledObject<Jedis> created;
+            BoundedSockets.OPENING.set(Boolean.TRUE);
+            try {
+                created = super.makeObject();
+            } finally {
+                BoundedSockets.OPENING.remove();
+            }
+            Jedis jedis = created.getObject();
+            try {
+                jedis.getConnection().setSoTimeout(socketTimeoutMillis);
+            } catch (RuntimeException e) {
+                jedis.close();
+                throw e;
+            }
+            return created;
         }
 
         @Override
@@ -151,6 +180,52 @@ final class JedisPools {
             }
             // A connection that failed the check is destroyed, so its deadline no longer matters.
             return valid;
+        }
+    }
+
+    /**
+     * Jedis' socket factory, with the read deadline bounded while {@link CheckedFactory#makeObject} opens a
+     * connection, TLS handshake included. A socket opened at any other time, when Jedis reconnects a connection
+     * it had closed, gets the configured socket timeout, so a graph query on it keeps having no deadline when
+     * none is configured.
+     *
+     * <p>It stays a {@link DefaultJedisSocketFactory}: {@link JedisSentinelPool} re-points that type at the
+     * master it finds, and refuses any other.
+     */
+    static final class BoundedSockets extends DefaultJedisSocketFactory {
+
+        /** Set while the current thread runs {@link CheckedFactory#makeObject}. */
+        static final ThreadLocal<Boolean> OPENING = new ThreadLocal<>();
+
+        private final int socketTimeoutMillis;
+
+        @SuppressWarnings("deprecation") // JedisFactory builds its own socket factory with this constructor
+        BoundedSockets(HostAndPort node, JedisClientConfig config) {
+            super(
+                    node,
+                    DefaultJedisClientConfig.builder()
+                            .from(config)
+                            .socketTimeoutMillis(validationTimeoutMillis(config))
+                            .build());
+            this.socketTimeoutMillis = config.getSocketTimeoutMillis();
+        }
+
+        @Override
+        public Socket createSocket() {
+            Socket socket = super.createSocket();
+            if (OPENING.get() == null) {
+                try {
+                    socket.setSoTimeout(socketTimeoutMillis);
+                } catch (SocketException e) {
+                    try {
+                        socket.close();
+                    } catch (IOException suppressed) {
+                        e.addSuppressed(suppressed);
+                    }
+                    throw new JedisConnectionException(e);
+                }
+            }
+            return socket;
         }
     }
 }

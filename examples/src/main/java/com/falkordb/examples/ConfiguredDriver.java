@@ -24,7 +24,7 @@ public final class ConfiguredDriver {
     public static void main(String[] args) throws NoSuchAlgorithmException {
         // TLS with protocols restricted; the parameters must say whether to verify the hostname ("HTTPS").
         SSLParameters tls = new SSLParameters();
-        tls.setProtocols(new String[] {"TLSv1.3", "TLSv1.2"});
+        tls.setProtocols(new String[] {"TLSv1.2"}); // add "TLSv1.3" on Java 8u261 or later
         tls.setEndpointIdentificationAlgorithm("HTTPS");
         try (Driver driver = FalkorDB.builder()
                 .host("db.example.com")

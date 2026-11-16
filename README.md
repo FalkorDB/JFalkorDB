@@ -387,22 +387,29 @@ try (Driver driver = FalkorDB.builder()
 ### Checking connections
 
 A connection can be closed by the server, for example by its idle `timeout`, or by a load balancer or a
-firewall while it sits in the pool. Two checks, both off by default, send a `PING` and replace a
+firewall while it sits in the pool. Two checks, both off by default, send a `PING` and close a
 connection that doesn't answer:
 
-- `poolTestWhileIdle(true)` checks every idle connection in the background, every 30 seconds.
-- `poolTestOnBorrow(true)` checks a connection each time one is borrowed, which is once per graph call.
-  It catches the connections the background check hasn't reached yet, at the cost of one extra
-  round-trip per call.
+- `poolTestWhileIdle(true)` checks every idle connection in the background, every 30 seconds. A connection
+  it closes is replaced when the pool next needs one, or straight away when that brings the pool below
+  `poolMinIdle`.
+- `poolTestOnBorrow(true)` checks a connection each time one is borrowed, and opens another in its place
+  if the check fails. A graph call borrows at least once, and again each time a Redis Cluster redirect is
+  retried. It catches the connections the background check hasn't reached yet, at the cost of one extra
+  round-trip per borrow.
 
-A check's `PING` waits at most the socket timeout, or 2 seconds when there is none. `poolMinIdle`
-connections are opened by the same background task, so the pool reaches that size within 30 seconds of the
-driver's first use. Idle connections are never closed merely for having been idle; `poolMaxIdle` bounds how
-many are kept.
+A check's `PING` waits at most the socket timeout, or 2 seconds when there is none, and so does opening a
+pooled connection: the TLS handshake and the replies to `AUTH`, `CLIENT SETINFO` and `SELECT`. The open
+connection then gets the configured socket timeout back. `poolMinIdle` connections are opened by the same
+background task, so the pool reaches that size within 30 seconds of the driver's first use. Idle
+connections are never closed merely for having been idle; `poolMaxIdle` bounds how many are kept.
 
 ### Connection Pool Configuration with Authentication
 
 ```java
+import com.falkordb.Driver;
+import com.falkordb.FalkorDB;
+
 Driver driver = FalkorDB.builder()
     .host("localhost")
     .port(6379)
@@ -417,6 +424,10 @@ Driver driver = FalkorDB.builder()
 ### Advanced Pool Configuration with Timeouts
 
 ```java
+import com.falkordb.Driver;
+import com.falkordb.FalkorDB;
+import java.time.Duration;
+
 Driver driver = FalkorDB.builder()
     .host("localhost")
     .port(6379)
@@ -448,6 +459,9 @@ master's address and listen for failovers, never have a read deadline.
 `ssl(true)` connects over TLS with the default trust store of the JVM, and verifies the server's hostname:
 
 ```java
+import com.falkordb.Driver;
+import com.falkordb.FalkorDB;
+
 Driver driver = FalkorDB.builder()
     .host("your-server.com")
     .port(6380)
@@ -460,6 +474,8 @@ For your own trust or key material (a private CA, or mutual TLS), pass an `SSLCo
 turns TLS on:
 
 ```java
+import com.falkordb.Driver;
+import com.falkordb.FalkorDB;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.InputStream;
@@ -493,12 +509,17 @@ properties; `ssl(true)` alone presents no client certificate.
 `sslParameters(SSLParameters)` restricts protocols and cipher suites or sets SNI names, and
 `sslHostnameVerifier(HostnameVerifier)` adds a check of your own after each handshake. Parameters are used
 as given, and `new SSLParameters()` would switch hostname verification off, so the builder rejects
-parameters without an endpoint identification algorithm: set `"HTTPS"` to verify the hostname or `""` to
-skip it deliberately.
+parameters without an endpoint identification algorithm, unless an `sslHostnameVerifier` is set to do the
+checking: set `"HTTPS"` to verify the hostname or `""` to skip it deliberately. The builder keeps a copy of
+the parameters, so changing them after `build()` has no effect.
 
 ```java
+import com.falkordb.Driver;
+import com.falkordb.FalkorDB;
+import javax.net.ssl.SSLParameters;
+
 SSLParameters parameters = new SSLParameters();
-parameters.setProtocols(new String[] {"TLSv1.3"});
+parameters.setProtocols(new String[] {"TLSv1.2"}); // TLS 1.3 needs Java 8u261 or later
 parameters.setEndpointIdentificationAlgorithm("HTTPS");
 
 Driver driver = FalkorDB.builder().host("your-server.com").port(6380).sslParameters(parameters).build();
@@ -523,7 +544,7 @@ removed in 0.18.0, because they expose the Jedis types the driver is built on. B
 | `JedisPoolConfig.setMaxWait(d)` | `poolMaxWait(d)` |
 | `JedisPoolConfig.setTestOnBorrow(true)` | `poolTestOnBorrow(true)` |
 | `JedisPoolConfig.setTestWhileIdle(true)` | `poolTestWhileIdle(true)` |
-| `JedisPoolConfig.setTestOnReturn(true)` | none: a returned connection is checked on its next borrow or idle check |
+| `JedisPoolConfig.setTestOnReturn(true)` | none; enable `poolTestOnBorrow(true)` to check a connection when it is next borrowed, or `poolTestWhileIdle(true)` to check it while it is idle. Both are off by default, and `poolMinIdle` doesn't enable either |
 | `new JedisPool(config, host, port)` | `host(host)`, `port(port)` |
 | `DefaultJedisClientConfig.user(u).password(p)` | `credentials(u, p)` |
 | `DefaultJedisClientConfig.database(n)` | `database(n)` |

@@ -1,5 +1,7 @@
 package com.falkordb.impl.api;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -15,7 +17,9 @@ import org.jspecify.annotations.Nullable;
  * Jedis' {@code SslOptions.defaults()}, exactly as before.
  *
  * <p>Instances are immutable and valid: {@link #of} rejects {@code SSLParameters} that would silently
- * switch off hostname verification.
+ * switch off hostname verification, and keeps a copy of the ones it accepts, so changing the caller's object
+ * afterwards can't get round that check. The {@code SSLContext} and {@code HostnameVerifier} are kept as given:
+ * neither is a value that can be copied, and the JDK's own {@code HttpClient} keeps them the same way.
  */
 public final class TlsOptions {
 
@@ -63,7 +67,72 @@ public final class TlsOptions {
                     + " to verify it, or setEndpointIdentificationAlgorithm(\"\") to skip the check deliberately,"
                     + " or set an sslHostnameVerifier");
         }
-        return new TlsOptions(context, parameters, hostnameVerifier);
+        return new TlsOptions(context, parameters == null ? null : copy(parameters), hostnameVerifier);
+    }
+
+    /**
+     * Newer {@link SSLParameters} properties, copied by reflection where the running JDK has them: the library
+     * compiles against the Java 8 API, which doesn't declare them.
+     */
+    private static final String[] LATER_PROPERTIES = {
+        "ApplicationProtocols", // Java 9
+        "EnableRetransmissions", // Java 9
+        "MaximumPacketSize", // Java 9
+        "SignatureSchemes", // Java 19
+        "NamedGroups" // Java 20
+    };
+
+    /**
+     * Copies every property of {@code source}, including those added after Java 8 when the running JDK has them.
+     *
+     * @param source the parameters to copy
+     * @return an independent copy
+     */
+    static SSLParameters copy(SSLParameters source) {
+        SSLParameters copy = new SSLParameters();
+        copy.setCipherSuites(source.getCipherSuites());
+        copy.setProtocols(source.getProtocols());
+        if (source.getNeedClientAuth()) {
+            copy.setNeedClientAuth(true);
+        } else {
+            copy.setWantClientAuth(source.getWantClientAuth());
+        }
+        copy.setAlgorithmConstraints(source.getAlgorithmConstraints());
+        copy.setEndpointIdentificationAlgorithm(source.getEndpointIdentificationAlgorithm());
+        copy.setServerNames(source.getServerNames());
+        copy.setSNIMatchers(source.getSNIMatchers());
+        copy.setUseCipherSuitesOrder(source.getUseCipherSuitesOrder());
+        for (String property : LATER_PROPERTIES) {
+            copyLaterProperty(source, copy, property);
+        }
+        return copy;
+    }
+
+    private static void copyLaterProperty(SSLParameters source, SSLParameters copy, String property) {
+        Method getter = publicMethod("get" + property);
+        if (getter == null) {
+            return; // a JDK older than the property
+        }
+        Method setter = publicMethod("set" + property, getter.getReturnType());
+        if (setter == null) {
+            return;
+        }
+        try {
+            setter.invoke(copy, getter.invoke(source));
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException("cannot copy SSLParameters." + property, e);
+        } catch (InvocationTargetException e) {
+            // The value came from a valid SSLParameters, so its setter rejecting it is a JDK inconsistency.
+            throw new IllegalArgumentException("cannot copy SSLParameters." + property, e.getCause());
+        }
+    }
+
+    private static @Nullable Method publicMethod(String name, Class<?>... parameterTypes) {
+        try {
+            return SSLParameters.class.getMethod(name, parameterTypes);
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
     }
 
     /**
@@ -76,7 +145,8 @@ public final class TlsOptions {
     }
 
     /**
-     * Returns the parameters to apply to each socket, or {@code null} for the defaults.
+     * Returns the parameters to apply to each socket, or {@code null} for the defaults. They are this instance's
+     * own copy: don't change them.
      *
      * @return the parameters to apply to each socket, or {@code null} for the defaults
      */

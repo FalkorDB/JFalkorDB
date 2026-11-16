@@ -3,6 +3,7 @@ package com.falkordb.impl.api;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -178,7 +179,8 @@ class BuilderWiringTest {
         assertNull(config.getSslOptions());
         assertTrue(config.isSsl(), "the legacy fields only take effect with isSsl()");
         assertSame(context.factory(), config.getSslSocketFactory());
-        assertSame(parameters, config.getSslParameters());
+        assertNotSame(parameters, config.getSslParameters(), "a copy, so the caller can't change it afterwards");
+        assertEquals("HTTPS", config.getSslParameters().getEndpointIdentificationAlgorithm());
         assertSame(ACCEPT_ALL, config.getHostnameVerifier());
     }
 
@@ -210,7 +212,7 @@ class BuilderWiringTest {
             assertNull(config.getSslOptions());
             assertTrue(config.isSsl());
             assertSame(context.factory(), config.getSslSocketFactory());
-            assertSame(parameters, config.getSslParameters());
+            assertSame(data.getSslParameters(), config.getSslParameters());
             assertSame(ACCEPT_ALL, config.getHostnameVerifier());
         }
     }
@@ -233,12 +235,20 @@ class BuilderWiringTest {
 
     @Test
     void theDatabaseIsSelectedOnTheDataConnections() throws Exception {
-        try (FakeServer server = new FakeServer(FakeServer.Mode.ANSWER);
-                Driver driver = direct(server).database(3).build()) {
+        try (FakeRedisServer server = new FakeRedisServer(command -> FakeRedisServer.ok());
+                Driver driver = FalkorDB.builder()
+                        .host("127.0.0.1")
+                        .port(server.port())
+                        .autoDetectSentinel(false)
+                        .autoDetectCluster(false)
+                        .database(3)
+                        .build()) {
             // The fake server answers the query with +OK, which is no result set.
             assertThrows(RuntimeException.class, () -> driver.graph("g").query("RETURN 1"));
 
-            assertTrue(server.received().contains("SELECT\r\n$1\r\n3\r\n"), server.received());
+            // Jedis selects when it opens the connection and again when the pool hands it out.
+            assertTrue(server.count("SELECT", "3") >= 1, server.received().toString());
+            assertEquals(0, server.count("SELECT", "0"), server.received().toString());
         }
     }
 }
