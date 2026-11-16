@@ -378,9 +378,10 @@ public final class FalkorDB {
          * Enables or disables Redis Cluster auto-detection (default {@code true}).
          *
          * <p>When enabled, the driver probes the configured host/port once with {@code INFO server}
-         * the first time it is used; if that endpoint reports {@code redis_mode:cluster}, the driver
-         * learns the cluster's topology from it and sends every graph command to the node that owns the
-         * graph, so the same address works for a standalone server and a cluster. This mirrors
+         * the first time it is used; if that endpoint reports {@code redis_mode:cluster} (or {@code
+         * server_mode:cluster}, as Valkey does), the driver learns the cluster's topology from it and
+         * sends every graph command to the node that owns the graph, so the same address works for a
+         * standalone server and a cluster. This mirrors
          * falkordb-py. Like every other connection, the probe happens on first use rather than in
          * {@link #build()}, which performs no I/O.
          *
