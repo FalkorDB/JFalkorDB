@@ -123,7 +123,9 @@ abstract class ContextBatch<B extends GraphBatch> {
 
     /**
      * Called when the context closes, which ends the batch underneath: a reply the caller keeps holds this view, which
-     * mustn't then hold every other reply. The replies stay readable, each through its own response.
+     * mustn't then hold every other reply. Each reply keeps its own response, so this doesn't change what reading it
+     * does: a pipeline's replies were read when the context drained it, and a transaction the context discarded still
+     * has replies that throw {@link IllegalStateException}.
      */
     final void contextClosing() {
         dropPending();
