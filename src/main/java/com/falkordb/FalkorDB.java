@@ -2,13 +2,18 @@ package com.falkordb;
 
 import com.falkordb.impl.api.ClusterOptions;
 import com.falkordb.impl.api.DriverImpl;
+import com.falkordb.impl.api.PoolOptions;
 import com.falkordb.impl.api.SentinelOptions;
+import com.falkordb.impl.api.TlsOptions;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -103,7 +108,8 @@ public final class FalkorDB {
 
     /**
      * Starts building a driver with a fluent, discoverable configuration API — a superset of the
-     * {@code driver(...)} factories that also exposes TLS, connection-pool sizing, and timeouts.
+     * {@code driver(...)} factories that also exposes TLS, connection-pool sizing and connection checks,
+     * timeouts, and the database index.
      *
      * <p>With no options set, {@link Builder#build()} produces a driver pointing at host {@code
      * localhost}, port {@code 6379}, with no credentials, no TLS, Jedis' default 2000&nbsp;ms connect
@@ -118,11 +124,14 @@ public final class FalkorDB {
      *     .credentials("user", "password")
      *     .ssl(true)
      *     .poolMaxTotal(64)
+     *     .poolMinIdle(4)
+     *     .poolTestWhileIdle(true)
      *     .connectionTimeout(Duration.ofSeconds(2))
      *     .build();
      * }</pre>
      *
-     * <p>To connect from a URI, keep using {@link #driver(URI)}.
+     * <p>It covers what a hand-built Jedis pool passed to the deprecated {@code DriverImpl(Pool)} was used
+     * for, without naming a Jedis type. To connect from a URI, keep using {@link #driver(URI)}.
      *
      * @return a new builder
      */
@@ -144,12 +153,19 @@ public final class FalkorDB {
         private int port = 6379;
         private @Nullable String user;
         private @Nullable String password;
-        private boolean ssl;
+        private @Nullable Boolean ssl;
+        private @Nullable SSLContext sslContext;
+        private @Nullable SSLParameters sslParameters;
+        private @Nullable HostnameVerifier sslHostnameVerifier;
+        private int database;
         private @Nullable Duration connectionTimeout;
         private @Nullable Duration socketTimeout;
         private @Nullable Integer poolMaxTotal;
         private @Nullable Integer poolMaxIdle;
         private @Nullable Duration poolMaxWait;
+        private int poolMinIdle;
+        private boolean poolTestOnBorrow;
+        private boolean poolTestWhileIdle;
         private @Nullable String sentinelMasterName;
         private @Nullable List<String> sentinelAddresses;
         private @Nullable String sentinelUser;
@@ -209,13 +225,108 @@ public final class FalkorDB {
         }
 
         /**
-         * Enables or disables TLS (default {@code false}).
+         * Selects the database (default {@code 0}), as the path of a {@code redis://host:port/2} URI does.
+         *
+         * <p>A Redis Cluster has a single database, so a non-zero index is rejected by {@link #build()} with
+         * {@link #cluster(String...)}, and when the first connection finds the endpoint is a cluster. The
+         * connections to Sentinels never select one; only the master's do.
+         *
+         * @param database database index; must not be negative
+         * @return this builder
+         */
+        public Builder database(int database) {
+            this.database = database;
+            return this;
+        }
+
+        /**
+         * Enables or disables TLS. Unset, TLS is on when {@link #sslContext}, {@link #sslParameters} or
+         * {@link #sslHostnameVerifier} is set, and off otherwise.
+         *
+         * <p>{@code ssl(true)} alone uses the JVM's default trust store and verifies the server's hostname.
+         * {@code ssl(false)} together with one of the settings above is a contradiction, which {@link
+         * #build()} rejects.
          *
          * @param ssl whether to connect over TLS
          * @return this builder
          */
         public Builder ssl(boolean ssl) {
             this.ssl = ssl;
+            return this;
+        }
+
+        /**
+         * Connects over TLS with sockets from this {@link SSLContext}, which carries the trust material that
+         * authenticates the server and, for mutual TLS, the key material that authenticates the client.
+         * Setting it turns TLS on. Unset, the JVM default applies.
+         *
+         * <pre>{@code
+         * KeyStore trustStore = KeyStore.getInstance("PKCS12");
+         * try (InputStream in = Files.newInputStream(Paths.get("truststore.p12"))) {
+         *     trustStore.load(in, trustStorePassword);
+         * }
+         * TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+         * tmf.init(trustStore);
+         * SSLContext context = SSLContext.getInstance("TLS");
+         * context.init(null, tmf.getTrustManagers(), null);
+         *
+         * Driver driver = FalkorDB.builder().host("db.example.com").port(6380).sslContext(context).build();
+         * }</pre>
+         *
+         * <p>The same TLS settings are used for every connection the driver opens: to the server, to each
+         * Redis Cluster node, to the Sentinels and to the master they name. Cluster nodes and Sentinel masters
+         * are usually reported by IP address, so for hostname verification to pass their certificates need IP
+         * subject alternative names.
+         *
+         * @param sslContext the context to create TLS sockets from, or {@code null} to clear it
+         * @return this builder
+         */
+        public Builder sslContext(@Nullable SSLContext sslContext) {
+            this.sslContext = sslContext;
+            return this;
+        }
+
+        /**
+         * Applies these {@link SSLParameters} to every TLS socket: protocols, cipher suites, SNI server names
+         * and the endpoint identification algorithm, which decides whether the server's hostname is verified.
+         * Setting them turns TLS on. Unset, the defaults apply, which verify the hostname.
+         *
+         * <p>They are used as given, and {@code new SSLParameters()} has no endpoint identification algorithm,
+         * which would mean no hostname verification. {@link #build()} therefore rejects parameters without one
+         * unless an {@link #sslHostnameVerifier} does the checking: call {@code
+         * setEndpointIdentificationAlgorithm("HTTPS")} to verify the hostname, or {@code
+         * setEndpointIdentificationAlgorithm("")} to skip that check deliberately.
+         *
+         * <pre>{@code
+         * SSLParameters parameters = new SSLParameters();
+         * parameters.setProtocols(new String[] {"TLSv1.2"}); // TLS 1.3 needs Java 8u261 or later
+         * parameters.setEndpointIdentificationAlgorithm("HTTPS");
+         * Driver driver = FalkorDB.builder().host("db.example.com").sslParameters(parameters).build();
+         * }</pre>
+         *
+         * <p>{@link #build()} keeps a copy, so changing the object afterwards has no effect on the driver.
+         *
+         * @param sslParameters the parameters for each TLS socket, or {@code null} to clear them
+         * @return this builder
+         */
+        public Builder sslParameters(@Nullable SSLParameters sslParameters) {
+            this.sslParameters = sslParameters;
+            return this;
+        }
+
+        /**
+         * Checks the server's identity with this {@link HostnameVerifier} once each TLS handshake has
+         * completed, and refuses the connection if it returns {@code false}. Setting it turns TLS on.
+         *
+         * <p>It runs in addition to the endpoint identification of the {@linkplain #sslParameters
+         * parameters}, not instead of it. For a verifier more lenient than the standard {@code "HTTPS"} check
+         * to take effect, set the parameters' endpoint identification algorithm to {@code ""} as well.
+         *
+         * @param sslHostnameVerifier the extra check, or {@code null} to clear it
+         * @return this builder
+         */
+        public Builder sslHostnameVerifier(@Nullable HostnameVerifier sslHostnameVerifier) {
+            this.sslHostnameVerifier = sslHostnameVerifier;
             return this;
         }
 
@@ -239,6 +350,64 @@ public final class FalkorDB {
          */
         public Builder poolMaxIdle(int poolMaxIdle) {
             this.poolMaxIdle = poolMaxIdle;
+            return this;
+        }
+
+        /**
+         * Sets how many idle connections the pool keeps open, ready for use (default {@code 0}).
+         *
+         * <p>A background task tops the pool up every 30 seconds, starting 30 seconds after the driver's
+         * first use, since the pool is created then; building the driver still opens no connection. Opening
+         * one waits at most the {@linkplain #socketTimeout(Duration) socket timeout}, or 2 seconds when none is
+         * set, for each reply of the connection setup, so a server that accepts connections but never answers
+         * can't hold up the task. With a Redis Cluster it applies to each node's pool separately.
+         *
+         * @param poolMinIdle idle connections to keep; must be non-negative and no greater than the pool's
+         *                    {@code maxIdle}
+         * @return this builder
+         */
+        public Builder poolMinIdle(int poolMinIdle) {
+            this.poolMinIdle = poolMinIdle;
+            return this;
+        }
+
+        /**
+         * Checks each connection with a {@code PING} before handing it out, and replaces one that fails
+         * (default {@code false}).
+         *
+         * <p>It catches a connection the server or the network closed while it sat in the pool before a query
+         * is sent on it, at the cost of one extra round-trip every time a connection is borrowed: at least once
+         * per graph call, and again each time a Redis Cluster redirect is retried. {@link
+         * #poolTestWhileIdle(boolean)} catches most of the same connections in the background instead.
+         *
+         * <p>The {@code PING} waits at most the {@linkplain #socketTimeout(Duration) socket timeout}, or 2
+         * seconds when none is set.
+         *
+         * @param poolTestOnBorrow whether to check a connection before each use
+         * @return this builder
+         */
+        public Builder poolTestOnBorrow(boolean poolTestOnBorrow) {
+            this.poolTestOnBorrow = poolTestOnBorrow;
+            return this;
+        }
+
+        /**
+         * Checks idle connections with a {@code PING} in the background every 30 seconds, and closes the ones
+         * that fail (default {@code false}), so that a connection the server or the network dropped while idle,
+         * for example after the server's idle {@code timeout} or a load balancer's, is not handed to a query. A
+         * closed connection is replaced when the pool next needs one, or straight away when that brings the pool
+         * below {@link #poolMinIdle(int)}.
+         *
+         * <p>The {@code PING} waits at most the {@linkplain #socketTimeout(Duration) socket timeout}, or 2
+         * seconds when none is set. Idle connections are never closed merely for having been idle; {@link
+         * #poolMaxIdle(int)} bounds how many are kept. The first check runs 30 seconds after the driver's first
+         * use. With a Redis Cluster it applies to each node's pool separately.
+         *
+         * @param poolTestWhileIdle whether to check idle connections in the background
+         * @return this builder
+         */
+        public Builder poolTestWhileIdle(boolean poolTestWhileIdle) {
+            this.poolTestWhileIdle = poolTestWhileIdle;
             return this;
         }
 
@@ -395,9 +564,10 @@ public final class FalkorDB {
          *   <li>{@link Driver#listGraphs()} returns the graphs of every primary, and the server-wide
          *       commands ({@code udfLoad}, {@code udfDelete}, {@code udfFlush}, {@code configSet}) run
          *       on every primary;
-         *   <li>pool sizing applies to each node separately, and the connection settings are used for
-         *       every node, so all nodes must accept the same credentials and TLS setting;
-         *   <li>a cluster has a single database, so a database index in a URI is not supported;
+         *   <li>pool sizing and connection checks apply to each node separately, and the connection settings
+         *       are used for every node, so all nodes must accept the same credentials and TLS settings;
+         *   <li>a cluster has a single database, so a database index, in a URI or set with {@link
+         *       #database(int)}, is not supported;
          *   <li>when the cluster reshards or fails over, the driver follows the redirect and retries
          *       the command, up to three attempts.
          * </ul>
@@ -457,9 +627,16 @@ public final class FalkorDB {
          * Range validation happens in {@link DriverImpl#create}.
          *
          * @return a new driver
-         * @throws IllegalArgumentException if any option is out of range (see the individual setters)
+         * @throws IllegalArgumentException if any option is out of range or the options contradict each other
+         *     (see the individual setters)
          */
         public Driver build() {
+            TlsOptions tls = TlsOptions.of(sslContext, sslParameters, sslHostnameVerifier);
+            if (tls != null && Boolean.FALSE.equals(ssl)) {
+                throw new IllegalArgumentException(
+                        "ssl(false) contradicts sslContext, sslParameters or sslHostnameVerifier, which need TLS");
+            }
+            boolean useTls = ssl == null ? tls != null : ssl;
             int maxTotal = poolMaxTotal == null ? DriverImpl.DEFAULT_POOL_MAX_TOTAL : poolMaxTotal;
             int maxIdle = poolMaxIdle == null ? DriverImpl.DEFAULT_POOL_MAX_IDLE : poolMaxIdle;
             Duration maxWait = poolMaxWait == null ? DriverImpl.DEFAULT_POOL_MAX_WAIT : poolMaxWait;
@@ -474,12 +651,12 @@ public final class FalkorDB {
                     port,
                     user,
                     password,
-                    ssl,
+                    database,
+                    useTls,
+                    tls,
                     connectMillis,
                     socketMillis,
-                    maxTotal,
-                    maxIdle,
-                    maxWait,
+                    PoolOptions.of(maxTotal, maxIdle, poolMinIdle, maxWait, poolTestOnBorrow, poolTestWhileIdle),
                     sentinelOptions(),
                     clusterOptions());
         }

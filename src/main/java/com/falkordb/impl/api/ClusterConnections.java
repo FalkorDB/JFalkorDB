@@ -135,7 +135,7 @@ final class ClusterConnections implements Connections {
             Set<HostAndPort> startupNodes,
             GenericObjectPoolConfig<Jedis> poolConfig,
             DefaultJedisClientConfig nodeConfig) {
-        this(startupNodes, nodeConfig, node -> new JedisPool(poolConfig, node, nodeConfig));
+        this(startupNodes, nodeConfig, node -> JedisPools.direct(poolConfig, node, nodeConfig));
     }
 
     /**

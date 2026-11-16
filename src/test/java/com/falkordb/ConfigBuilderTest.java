@@ -19,6 +19,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -67,6 +69,95 @@ class ConfigBuilderTest {
         assertSame(builder, builder.poolMaxWait(Duration.ZERO));
         assertSame(builder, builder.connectionTimeout(Duration.ZERO));
         assertSame(builder, builder.socketTimeout(Duration.ZERO));
+        assertSame(builder, builder.poolMinIdle(0));
+        assertSame(builder, builder.poolTestOnBorrow(true));
+        assertSame(builder, builder.poolTestWhileIdle(true));
+        assertSame(builder, builder.database(0));
+        assertSame(builder, builder.sslContext(null));
+        assertSame(builder, builder.sslParameters(null));
+        assertSame(builder, builder.sslHostnameVerifier(null));
+    }
+
+    @Test
+    void rejectsAnInvalidMinIdle() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> FalkorDB.builder().poolMinIdle(-1).build());
+        // The default maxIdle is 8; commons-pool2 would silently keep only 8 idle.
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> FalkorDB.builder().poolMinIdle(9).build());
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> FalkorDB.builder().poolMaxIdle(2).poolMinIdle(3).build());
+    }
+
+    @Test
+    void acceptsMinIdleUpToMaxIdleAndTheConnectionChecks() {
+        assertDoesNotThrow(() -> FalkorDB.builder()
+                .poolMaxIdle(4)
+                .poolMinIdle(4)
+                .poolTestOnBorrow(true)
+                .poolTestWhileIdle(true)
+                .build()
+                .close());
+    }
+
+    @Test
+    void rejectsAnInvalidDatabase() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> FalkorDB.builder().database(-1).build());
+        // A cluster has a single database; with the nodes named up front that needs no connection to tell.
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> FalkorDB.builder().database(1).cluster("node-a:6379").build());
+        assertDoesNotThrow(() ->
+                FalkorDB.builder().database(0).cluster("node-a:6379").build().close());
+    }
+
+    @Test
+    void rejectsTurningTlsOffWhileConfiguringIt() throws Exception {
+        SSLContext context = SSLContext.getDefault();
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> FalkorDB.builder().ssl(false).sslContext(context).build());
+        assertThrows(IllegalArgumentException.class, () -> FalkorDB.builder()
+                .sslHostnameVerifier((host, session) -> true)
+                .ssl(false)
+                .build());
+        // Clearing the setting again resolves the contradiction.
+        assertDoesNotThrow(() -> FalkorDB.builder()
+                .sslContext(context)
+                .ssl(false)
+                .sslContext(null)
+                .build()
+                .close());
+    }
+
+    @Test
+    void rejectsSslParametersThatWouldSkipHostnameVerificationUnnoticed() {
+        // new SSLParameters() has no endpoint identification algorithm, which means no hostname check.
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> FalkorDB.builder().sslParameters(new SSLParameters()).build());
+    }
+
+    @Test
+    void acceptsSslParametersThatDecideOnHostnameVerification() {
+        SSLParameters verify = new SSLParameters();
+        verify.setEndpointIdentificationAlgorithm("HTTPS");
+        SSLParameters skip = new SSLParameters();
+        skip.setEndpointIdentificationAlgorithm("");
+        assertDoesNotThrow(
+                () -> FalkorDB.builder().sslParameters(verify).build().close());
+        assertDoesNotThrow(() -> FalkorDB.builder().sslParameters(skip).build().close());
+        // A verifier of one's own is a decision too.
+        assertDoesNotThrow(() -> FalkorDB.builder()
+                .sslParameters(new SSLParameters())
+                .sslHostnameVerifier((host, session) -> true)
+                .build()
+                .close());
     }
 
     @Test

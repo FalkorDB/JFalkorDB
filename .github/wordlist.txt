@@ -60,3 +60,7 @@ backtick
 NUL
 UTF
 Valkey
+JVM
+SNI
+hostname
+balancer

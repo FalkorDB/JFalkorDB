@@ -38,7 +38,7 @@ com.falkordb.Driver
   method public abstract java.lang.String configGet(java.lang.String)
   method public default java.util.Map<java.lang.String, java.lang.String> configGetAll()
   method public abstract boolean configSet(java.lang.String, java.lang.Object)
-  method public abstract redis.clients.jedis.Jedis getConnection()
+  method @Deprecated public abstract redis.clients.jedis.Jedis getConnection()
   method public abstract com.falkordb.GraphContextGenerator graph(java.lang.String)
   method public abstract java.util.List<java.lang.String> listGraphs()
   method public abstract boolean udfDelete(java.lang.String)
@@ -65,10 +65,14 @@ com.falkordb.FalkorDB$Builder
   method public com.falkordb.FalkorDB$Builder connectionTimeout(java.time.Duration)
   method public com.falkordb.FalkorDB$Builder credentials(java.lang.String)
   method public com.falkordb.FalkorDB$Builder credentials(java.lang.String, java.lang.String)
+  method public com.falkordb.FalkorDB$Builder database(int)
   method public com.falkordb.FalkorDB$Builder host(java.lang.String)
   method public com.falkordb.FalkorDB$Builder poolMaxIdle(int)
   method public com.falkordb.FalkorDB$Builder poolMaxTotal(int)
   method public com.falkordb.FalkorDB$Builder poolMaxWait(java.time.Duration)
+  method public com.falkordb.FalkorDB$Builder poolMinIdle(int)
+  method public com.falkordb.FalkorDB$Builder poolTestOnBorrow(boolean)
+  method public com.falkordb.FalkorDB$Builder poolTestWhileIdle(boolean)
   method public com.falkordb.FalkorDB$Builder port(int)
   method public com.falkordb.FalkorDB$Builder sentinel(java.lang.String, java.lang.String...)
   method public com.falkordb.FalkorDB$Builder sentinel(java.lang.String, java.util.Collection<java.lang.String>)
@@ -76,6 +80,9 @@ com.falkordb.FalkorDB$Builder
   method public com.falkordb.FalkorDB$Builder sentinelCredentials(java.lang.String, java.lang.String)
   method public com.falkordb.FalkorDB$Builder socketTimeout(java.time.Duration)
   method public com.falkordb.FalkorDB$Builder ssl(boolean)
+  method public com.falkordb.FalkorDB$Builder sslContext(javax.net.ssl.SSLContext)
+  method public com.falkordb.FalkorDB$Builder sslHostnameVerifier(javax.net.ssl.HostnameVerifier)
+  method public com.falkordb.FalkorDB$Builder sslParameters(javax.net.ssl.SSLParameters)
 
 com.falkordb.Graph
   type public interface com.falkordb.Graph

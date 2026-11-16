@@ -32,6 +32,10 @@ public interface Driver extends Closeable {
     /**
      * Returns a underline connection to the database
      *
+     * @deprecated since 0.17.0, and to be removed in 0.18.0, because it exposes the Jedis transport. Run
+     *     graph commands through {@link #graph(String)}. Configure the connection pool, connection checks,
+     *     database and TLS with {@link FalkorDB#builder()}. Run non-graph Redis commands with a Redis client
+     *     of your own.
      * @return a underline connection to the database
      * @throws com.falkordb.exceptions.GraphException if the server rejects the new connection with a plain error,
      *     for example its {@code AUTH}; a {@code WRONGPASS} or {@code NOPERM} is Jedis' {@code
@@ -39,6 +43,7 @@ public interface Driver extends Closeable {
      * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
      *     fails while the command is sent or its reply read
      */
+    @Deprecated
     Jedis getConnection();
 
     /**
