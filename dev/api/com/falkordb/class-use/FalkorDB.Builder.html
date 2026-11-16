@@ -84,7 +84,8 @@ loadScripts(document, 'script');</script>
 <div class="col-second even-row-color"><span class="type-name-label">FalkorDB.</span><code><a href="../FalkorDB.html#builder()" class="member-name-link">builder</a>()</code></div>
 <div class="col-last even-row-color">
 <div class="block">Starts building a driver with a fluent, discoverable configuration API — a superset of the
- <code>driver(...)</code> factories that also exposes TLS, connection-pool sizing, and timeouts.</div>
+ <code>driver(...)</code> factories that also exposes TLS, connection-pool sizing and connection checks,
+ timeouts, and the database index.</div>
 </div>
 <div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
 <div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#cluster(java.lang.String...)" class="member-name-link">cluster</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>...&nbsp;startupNodes)</code></div>
@@ -114,25 +115,48 @@ loadScripts(document, 'script');</script>
 <div class="block">Sets the username and password used to authenticate.</div>
 </div>
 <div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#host(java.lang.String)" class="member-name-link">host</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;host)</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#database(int)" class="member-name-link">database</a><wbr>(int&nbsp;database)</code></div>
 <div class="col-last even-row-color">
+<div class="block">Selects the database (default <code>0</code>), as the path of a <code>redis://host:port/2</code> URI does.</div>
+</div>
+<div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#host(java.lang.String)" class="member-name-link">host</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;host)</code></div>
+<div class="col-last odd-row-color">
 <div class="block">Sets the server host (default <code>"localhost"</code>).</div>
 </div>
-<div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#poolMaxIdle(int)" class="member-name-link">poolMaxIdle</a><wbr>(int&nbsp;poolMaxIdle)</code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#poolMaxIdle(int)" class="member-name-link">poolMaxIdle</a><wbr>(int&nbsp;poolMaxIdle)</code></div>
+<div class="col-last even-row-color">
 <div class="block">Sets the maximum number of idle connections kept in the pool (default <code>8</code>).</div>
 </div>
-<div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#poolMaxTotal(int)" class="member-name-link">poolMaxTotal</a><wbr>(int&nbsp;poolMaxTotal)</code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#poolMaxTotal(int)" class="member-name-link">poolMaxTotal</a><wbr>(int&nbsp;poolMaxTotal)</code></div>
+<div class="col-last odd-row-color">
 <div class="block">Sets the maximum connection-pool size (default <code>8</code>).</div>
 </div>
-<div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#poolMaxWait(java.time.Duration)" class="member-name-link">poolMaxWait</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;poolMaxWait)</code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#poolMaxWait(java.time.Duration)" class="member-name-link">poolMaxWait</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;poolMaxWait)</code></div>
+<div class="col-last even-row-color">
 <div class="block">Sets the maximum time to wait for a connection when the pool is exhausted (default: wait
  indefinitely).</div>
+</div>
+<div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#poolMinIdle(int)" class="member-name-link">poolMinIdle</a><wbr>(int&nbsp;poolMinIdle)</code></div>
+<div class="col-last odd-row-color">
+<div class="block">Sets how many idle connections the pool keeps open, ready for use (default <code>0</code>).</div>
+</div>
+<div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#poolTestOnBorrow(boolean)" class="member-name-link">poolTestOnBorrow</a><wbr>(boolean&nbsp;poolTestOnBorrow)</code></div>
+<div class="col-last even-row-color">
+<div class="block">Checks each connection with a <code>PING</code> before handing it out, and replaces one that fails
+ (default <code>false</code>).</div>
+</div>
+<div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#poolTestWhileIdle(boolean)" class="member-name-link">poolTestWhileIdle</a><wbr>(boolean&nbsp;poolTestWhileIdle)</code></div>
+<div class="col-last odd-row-color">
+<div class="block">Checks idle connections with a <code>PING</code> in the background every 30 seconds, and closes the ones
+ that fail (default <code>false</code>), so that a connection the server or the network dropped while idle,
+ for example after the server's idle <code>timeout</code> or a load balancer's, is not handed to a query.</div>
 </div>
 <div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
 <div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#port(int)" class="member-name-link">port</a><wbr>(int&nbsp;port)</code></div>
@@ -173,7 +197,25 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
 <div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#ssl(boolean)" class="member-name-link">ssl</a><wbr>(boolean&nbsp;ssl)</code></div>
 <div class="col-last even-row-color">
-<div class="block">Enables or disables TLS (default <code>false</code>).</div>
+<div class="block">Enables or disables TLS.</div>
+</div>
+<div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#sslContext(javax.net.ssl.SSLContext)" class="member-name-link">sslContext</a><wbr>(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLContext.html" title="class or interface in javax.net.ssl" class="external-link">SSLContext</a>&nbsp;sslContext)</code></div>
+<div class="col-last odd-row-color">
+<div class="block">Connects over TLS with sockets from this <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLContext.html" title="class or interface in javax.net.ssl" class="external-link"><code>SSLContext</code></a>, which carries the trust material that
+ authenticates the server and, for mutual TLS, the key material that authenticates the client.</div>
+</div>
+<div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#sslHostnameVerifier(javax.net.ssl.HostnameVerifier)" class="member-name-link">sslHostnameVerifier</a><wbr>(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/HostnameVerifier.html" title="class or interface in javax.net.ssl" class="external-link">HostnameVerifier</a>&nbsp;sslHostnameVerifier)</code></div>
+<div class="col-last even-row-color">
+<div class="block">Checks the server's identity with this <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/HostnameVerifier.html" title="class or interface in javax.net.ssl" class="external-link"><code>HostnameVerifier</code></a> once each TLS handshake has
+ completed, and refuses the connection if it returns <code>false</code>.</div>
+</div>
+<div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#sslParameters(javax.net.ssl.SSLParameters)" class="member-name-link">sslParameters</a><wbr>(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLParameters.html" title="class or interface in javax.net.ssl" class="external-link">SSLParameters</a>&nbsp;sslParameters)</code></div>
+<div class="col-last odd-row-color">
+<div class="block">Applies these <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLParameters.html" title="class or interface in javax.net.ssl" class="external-link"><code>SSLParameters</code></a> to every TLS socket: protocols, cipher suites, SNI server names
+ and the endpoint identification algorithm, which decides whether the server's hostname is verified.</div>
 </div>
 </div>
 </section>

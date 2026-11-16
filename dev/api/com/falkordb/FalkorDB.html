@@ -129,7 +129,8 @@ loadScripts(document, 'script');</script>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#builder()" class="member-name-link">builder</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Starts building a driver with a fluent, discoverable configuration API — a superset of the
- <code>driver(...)</code> factories that also exposes TLS, connection-pool sizing, and timeouts.</div>
+ <code>driver(...)</code> factories that also exposes TLS, connection-pool sizing and connection checks,
+ timeouts, and the database index.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="Driver.html" title="interface in com.falkordb">Driver</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#driver()" class="member-name-link">driver</a>()</code></div>
@@ -273,7 +274,8 @@ loadScripts(document, 'script');</script>
 <h3>builder</h3>
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type"><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></span>&nbsp;<span class="element-name">builder</span>()</div>
 <div class="block">Starts building a driver with a fluent, discoverable configuration API — a superset of the
- <code>driver(...)</code> factories that also exposes TLS, connection-pool sizing, and timeouts.
+ <code>driver(...)</code> factories that also exposes TLS, connection-pool sizing and connection checks,
+ timeouts, and the database index.
 
  <p>With no options set, <a href="FalkorDB.Builder.html#build()"><code>FalkorDB.Builder.build()</code></a> produces a driver pointing at host <code>
  localhost</code>, port <code>6379</code>, with no credentials, no TLS, Jedis' default 2000&nbsp;ms connect
@@ -288,11 +290,14 @@ loadScripts(document, 'script');</script>
      .credentials("user", "password")
      .ssl(true)
      .poolMaxTotal(64)
+     .poolMinIdle(4)
+     .poolTestWhileIdle(true)
      .connectionTimeout(Duration.ofSeconds(2))
      .build();
  </code></pre>
 
- <p>To connect from a URI, keep using <a href="#driver(java.net.URI)"><code>driver(URI)</code></a>.</div>
+ <p>It covers what a hand-built Jedis pool passed to the deprecated <code>DriverImpl(Pool)</code> was used
+ for, without naming a Jedis type. To connect from a URI, keep using <a href="#driver(java.net.URI)"><code>driver(URI)</code></a>.</div>
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>a new builder</dd>

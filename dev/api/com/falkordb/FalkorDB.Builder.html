@@ -159,25 +159,48 @@ loadScripts(document, 'script');</script>
 <div class="block">Sets the username and password used to authenticate.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#host(java.lang.String)" class="member-name-link">host</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;host)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#database(int)" class="member-name-link">database</a><wbr>(int&nbsp;database)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Selects the database (default <code>0</code>), as the path of a <code>redis://host:port/2</code> URI does.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#host(java.lang.String)" class="member-name-link">host</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;host)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets the server host (default <code>"localhost"</code>).</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#poolMaxIdle(int)" class="member-name-link">poolMaxIdle</a><wbr>(int&nbsp;poolMaxIdle)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#poolMaxIdle(int)" class="member-name-link">poolMaxIdle</a><wbr>(int&nbsp;poolMaxIdle)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets the maximum number of idle connections kept in the pool (default <code>8</code>).</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#poolMaxTotal(int)" class="member-name-link">poolMaxTotal</a><wbr>(int&nbsp;poolMaxTotal)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#poolMaxTotal(int)" class="member-name-link">poolMaxTotal</a><wbr>(int&nbsp;poolMaxTotal)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets the maximum connection-pool size (default <code>8</code>).</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#poolMaxWait(java.time.Duration)" class="member-name-link">poolMaxWait</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;poolMaxWait)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#poolMaxWait(java.time.Duration)" class="member-name-link">poolMaxWait</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;poolMaxWait)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets the maximum time to wait for a connection when the pool is exhausted (default: wait
  indefinitely).</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#poolMinIdle(int)" class="member-name-link">poolMinIdle</a><wbr>(int&nbsp;poolMinIdle)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Sets how many idle connections the pool keeps open, ready for use (default <code>0</code>).</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#poolTestOnBorrow(boolean)" class="member-name-link">poolTestOnBorrow</a><wbr>(boolean&nbsp;poolTestOnBorrow)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Checks each connection with a <code>PING</code> before handing it out, and replaces one that fails
+ (default <code>false</code>).</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#poolTestWhileIdle(boolean)" class="member-name-link">poolTestWhileIdle</a><wbr>(boolean&nbsp;poolTestWhileIdle)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Checks idle connections with a <code>PING</code> in the background every 30 seconds, and closes the ones
+ that fail (default <code>false</code>), so that a connection the server or the network dropped while idle,
+ for example after the server's idle <code>timeout</code> or a load balancer's, is not handed to a query.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#port(int)" class="member-name-link">port</a><wbr>(int&nbsp;port)</code></div>
@@ -218,7 +241,25 @@ loadScripts(document, 'script');</script>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#ssl(boolean)" class="member-name-link">ssl</a><wbr>(boolean&nbsp;ssl)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Enables or disables TLS (default <code>false</code>).</div>
+<div class="block">Enables or disables TLS.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sslContext(javax.net.ssl.SSLContext)" class="member-name-link">sslContext</a><wbr>(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLContext.html" title="class or interface in javax.net.ssl" class="external-link">SSLContext</a>&nbsp;sslContext)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Connects over TLS with sockets from this <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLContext.html" title="class or interface in javax.net.ssl" class="external-link"><code>SSLContext</code></a>, which carries the trust material that
+ authenticates the server and, for mutual TLS, the key material that authenticates the client.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sslHostnameVerifier(javax.net.ssl.HostnameVerifier)" class="member-name-link">sslHostnameVerifier</a><wbr>(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/HostnameVerifier.html" title="class or interface in javax.net.ssl" class="external-link">HostnameVerifier</a>&nbsp;sslHostnameVerifier)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Checks the server's identity with this <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/HostnameVerifier.html" title="class or interface in javax.net.ssl" class="external-link"><code>HostnameVerifier</code></a> once each TLS handshake has
+ completed, and refuses the connection if it returns <code>false</code>.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sslParameters(javax.net.ssl.SSLParameters)" class="member-name-link">sslParameters</a><wbr>(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLParameters.html" title="class or interface in javax.net.ssl" class="external-link">SSLParameters</a>&nbsp;sslParameters)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Applies these <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLParameters.html" title="class or interface in javax.net.ssl" class="external-link"><code>SSLParameters</code></a> to every TLS socket: protocols, cipher suites, SNI server names
+ and the endpoint identification algorithm, which decides whether the server's hostname is verified.</div>
 </div>
 </div>
 </div>
@@ -293,13 +334,114 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
+<section class="detail" id="database(int)">
+<h3>database</h3>
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></span>&nbsp;<span class="element-name">database</span><wbr><span class="parameters">(int&nbsp;database)</span></div>
+<div class="block">Selects the database (default <code>0</code>), as the path of a <code>redis://host:port/2</code> URI does.
+
+ <p>A Redis Cluster has a single database, so a non-zero index is rejected by <a href="#build()"><code>build()</code></a> with
+ <a href="#cluster(java.lang.String...)"><code>cluster(String...)</code></a>, and when the first connection finds the endpoint is a cluster. The
+ connections to Sentinels never select one; only the master's do.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>database</code> - database index; must not be negative</dd>
+<dt>Returns:</dt>
+<dd>this builder</dd>
+</dl>
+</section>
+</li>
+<li>
 <section class="detail" id="ssl(boolean)">
 <h3>ssl</h3>
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></span>&nbsp;<span class="element-name">ssl</span><wbr><span class="parameters">(boolean&nbsp;ssl)</span></div>
-<div class="block">Enables or disables TLS (default <code>false</code>).</div>
+<div class="block">Enables or disables TLS. Unset, TLS is on when <code>sslContext</code>, <code>sslParameters</code> or
+ <code>sslHostnameVerifier</code> is set, and off otherwise.
+
+ <p><code>ssl(true)</code> alone uses the JVM's default trust store and verifies the server's hostname.
+ <code>ssl(false)</code> together with one of the settings above is a contradiction, which <a href="#build()"><code>build()</code></a> rejects.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>ssl</code> - whether to connect over TLS</dd>
+<dt>Returns:</dt>
+<dd>this builder</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="sslContext(javax.net.ssl.SSLContext)">
+<h3>sslContext</h3>
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></span>&nbsp;<span class="element-name">sslContext</span><wbr><span class="parameters">(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLContext.html" title="class or interface in javax.net.ssl" class="external-link">SSLContext</a>&nbsp;sslContext)</span></div>
+<div class="block">Connects over TLS with sockets from this <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLContext.html" title="class or interface in javax.net.ssl" class="external-link"><code>SSLContext</code></a>, which carries the trust material that
+ authenticates the server and, for mutual TLS, the key material that authenticates the client.
+ Setting it turns TLS on. Unset, the JVM default applies.
+
+ <pre><code>
+ KeyStore trustStore = KeyStore.getInstance("PKCS12");
+ try (InputStream in = Files.newInputStream(Paths.get("truststore.p12"))) {
+     trustStore.load(in, trustStorePassword);
+ }
+ TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+ tmf.init(trustStore);
+ SSLContext context = SSLContext.getInstance("TLS");
+ context.init(null, tmf.getTrustManagers(), null);
+
+ Driver driver = FalkorDB.builder().host("db.example.com").port(6380).sslContext(context).build();
+ </code></pre>
+
+ <p>The same TLS settings are used for every connection the driver opens: to the server, to each
+ Redis Cluster node, to the Sentinels and to the master they name. Cluster nodes and Sentinel masters
+ are usually reported by IP address, so for hostname verification to pass their certificates need IP
+ subject alternative names.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>sslContext</code> - the context to create TLS sockets from, or <code>null</code> to clear it</dd>
+<dt>Returns:</dt>
+<dd>this builder</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="sslParameters(javax.net.ssl.SSLParameters)">
+<h3>sslParameters</h3>
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></span>&nbsp;<span class="element-name">sslParameters</span><wbr><span class="parameters">(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLParameters.html" title="class or interface in javax.net.ssl" class="external-link">SSLParameters</a>&nbsp;sslParameters)</span></div>
+<div class="block">Applies these <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLParameters.html" title="class or interface in javax.net.ssl" class="external-link"><code>SSLParameters</code></a> to every TLS socket: protocols, cipher suites, SNI server names
+ and the endpoint identification algorithm, which decides whether the server's hostname is verified.
+ Setting them turns TLS on. Unset, the defaults apply, which verify the hostname.
+
+ <p>They are used as given, and <code>new SSLParameters()</code> has no endpoint identification algorithm,
+ which would mean no hostname verification. <a href="#build()"><code>build()</code></a> therefore rejects parameters without one
+ unless an <code>sslHostnameVerifier</code> does the checking: call <code>
+ setEndpointIdentificationAlgorithm("HTTPS")</code> to verify the hostname, or <code>
+ setEndpointIdentificationAlgorithm("")</code> to skip that check deliberately.
+
+ <pre><code>
+ SSLParameters parameters = new SSLParameters();
+ parameters.setProtocols(new String[] {"TLSv1.2"}); // TLS 1.3 needs Java 8u261 or later
+ parameters.setEndpointIdentificationAlgorithm("HTTPS");
+ Driver driver = FalkorDB.builder().host("db.example.com").sslParameters(parameters).build();
+ </code></pre>
+
+ <p><a href="#build()"><code>build()</code></a> keeps a copy, so changing the object afterwards has no effect on the driver.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>sslParameters</code> - the parameters for each TLS socket, or <code>null</code> to clear them</dd>
+<dt>Returns:</dt>
+<dd>this builder</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="sslHostnameVerifier(javax.net.ssl.HostnameVerifier)">
+<h3>sslHostnameVerifier</h3>
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></span>&nbsp;<span class="element-name">sslHostnameVerifier</span><wbr><span class="parameters">(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/HostnameVerifier.html" title="class or interface in javax.net.ssl" class="external-link">HostnameVerifier</a>&nbsp;sslHostnameVerifier)</span></div>
+<div class="block">Checks the server's identity with this <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/HostnameVerifier.html" title="class or interface in javax.net.ssl" class="external-link"><code>HostnameVerifier</code></a> once each TLS handshake has
+ completed, and refuses the connection if it returns <code>false</code>. Setting it turns TLS on.
+
+ <p>It runs in addition to the endpoint identification of the parameters, not instead of it. For a verifier more lenient than the standard <code>"HTTPS"</code> check
+ to take effect, set the parameters' endpoint identification algorithm to <code>""</code> as well.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>sslHostnameVerifier</code> - the extra check, or <code>null</code> to clear it</dd>
 <dt>Returns:</dt>
 <dd>this builder</dd>
 </dl>
@@ -327,6 +469,68 @@ loadScripts(document, 'script');</script>
 <dt>Parameters:</dt>
 <dd><code>poolMaxIdle</code> - maximum idle connections; must be non-negative and no greater than the
                     pool's <code>maxTotal</code></dd>
+<dt>Returns:</dt>
+<dd>this builder</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="poolMinIdle(int)">
+<h3>poolMinIdle</h3>
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></span>&nbsp;<span class="element-name">poolMinIdle</span><wbr><span class="parameters">(int&nbsp;poolMinIdle)</span></div>
+<div class="block">Sets how many idle connections the pool keeps open, ready for use (default <code>0</code>).
+
+ <p>A background task tops the pool up every 30 seconds, starting 30 seconds after the driver's
+ first use, since the pool is created then; building the driver still opens no connection. Opening
+ one waits at most the <a href="#socketTimeout(java.time.Duration)">socket timeout</a>, or 2 seconds when none is
+ set, for each reply of the connection setup, so a server that accepts connections but never answers
+ can't hold up the task. With a Redis Cluster it applies to each node's pool separately.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>poolMinIdle</code> - idle connections to keep; must be non-negative and no greater than the pool's
+                    <code>maxIdle</code></dd>
+<dt>Returns:</dt>
+<dd>this builder</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="poolTestOnBorrow(boolean)">
+<h3>poolTestOnBorrow</h3>
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></span>&nbsp;<span class="element-name">poolTestOnBorrow</span><wbr><span class="parameters">(boolean&nbsp;poolTestOnBorrow)</span></div>
+<div class="block">Checks each connection with a <code>PING</code> before handing it out, and replaces one that fails
+ (default <code>false</code>).
+
+ <p>It catches a connection the server or the network closed while it sat in the pool before a query
+ is sent on it, at the cost of one extra round-trip every time a connection is borrowed: at least once
+ per graph call, and again each time a Redis Cluster redirect is retried. <a href="#poolTestWhileIdle(boolean)"><code>poolTestWhileIdle(boolean)</code></a> catches most of the same connections in the background instead.
+
+ <p>The <code>PING</code> waits at most the <a href="#socketTimeout(java.time.Duration)">socket timeout</a>, or 2
+ seconds when none is set.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>poolTestOnBorrow</code> - whether to check a connection before each use</dd>
+<dt>Returns:</dt>
+<dd>this builder</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="poolTestWhileIdle(boolean)">
+<h3>poolTestWhileIdle</h3>
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></span>&nbsp;<span class="element-name">poolTestWhileIdle</span><wbr><span class="parameters">(boolean&nbsp;poolTestWhileIdle)</span></div>
+<div class="block">Checks idle connections with a <code>PING</code> in the background every 30 seconds, and closes the ones
+ that fail (default <code>false</code>), so that a connection the server or the network dropped while idle,
+ for example after the server's idle <code>timeout</code> or a load balancer's, is not handed to a query. A
+ closed connection is replaced when the pool next needs one, or straight away when that brings the pool
+ below <a href="#poolMinIdle(int)"><code>poolMinIdle(int)</code></a>.
+
+ <p>The <code>PING</code> waits at most the <a href="#socketTimeout(java.time.Duration)">socket timeout</a>, or 2
+ seconds when none is set. Idle connections are never closed merely for having been idle; <a href="#poolMaxIdle(int)"><code>poolMaxIdle(int)</code></a> bounds how many are kept. The first check runs 30 seconds after the driver's first
+ use. With a Redis Cluster it applies to each node's pool separately.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>poolTestWhileIdle</code> - whether to check idle connections in the background</dd>
 <dt>Returns:</dt>
 <dd>this builder</dd>
 </dl>
@@ -505,9 +709,9 @@ loadScripts(document, 'script');</script>
    <li><a href="Driver.html#listGraphs()"><code>Driver.listGraphs()</code></a> returns the graphs of every primary, and the server-wide
        commands (<code>udfLoad</code>, <code>udfDelete</code>, <code>udfFlush</code>, <code>configSet</code>) run
        on every primary;
-   <li>pool sizing applies to each node separately, and the connection settings are used for
-       every node, so all nodes must accept the same credentials and TLS setting;
-   <li>a cluster has a single database, so a database index in a URI is not supported;
+   <li>pool sizing and connection checks apply to each node separately, and the connection settings
+       are used for every node, so all nodes must accept the same credentials and TLS settings;
+   <li>a cluster has a single database, so a database index, in a URI or set with <a href="#database(int)"><code>database(int)</code></a>, is not supported;
    <li>when the cluster reshards or fails over, the driver follows the redirect and retries
        the command, up to three attempts.
  </ul>
@@ -573,7 +777,8 @@ loadScripts(document, 'script');</script>
 <dt>Returns:</dt>
 <dd>a new driver</dd>
 <dt>Throws:</dt>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if any option is out of range (see the individual setters)</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if any option is out of range or the options contradict each other
+     (see the individual setters)</dd>
 </dl>
 </section>
 </li>

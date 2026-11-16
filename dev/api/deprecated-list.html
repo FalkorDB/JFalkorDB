@@ -62,16 +62,23 @@ loadScripts(document, 'script');</script>
 <div class="summary-table two-column-summary">
 <div class="table-header col-first">Method</div>
 <div class="table-header col-last">Description</div>
-<div class="col-summary-item-name even-row-color"><a href="com/falkordb/Record.html#getValue(int)">com.falkordb.Record.getValue<wbr>(int)</a></div>
+<div class="col-summary-item-name even-row-color"><a href="com/falkordb/Driver.html#getConnection()">com.falkordb.Driver.getConnection()</a></div>
 <div class="col-last even-row-color">
+<div class="block">since 0.17.0, and to be removed in 0.18.0, because it exposes the Jedis transport. Run
+     graph commands through <a href="com/falkordb/Driver.html#graph(java.lang.String)"><code>Driver.graph(String)</code></a>. Configure the connection pool, connection checks,
+     database and TLS with <a href="com/falkordb/FalkorDB.html#builder()"><code>FalkorDB.builder()</code></a>. Run non-graph Redis commands with a Redis client
+     of your own.</div>
+</div>
+<div class="col-summary-item-name odd-row-color"><a href="com/falkordb/Record.html#getValue(int)">com.falkordb.Record.getValue<wbr>(int)</a></div>
+<div class="col-last odd-row-color">
 <div class="block">since 0.16.0, and to be removed in 1.0.0, because <code>T</code> is unchecked. Use
      <a href="com/falkordb/Record.html#getValue(int,java.lang.Class)"><code>Record.getValue(int, Class)</code></a>, which checks the type here and names the column when it
      doesn't match: <code>String s = record.getValue(0)</code> becomes <code>String s =
      record.getValue(0, String.class)</code>. For an untyped read use <code>getValue(index,
      Object.class)</code> or <a href="com/falkordb/Record.html#values()"><code>Record.values()</code></a><code>.get(index)</code>.</div>
 </div>
-<div class="col-summary-item-name odd-row-color"><a href="com/falkordb/Record.html#getValue(java.lang.String)">com.falkordb.Record.getValue<wbr>(String)</a></div>
-<div class="col-last odd-row-color">
+<div class="col-summary-item-name even-row-color"><a href="com/falkordb/Record.html#getValue(java.lang.String)">com.falkordb.Record.getValue<wbr>(String)</a></div>
+<div class="col-last even-row-color">
 <div class="block">since 0.16.0, and to be removed in 1.0.0, because <code>T</code> is unchecked. Use
      <a href="com/falkordb/Record.html#getValue(java.lang.String,java.lang.Class)"><code>Record.getValue(String, Class)</code></a>, which checks the type here and names the column when it
      doesn't match: <code>Node n = record.getValue("a")</code> becomes <code>Node n =

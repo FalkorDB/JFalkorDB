@@ -94,7 +94,8 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/falkordb/FalkorDB.html#builder()" class="member-name-link">builder()</a> - Static method in class com.falkordb.<a href="com/falkordb/FalkorDB.html" title="class in com.falkordb">FalkorDB</a></dt>
 <dd>
 <div class="block">Starts building a driver with a fluent, discoverable configuration API — a superset of the
- <code>driver(...)</code> factories that also exposes TLS, connection-pool sizing, and timeouts.</div>
+ <code>driver(...)</code> factories that also exposes TLS, connection-pool sizing and connection checks,
+ timeouts, and the database index.</div>
 </dd>
 </dl>
 <h2 class="title" id="I:C">C</h2>
@@ -257,6 +258,10 @@ loadScripts(document, 'script');</script>
 </dl>
 <h2 class="title" id="I:D">D</h2>
 <dl class="index">
+<dt><a href="com/falkordb/FalkorDB.Builder.html#database(int)" class="member-name-link">database(int)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Selects the database (default <code>0</code>), as the path of a <code>redis://host:port/2</code> URI does.</div>
+</dd>
 <dt><a href="com/falkordb/AsyncGraph.html#deleteGraph()" class="member-name-link">deleteGraph()</a> - Method in interface com.falkordb.<a href="com/falkordb/AsyncGraph.html" title="interface in com.falkordb">AsyncGraph</a></dt>
 <dd>
 <div class="block">Asynchronously runs <a href="com/falkordb/Graph.html#deleteGraph()"><code>Graph.deleteGraph()</code></a>.</div>
@@ -399,7 +404,12 @@ loadScripts(document, 'script');</script>
 <dl class="index">
 <dt><a href="com/falkordb/Driver.html#getConnection()" class="member-name-link">getConnection()</a> - Method in interface com.falkordb.<a href="com/falkordb/Driver.html" title="interface in com.falkordb">Driver</a></dt>
 <dd>
-<div class="block">Returns a underline connection to the database</div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+<div class="deprecation-comment">since 0.17.0, and to be removed in 0.18.0, because it exposes the Jedis transport. Run
+     graph commands through <a href="com/falkordb/Driver.html#graph(java.lang.String)"><code>Driver.graph(String)</code></a>. Configure the connection pool, connection checks,
+     database and TLS with <a href="com/falkordb/FalkorDB.html#builder()"><code>FalkorDB.builder()</code></a>. Run non-graph Redis commands with a Redis client
+     of your own.</div>
+</div>
 </dd>
 <dt><a href="com/falkordb/GraphContextGenerator.html#getContext()" class="member-name-link">getContext()</a> - Method in interface com.falkordb.<a href="com/falkordb/GraphContextGenerator.html" title="interface in com.falkordb">GraphContextGenerator</a></dt>
 <dd>
@@ -753,6 +763,21 @@ loadScripts(document, 'script');</script>
 <div class="block">Sets the maximum time to wait for a connection when the pool is exhausted (default: wait
  indefinitely).</div>
 </dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#poolMinIdle(int)" class="member-name-link">poolMinIdle(int)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Sets how many idle connections the pool keeps open, ready for use (default <code>0</code>).</div>
+</dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#poolTestOnBorrow(boolean)" class="member-name-link">poolTestOnBorrow(boolean)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Checks each connection with a <code>PING</code> before handing it out, and replaces one that fails
+ (default <code>false</code>).</div>
+</dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#poolTestWhileIdle(boolean)" class="member-name-link">poolTestWhileIdle(boolean)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Checks idle connections with a <code>PING</code> in the background every 30 seconds, and closes the ones
+ that fail (default <code>false</code>), so that a connection the server or the network dropped while idle,
+ for example after the server's idle <code>timeout</code> or a load balancer's, is not handed to a query.</div>
+</dd>
 <dt><a href="com/falkordb/FalkorDB.Builder.html#port(int)" class="member-name-link">port(int)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
 <dd>
 <div class="block">Sets the server port (default <code>6379</code>).</div>
@@ -1049,7 +1074,22 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/falkordb/FalkorDB.Builder.html#ssl(boolean)" class="member-name-link">ssl(boolean)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
 <dd>
-<div class="block">Enables or disables TLS (default <code>false</code>).</div>
+<div class="block">Enables or disables TLS.</div>
+</dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#sslContext(javax.net.ssl.SSLContext)" class="member-name-link">sslContext(SSLContext)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Connects over TLS with sockets from this <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLContext.html" title="class or interface in javax.net.ssl" class="external-link"><code>SSLContext</code></a>, which carries the trust material that
+ authenticates the server and, for mutual TLS, the key material that authenticates the client.</div>
+</dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#sslHostnameVerifier(javax.net.ssl.HostnameVerifier)" class="member-name-link">sslHostnameVerifier(HostnameVerifier)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Checks the server's identity with this <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/HostnameVerifier.html" title="class or interface in javax.net.ssl" class="external-link"><code>HostnameVerifier</code></a> once each TLS handshake has
+ completed, and refuses the connection if it returns <code>false</code>.</div>
+</dd>
+<dt><a href="com/falkordb/FalkorDB.Builder.html#sslParameters(javax.net.ssl.SSLParameters)" class="member-name-link">sslParameters(SSLParameters)</a> - Method in class com.falkordb.<a href="com/falkordb/FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></dt>
+<dd>
+<div class="block">Applies these <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLParameters.html" title="class or interface in javax.net.ssl" class="external-link"><code>SSLParameters</code></a> to every TLS socket: protocols, cipher suites, SNI server names
+ and the endpoint identification algorithm, which decides whether the server's hostname is verified.</div>
 </dd>
 <dt><a href="com/falkordb/Statistics.html" class="type-name-link" title="interface in com.falkordb">Statistics</a> - Interface in <a href="com/falkordb/package-summary.html">com.falkordb</a></dt>
 <dd>
