@@ -374,6 +374,26 @@ class GraphContextCloseTest {
     }
 
     @Test
+    void aDeleteWhoseReplyFailsToDecodeInAnExplicitSyncClearsTheCache() {
+        try (JedisPool pool = new JedisPool(poolOfOne(), "127.0.0.1", server.port())) {
+            nextBorrower = pool::getResource;
+            CountingCache cache = new CountingCache();
+            GraphContextImpl context = new GraphContextImpl(pool.getResource(), cache, "g");
+            GraphPipeline pipeline = context.pipelined();
+            // The delete runs, but its reply can't be decoded.
+            connections.get(0).deleteReply = FakeRedisServer.integer(1);
+            Response<String> deleted = pipeline.deleteGraph();
+            pipeline.sync(); // reads every reply; the decode failure stays in the delete's response
+            context.close();
+
+            assertEquals(1, cache.clears, "the delete ran");
+            assertThrows(RuntimeException.class, deleted::get);
+            assertThrows(RuntimeException.class, deleted::get, "the failure must not turn into null");
+            assertNextBorrowerGetsTheSameCleanConnection();
+        }
+    }
+
+    @Test
     void endingABatchThatFailsAfterReadingADeleteClearsTheCache() {
         try (JedisPool pool = new JedisPool(poolOfOne(), "127.0.0.1", server.port())) {
             nextBorrower = pool::getResource;
