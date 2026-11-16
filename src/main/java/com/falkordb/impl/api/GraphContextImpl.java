@@ -17,7 +17,6 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -64,7 +63,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      * while it awaits replies, so {@link #checkConnectionFree} and {@link #checkNoBatchAwaits} keep seeing it.
      * Otherwise only the latest {@value #HELD_BATCHES} batches are held.
      */
-    private final Map<QueuedReplies, Closeable> awaiting = new IdentityHashMap<>();
+    private final IdentityHashMap<QueuedReplies, Closeable> awaiting = new IdentityHashMap<>();
     /** How many of the latest pipelines and transactions created on a context it holds strongly. */
     static final int HELD_BATCHES = 128;
     /**
