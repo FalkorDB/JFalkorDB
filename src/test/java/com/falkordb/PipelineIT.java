@@ -146,6 +146,32 @@ public class PipelineIT {
     }
 
     @Test
+    public void testClosingAContextWithAnUnsyncedPipelineReturnsACleanConnection() {
+        try (Driver driver = FalkorDB.builder()
+                .host(TestServer.host())
+                .port(TestServer.port())
+                .poolMaxTotal(1)
+                .poolMaxIdle(1)
+                .build()) {
+            GraphContextGenerator graph = driver.graph("social");
+            Response<ResultSet> created;
+            try (GraphContext c = graph.getContext()) {
+                GraphPipeline pipeline = c.pipelined();
+                created = pipeline.query("CREATE (:Person {name:'unsynced'})");
+            } // closed without sync()
+
+            // The pool's only connection again: its query must read its own reply, not the pipeline's.
+            try (GraphContext c = graph.getContext()) {
+                ResultSet resultSet = c.query("MATCH (n:Person) RETURN n.name");
+                Assertions.assertEquals(1, resultSet.size());
+                Assertions.assertEquals("unsynced", resultSet.iterator().next().getString(0));
+            }
+            // close() read the pipeline's reply
+            Assertions.assertEquals(1, created.get().getStatistics().nodesCreated());
+        }
+    }
+
+    @Test
     public void testQueryFollowedByDeleteGraphInSamePipeline() {
         api.query("CREATE (:Person {name:'a'})");
         api.query("MATCH (n:Person) RETURN n"); // caches the label and the property key

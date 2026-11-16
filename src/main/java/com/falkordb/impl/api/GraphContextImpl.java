@@ -9,11 +9,17 @@ import com.falkordb.exceptions.GraphException;
 import com.falkordb.impl.Utils;
 import com.falkordb.impl.graph_cache.GraphCache;
 import com.falkordb.impl.resultset.ResultSetImpl;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisDataException;
@@ -45,6 +51,25 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      * drops don't accumulate.
      */
     private final Set<QueuedReplies> connectionUsers = Collections.newSetFromMap(new WeakHashMap<>());
+    /** How many of the latest pipelines and transactions created on a context it holds strongly. */
+    static final int HELD_BATCHES = 128;
+    /**
+     * Every pipeline and transaction created on this context's connection, which {@link #close()} ends so the
+     * connection goes back clean. Held weakly: the latest ones are also in {@link #heldBatches}.
+     */
+    private final Set<Closeable> batches = Collections.newSetFromMap(new WeakHashMap<>());
+    /**
+     * The latest {@value #HELD_BATCHES} of them, held strongly, so a caller that drops one, say when an exception
+     * skips its sync or exec, can't have it collected before {@link #close()} ends it. A batch can be used again
+     * at any time, so whether one still has something on the connection can only be told at close. Older ones
+     * are held only weakly, so a long-lived context doesn't accumulate them.
+     */
+    private final Deque<Closeable> heldBatches = new ArrayDeque<>();
+    /**
+     * How many batches were created, which tells {@link #close()} whether one of them was collected. Atomic, like
+     * {@link #closed}, because {@code close()} may run on another thread.
+     */
+    private final AtomicInteger createdBatches = new AtomicInteger();
 
     private final AtomicBoolean closed = new AtomicBoolean();
 
@@ -285,10 +310,12 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public GraphTransaction multi() {
+        checkOpen();
         GraphTransactionImpl transaction =
                 new GraphTransactionImpl(connection.getConnection(), this::decodeQueued, this.cache, this.graphId);
         transaction.multi();
         connectionUsers.add(transaction.replies());
+        track(transaction);
         return transaction;
     }
 
@@ -298,10 +325,39 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public GraphPipeline pipelined() {
+        checkOpen();
         GraphPipelineImpl pipeline =
                 new GraphPipelineImpl(connection.getConnection(), this::decodeQueued, this.cache, this.graphId);
         connectionUsers.add(pipeline.replies());
+        track(pipeline);
         return pipeline;
+    }
+
+    /**
+     * After {@link #close()} the connection may already be lent to another borrower, so a pipeline or transaction
+     * must not be created on it.
+     */
+    private void checkOpen() {
+        if (closed.get()) {
+            throw new IllegalStateException("the context is closed");
+        }
+    }
+
+    /** Records a pipeline or transaction created on this context's connection, for {@link #close()} to end. */
+    private void track(Closeable batch) {
+        batches.add(batch);
+        heldBatches.addLast(batch);
+        if (heldBatches.size() > HELD_BATCHES) {
+            heldBatches.removeFirst();
+        }
+        createdBatches.incrementAndGet();
+    }
+
+    /** How a pipeline or transaction created here decodes its replies, and whether it awaits any. */
+    private static QueuedReplies repliesOf(Closeable batch) {
+        return batch instanceof GraphPipelineImpl
+                ? ((GraphPipelineImpl) batch).replies()
+                : ((GraphTransactionImpl) batch).replies();
     }
 
     /**
@@ -386,12 +442,89 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     /**
      * Releases the context's connection, returning it to its pool when it was borrowed from one.
      * This is the only method that releases the connection.
+     *
+     * <p>The next borrower must get the connection clean, so the pipelines and transactions created on it are
+     * ended first: a transaction still open is discarded, and the replies a pipeline still awaits are read. A key
+     * the context itself watched needs nothing here: the pool unwatches it when the connection comes back
+     * ({@code JedisPool.returnResource} calls {@code Jedis.resetState()}), and a connection that isn't pooled is
+     * disconnected.
      */
     @Override
     public void close() {
         // Once only: a second close() would hand the connection to the pool again.
         if (closed.compareAndSet(false, true)) {
-            this.connection.close();
+            try {
+                endBatches();
+            } finally {
+                this.connection.close();
+            }
+        }
+    }
+
+    /**
+     * Ends what the pipelines and transactions created on this context left on its connection, which Jedis' pool
+     * doesn't know about: they were built on the bare connection, not by {@code Jedis.multi()} or
+     * {@code Jedis.pipelined()}. Each one's own {@code close()} does it: a transaction still inside {@code MULTI}
+     * is discarded, one that watched keys after it ended unwatches them, and a pipeline reads the replies it still
+     * awaits, without decoding them. One that has nothing left sends nothing.
+     *
+     * <p>The one that awaits replies is ended first, so the replies on the connection are its own when it reads
+     * them. The connection is instead marked broken, without reading anything, when what is on it can't be told
+     * apart:
+     *
+     * <ul>
+     *   <li>several await replies: theirs are interleaved, and a transaction's may be queued inside another's
+     *       {@code MULTI}, so no order hands each its own. Their deletes may have run, so the replies are marked
+     *       unknown, which clears the schema cache if one of them queued a delete;
+     *   <li>a batch older than the ones {@link #heldBatches} holds was collected, after it may have sent commands
+     *       or a delete: the schema cache is cleared in case one ran;
+     *   <li>a pipeline's last read failed: Jedis may have read every reply and still hold responses it didn't
+     *       build, so reading the ones it holds could wait for replies that never come.
+     * </ul>
+     *
+     * <p>So it is when ending one fails, after which what is left on the connection is unknown; its replies are
+     * marked unknown too, in case it queued a delete that ran. The pool then
+     * destroys the connection instead of lending it again, and this returns normally, as the pool does when its
+     * own reset fails.
+     */
+    private void endBatches() {
+        List<Closeable> open = new ArrayList<>(batches); // the ones not collected
+        boolean collected = open.size() < createdBatches.getAndSet(0);
+        batches.clear();
+        heldBatches.clear();
+
+        List<Closeable> ordered = new ArrayList<>(open.size());
+        boolean readFailed = false;
+        for (Closeable batch : open) {
+            if (repliesOf(batch).awaitsReplies()) {
+                ordered.add(batch);
+            }
+            readFailed |= batch instanceof GraphPipelineImpl && ((GraphPipelineImpl) batch).readFailed();
+        }
+        if (collected || readFailed || ordered.size() > 1) {
+            for (Closeable abandoned : ordered) {
+                repliesOf(abandoned).unknown();
+            }
+            if (collected) {
+                cache.clear();
+            }
+            connection.getConnection().setBroken();
+            return;
+        }
+        for (Closeable batch : open) {
+            if (!repliesOf(batch).awaitsReplies()) { // the one that does is in ordered already
+                ordered.add(batch);
+            }
+        }
+        for (Closeable batch : ordered) {
+            try {
+                batch.close();
+            } catch (IOException | RuntimeException e) {
+                // It may have read a delete's reply without recording that the delete ran.
+                repliesOf(batch).unknown();
+                connection.getConnection().setBroken();
+                return;
+            }
         }
     }
 

@@ -35,7 +35,8 @@ import redis.clients.jedis.commands.RedisModulePipelineCommands;
  *
  * <p>Call {@link #sync()}, {@link #syncAndReturnAll()} or {@link #close()} before dropping a pipeline that has
  * queued commands. Their replies stay unread on the context's connection, and the next command sent on it, by the
- * context or by a schema lookup, reads one of them as its own.
+ * context or by a schema lookup, reads one of them as its own. Closing the context reads them, when this pipeline
+ * is the only one of the context's pipelines and transactions that awaits replies (see {@link GraphContext}).
  *
  * <p>A graph reply that fails to decode, with a {@link com.falkordb.exceptions.GraphException} or with the
  * failure of a lookup that decoding needed, fails every {@code get()} of its {@code Response} with the same
