@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794816109550,
+  "lastUpdate": 1794833073768,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -9557,6 +9557,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 24714.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "aaded1072c37d4af08ea5d82d89baa7ced58c0d6",
+          "message": "feat!: report connection failures as FalkorDBConnectionException and Driver server errors as GraphException (#535)\n\n* feat!: report connection failures as FalkorDBConnectionException and Driver server errors as GraphException\n\nAdd com.falkordb.exceptions.FalkorDBConnectionException, which extends\nJedisConnectionException, and map the exceptions that escape a public\nDriver, Graph, GraphContext or AsyncGraph method:\n\n- an exact JedisConnectionException becomes a FalkorDBConnectionException;\n- an exact JedisDataException (a plain error reply) becomes a GraphException.\n\nThe new exception keeps the original's message, cause, suppressed\nexceptions and stack trace, so only getClass() changes. Jedis' subclasses,\npool exhaustion, JedisClusterOperationException and everything else are\nleft as they are. DriverImpl.routed() now recognises a connection failure\nof either type, so relearning the cluster topology does not depend on\nFalkorDBConnectionException extending Jedis' type.\n\nBREAKING CHANGE: getClass() comparisons with JedisConnectionException or\nJedisDataException, and catch blocks that catch GraphException before\nJedisDataException, can see the new types. catch (JedisConnectionException)\nand catch (JedisDataException) still match.\n\nPart of #400\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: scope the exception docs to the methods the mapping covers\n\nAddress the AI review on #535:\n\n- say which methods report GraphException / FalkorDBConnectionException\n  (Driver, Graph, GraphContext, AsyncGraph) and list what still comes out\n  as Jedis raises it: pool exhaustion, an unreachable cluster, Jedis'\n  own subclasses from a Driver method, pipelines, transactions and the\n  Jedis from getConnection()\n- a GraphException from a graph command wraps the Jedis exception as its\n  cause; only the mapped ones copy message, cause and suppressed\n- an AUTH rejected with WRONGPASS/NOPERM stays JedisAccessControlException\n- a rejected executor completes an AsyncGraph future with\n  RejectedExecutionException\n- llms.txt names the version the new exception arrives after\n- isConnectionFailure tests the client's own type first and says why\n  both tests stay\n\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>\n\n* docs: name GraphContextGenerator and the AsyncGraph future's cause in the exception docs\n\ngetContext() is one of the mapped boundaries, and an AsyncGraph operation\ndoesn't throw the exceptions itself: its future's CompletionException or\nExecutionException carries them as its cause.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>\nCo-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>",
+          "timestamp": "2026-11-16T14:42:11+02:00",
+          "tree_id": "4f1fa9ec75aafe1827f68dc949fa7f159e7db408",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/aaded1072c37d4af08ea5d82d89baa7ced58c0d6"
+        },
+        "date": 1794833073719,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3863.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6692.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9551.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 12215.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11778.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11801.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11854.333,
             "unit": "ops/s"
           }
         ]
