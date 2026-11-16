@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794747502324,
+  "lastUpdate": 1794814658671,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -20639,6 +20639,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 30386.422,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f495c2e9a32f34fac42a9cca0a5dd564e9757c4b",
+          "message": "fix: keep a reply that fails to decode in the batch result, and rethrow it on every get() (#529)\n\n* fix: keep a reply that fails to decode in the batch result, and rethrow it on every get()\n\nA graph reply in a pipeline or transaction that failed to decode was lost\nin two ways:\n\n- Jedis' Response forgets an exception its builder threw, so every get()\n  after the first returned null. syncAndReturnAll() and exec() make that\n  first get() themselves, so the caller's get() saw only null.\n- Jedis' syncAndReturnAll() and exec() loops catch only JedisDataException.\n  A lookup that decoding needs can fail with a pool-exhaustion\n  JedisException or a JedisConnectionException. That ended the loop part\n  way: every reply was lost, and a pipeline kept the responses it hadn't\n  reached queued after their replies were read, so the next sync() waited\n  for replies that never came.\n\nEvery graph reply builder (queries, profiles, deleteGraph, copyGraph,\nexplain) now keeps what decoding threw and throws it on inside\nQueuedReplyFailure, a package-private JedisDataException that Jedis' loops\nkeep in place of the reply. The Response handed to the caller rethrows the\noriginal on every get(), and syncAndReturnAll() / exec() put the original in\nthe returned list. A GraphException is seen exactly as before; only the\nforgotten and escaping cases change.\n\nRefs #400\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: say only a RuntimeException from decoding is kept, and that setDependency doesn't decode a graph reply first\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Barak Bar Orion <barak.bar@falkordb.com>\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-16T09:35:17+02:00",
+          "tree_id": "61be4f6d6e1a758578f4a429f13b00e6210b414d",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/f495c2e9a32f34fac42a9cca0a5dd564e9757c4b"
+        },
+        "date": 1794814657832,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 176.709,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 224.218,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 284.651,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 210.514,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 255.336,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 295.361,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 291.897,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 466.641,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 585.962,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 474.906,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 785.274,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 973.044,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 560.676,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5191.727,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 11343.687,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 568.22,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 14668.584,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 31017.937,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 561.118,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 33563.662,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 73327.914,
             "unit": "us"
           }
         ]
