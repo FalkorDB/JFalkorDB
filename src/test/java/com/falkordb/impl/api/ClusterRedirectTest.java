@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.falkordb.Driver;
 import com.falkordb.ResultSet;
+import com.falkordb.exceptions.FalkorDBConnectionException;
 import com.falkordb.exceptions.GraphException;
 import com.falkordb.graph_entities.Node;
 import com.falkordb.impl.graph_cache.GraphCache;
@@ -30,7 +31,6 @@ import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisAskDataException;
 import redis.clients.jedis.exceptions.JedisClusterOperationException;
-import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisMovedDataException;
 
 /**
@@ -475,7 +475,7 @@ class ClusterRedirectTest {
         cluster.node(0).close();
         cluster.node(1).close();
 
-        JedisConnectionException e = assertThrows(JedisConnectionException.class, () -> driver.udfList());
+        FalkorDBConnectionException e = assertThrows(FalkorDBConnectionException.class, () -> driver.udfList());
 
         assertTrue(
                 Arrays.stream(e.getSuppressed()).anyMatch(s -> s instanceof JedisClusterOperationException),
