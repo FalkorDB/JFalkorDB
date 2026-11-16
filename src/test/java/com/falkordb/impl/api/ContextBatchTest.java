@@ -719,6 +719,8 @@ class ContextBatchTest {
                 "DEL other",
                 "SCRIPT FLUSH",
                 "MIGRATE h 1 \"\" 0 0 AUTH KEYS KEYS other", // a password named KEYS
+                "MIGRATE h 1 other 0 0 AUTH KEYS g", // a password named KEYS, before a word that is the graph's name
+                "MIGRATE h 1 other 0 0 AUTH2 KEYS g", // a user named KEYS, and a password that is the graph's name
                 "COPY g other",
                 "MIGRATE h 1 other 0 0",
                 "PING");
