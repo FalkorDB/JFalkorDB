@@ -139,6 +139,12 @@ extends <a href="Graph.html" title="interface in com.falkordb">Graph</a></span><
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>a connection bounded api</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the new connection with a plain error,
+     for example its <code>AUTH</code>; a <code>WRONGPASS</code> or <code>NOPERM</code> is Jedis' <code>
+     JedisAccessControlException</code></dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>

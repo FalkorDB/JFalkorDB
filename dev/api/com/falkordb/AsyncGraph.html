@@ -108,7 +108,10 @@ loadScripts(document, 'script');</script>
  a not-yet-started query, but cannot interrupt a query already on the wire — bound in-flight work with
  a per-query/server timeout or a finite socket timeout (not <code>cancel()</code>). Failures surface as the
  future completing exceptionally (<code>join()</code> throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/CompletionException.html" title="class or interface in java.util.concurrent" class="external-link"><code>CompletionException</code></a>;
- <code>get()</code> throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/ExecutionException.html" title="class or interface in java.util.concurrent" class="external-link"><code>ExecutionException</code></a>). The map/list arguments are read
+ <code>get()</code> throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/ExecutionException.html" title="class or interface in java.util.concurrent" class="external-link"><code>ExecutionException</code></a>). Once the operation runs, the cause is
+ what the synchronous <code>Graph</code> method threw, such as a <a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a> or a
+ <a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions"><code>FalkorDBConnectionException</code></a>; an executor that rejects the operation completes
+ the future with its <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/RejectedExecutionException.html" title="class or interface in java.util.concurrent" class="external-link"><code>RejectedExecutionException</code></a> instead. The map/list arguments are read
  later on the worker thread, so do not mutate them until the future completes.</div>
 </section>
 <section class="summary">

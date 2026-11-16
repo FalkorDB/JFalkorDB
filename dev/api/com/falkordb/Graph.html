@@ -98,7 +98,12 @@ loadScripts(document, 'script');</script>
 <hr>
 <div class="type-signature"><span class="modifiers">public interface </span><span class="element-name type-name-label">Graph</span><span class="extends-implements">
 extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Closeable.html" title="class or interface in java.io" class="external-link">Closeable</a></span></div>
-<div class="block">An interface for a FalkorDB graph.</div>
+<div class="block">An interface for a FalkorDB graph.
+
+ <p>A command the server rejects throws a <a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a>, and a connection that
+ fails a <a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions"><code>FalkorDBConnectionException</code></a>. The few failures that are still Jedis' own
+ exceptions, such as a pool that stays exhausted or a Redis Cluster whose topology can't be learned, are listed
+ on <a href="Driver.html" title="interface in com.falkordb"><code>Driver</code></a>.</div>
 </section>
 <section class="summary">
 <ul class="summary-list">
@@ -242,6 +247,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd>a result set</dd>
 <dt>Throws:</dt>
 <dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -257,6 +264,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd>a result set</dd>
 <dt>Throws:</dt>
 <dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -284,6 +293,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>timeout</code> is negative</dd>
 <dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query, for instance when it
      runs out of time</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -303,6 +314,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>timeout</code> is negative</dd>
 <dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query, for instance when it
      runs out of time</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -336,6 +349,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd>a result set.</dd>
 <dt>Throws:</dt>
 <dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -353,6 +368,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd>a result set.</dd>
 <dt>Throws:</dt>
 <dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -374,6 +391,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>timeout</code> is negative</dd>
 <dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query, for instance when it
      runs out of time</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -395,6 +414,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>timeout</code> is negative</dd>
 <dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query, for instance when it
      runs out of time</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -412,6 +433,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>procedure</code> is null or not a valid procedure name</dd>
 <dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the call</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -428,6 +451,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd>a result set with execution plan and performance metrics</dd>
 <dt>Throws:</dt>
 <dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -446,6 +471,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd>a result set with execution plan and performance metrics</dd>
 <dt>Throws:</dt>
 <dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -466,6 +493,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>procedure</code> is null or not a valid procedure name, or
      <code>args</code> or one of its elements is null</dd>
 <dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the call</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -491,6 +520,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
      <code>args</code>, <code>kwargs</code> or an argument is null, or if a <code>YIELD</code> column is not a
      Cypher identifier</dd>
 <dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the call</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -507,6 +538,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dt>Throws:</dt>
 <dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the command, for instance because
      the graph does not exist</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -521,6 +554,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dt>Throws:</dt>
 <dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the command, for instance because
      the graph does not exist</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -536,6 +571,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd>execution plan as list of strings</dd>
 <dt>Throws:</dt>
 <dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -553,6 +590,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd>execution plan as list of strings</dd>
 <dt>Throws:</dt>
 <dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the query</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>

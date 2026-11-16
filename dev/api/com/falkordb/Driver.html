@@ -94,7 +94,14 @@ loadScripts(document, 'script');</script>
 <hr>
 <div class="type-signature"><span class="modifiers">public interface </span><span class="element-name type-name-label">Driver</span><span class="extends-implements">
 extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Closeable.html" title="class or interface in java.io" class="external-link">Closeable</a></span></div>
-<div class="block">An interface which aligned to FalkorDB Driver interface</div>
+<div class="block">An interface which aligned to FalkorDB Driver interface
+
+ <p>The methods of a driver, and of the graphs and contexts it creates, report a failed connection as a <a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions"><code>FalkorDBConnectionException</code></a> and a command the server rejects as a <a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a>. Both extend the Jedis exceptions earlier versions threw, so existing
+ <code>catch</code> clauses keep matching. A few failures are still Jedis' own: a pool that stays exhausted (<code>
+ JedisException</code>), a Redis Cluster whose topology can't be learned (<code>JedisClusterOperationException</code>), and,
+ from a driver method, an error Jedis has a subclass for, such as <code>JedisAccessControlException</code> (a graph
+ command wraps that in a <code>GraphException</code> as its cause). The methods of <a href="GraphPipeline.html" title="interface in com.falkordb"><code>GraphPipeline</code></a> and <a href="GraphTransaction.html" title="interface in com.falkordb"><code>GraphTransaction</code></a>, and commands on the <code>Jedis</code> that <a href="#getConnection()"><code>getConnection()</code></a> returns, report what Jedis
+ raises.</div>
 </section>
 <section class="summary">
 <ul class="summary-list">
@@ -208,6 +215,12 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>a underline connection to the database</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the new connection with a plain error,
+     for example its <code>AUTH</code>; a <code>WRONGPASS</code> or <code>NOPERM</code> is Jedis' <code>
+     JedisAccessControlException</code></dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -219,6 +232,10 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>a list of graph names</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the command</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -236,6 +253,10 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>replace</code> - Whether to replace an existing library with the same name</dd>
 <dt>Returns:</dt>
 <dd>true if the library was loaded successfully</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the command</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -247,6 +268,10 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>a list of UDF library information</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the command</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -262,6 +287,10 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>withCode</code> - Whether to include the code in the response</dd>
 <dt>Returns:</dt>
 <dd>a list of UDF library information</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the command</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -273,6 +302,10 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>true if libraries were flushed successfully</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the command</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -286,6 +319,10 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd><code>libraryName</code> - The name of the library to delete</dd>
 <dt>Returns:</dt>
 <dd>true if the library was deleted successfully</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the command</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -305,8 +342,10 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>name</code> is null or <code>"*"</code>, or the server answers with
      more than one parameter</dd>
-<dd><code>redis.clients.jedis.exceptions.JedisDataException</code> - if the server rejects the name, for
-     example because there is no such parameter</dd>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the name, for example because
+     there is no such parameter</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 <dt>See Also:</dt>
 <dd>
 <ul class="tag-list">
@@ -335,6 +374,9 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd>every configuration parameter's value, by name</dd>
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/UnsupportedOperationException.html" title="class or interface in java.lang" class="external-link">UnsupportedOperationException</a></code> - if this driver does not implement it</dd>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the command</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 <dt>See Also:</dt>
 <dd>
 <ul class="tag-list">
@@ -358,7 +400,9 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <dd>true if the configuration was set successfully</dd>
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - if <code>name</code> is null</dd>
-<dd><code>redis.clients.jedis.exceptions.JedisDataException</code> - if the server rejects the name or value</dd>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the name or value</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 <dt>See Also:</dt>
 <dd>
 <ul class="tag-list">

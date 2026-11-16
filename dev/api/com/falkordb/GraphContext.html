@@ -179,6 +179,8 @@ extends <a href="Graph.html" title="interface in com.falkordb">Graph</a></span><
 <dd>Redis transactional object, over the connection context, with graph API capabilities</dd>
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link">IllegalStateException</a></code> - if the context is closed</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -205,6 +207,10 @@ extends <a href="Graph.html" title="interface in com.falkordb">Graph</a></span><
 <dd><code>keys</code> - Redis keys (Graphs names)</dd>
 <dt>Returns:</dt>
 <dd>"OK"</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the command</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>
@@ -216,6 +222,10 @@ extends <a href="Graph.html" title="interface in com.falkordb">Graph</a></span><
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>"OK"</dd>
+<dt>Throws:</dt>
+<dd><code><a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></code> - if the server rejects the command</dd>
+<dd><code><a href="exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></code> - if a connection to the server can't be opened, or
+     fails while the command is sent or its reply read</dd>
 </dl>
 </section>
 </li>

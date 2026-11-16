@@ -205,7 +205,8 @@ loadScripts(document, 'script');</script>
 </dd>
 <dt><a href="com/falkordb/exceptions/package-summary.html">com.falkordb.exceptions</a> - package com.falkordb.exceptions</dt>
 <dd>
-<div class="block">Exceptions thrown by the FalkorDB client, principally <a href="com/falkordb/exceptions/GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a>.</div>
+<div class="block">Exceptions thrown by the FalkorDB client's <code>Driver</code>, <code>Graph</code>, <code>GraphContextGenerator</code> and
+ <code>GraphContext</code>, and the cause of a failed <code>AsyncGraph</code> future: <a href="com/falkordb/exceptions/GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a> when the server rejects a command, and <a href="com/falkordb/exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions"><code>FalkorDBConnectionException</code></a> when the client can't talk to the server.</div>
 </dd>
 <dt><a href="com/falkordb/graph_entities/package-summary.html">com.falkordb.graph_entities</a> - package com.falkordb.graph_entities</dt>
 <dd>
@@ -371,6 +372,23 @@ loadScripts(document, 'script');</script>
 <dt><a href="com/falkordb/FalkorDB.Builder.html" class="type-name-link" title="class in com.falkordb">FalkorDB.Builder</a> - Class in <a href="com/falkordb/package-summary.html">com.falkordb</a></dt>
 <dd>
 <div class="block">A fluent builder for a <a href="com/falkordb/Driver.html" title="interface in com.falkordb"><code>Driver</code></a>, created via <a href="com/falkordb/FalkorDB.html#builder()"><code>FalkorDB.builder()</code></a>.</div>
+</dd>
+<dt><a href="com/falkordb/exceptions/FalkorDBConnectionException.html" class="type-name-link" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a> - Exception Class in <a href="com/falkordb/exceptions/package-summary.html">com.falkordb.exceptions</a></dt>
+<dd>
+<div class="block">The client could not talk to the server: a connection could not be opened, or it broke or timed out while
+ a command was sent or its reply read.</div>
+</dd>
+<dt><a href="com/falkordb/exceptions/FalkorDBConnectionException.html#%3Cinit%3E(java.lang.String)" class="member-name-link">FalkorDBConnectionException(String)</a> - Constructor for exception class com.falkordb.exceptions.<a href="com/falkordb/exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></dt>
+<dd>
+<div class="block">Creates a FalkorDBConnectionException with the given error message.</div>
+</dd>
+<dt><a href="com/falkordb/exceptions/FalkorDBConnectionException.html#%3Cinit%3E(java.lang.String,java.lang.Throwable)" class="member-name-link">FalkorDBConnectionException(String, Throwable)</a> - Constructor for exception class com.falkordb.exceptions.<a href="com/falkordb/exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></dt>
+<dd>
+<div class="block">Creates a FalkorDBConnectionException with the given error message and cause.</div>
+</dd>
+<dt><a href="com/falkordb/exceptions/FalkorDBConnectionException.html#%3Cinit%3E(java.lang.Throwable)" class="member-name-link">FalkorDBConnectionException(Throwable)</a> - Constructor for exception class com.falkordb.exceptions.<a href="com/falkordb/exceptions/FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></dt>
+<dd>
+<div class="block">Creates a FalkorDBConnectionException with the given cause.</div>
 </dd>
 <dt><a href="com/falkordb/graph_entities/Path.html#firstNode()" class="member-name-link">firstNode()</a> - Method in class com.falkordb.graph_entities.<a href="com/falkordb/graph_entities/Path.html" title="class in com.falkordb.graph_entities">Path</a></dt>
 <dd>

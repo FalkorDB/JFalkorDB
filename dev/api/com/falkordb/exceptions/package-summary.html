@@ -72,7 +72,14 @@ loadScripts(document, 'script');</script>
 <div class="package-signature"><span class="annotations">@NullMarked
 </span>package <span class="element-name">com.falkordb.exceptions</span></div>
 <section class="package-description" id="package-description">
-<div class="block">Exceptions thrown by the FalkorDB client, principally <a href="GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a>.
+<div class="block">Exceptions thrown by the FalkorDB client's <code>Driver</code>, <code>Graph</code>, <code>GraphContextGenerator</code> and
+ <code>GraphContext</code>, and the cause of a failed <code>AsyncGraph</code> future: <a href="GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a> when the server rejects a command, and <a href="FalkorDBConnectionException.html" title="class in com.falkordb.exceptions"><code>FalkorDBConnectionException</code></a> when the client can't talk to the server. A few failures
+ are still reported as Jedis' own exceptions; <a href="../Driver.html" title="interface in com.falkordb"><code>Driver</code></a> lists them.
+
+ <p>Both still extend the Jedis exceptions earlier versions threw in their place (<code>JedisDataException</code>
+ and <code>JedisConnectionException</code>), so existing <code>catch</code> clauses keep matching. A later release
+ roots them in a type of the client's own instead; catching these two types keeps working across that
+ change.
 
  <p>This package is <code>NullMarked</code>: an unannotated type usage is
  non-null, and the nullable ones are explicitly annotated <code>Nullable</code>.</div>
@@ -103,8 +110,13 @@ loadScripts(document, 'script');</script>
 <div class="summary-table two-column-summary">
 <div class="table-header col-first">Class</div>
 <div class="table-header col-last">Description</div>
-<div class="col-first even-row-color class-summary class-summary-tab5"><a href="GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></div>
+<div class="col-first even-row-color class-summary class-summary-tab5"><a href="FalkorDBConnectionException.html" title="class in com.falkordb.exceptions">FalkorDBConnectionException</a></div>
 <div class="col-last even-row-color class-summary class-summary-tab5">
+<div class="block">The client could not talk to the server: a connection could not be opened, or it broke or timed out while
+ a command was sent or its reply read.</div>
+</div>
+<div class="col-first odd-row-color class-summary class-summary-tab5"><a href="GraphException.html" title="class in com.falkordb.exceptions">GraphException</a></div>
+<div class="col-last odd-row-color class-summary class-summary-tab5">
 <div class="block">Graph query evaluation exception.</div>
 </div>
 </div>
