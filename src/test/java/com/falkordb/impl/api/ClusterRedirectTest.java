@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.falkordb.Driver;
@@ -106,6 +107,25 @@ class ClusterRedirectTest {
         assertEveryGraphCommandFollowsAsking(cluster.node(1));
         assertEquals(2, cluster.node(1).count("ASKING"), "one ASKING per graph command");
         assertEquals(1, slotTableReads(), "the slot table was read once, when the driver started");
+    }
+
+    @Test
+    void anAskingThatLosesItsConnectionIsAFalkorDBConnectionException() {
+        // On an ASK attempt, the context sends ASKING itself only before a command after its first: the lookup a
+        // reply needs. When that ASKING loses the connection, the caller still gets the client's own type.
+        AtomicInteger askings = new AtomicInteger();
+        cluster = new FakeCluster(2, (node, command) -> {
+            if (node == 1 && startsWith(command, "ASKING") && askings.incrementAndGet() == 2) {
+                cluster.node(1).dropClients();
+                return "";
+            }
+            return migrating(node, command);
+        });
+        connect();
+
+        assertThrowsExactly(
+                FalkorDBConnectionException.class, () -> driver.graph(GRAPH).query("MATCH (n) RETURN n"));
+        assertEquals(2, askings.get(), "the second ASKING, before the label lookup, is the one that failed");
     }
 
     @Test
