@@ -14,6 +14,7 @@ import com.falkordb.GraphContextGenerator;
 import com.falkordb.GraphPipeline;
 import com.falkordb.GraphTransaction;
 import com.falkordb.ResultSet;
+import com.falkordb.exceptions.FalkorDBConnectionException;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -185,6 +186,7 @@ class QueryTimeoutTest {
                 Duration.ofSeconds(10),
                 () -> assertThrows(JedisConnectionException.class, call::run),
                 "the call ignored the socket timeout");
+        assertEquals(FalkorDBConnectionException.class, e.getClass());
         assertTrue(e.getCause() instanceof SocketTimeoutException, String.valueOf(e.getCause()));
     }
 

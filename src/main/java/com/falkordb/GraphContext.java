@@ -20,6 +20,8 @@ public interface GraphContext extends Graph {
     /**
      * Returns a Redis transactional object, over the connection context, with graph API capabilities
      * @return Redis transactional object, over the connection context, with graph API capabilities
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
+     *     fails
      */
     GraphTransaction multi();
 
@@ -33,12 +35,18 @@ public interface GraphContext extends Graph {
      * Perform watch over given Redis keys (Graphs names)
      * @param keys Redis keys (Graphs names)
      * @return "OK"
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the command
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
+     *     fails
      */
     String watch(String... keys);
 
     /**
      * Removes watch from all keys
      * @return "OK"
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the command
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
+     *     fails
      */
     String unwatch();
 }

@@ -5,6 +5,7 @@ import com.falkordb.GraphContextGenerator;
 import com.falkordb.ResultSet;
 import com.falkordb.impl.graph_cache.GraphCache;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * An implementation of GraphContextGenerator.
@@ -36,7 +37,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendQuery(String preparedQuery) {
-        return driver.routed(graphId, route -> {
+        return routed(route -> {
             try (GraphContext contextedGraph = newContext(route)) {
                 return contextedGraph.query(preparedQuery);
             }
@@ -53,7 +54,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendReadOnlyQuery(String preparedQuery) {
-        return driver.routed(graphId, route -> {
+        return routed(route -> {
             try (GraphContext contextedGraph = newContext(route)) {
                 return contextedGraph.readOnlyQuery(preparedQuery);
             }
@@ -71,7 +72,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendQuery(String preparedQuery, long timeout) {
-        return driver.routed(graphId, route -> {
+        return routed(route -> {
             try (GraphContext contextedGraph = newContext(route)) {
                 return contextedGraph.query(preparedQuery, timeout);
             }
@@ -89,7 +90,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendReadOnlyQuery(String preparedQuery, long timeout) {
-        return driver.routed(graphId, route -> {
+        return routed(route -> {
             try (GraphContext contextedGraph = newContext(route)) {
                 return contextedGraph.readOnlyQuery(preparedQuery, timeout);
             }
@@ -106,7 +107,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected ResultSet sendProfile(String preparedQuery) {
-        return driver.routed(graphId, route -> {
+        return routed(route -> {
             try (GraphContext contextedGraph = newContext(route)) {
                 return contextedGraph.profile(preparedQuery);
             }
@@ -121,7 +122,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     public String copyGraph(String destinationGraphId) {
-        return driver.routed(graphId, route -> {
+        return routed(route -> {
             try (GraphContext contextedGraph = newContext(route)) {
                 return contextedGraph.copyGraph(destinationGraphId);
             }
@@ -135,7 +136,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     public String deleteGraph() {
-        return driver.routed(graphId, route -> {
+        return routed(route -> {
             try (GraphContext contextedGraph = newContext(route)) {
                 // the context shares this graph's cache, and clears it once the delete succeeds
                 return contextedGraph.deleteGraph();
@@ -152,7 +153,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
      */
     @Override
     protected List<String> sendExplain(String preparedQuery) {
-        return driver.routed(graphId, route -> {
+        return routed(route -> {
             try (GraphContext contextedGraph = newContext(route)) {
                 // explain(String) sends the query as it is, so it isn't prepared a second time
                 return contextedGraph.explain(preparedQuery);
@@ -174,7 +175,19 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
         return newContext();
     }
 
-    /** A context on a connection to the node that serves this graph (any node outside a cluster). */
+    /**
+     * Runs one command of this graph through {@link DriverImpl#routed}, and maps what escapes it to the client's own
+     * exceptions (see {@link ExceptionMapping}). Mapping out here also covers what fails outside the context the
+     * command runs in: borrowing the attempt's connection, and resolving the driver's connection source.
+     */
+    private <T> T routed(Function<DriverImpl.Route, T> command) {
+        return ExceptionMapping.mapped(() -> driver.routed(graphId, command));
+    }
+
+    /**
+     * A context on a connection to the node that serves this graph (any node outside a cluster). {@link
+     * DriverImpl#getConnection(String)} maps a failure to borrow it.
+     */
     private GraphContext newContext() {
         return new GraphContextImpl(driver.getConnection(this.graphId), this, this.cache, this.graphId);
     }
