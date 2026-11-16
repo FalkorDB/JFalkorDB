@@ -4,7 +4,9 @@ import static com.falkordb.impl.api.FakeRedisServer.array;
 import static com.falkordb.impl.api.FakeRedisServer.bulk;
 import static com.falkordb.impl.api.FakeRedisServer.integer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -32,6 +34,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +46,7 @@ import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisDataException;
+import redis.clients.jedis.exceptions.JedisException;
 import redis.clients.jedis.util.SafeEncoder;
 
 /**
@@ -823,6 +827,217 @@ class QueuedRepliesTest {
         assertEquals(Arrays.asList(plain, withParams, plain, withParams), sent(server, "GRAPH.PROFILE"));
     }
 
+    // --- a reply that fails to decode -------------------------------------------------------------
+
+    @Test
+    void aPipelineWhoseMiddleReplyCantBorrowALookupConnectionReturnsEveryReply() {
+        // The context holds its pool's only connection, and another pipeline on it awaits a reply, so the lookup
+        // the middle reply needs has to borrow a connection, and the pool has none: a JedisException, which is not
+        // a JedisDataException. It must become that reply's element, not end syncAndReturnAll() part way with the
+        // later replies read off the connection but still queued.
+        JedisPoolConfig oneConnection = new JedisPoolConfig();
+        oneConnection.setMaxTotal(1);
+        oneConnection.setMaxWait(Duration.ofMillis(200));
+        try (JedisPool single = new JedisPool(oneConnection, "127.0.0.1", server.port());
+                DriverImpl singleDriver = new DriverImpl(single);
+                GraphContext own = singleDriver.graph("g").getContext()) {
+            GraphPipeline pipeline = own.pipelined();
+            pipeline.query("RETURN 1");
+            Response<ResultSet> cold = pipeline.query(QUERY); // label 0 isn't cached yet
+            pipeline.query("RETURN 1");
+            GraphPipeline other = own.pipelined();
+            Response<String> queued = other.set("k", "v");
+
+            List<Object> results = assertTimeoutPreemptively(Duration.ofSeconds(10), pipeline::syncAndReturnAll);
+
+            assertEquals(3, results.size(), String.valueOf(results));
+            assertInstanceOf(ResultSet.class, results.get(0));
+            JedisException failure = assertInstanceOf(JedisException.class, results.get(1));
+            assertEquals("Could not get a resource from the pool", failure.getMessage());
+            assertInstanceOf(ResultSet.class, results.get(2));
+            assertSame(failure, assertThrows(JedisException.class, cold::get), "the element is what get() throws");
+
+            assertTimeoutPreemptively(Duration.ofSeconds(10), pipeline::sync, "a reply was left queued");
+            other.sync();
+            assertEquals("OK", queued.get(), "the connection is still in step");
+        }
+    }
+
+    @Test
+    void aTransactionWhoseMiddleReplyFailsALookupReturnsEveryReply() {
+        JedisConnectionException lost = new JedisConnectionException("lookup connection lost");
+        try (Jedis own = pool.getResource()) {
+            GraphTransactionImpl transaction =
+                    new GraphTransactionImpl(own.getConnection(), new LabelSource(lost), cache, "g");
+            transaction.multi();
+            transaction.query("RETURN 1");
+            Response<ResultSet> cold = transaction.query(QUERY);
+            transaction.query("RETURN 1");
+
+            List<Object> results = transaction.exec();
+
+            assertEquals(3, results.size(), String.valueOf(results));
+            assertInstanceOf(ResultSet.class, results.get(0));
+            assertSame(lost, results.get(1));
+            assertInstanceOf(ResultSet.class, results.get(2));
+            assertSame(lost, assertThrows(JedisConnectionException.class, cold::get));
+            // the next reply read on the connection is the next command's
+            Long one = new GraphContextImpl(own, cache, "g")
+                    .query("RETURN 1")
+                    .iterator()
+                    .next()
+                    .getValue(0);
+            assertEquals(1L, one.longValue(), "the connection is still in step");
+        }
+    }
+
+    @Test
+    void aPipelineWhoseMiddleReplyFailsALookupStaysInStep() {
+        JedisConnectionException lost = new JedisConnectionException("lookup connection lost");
+        try (Jedis own = pool.getResource()) {
+            GraphPipelineImpl pipeline = new GraphPipelineImpl(own.getConnection(), new LabelSource(lost), cache, "g");
+            pipeline.query("RETURN 1");
+            pipeline.query(QUERY);
+            pipeline.query("RETURN 1");
+
+            List<Object> results = assertTimeoutPreemptively(Duration.ofSeconds(10), pipeline::syncAndReturnAll);
+
+            assertEquals(3, results.size(), String.valueOf(results));
+            assertSame(lost, results.get(1));
+            assertTimeoutPreemptively(Duration.ofSeconds(10), pipeline::sync, "a reply was left queued");
+            Response<String> next = pipeline.set("k", "v");
+            pipeline.sync();
+            assertEquals("OK", next.get());
+        }
+    }
+
+    @Test
+    void aReplyWhoseLookupFailsFailsEveryReadWithTheSameException() {
+        JedisConnectionException lost = new JedisConnectionException("lookup connection lost");
+        try (Jedis own = pool.getResource()) {
+            GraphPipelineImpl pipeline = new GraphPipelineImpl(own.getConnection(), new LabelSource(lost), cache, "g");
+            List<Response<ResultSet>> replies = new ArrayList<>(queueEveryQuery(pipeline));
+            replies.add(pipeline.callProcedure("db.labels"));
+            pipeline.sync();
+
+            for (Response<ResultSet> reply : replies) {
+                assertSame(lost, assertThrows(JedisConnectionException.class, reply::get));
+                assertSame(lost, assertThrows(JedisConnectionException.class, reply::get), "forgotten after one read");
+            }
+        }
+    }
+
+    @Test
+    void aGraphExceptionWhileDecodingIsThrownByEveryReadAfterSync() {
+        Response<ResultSet> between = queueAReplyBetweenTwoDeletes(context.pipelined(), GraphPipeline::sync);
+
+        GraphException first = assertThrows(GraphException.class, between::get);
+        assertTrue(first.getMessage().contains("label id 0"), first.getMessage());
+        assertSame(first, assertThrows(GraphException.class, between::get), "forgotten after one read");
+    }
+
+    @Test
+    void aGraphExceptionWhileDecodingIsThrownByEveryReadAfterSyncAndReturnAll() {
+        GraphPipeline pipeline = context.pipelined();
+        List<List<Object>> results = new ArrayList<>();
+        Response<ResultSet> between = queueAReplyBetweenTwoDeletes(pipeline, p -> results.add(p.syncAndReturnAll()));
+
+        GraphException element =
+                assertInstanceOf(GraphException.class, results.get(0).get(2));
+        assertTrue(element.getMessage().contains("label id 0"), element.getMessage());
+        assertSame(element, assertThrows(GraphException.class, between::get), "syncAndReturnAll() read it first");
+        assertSame(element, assertThrows(GraphException.class, between::get));
+    }
+
+    @Test
+    void aGraphExceptionWhileDecodingIsThrownByEveryReadAfterExec() {
+        warmCache("Person");
+        handler.labels = Collections.singletonList("Animal");
+        GraphTransaction transaction = context.multi();
+        transaction.query(QUERY);
+        transaction.deleteGraph();
+        Response<ResultSet> between = transaction.query("CREATE (n:B) RETURN n");
+        transaction.deleteGraph();
+        List<Object> results = transaction.exec();
+
+        GraphException element = assertInstanceOf(GraphException.class, results.get(2));
+        assertSame(element, assertThrows(GraphException.class, between::get), "exec() read it first");
+        assertSame(element, assertThrows(GraphException.class, between::get));
+    }
+
+    @Test
+    void aProfileThatFailsToDecodeFailsEveryRead() {
+        handler.profileError = true;
+        GraphPipeline pipeline = context.pipelined();
+        Response<ResultSet> piped = pipeline.profile(QUERY);
+        List<Object> results = pipeline.syncAndReturnAll();
+        GraphTransaction transaction = context.multi();
+        Response<ResultSet> transacted = transaction.profile(QUERY, PARAMS);
+        List<Object> executed = transaction.exec();
+
+        assertSame(results.get(0), assertThrows(GraphException.class, piped::get));
+        assertSame(results.get(0), assertThrows(GraphException.class, piped::get));
+        assertSame(executed.get(0), assertThrows(GraphException.class, transacted::get));
+        assertSame(executed.get(0), assertThrows(GraphException.class, transacted::get));
+    }
+
+    @Test
+    void aDeleteWhoseReplyCantBeDecodedRanAndFailsEveryRead() {
+        // The server answered the delete without an error, so it ran, even though its reply isn't the bulk
+        // string the client decodes.
+        handler.deleteReply = integer(1);
+        GraphPipeline pipeline = context.pipelined();
+        Response<String> delete = pipeline.deleteGraph();
+        Response<String> next = pipeline.set("k", "v");
+
+        assertTimeoutPreemptively(Duration.ofSeconds(10), pipeline::sync);
+
+        assertEquals(1, cache.clears, "the delete ran");
+        ClassCastException failure = assertThrows(ClassCastException.class, delete::get);
+        assertSame(failure, assertThrows(ClassCastException.class, delete::get));
+        assertEquals("OK", next.get());
+
+        // After exec() a transaction runs a delete at once: its failure is kept in the response too.
+        GraphTransaction executed = context.multi();
+        executed.exec();
+        Response<String> immediate = executed.deleteGraph();
+        assertEquals(2, cache.clears, "the delete ran");
+        ClassCastException immediateFailure = assertThrows(ClassCastException.class, immediate::get);
+        assertSame(immediateFailure, assertThrows(ClassCastException.class, immediate::get));
+    }
+
+    @Test
+    void aCopyWhoseReplyCantBeDecodedBecomesItsElement() {
+        handler.copyReply = integer(1);
+        GraphPipeline pipeline = context.pipelined();
+        Response<String> copy = pipeline.copyGraph("g2");
+        pipeline.set("k", "v");
+
+        List<Object> results = assertTimeoutPreemptively(Duration.ofSeconds(10), pipeline::syncAndReturnAll);
+
+        ClassCastException failure = assertInstanceOf(ClassCastException.class, results.get(0));
+        assertEquals("OK", results.get(1));
+        assertSame(failure, assertThrows(ClassCastException.class, copy::get));
+    }
+
+    /**
+     * Queues a reply between two deletes that can't be decoded (see {@link
+     * #aReplyBetweenTwoDeletesCanOnlyUseWhatWasCached}), then reads the pipeline with {@code read}.
+     *
+     * @return the reply, the third command queued
+     */
+    private Response<ResultSet> queueAReplyBetweenTwoDeletes(GraphPipeline pipeline, Consumer<GraphPipeline> read) {
+        warmCache("Person");
+        handler.labels = Collections.singletonList("Animal");
+        pipeline.query(QUERY);
+        pipeline.deleteGraph();
+        Response<ResultSet> between = pipeline.query("CREATE (n:B) RETURN n");
+        pipeline.deleteGraph();
+        pipeline.query("CREATE (n:Animal) RETURN n");
+        read.accept(pipeline);
+        return between;
+    }
+
     // --- helpers ----------------------------------------------------------------------------------
 
     private static <T> List<T> twice(List<T> items) {
@@ -924,6 +1139,10 @@ class QueuedRepliesTest {
         volatile boolean refuseExec;
         /** Refuse {@code MULTI}, as an ACL that denies it does: the commands after it then run as they are sent. */
         volatile boolean refuseMulti;
+        /** Answer a profile with a plan that ends in an error, which the client can't decode. */
+        volatile boolean profileError;
+        /** The reply to {@code GRAPH.COPY}. */
+        volatile String copyReply = bulk("Graph copied");
 
         private final ThreadLocal<List<String>> transaction = new ThreadLocal<>();
 
@@ -992,7 +1211,13 @@ class QueuedRepliesTest {
                 return array(header, array(array(node)), array(bulk("Cached execution: 0")));
             }
             if (FakeRedisServer.startsWith(command, "GRAPH.PROFILE")) {
+                if (profileError) {
+                    return array(bulk(PLAN_ROOT), FakeRedisServer.error("ERR the plan failed"));
+                }
                 return array(bulk(PLAN_ROOT), bulk("    Project | Records produced: 1"));
+            }
+            if (FakeRedisServer.startsWith(command, "GRAPH.COPY")) {
+                return copyReply;
             }
             if (FakeRedisServer.startsWith(command, "GRAPH.DELETE")) {
                 if (labelsAfterDelete != null) {
@@ -1023,13 +1248,26 @@ class QueuedRepliesTest {
     /** A graph that answers {@code CALL db.labels()} without a server, to fill the cache. */
     private static final class LabelSource extends AbstractGraph {
         private final List<String> labels;
+        /** What a lookup throws instead of answering, as when its connection fails; null if it answers. */
+        private final @Nullable RuntimeException failure;
 
         LabelSource(String... labels) {
             this.labels = Arrays.asList(labels);
+            this.failure = null;
+        }
+
+        /** A graph whose every lookup throws {@code failure}. */
+        LabelSource(RuntimeException failure) {
+            this.labels = Collections.emptyList();
+            this.failure = failure;
         }
 
         @Override
         protected ResultSet sendReadOnlyQuery(String preparedQuery) {
+            RuntimeException thrown = failure;
+            if (thrown != null) {
+                throw thrown;
+            }
             assertEquals("CALL db.labels()", preparedQuery);
             List<List<Object>> rows = new ArrayList<>();
             for (String label : labels) {
