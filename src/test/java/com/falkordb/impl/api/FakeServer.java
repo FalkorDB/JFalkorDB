@@ -29,7 +29,7 @@ final class FakeServer implements AutoCloseable {
     private final ServerSocket server;
     private final Mode mode;
     private final List<Socket> open = new CopyOnWriteArrayList<>();
-    private final StringBuffer received = new StringBuffer();
+    private final StringBuilder received = new StringBuilder();
     private final Thread acceptor;
 
     FakeServer(Mode mode) throws IOException {
@@ -74,7 +74,9 @@ final class FakeServer implements AutoCloseable {
 
     /** @return everything received so far, in {@link Mode#ANSWER} mode */
     String received() {
-        return received.toString();
+        synchronized (received) {
+            return received.toString();
+        }
     }
 
     private void answer(Socket socket) {
@@ -84,7 +86,9 @@ final class FakeServer implements AutoCloseable {
             int read;
             while ((read = in.read(buffer)) >= 0) {
                 String chunk = new String(buffer, 0, read, StandardCharsets.US_ASCII);
-                received.append(chunk);
+                synchronized (received) {
+                    received.append(chunk);
+                }
                 // Jedis can send several commands in one write; each is a RESP array starting a line with '*'.
                 String reply = chunk.contains("PING") ? "+PONG\r\n" : "+OK\r\n";
                 StringBuilder replies = new StringBuilder();

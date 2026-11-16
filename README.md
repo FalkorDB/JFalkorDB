@@ -282,8 +282,8 @@ try (Driver driver = FalkorDB.builder()
 - **`udfList`, `configGet` and `configGetAll`** are answered by any one primary. If it refuses the connection or drops it,
   the driver relearns the layout once and asks another primary. A primary that hangs without answering
   still holds the call up, unless a socket timeout is set.
-- **`getConnection()`** returns a connection to an arbitrary primary. Use it for commands that do not
-  concern a particular graph.
+- **`getConnection()`** (deprecated, to be removed in 0.18.0) returns a connection to an arbitrary
+  primary. Run commands that do not concern a particular graph with a Redis client of your own.
 - **Copying a graph** needs both names in the same hash slot. A hash tag does that:
   `driver.graph("{social}-a").copyGraph("{social}-b")`. Otherwise the server answers `CROSSSLOT`.
 - **Resharding and failover** are followed for single graph calls (`query`, `readOnlyQuery`,
@@ -300,7 +300,8 @@ try (Driver driver = FalkorDB.builder()
   up on the node) is reported instead, not repeated; a read-only query is repeated. If a node cannot be
   reached the layout is relearned too, but the command is reported as failed, because it may have run
   before the connection dropped.
-- **Pool sizing** (`poolMaxTotal`, `poolMaxIdle`, `poolMaxWait`) applies to each node separately.
+- **Pool settings** (`poolMaxTotal`, `poolMaxIdle`, `poolMinIdle`, `poolMaxWait` and the connection
+  checks) apply to each node separately.
 - **Credentials and TLS** are the same for every node. A database index is not supported, since a
   cluster has a single database.
 - Replicas are not read from: reads and writes both go to the primaries.
@@ -351,118 +352,82 @@ of the procedures you allow.
 
 ## Configuring Connection Pool
 
-You can customize the connection pool to optimize performance and resource usage. JFalkorDB uses [Jedis](https://github.com/redis/jedis) internally, which provides comprehensive pool configuration options.
+`FalkorDB.builder()` configures the connection pool, the connection checks, timeouts, credentials, the
+database and TLS. Building a driver opens no connection: the pool is created when the driver is first used.
 
 **Pool Configuration Guidelines:**
-- `maxTotal`: Maximum number of connections (size according to your application's concurrency needs)
-- `maxIdle`: Maximum idle connections kept in the pool (recommended: `maxTotal / 4` to balance resource usage and responsiveness; increase for applications with high traffic variability)
-- `minIdle`: Minimum idle connections to keep ready (recommended: `maxIdle / 4` for steady performance)
-- `maxWait`: Maximum time to wait for a connection when pool is exhausted
+- `poolMaxTotal`: Maximum number of connections (size according to your application's concurrency needs; default 8)
+- `poolMaxIdle`: Maximum idle connections kept in the pool (recommended: `poolMaxTotal / 4` to balance resource usage and responsiveness; increase for applications with high traffic variability; default 8)
+- `poolMinIdle`: Idle connections kept open and ready (recommended: `poolMaxIdle / 4` for steady performance; default 0)
+- `poolMaxWait`: Maximum time to wait for a connection when the pool is exhausted (default: wait indefinitely)
+
+With a Redis Cluster, these apply to each node's pool separately.
 
 ### Basic Connection Pool Configuration
 
 ```java
 import com.falkordb.Driver;
-import com.falkordb.impl.api.DriverImpl;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
+import com.falkordb.FalkorDB;
 import java.time.Duration;
 
-// Create a custom pool configuration
-JedisPoolConfig poolConfig = new JedisPoolConfig();
-
-// Maximum number of connections in the pool
-poolConfig.setMaxTotal(128);
-
-// Maximum number of idle connections in the pool
-// Recommended: Set to maxTotal / 4 for optimal resource usage
-poolConfig.setMaxIdle(32);  // 128 / 4 = 32
-
-// Minimum number of idle connections in the pool
-poolConfig.setMinIdle(8);
-
-// Maximum time to wait for a connection (ms)
-poolConfig.setMaxWait(Duration.ofSeconds(30));
-
-// Test connections before borrowing from pool
-poolConfig.setTestOnBorrow(true);
-
-// Test connections when returning to pool
-poolConfig.setTestOnReturn(true);
-
-// Test idle connections in the pool
-poolConfig.setTestWhileIdle(true);
-
-// Create a JedisPool with custom configuration
-JedisPool jedisPool = new JedisPool(poolConfig, "localhost", 6379);
-
-// Create the driver with the custom pool; closing the driver closes the pool
-try (Driver driver = new DriverImpl(jedisPool)) {
+try (Driver driver = FalkorDB.builder()
+        .host("localhost")
+        .port(6379)
+        .poolMaxTotal(128)                   // maximum number of connections
+        .poolMaxIdle(32)                     // 128 / 4 = 32 idle connections kept
+        .poolMinIdle(8)                      // idle connections kept open and ready
+        .poolMaxWait(Duration.ofSeconds(30)) // fail if no connection frees up within 30 s
+        .poolTestWhileIdle(true)             // check idle connections in the background
+        .build()) {
     // Use the driver
     // ... your code here ...
 }
 ```
 
+### Checking connections
+
+A connection can be closed by the server, for example by its idle `timeout`, or by a load balancer or a
+firewall while it sits in the pool. Two checks, both off by default, send a `PING` and replace a
+connection that doesn't answer:
+
+- `poolTestWhileIdle(true)` checks every idle connection in the background, every 30 seconds.
+- `poolTestOnBorrow(true)` checks a connection each time one is borrowed, which is once per graph call.
+  It catches the connections the background check hasn't reached yet, at the cost of one extra
+  round-trip per call.
+
+A check's `PING` waits at most the socket timeout, or 2 seconds when there is none. `poolMinIdle`
+connections are opened by the same background task, so the pool reaches that size within 30 seconds of the
+driver's first use. Idle connections are never closed merely for having been idle; `poolMaxIdle` bounds how
+many are kept.
+
 ### Connection Pool Configuration with Authentication
 
 ```java
-import com.falkordb.Driver;
-import com.falkordb.impl.api.DriverImpl;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
-import redis.clients.jedis.JedisClientConfig;
-import redis.clients.jedis.DefaultJedisClientConfig;
-import redis.clients.jedis.HostAndPort;
-
-JedisPoolConfig poolConfig = new JedisPoolConfig();
-poolConfig.setMaxTotal(64);
-poolConfig.setMaxIdle(16);  // 64 / 4 = 16
-poolConfig.setMinIdle(4);
-
-// Configure authentication
-JedisClientConfig clientConfig = DefaultJedisClientConfig.builder()
-    .user("default")        // username
-    .password("your-password") // password
+Driver driver = FalkorDB.builder()
+    .host("localhost")
+    .port(6379)
+    .credentials("default", "your-password") // or .credentials("your-password") for password-only auth
+    .poolMaxTotal(64)
+    .poolMaxIdle(16)  // 64 / 4 = 16
+    .poolMinIdle(4)
+    .database(0)      // the database index, as in a redis://host:port/0 URI
     .build();
-
-// Create pool with authentication and custom pool config
-HostAndPort hostAndPort = new HostAndPort("localhost", 6379);
-JedisPool jedisPool = new JedisPool(poolConfig, hostAndPort, clientConfig);
-
-Driver driver = new DriverImpl(jedisPool);
 ```
 
 ### Advanced Pool Configuration with Timeouts
 
 ```java
-import com.falkordb.Driver;
-import com.falkordb.impl.api.DriverImpl;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
-import redis.clients.jedis.JedisClientConfig;
-import redis.clients.jedis.DefaultJedisClientConfig;
-import redis.clients.jedis.HostAndPort;
-import java.time.Duration;
-
-JedisPoolConfig poolConfig = new JedisPoolConfig();
-poolConfig.setMaxTotal(128);
-poolConfig.setMaxIdle(32);  // 128 / 4 = 32
-poolConfig.setMinIdle(8);
-poolConfig.setMaxWait(Duration.ofSeconds(30));
-
-// Configure connection and socket timeouts
-JedisClientConfig clientConfig = DefaultJedisClientConfig.builder()
-    .connectionTimeoutMillis(2000)  // Connection timeout: time to establish connection
-    .socketTimeoutMillis(5000)      // Socket timeout: time to wait for response
-    .user("default")                // Username for authentication
-    .password("your-password")      // Password for authentication
+Driver driver = FalkorDB.builder()
+    .host("localhost")
+    .port(6379)
+    .credentials("default", "your-password")
+    .poolMaxTotal(128)
+    .poolMaxIdle(32)  // 128 / 4 = 32
+    .poolMinIdle(8)
+    .poolMaxWait(Duration.ofSeconds(30))
+    .connectionTimeout(Duration.ofSeconds(2)) // time to establish a connection
+    .socketTimeout(Duration.ofSeconds(5))     // time to wait for each read of a reply
     .build();
-
-// Create pool with advanced configuration
-HostAndPort hostAndPort = new HostAndPort("localhost", 6379);
-JedisPool jedisPool = new JedisPool(poolConfig, hostAndPort, clientConfig);
-
-Driver driver = new DriverImpl(jedisPool);
 ```
 
 The socket timeout limits how long each read of a reply waits for data, and that includes the reply to
@@ -473,44 +438,109 @@ no read deadline. A socket timeout doesn't stop the query either: the server may
 end, so after one you can't tell whether a write was applied, and retrying a query that isn't
 idempotent can apply it twice.
 
-A pool built without a socket timeout, like the first two examples above, gets Jedis' default of
-2000 ms. A driver built with `FalkorDB.builder()` sets no read deadline unless you set `socketTimeout`,
-with two exceptions. The one-shot probes that detect a Sentinel or a Redis Cluster wait at most
-2000 ms when `socketTimeout` isn't set. The connections to the Sentinels themselves, which look up the
+A driver built with `FalkorDB.builder()` sets no read deadline unless you set `socketTimeout`, with
+two exceptions. The one-shot probes that detect a Sentinel or a Redis Cluster wait at most 2000 ms
+when `socketTimeout` isn't set. The connections to the Sentinels themselves, which look up the
 master's address and listen for failovers, never have a read deadline.
 
 ### Connection Pool Configuration with SSL/TLS
 
+`ssl(true)` connects over TLS with the JVM's default trust store, and verifies the server's hostname:
+
 ```java
-import com.falkordb.Driver;
-import com.falkordb.impl.api.DriverImpl;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
-import redis.clients.jedis.JedisClientConfig;
-import redis.clients.jedis.DefaultJedisClientConfig;
-import redis.clients.jedis.HostAndPort;
-import javax.net.ssl.SSLSocketFactory;
-
-JedisPoolConfig poolConfig = new JedisPoolConfig();
-poolConfig.setMaxTotal(64);
-poolConfig.setMaxIdle(16);  // 64 / 4 = 16
-poolConfig.setMinIdle(4);
-
-// Configure SSL connection
-JedisClientConfig clientConfig = DefaultJedisClientConfig.builder()
+Driver driver = FalkorDB.builder()
+    .host("your-server.com")
+    .port(6380)
     .ssl(true)
-    .sslSocketFactory((SSLSocketFactory) SSLSocketFactory.getDefault())
-    .user("default")
-    .password("your-password")
+    .credentials("default", "your-password")
     .build();
-
-HostAndPort hostAndPort = new HostAndPort("your-server.com", 6380);
-JedisPool jedisPool = new JedisPool(poolConfig, hostAndPort, clientConfig);
-
-Driver driver = new DriverImpl(jedisPool);
 ```
 
-For more information about Jedis pool configuration options, see the [Jedis documentation](https://github.com/redis/jedis).
+For your own trust or key material (a private CA, or mutual TLS), pass an `SSLContext`. Setting it
+turns TLS on:
+
+```java
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.KeyStore;
+
+KeyStore trustStore = KeyStore.getInstance("PKCS12");
+try (InputStream in = Files.newInputStream(Paths.get("truststore.p12"))) {
+    trustStore.load(in, "changeit".toCharArray());
+}
+TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+tmf.init(trustStore);
+SSLContext context = SSLContext.getInstance("TLS");
+context.init(null, tmf.getTrustManagers(), null); // pass KeyManagers as the first argument for mutual TLS
+
+Driver driver = FalkorDB.builder()
+    .host("your-server.com")
+    .port(6380)
+    .sslContext(context)
+    .credentials("default", "your-password")
+    .poolMaxTotal(64)
+    .poolMaxIdle(16)
+    .poolMinIdle(4)
+    .build();
+```
+
+`SSLContext.getDefault()` is the JVM default, which also reads the `javax.net.ssl.keyStore` system
+properties; `ssl(true)` alone presents no client certificate.
+
+`sslParameters(SSLParameters)` restricts protocols and cipher suites or sets SNI names, and
+`sslHostnameVerifier(HostnameVerifier)` adds a check of your own after each handshake. Parameters are used
+as given, and `new SSLParameters()` would switch hostname verification off, so the builder rejects
+parameters without an endpoint identification algorithm: set `"HTTPS"` to verify the hostname or `""` to
+skip it deliberately.
+
+```java
+SSLParameters parameters = new SSLParameters();
+parameters.setProtocols(new String[] {"TLSv1.3"});
+parameters.setEndpointIdentificationAlgorithm("HTTPS");
+
+Driver driver = FalkorDB.builder().host("your-server.com").port(6380).sslParameters(parameters).build();
+```
+
+The TLS settings are used for every connection the driver opens: to the server, to each Redis Cluster
+node, to the Sentinels and to the master they name. Cluster nodes and Sentinel masters are usually
+reported by IP address, so for hostname verification to pass, their certificates need IP subject
+alternative names.
+
+### Migrating from a hand-built Jedis pool
+
+`Driver.getConnection()` and the `DriverImpl(Pool)` constructor are deprecated since 0.17.0 and will be
+removed in 0.18.0, because they expose the Jedis types the driver is built on. Build the driver with
+`FalkorDB.builder()` instead:
+
+| Jedis setting | `FalkorDB.builder()` |
+| --- | --- |
+| `JedisPoolConfig.setMaxTotal(n)` | `poolMaxTotal(n)` |
+| `JedisPoolConfig.setMaxIdle(n)` | `poolMaxIdle(n)` |
+| `JedisPoolConfig.setMinIdle(n)` | `poolMinIdle(n)` |
+| `JedisPoolConfig.setMaxWait(d)` | `poolMaxWait(d)` |
+| `JedisPoolConfig.setTestOnBorrow(true)` | `poolTestOnBorrow(true)` |
+| `JedisPoolConfig.setTestWhileIdle(true)` | `poolTestWhileIdle(true)` |
+| `JedisPoolConfig.setTestOnReturn(true)` | none: a returned connection is checked on its next borrow or idle check |
+| `new JedisPool(config, host, port)` | `host(host)`, `port(port)` |
+| `DefaultJedisClientConfig.user(u).password(p)` | `credentials(u, p)` |
+| `DefaultJedisClientConfig.database(n)` | `database(n)` |
+| `DefaultJedisClientConfig.connectionTimeoutMillis(ms)` | `connectionTimeout(Duration.ofMillis(ms))` |
+| `DefaultJedisClientConfig.socketTimeoutMillis(ms)` | `socketTimeout(Duration.ofMillis(ms))` |
+| `DefaultJedisClientConfig.ssl(true)` | `ssl(true)` |
+| `DefaultJedisClientConfig.sslSocketFactory(context.getSocketFactory())` | `sslContext(context)` |
+| `sslSocketFactory(SSLSocketFactory.getDefault())` | `sslContext(SSLContext.getDefault())`, which keeps the `javax.net.ssl.keyStore` client certificate |
+| `DefaultJedisClientConfig.sslParameters(p)` | `sslParameters(p)` |
+| `DefaultJedisClientConfig.hostnameVerifier(v)` | `sslHostnameVerifier(v)` |
+| `new DriverImpl(pool)` to share one pool | share the `Driver`: it is thread-safe |
+
+`JedisPoolConfig` also closed connections that had been idle for 60 seconds; the builder keeps them until
+`poolMaxIdle` trims them, and `poolTestWhileIdle` replaces the ones that stopped working.
+
+`getConnection()` was for running Redis commands of your own. Run graph commands through
+`driver.graph(...)`, and other Redis commands with a Redis client of your own.
 
 ## Concurrency with Virtual Threads (JDK 21+)
 

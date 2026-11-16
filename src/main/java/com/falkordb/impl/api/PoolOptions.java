@@ -95,32 +95,56 @@ public final class PoolOptions {
         return new PoolOptions(maxTotal, maxIdle, minIdle, maxWait, testOnBorrow, testWhileIdle);
     }
 
-    /** @return the maximum number of connections */
+    /**
+     * Returns the maximum number of connections.
+     *
+     * @return the maximum number of connections
+     */
     public int maxTotal() {
         return maxTotal;
     }
 
-    /** @return the maximum number of idle connections kept */
+    /**
+     * Returns the maximum number of idle connections kept.
+     *
+     * @return the maximum number of idle connections kept
+     */
     public int maxIdle() {
         return maxIdle;
     }
 
-    /** @return the number of idle connections kept open */
+    /**
+     * Returns the number of idle connections kept open.
+     *
+     * @return the number of idle connections kept open
+     */
     public int minIdle() {
         return minIdle;
     }
 
-    /** @return the longest wait for a connection when the pool is exhausted */
+    /**
+     * Returns the longest wait for a connection when the pool is exhausted.
+     *
+     * @return the longest wait for a connection when the pool is exhausted
+     */
     public Duration maxWait() {
         return maxWait;
     }
 
-    /** @return whether a connection is checked before it is handed out */
+    /**
+     * Returns whether a connection is checked before it is handed out.
+     *
+     * @return whether a connection is checked before it is handed out
+     */
     public boolean testOnBorrow() {
         return testOnBorrow;
     }
 
-    /** @return whether idle connections are checked in the background */
+    /**
+     * Returns whether idle connections are checked in the background.
+     *
+     * @return whether idle connections are checked in the background
+     */
     public boolean testWhileIdle() {
         return testWhileIdle;
     }

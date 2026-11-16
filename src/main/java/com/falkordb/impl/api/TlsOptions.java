@@ -66,17 +66,29 @@ public final class TlsOptions {
         return new TlsOptions(context, parameters, hostnameVerifier);
     }
 
-    /** @return the context supplying the socket factory, or {@code null} for the JVM default */
+    /**
+     * Returns the context supplying the socket factory, or {@code null} for the JVM default.
+     *
+     * @return the context supplying the socket factory, or {@code null} for the JVM default
+     */
     public @Nullable SSLContext context() {
         return context;
     }
 
-    /** @return the parameters to apply to each socket, or {@code null} for the defaults */
+    /**
+     * Returns the parameters to apply to each socket, or {@code null} for the defaults.
+     *
+     * @return the parameters to apply to each socket, or {@code null} for the defaults
+     */
     public @Nullable SSLParameters parameters() {
         return parameters;
     }
 
-    /** @return the extra hostname check, or {@code null} for none */
+    /**
+     * Returns the extra hostname check, or {@code null} for none.
+     *
+     * @return the extra hostname check, or {@code null} for none
+     */
     public @Nullable HostnameVerifier hostnameVerifier() {
         return hostnameVerifier;
     }

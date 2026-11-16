@@ -560,8 +560,8 @@ public final class FalkorDB {
          *   <li>{@link Driver#listGraphs()} returns the graphs of every primary, and the server-wide
          *       commands ({@code udfLoad}, {@code udfDelete}, {@code udfFlush}, {@code configSet}) run
          *       on every primary;
-         *   <li>pool sizing applies to each node separately, and the connection settings are used for
-         *       every node, so all nodes must accept the same credentials and TLS setting;
+         *   <li>pool sizing and connection checks apply to each node separately, and the connection settings
+         *       are used for every node, so all nodes must accept the same credentials and TLS settings;
          *   <li>a cluster has a single database, so a database index, in a URI or set with {@link
          *       #database(int)}, is not supported;
          *   <li>when the cluster reshards or fails over, the driver follows the redirect and retries
