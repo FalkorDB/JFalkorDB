@@ -164,6 +164,11 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     /**
      * Sends {@code ASKING} before a graph command once {@link #askBeforeEachCommand()} was called, except before the
      * first command: the route sent its {@code ASKING} when it lent the connection.
+     *
+     * <p>It is called outside the commands' {@code try} on purpose. Only {@link GraphImpl} turns asking on, for a
+     * context it makes inside {@link DriverImpl#routed} and never hands out, and it maps what escapes that call (see
+     * {@link ExceptionMapping}), so a connection failure here still reaches the caller mapped. Inside the {@code try},
+     * an error reply to {@code ASKING} would be wrapped like a graph command's instead of mapped.
      */
     private void askIfImporting() {
         if (!asking) {
