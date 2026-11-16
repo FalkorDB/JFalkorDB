@@ -157,7 +157,7 @@ public class GraphExample {
 `sendCommand`, on the context's connection. Each command returns a `Reply<T>`, read with `get()` once
 `sync()` or `exec()` has read it. Their API names no Jedis type, so it doesn't change when Jedis does.
 
-A transaction is Redis' (or Valkey's) `MULTI`/`EXEC` applied to graph commands; FalkorDB itself has no
+A transaction is the `MULTI`/`EXEC` of Redis (or Valkey) applied to graph commands; FalkorDB itself has no
 transactions, so it is not a database transaction:
 
 - The queued commands run back to back at `EXEC`, with no other client's command in between.
