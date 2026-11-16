@@ -174,9 +174,9 @@ The differences to look out for:
   not the `Map` Jedis' `hgetAll` built.
 - An error reply is a `GraphException`, where it was a `JedisDataException` (which `GraphException` still extends).
 - `sendCommand` refuses what would break the batch, the connection or the client's schema cache, such as
-  `MULTI`, `SELECT`, `CLIENT`, blocking commands, `GRAPH.*` commands and `DEL` of the graph's key. See its Javadoc.
+  `MULTI`, `SELECT`, `CLIENT`, blocking commands, `GRAPH.*` commands and `DEL` of the graph's key. The full list is in the documentation of `sendCommand`.
 - While a pipeline awaits replies, or a transaction is open, the context runs no other command, and no other
-  pipeline or transaction starts on it: each throws `IllegalStateException` instead of reading another's reply.
+  pipeline or transaction starts on it: each throws `IllegalStateException` instead of reading a reply that belongs to another batch.
 - A transaction is used once: nothing can be queued after `exec()` or `discard()`. A pipeline can't be used after
   `close()`, or after a `sync()` that failed.
 
