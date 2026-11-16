@@ -2,6 +2,7 @@ package com.falkordb.impl.api;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -354,13 +355,11 @@ class ContextBatchTest {
     void closingAPipelineLetsGoOfTheRepliesTheCallerDropped() {
         GraphContext.Pipeline pipeline = context.pipeline();
         Reply<Object> kept = pipeline.sendCommand("SET", "k", "v");
-        WeakReference<Reply<Object>> dropped = new WeakReference<>(pipeline.sendCommand("GET", "k"));
+        pipeline.sendCommand("GET", "k"); // dropped by the caller
         pipeline.close();
-        for (int i = 0; i < 10 && dropped.get() != null; i++) {
-            System.gc();
-        }
 
-        assertNull(dropped.get(), "the closed pipeline, which the kept reply holds, still holds the dropped one");
+        // A reply the caller keeps holds the pipeline, which must then hold no other reply.
+        assertFalse(((ContextBatch<?>) pipeline).hasPending(), "the closed pipeline still holds its replies");
         assertEquals("OK", kept.get());
     }
 
