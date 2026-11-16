@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.exceptions.JedisRedirectionException;
 import redis.clients.jedis.util.SafeEncoder;
@@ -209,6 +210,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             throw rt;
         } catch (JedisDataException j) {
             throw new GraphException(j);
+        } catch (JedisConnectionException e) {
+            throw ExceptionMapping.map(e);
         }
     }
 
@@ -229,6 +232,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             throw ge;
         } catch (JedisDataException de) {
             throw new GraphException(de);
+        } catch (JedisConnectionException e) {
+            throw ExceptionMapping.map(e);
         }
     }
 
@@ -255,6 +260,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             throw rt;
         } catch (JedisDataException j) {
             throw new GraphException(j);
+        } catch (JedisConnectionException e) {
+            throw ExceptionMapping.map(e);
         }
     }
 
@@ -281,6 +288,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             throw ge;
         } catch (JedisDataException de) {
             throw new GraphException(de);
+        } catch (JedisConnectionException e) {
+            throw ExceptionMapping.map(e);
         }
     }
 
@@ -301,6 +310,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             throw ge;
         } catch (JedisDataException de) {
             throw new GraphException(de);
+        } catch (JedisConnectionException e) {
+            throw ExceptionMapping.map(e);
         }
     }
 
@@ -313,7 +324,10 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
         checkOpen();
         GraphTransactionImpl transaction =
                 new GraphTransactionImpl(connection.getConnection(), this::decodeQueued, this.cache, this.graphId);
-        transaction.multi();
+        ExceptionMapping.mapped(() -> {
+            transaction.multi();
+            return null;
+        });
         connectionUsers.add(transaction.replies());
         track(transaction);
         return transaction;
@@ -367,7 +381,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public String watch(String... keys) {
-        return connection.watch(keys);
+        return ExceptionMapping.mapped(() -> connection.watch(keys));
     }
 
     /**
@@ -376,7 +390,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      */
     @Override
     public String unwatch() {
-        return connection.unwatch();
+        return ExceptionMapping.mapped(connection::unwatch);
     }
 
     /**
@@ -395,6 +409,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             throw ge;
         } catch (JedisDataException de) {
             throw new GraphException(de);
+        } catch (JedisConnectionException e) {
+            throw ExceptionMapping.map(e);
         }
         return SafeEncoder.encode((byte[]) response);
     }
@@ -415,6 +431,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             throw ge;
         } catch (JedisDataException de) {
             throw new GraphException(de);
+        } catch (JedisConnectionException e) {
+            throw ExceptionMapping.map(e);
         }
         // clear local state
         this.cache.clear();
@@ -436,6 +454,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             throw ge;
         } catch (JedisDataException de) {
             throw new GraphException(de);
+        } catch (JedisConnectionException e) {
+            throw ExceptionMapping.map(e);
         }
     }
 
