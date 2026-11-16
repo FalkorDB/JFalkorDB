@@ -8,8 +8,8 @@ import redis.clients.jedis.exceptions.JedisConnectionException;
  * a command was sent or its reply read. With an explicitly configured Redis Sentinel, it is also what you get
  * when no Sentinel can be reached.
  *
- * <p>A {@link com.falkordb.Driver}, {@link com.falkordb.Graph} or {@link com.falkordb.GraphContext} method
- * throws this exception where earlier versions threw Jedis' {@link JedisConnectionException}, which this
+ * <p>A {@link com.falkordb.Driver}, {@link com.falkordb.Graph}, {@link com.falkordb.GraphContextGenerator} or
+ * {@link com.falkordb.GraphContext} method throws this exception where earlier versions threw Jedis' {@link JedisConnectionException}, which this
  * class extends, so {@code catch (JedisConnectionException e)} still catches it. Its message, cause,
  * suppressed exceptions and stack trace are those of the exception Jedis raised: a read timeout, say, still
  * has the {@link java.net.SocketTimeoutException} as its cause.
@@ -22,9 +22,11 @@ import redis.clients.jedis.exceptions.JedisConnectionException;
  * <p>When the connection broke after a command was sent, whether the command ran is unknown, so retrying a
  * write may repeat it.
  *
- * <p>Around those methods, and an {@link com.falkordb.AsyncGraph}'s, catch this type rather than {@code
- * JedisConnectionException}: a later release roots the client's exceptions in a type of its own instead of
- * Jedis', and code that catches this one keeps working. The methods of {@link com.falkordb.GraphPipeline} and
+ * <p>Around those methods, catch this type rather than {@code JedisConnectionException}: a later release roots
+ * the client's exceptions in a type of its own instead of Jedis', and code that catches this one keeps working.
+ * An {@link com.falkordb.AsyncGraph} operation doesn't throw it: its future completes exceptionally, so {@code
+ * join()} throws a {@link java.util.concurrent.CompletionException} and {@code get()} an {@link
+ * java.util.concurrent.ExecutionException} whose {@link Throwable#getCause() cause} is this exception. The methods of {@link com.falkordb.GraphPipeline} and
  * {@link com.falkordb.GraphTransaction} still throw Jedis' {@code JedisConnectionException}.
  */
 public class FalkorDBConnectionException extends JedisConnectionException {

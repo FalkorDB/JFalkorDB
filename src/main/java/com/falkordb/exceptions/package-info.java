@@ -1,6 +1,7 @@
 /**
- * Exceptions thrown by the FalkorDB client's {@code Driver}, {@code Graph}, {@code GraphContext} and {@code
- * AsyncGraph}: {@link com.falkordb.exceptions.GraphException} when the server rejects a command, and {@link
+ * Exceptions thrown by the FalkorDB client's {@code Driver}, {@code Graph}, {@code GraphContextGenerator} and
+ * {@code GraphContext}, and the cause of a failed {@code AsyncGraph} future: {@link
+ * com.falkordb.exceptions.GraphException} when the server rejects a command, and {@link
  * com.falkordb.exceptions.FalkorDBConnectionException} when the client can't talk to the server. A few failures
  * are still reported as Jedis' own exceptions; {@link com.falkordb.Driver} lists them.
  *

@@ -358,8 +358,10 @@ The client reports failures with two exception types from `com.falkordb.exceptio
 | `GraphException` | The server rejects a command: a query, a procedure call, `explain`, `profile`, `copyGraph`, `deleteGraph`, a `Driver` method such as `configGet` or `udfDelete`, `watch`, `unwatch`, or an `AUTH` rejected with a plain error while a connection opens. | `JedisDataException` |
 | `FalkorDBConnectionException` | A connection to the server can't be opened, or it breaks or times out while a command is sent or its reply read. | `JedisConnectionException` |
 
-This covers the methods of `Driver`, `Graph`, `GraphContext` and `AsyncGraph`; the exceptions listed further down
-still come out as Jedis raises them.
+This covers the methods of `Driver`, `Graph`, `GraphContextGenerator` (including `getContext()`) and
+`GraphContext`. An `AsyncGraph` future completes exceptionally with the same exceptions as the cause of the
+`CompletionException` that `join()` throws, or of the `ExecutionException` that `get()` throws. The exceptions
+listed further down still come out as Jedis raises them.
 
 ```java
 try {

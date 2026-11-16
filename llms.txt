@@ -40,13 +40,15 @@
   from untrusted input.
 - A read against a graph that doesn't exist yet errors — create it with a write query first.
 - After 0.16.0 (`FalkorDBConnectionException` doesn't exist before that), around `Driver`, `Graph`,
-  `GraphContext` and `AsyncGraph` methods, catch `com.falkordb.exceptions.GraphException` for a
-  command the server rejects and `com.falkordb.exceptions.FalkorDBConnectionException` for a
-  connection that fails, not the Jedis exceptions they extend (`JedisDataException`,
-  `JedisConnectionException`): a later release stops extending those. A few failures are still
-  Jedis types: an exhausted pool (`JedisException`), an unreachable Redis Cluster
-  (`JedisClusterOperationException`), an error Jedis has a subclass for from a `Driver` method (such
-  as `JedisAccessControlException`), and `GraphPipeline` / `GraphTransaction` methods.
+  `GraphContextGenerator` (including `getContext()`) and `GraphContext` methods, catch
+  `com.falkordb.exceptions.GraphException` for a command the server rejects and
+  `com.falkordb.exceptions.FalkorDBConnectionException` for a connection that fails, not the Jedis
+  exceptions they extend (`JedisDataException`, `JedisConnectionException`): a later release stops
+  extending those. For `AsyncGraph`, check the cause of the `CompletionException` /
+  `ExecutionException`. A few failures are still Jedis types: an exhausted pool (`JedisException`),
+  an unreachable Redis Cluster (`JedisClusterOperationException`), an error Jedis has a subclass for
+  from a `Driver` method (such as `JedisAccessControlException`), and `GraphPipeline` /
+  `GraphTransaction` methods.
 - A `Driver` owns the connection pool: close it, ideally with try-with-resources. After 0.15.0 its
   `close()` throws no checked exception, so don't wrap it in `catch (IOException e)`: that no longer
   compiles. Up to 0.15.0 it declares `IOException`, which the enclosing method must catch or declare.
