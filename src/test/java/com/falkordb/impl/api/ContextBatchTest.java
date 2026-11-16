@@ -494,6 +494,22 @@ class ContextBatchTest {
     }
 
     @Test
+    void aDecodeFailureThatIsAJedisDataExceptionIsThrownAsItIs() {
+        JedisDataException busy = new JedisDataException("BUSY the lookup's server is busy");
+        try (redis.clients.jedis.JedisPool pool = new redis.clients.jedis.JedisPool("127.0.0.1", server.port())) {
+            GraphContextImpl failing = new GraphContextImpl(pool.getResource(), new BusyCache(busy), "g");
+            GraphContext.Pipeline pipeline = failing.pipeline();
+            Reply<ResultSet> node = pipeline.query("MATCH (n) RETURN n");
+            List<Object> results = pipeline.syncAndReturnAll();
+
+            // what decoding threw, not taken for the server's error reply and made a GraphException
+            assertSame(busy, assertThrows(JedisDataException.class, node::get));
+            assertSame(busy, results.get(0));
+            failing.close();
+        }
+    }
+
+    @Test
     void aReplyWhoseDecodingThrewAnErrorIsNeverNull() {
         try (redis.clients.jedis.JedisPool pool = new redis.clients.jedis.JedisPool("127.0.0.1", server.port())) {
             GraphContextImpl failing = new GraphContextImpl(pool.getResource(), new FailingCache(), "g");
@@ -815,6 +831,20 @@ class ContextBatchTest {
         @Override
         public String getLabel(int index, com.falkordb.Graph graph) {
             throw new LookupFailed();
+        }
+    }
+
+    /** A cache whose label lookup fails with the given exception. */
+    private static final class BusyCache extends com.falkordb.impl.graph_cache.GraphCache {
+        private final RuntimeException failure;
+
+        BusyCache(RuntimeException failure) {
+            this.failure = failure;
+        }
+
+        @Override
+        public String getLabel(int index, com.falkordb.Graph graph) {
+            throw failure;
         }
     }
 
