@@ -121,6 +121,14 @@ abstract class ContextBatch<B extends GraphBatch> {
         return Collections.unmodifiableList(results);
     }
 
+    /**
+     * Called when the context closes, which ends the batch underneath: a reply the caller keeps holds this view, which
+     * mustn't then hold every other reply. The replies stay readable, each through its own response.
+     */
+    final void contextClosing() {
+        dropPending();
+    }
+
     /** Forgets the pending replies, which the batch will never read. */
     final void dropPending() {
         pending.clear();

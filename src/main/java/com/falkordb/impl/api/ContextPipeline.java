@@ -133,10 +133,11 @@ final class ContextPipeline extends ContextBatch<GraphPipelineImpl> implements G
             if (!batch.readFailed() && batch.hasPipelinedResponse()) {
                 checkConnection();
             }
-            ExceptionMapping.mapped(() -> {
+            try {
                 batch.close();
-                return null;
-            });
+            } catch (RuntimeException e) {
+                throw failed(e); // the cause a saved reply's IllegalStateException then has
+            }
         } finally {
             dropPending(); // a reply the caller keeps holds the pipeline, which mustn't hold every other reply
         }

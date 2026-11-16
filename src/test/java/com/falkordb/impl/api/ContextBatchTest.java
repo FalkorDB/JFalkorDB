@@ -352,6 +352,39 @@ class ContextBatchTest {
     }
 
     @Test
+    void closingAPipelineWhoseReadFailsKeepsTheFailureTheCallerGot() {
+        GraphContext.Pipeline pipeline = context.pipeline();
+        Reply<Object> set = pipeline.sendCommand("SET", "k", "v");
+        server.dropClients();
+
+        com.falkordb.exceptions.FalkorDBConnectionException e =
+                assertThrows(com.falkordb.exceptions.FalkorDBConnectionException.class, pipeline::close);
+        assertSame(e, assertThrows(IllegalStateException.class, set::get).getCause());
+    }
+
+    @Test
+    void closingTheContextLetsGoOfThePipelinesReplies() {
+        GraphContext.Pipeline pipeline = context.pipeline();
+        Reply<Object> kept = pipeline.sendCommand("SET", "k", "v");
+        pipeline.sendCommand("GET", "k"); // dropped by the caller
+        context.close(); // reads them; the pipeline isn't closed itself
+
+        assertFalse(((ContextBatch<?>) pipeline).hasPending(), "the pipeline still holds the replies");
+        assertEquals("OK", kept.get());
+    }
+
+    @Test
+    void closingTheContextLetsGoOfTheTransactionsReplies() {
+        GraphContext.Transaction transaction = context.transaction();
+        Reply<Object> kept = transaction.sendCommand("SET", "k", "v");
+        transaction.sendCommand("GET", "k");
+        context.close(); // discards it
+
+        assertFalse(((ContextBatch<?>) transaction).hasPending(), "the transaction still holds the replies");
+        assertThrows(IllegalStateException.class, kept::get);
+    }
+
+    @Test
     void closingAPipelineLetsGoOfTheRepliesTheCallerDropped() {
         GraphContext.Pipeline pipeline = context.pipeline();
         Reply<Object> kept = pipeline.sendCommand("SET", "k", "v");

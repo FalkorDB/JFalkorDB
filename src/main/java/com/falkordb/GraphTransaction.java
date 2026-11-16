@@ -10,7 +10,7 @@ import redis.clients.jedis.commands.PipelineCommands;
 import redis.clients.jedis.commands.RedisModulePipelineCommands;
 
 /**
- * Redis' (or Valkey's) {@code MULTI}/{@code EXEC} applied to graph commands, not a database transaction: see
+ * The {@code MULTI}/{@code EXEC} of Redis (or Valkey) applied to graph commands, not a database transaction: see
  * {@link GraphContext.Transaction}, which replaces it, for what that does and doesn't guarantee.
  *
  * <p>{@link #exec()} decodes every graph reply before it returns. {@link #deleteGraph()} clears the client's

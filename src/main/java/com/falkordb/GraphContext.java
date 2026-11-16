@@ -493,7 +493,7 @@ public interface GraphContext extends Graph {
      * }
      * }</pre>
      *
-     * <p>FalkorDB itself has no transactions: this is Redis' (or Valkey's) {@code MULTI}/{@code EXEC} applied to graph
+     * <p>FalkorDB itself has no transactions: this is the {@code MULTI}/{@code EXEC} of Redis (or Valkey) applied to graph
      * commands, not a database transaction.
      *
      * <ul>

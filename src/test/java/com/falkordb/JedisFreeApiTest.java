@@ -12,7 +12,7 @@ import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.IdentityHashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -50,7 +50,7 @@ class JedisFreeApiTest {
     /** Every Jedis type that {@code type}'s own type parameters, supertypes and public methods name. */
     private static List<String> jedisTypesIn(Class<?> type) {
         List<String> found = new ArrayList<>();
-        Set<TypeVariable<?>> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        Set<TypeVariable<?>> seen = new HashSet<>();
         for (TypeVariable<?> parameter : type.getTypeParameters()) {
             names(parameter, type.toGenericString() + " parameter " + parameter + ": ", found, seen);
         }
@@ -63,7 +63,7 @@ class JedisFreeApiTest {
 
     private static void checkSupertypes(Class<?> type, List<String> found) {
         for (Type supertype : type.getGenericInterfaces()) {
-            Set<TypeVariable<?>> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+            Set<TypeVariable<?>> seen = new HashSet<>();
             names(supertype, type.getName() + " extends ", found, seen);
             Class<?> raw = supertype instanceof ParameterizedType
                     ? (Class<?>) ((ParameterizedType) supertype).getRawType()
@@ -77,7 +77,7 @@ class JedisFreeApiTest {
 
     private static void check(Method method, List<String> found) {
         String where = method.toGenericString() + ": ";
-        Set<TypeVariable<?>> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        Set<TypeVariable<?>> seen = new HashSet<>();
         names(method.getGenericReturnType(), where, found, seen);
         for (Type parameter : method.getGenericParameterTypes()) {
             names(parameter, where, found, seen);
@@ -90,7 +90,11 @@ class JedisFreeApiTest {
         }
     }
 
-    /** Adds every Jedis type {@code type} names: its type arguments, and the bounds of its variables and wildcards. */
+    /**
+     * Adds every Jedis type {@code type} names: its type arguments, and the bounds of its variables and wildcards.
+     * {@code seen} compares type variables by equality, as reflection may return a new instance for the same one,
+     * which a recursive bound such as {@code T extends Comparable<T>} would otherwise follow for ever.
+     */
     private static void names(Type type, String where, List<String> found, Set<TypeVariable<?>> seen) {
         if (type instanceof Class) {
             Class<?> cls = (Class<?>) type;

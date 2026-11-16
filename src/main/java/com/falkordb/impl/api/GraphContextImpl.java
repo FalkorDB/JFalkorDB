@@ -65,6 +65,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      * Otherwise only the latest {@value #HELD_BATCHES} batches are held.
      */
     private final IdentityHashMap<QueuedReplies, Closeable> awaiting = new IdentityHashMap<>();
+    /** The views {@link #pipeline()} and {@link #transaction()} returned, held weakly, which {@link #close()} tells. */
+    private final Set<ContextBatch<?>> views = Collections.newSetFromMap(new WeakHashMap<>());
     /** How many of the latest pipelines and transactions created on a context it holds strongly. */
     static final int HELD_BATCHES = 128;
     /**
@@ -404,7 +406,9 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
         GraphTransactionImpl transaction = ExceptionMapping.mapped(this::newTransaction); // MULTI can fail
         strictUsers.add(transaction.replies());
         hold(transaction, transaction.replies()); // MULTI awaits its reply
-        return new ContextTransaction(transaction, this);
+        ContextTransaction view = new ContextTransaction(transaction, this);
+        views.add(view);
+        return view;
     }
 
     /**
@@ -417,7 +421,9 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
         checkConnectionFree(null);
         GraphPipelineImpl pipeline = newPipeline();
         strictUsers.add(pipeline.replies());
-        return new ContextPipeline(pipeline, this);
+        ContextPipeline view = new ContextPipeline(pipeline, this);
+        views.add(view);
+        return view;
     }
 
     /**
@@ -601,6 +607,10 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
                 endBatches();
             } finally {
                 awaiting.clear();
+                for (ContextBatch<?> view : new ArrayList<>(views)) {
+                    view.contextClosing();
+                }
+                views.clear();
                 this.connection.close();
             }
         }
