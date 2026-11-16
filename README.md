@@ -137,7 +137,7 @@ public class GraphExample {
                     System.out.println(matched.get().size() + " matches, x = " + x.get());
                 }
 
-                // a pipeline sends its commands at once and reads the replies together
+                // a pipeline sends each command as it is queued, and reads the replies together
                 GraphContext.Pipeline p = context.pipeline();
                 Reply<ResultSet> created = p.query("CREATE (:person{name:'dana',age:28})");
                 Reply<Object> visits = p.sendCommand("INCR", "{contextSocial}visits");

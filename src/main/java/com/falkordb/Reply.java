@@ -14,6 +14,11 @@ import org.jspecify.annotations.Nullable;
  * since that lookup can run on the context's connection; after that, on one thread at a time. A reply is not safe
  * for concurrent use.
  *
+ * <p>A reply that fails to decode fails for good, even when the cause was passing. One such cause: a lookup can't
+ * run on the context's connection while another pipeline or transaction on it awaits replies, and a context the
+ * driver didn't create has no other connection to borrow, so read a reply before starting the next batch on such a
+ * context.
+ *
  * @param <T> the decoded reply
  */
 public interface Reply<T extends @Nullable Object> extends Supplier<T> {

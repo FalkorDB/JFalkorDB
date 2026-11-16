@@ -241,6 +241,13 @@ class ContextBatchTest {
         List<String> sent = server.received().get(server.received().size() - 3); // SET, LRANGE, EXEC
         assertEquals("SET", sent.get(0));
         assertEquals(3, sent.size());
+        // the fake server reads arguments as UTF-8, so only bytes that are UTF-8 can be compared here;
+        // ContextPipelineIT.binaryValuesRoundTrip sends others to a real server
+        GraphContext.Pipeline pipeline = context.pipeline();
+        Reply<Object> utf8 = pipeline.sendBinaryCommand("SET", bytes("k"), bytes("é\u0001"));
+        pipeline.sync();
+        assertEquals(Arrays.asList("SET", "k", "é\u0001"), last("SET"));
+        assertArrayEquals(bytes("OK"), (byte[]) utf8.get());
     }
 
     @Test
@@ -340,6 +347,20 @@ class ContextBatchTest {
         assertThrows(IllegalStateException.class, pipeline::syncAndReturnAll);
         pipeline.close(); // nothing to do
         assertTrue(old != null);
+    }
+
+    @Test
+    void closingAPipelineLetsGoOfTheRepliesTheCallerDropped() {
+        GraphContext.Pipeline pipeline = context.pipeline();
+        Reply<Object> kept = pipeline.sendCommand("SET", "k", "v");
+        WeakReference<Reply<Object>> dropped = new WeakReference<>(pipeline.sendCommand("GET", "k"));
+        pipeline.close();
+        for (int i = 0; i < 10 && dropped.get() != null; i++) {
+            System.gc();
+        }
+
+        assertNull(dropped.get(), "the closed pipeline, which the kept reply holds, still holds the dropped one");
+        assertEquals("OK", kept.get());
     }
 
     @Test
@@ -664,6 +685,7 @@ class ContextBatchTest {
                         "FLUSHDB",
                         "SWAPDB 0 1",
                         "SCRIPT DEBUG YES",
+                        "DEBUG SLEEP 10",
                         "MIGRATE h 1 \"\" 0 0 AUTH2 u KEYS KEYS g")
                 .flatMap(command -> Stream.of(command, command.toLowerCase(Locale.ROOT)))
                 .flatMap(command -> Stream.of(Arguments.of(command, true), Arguments.of(command, false)));
@@ -718,6 +740,7 @@ class ContextBatchTest {
                 "MULTİ", // not MULTI for Redis, which folds ASCII letters only
                 "DEL other",
                 "SCRIPT FLUSH",
+                "DEBUG OBJECT k",
                 "MIGRATE h 1 \"\" 0 0 AUTH KEYS KEYS other", // a password named KEYS
                 "MIGRATE h 1 other 0 0 AUTH KEYS g", // a password named KEYS, before a word that is the graph's name
                 "MIGRATE h 1 other 0 0 AUTH2 KEYS g", // a user named KEYS, and a password that is the graph's name

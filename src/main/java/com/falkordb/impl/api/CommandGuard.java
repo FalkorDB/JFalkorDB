@@ -115,6 +115,8 @@ final class CommandGuard {
             case "MIGRATE":
                 // MIGRATE host port key|"" db timeout [COPY] [REPLACE] [AUTH ...] [KEYS key ...]
                 return names(arguments, 2, 3, graphId) || afterKeys(arguments, graphId) ? DELETES_GRAPH : null;
+            case "DEBUG":
+                return !arguments.isEmpty() && word(arguments.get(0)).equals("SLEEP") ? BLOCKING : null;
             case "SCRIPT":
                 // SCRIPT DEBUG YES|SYNC makes the connection's next EVAL start the Lua debugger
                 return !arguments.isEmpty() && word(arguments.get(0)).equals("DEBUG") ? CONNECTION_STATE : null;

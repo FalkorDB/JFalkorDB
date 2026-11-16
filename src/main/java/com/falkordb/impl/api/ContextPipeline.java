@@ -123,12 +123,16 @@ final class ContextPipeline extends ContextBatch<GraphPipelineImpl> implements G
             return;
         }
         closed = true;
-        if (contextClosed()) {
-            return;
+        try {
+            if (contextClosed()) {
+                return;
+            }
+            if (!batch.readFailed() && batch.hasPipelinedResponse()) {
+                checkConnection();
+            }
+            batch.close();
+        } finally {
+            dropPending(); // a reply the caller keeps holds the pipeline, which mustn't hold every other reply
         }
-        if (!batch.readFailed() && batch.hasPipelinedResponse()) {
-            checkConnection();
-        }
-        batch.close();
     }
 }

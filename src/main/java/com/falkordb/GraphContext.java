@@ -354,7 +354,7 @@ public interface GraphContext extends Graph {
          *   <li>blocking commands, which hold the connection in a pipeline, so that closing the context waits for
          *       them, and don't block inside {@code MULTI}: {@code BLPOP}, {@code BRPOP}, {@code BRPOPLPUSH},
          *       {@code BLMOVE}, {@code BLMPOP}, {@code BZPOPMIN}, {@code BZPOPMAX}, {@code BZMPOP}, {@code WAITAOF},
-         *       and {@code XREAD} or {@code XREADGROUP} with {@code BLOCK}.
+         *       {@code DEBUG SLEEP}, and {@code XREAD} or {@code XREADGROUP} with {@code BLOCK}.
          * </ul>
          *
          * <p>Some of these may be allowed in a later release, such as the {@code GRAPH.*} commands that don't touch a
@@ -407,7 +407,7 @@ public interface GraphContext extends Graph {
          *   <li>blocking commands, which hold the connection in a pipeline, so that closing the context waits for
          *       them, and don't block inside {@code MULTI}: {@code BLPOP}, {@code BRPOP}, {@code BRPOPLPUSH},
          *       {@code BLMOVE}, {@code BLMPOP}, {@code BZPOPMIN}, {@code BZPOPMAX}, {@code BZMPOP}, {@code WAITAOF},
-         *       and {@code XREAD} or {@code XREADGROUP} with {@code BLOCK}.
+         *       {@code DEBUG SLEEP}, and {@code XREAD} or {@code XREADGROUP} with {@code BLOCK}.
          * </ul>
          *
          * <p>Some of these may be allowed in a later release, such as the {@code GRAPH.*} commands that don't touch a
@@ -703,7 +703,7 @@ public interface GraphContext extends Graph {
          *   <li>blocking commands, which hold the connection in a pipeline, so that closing the context waits for
          *       them, and don't block inside {@code MULTI}: {@code BLPOP}, {@code BRPOP}, {@code BRPOPLPUSH},
          *       {@code BLMOVE}, {@code BLMPOP}, {@code BZPOPMIN}, {@code BZPOPMAX}, {@code BZMPOP}, {@code WAITAOF},
-         *       {@code WAIT}, and {@code XREAD} or {@code XREADGROUP} with {@code BLOCK}.
+         *       {@code WAIT}, {@code DEBUG SLEEP}, and {@code XREAD} or {@code XREADGROUP} with {@code BLOCK}.
          * </ul>
          *
          * <p>Some of these may be allowed in a later release, such as the {@code GRAPH.*} commands that don't touch a
@@ -756,7 +756,7 @@ public interface GraphContext extends Graph {
          *   <li>blocking commands, which hold the connection in a pipeline, so that closing the context waits for
          *       them, and don't block inside {@code MULTI}: {@code BLPOP}, {@code BRPOP}, {@code BRPOPLPUSH},
          *       {@code BLMOVE}, {@code BLMPOP}, {@code BZPOPMIN}, {@code BZPOPMAX}, {@code BZMPOP}, {@code WAITAOF},
-         *       {@code WAIT}, and {@code XREAD} or {@code XREADGROUP} with {@code BLOCK}.
+         *       {@code WAIT}, {@code DEBUG SLEEP}, and {@code XREAD} or {@code XREADGROUP} with {@code BLOCK}.
          * </ul>
          *
          * <p>Some of these may be allowed in a later release, such as the {@code GRAPH.*} commands that don't touch a

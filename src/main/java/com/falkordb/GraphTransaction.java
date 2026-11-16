@@ -29,7 +29,7 @@ import redis.clients.jedis.commands.RedisModulePipelineCommands;
  *
  * @deprecated Use {@link GraphContext.Transaction}, from {@link GraphContext#transaction()}. It has the same graph methods,
  *     returns JFalkorDB's own {@link Reply} instead of Jedis' {@code Response}, and queues other Redis commands
- *     with {@code sendCommand} instead of inheriting Jedis' command interfaces, so its API doesn't change when
+ *     with {@code sendCommand}, or {@code sendBinaryCommand} for binary arguments, instead of inheriting Jedis' command interfaces, so its API doesn't change when
  *     Jedis does. This interface, with the thousand-odd methods it inherits from Jedis, is removed in 0.18.0.
  */
 @Deprecated
