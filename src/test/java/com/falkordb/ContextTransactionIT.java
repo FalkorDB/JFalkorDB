@@ -96,6 +96,25 @@ public class ContextTransactionIT {
     }
 
     @Test
+    public void aQueryThatFailsWhileItRunsRollsNothingBack() {
+        try (GraphContext c = api.getContext()) {
+            GraphContext.Transaction transaction = c.transaction();
+            Reply<ResultSet> before = transaction.query("CREATE (:Person {name:'before'})");
+            Reply<ResultSet> failing = transaction.query("MATCH (n:Person) RETURN n.name, 1 / 0"); // fails when run
+            Reply<ResultSet> after = transaction.query("CREATE (:Person {name:'after'})");
+            List<Object> results = transaction.exec();
+
+            Assertions.assertNotNull(results, "a query that fails while it runs doesn't abort the transaction");
+            GraphException e = Assertions.assertThrows(GraphException.class, failing::get);
+            Assertions.assertSame(e, results.get(1));
+            Assertions.assertEquals(1, before.get().getStatistics().nodesCreated());
+            Assertions.assertEquals(1, after.get().getStatistics().nodesCreated());
+            ResultSet names = c.query("MATCH (n:Person) RETURN n.name ORDER BY n.name");
+            Assertions.assertEquals(2, names.size(), "the writes around the failed query stay applied");
+        }
+    }
+
+    @Test
     public void aCommandThatFailsToQueueRefusesTheTransaction() {
         try (GraphContext c = api.getContext()) {
             GraphContext.Transaction transaction = c.transaction();

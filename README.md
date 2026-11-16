@@ -157,6 +157,18 @@ public class GraphExample {
 `sendCommand`, on the context's connection. Each command returns a `Reply<T>`, read with `get()` once
 `sync()` or `exec()` has read it. Their API names no Jedis type, so it doesn't change when Jedis does.
 
+A transaction is Redis' (or Valkey's) `MULTI`/`EXEC` applied to graph commands; FalkorDB itself has no
+transactions, so it is not a database transaction:
+
+- The queued commands run back to back at `EXEC`, with no other client's command in between.
+- Nothing is rolled back. If a queued graph query fails while it runs, the commands before it stay applied and the
+  ones after it still run; the failure is that command's element of what `exec()` returns. Only a command the server
+  rejects while it is queued aborts the whole transaction (`EXECABORT`), and then nothing runs.
+- Replies arrive only at `EXEC`, so you can't read inside the transaction and decide on what you read. For
+  optimistic concurrency, `watch(...)` the keys first: `exec()` then runs nothing, and returns `null`, if one changed.
+- In a Redis Cluster every key must be in the graph's hash slot: give the keys the graph's name as a hash tag.
+- For changes to a graph that must apply all together or not at all, put them in a single Cypher query.
+
 They replace `pipelined()` and `multi()`, whose `GraphPipeline` and `GraphTransaction` return Jedis'
 `Response<T>` and inherit about a thousand Jedis methods each. Those are deprecated, and removed in 0.18.0:
 

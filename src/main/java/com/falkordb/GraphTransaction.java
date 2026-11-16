@@ -10,7 +10,8 @@ import redis.clients.jedis.commands.PipelineCommands;
 import redis.clients.jedis.commands.RedisModulePipelineCommands;
 
 /**
- * An interface which aligned to Jedis transactional interface
+ * Redis' (or Valkey's) {@code MULTI}/{@code EXEC} applied to graph commands, not a database transaction: see
+ * {@link GraphContext.Transaction}, which replaces it, for what that does and doesn't guarantee.
  *
  * <p>{@link #exec()} decodes every graph reply before it returns. {@link #deleteGraph()} clears the client's
  * schema cache when {@code exec()} has run the delete: not when it is queued, and not at all if the

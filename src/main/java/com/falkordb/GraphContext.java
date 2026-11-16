@@ -493,6 +493,24 @@ public interface GraphContext extends Graph {
      * }
      * }</pre>
      *
+     * <p>FalkorDB itself has no transactions: this is Redis' (or Valkey's) {@code MULTI}/{@code EXEC} applied to graph
+     * commands, not a database transaction.
+     *
+     * <ul>
+     *   <li>The queued commands run back to back at {@code EXEC}, with no other client's command in between.
+     *   <li>Nothing is rolled back. If a queued command fails while it runs, such as a graph query the server
+     *       rejects, the commands before it stay applied and the ones after it still run; the failure is that
+     *       command's element of the list {@link #exec()} returns, and what its {@link Reply} throws. Only a command
+     *       the server rejects while it is queued, such as one with the wrong number of arguments, aborts the whole
+     *       transaction ({@code EXECABORT}), and then nothing runs.
+     *   <li>Replies arrive only at {@code EXEC}, so a decision can't be made inside the transaction on what it read.
+     *       For optimistic concurrency, {@link GraphContext#watch(String...) watch} the keys first: {@code EXEC}
+     *       then runs nothing, and returns {@code null}, if one of them changed.
+     *   <li>In a Redis Cluster every key the transaction touches must be in the same hash slot as the graph's: give
+     *       them the graph's name as a hash tag.
+     *   <li>For changes to a graph that must apply all together or not at all, put them in one Cypher query.
+     * </ul>
+     *
      * <p>A transaction is used once: after {@link #exec()} or {@link #discard()} nothing can be queued on it. The
      * replies are decoded by {@code exec()}, as for the deprecated {@link GraphTransaction}, which describes how a
      * {@link #deleteGraph()} affects the replies queued before it. A reply that fails to decode throws the same
