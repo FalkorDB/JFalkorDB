@@ -22,9 +22,9 @@ import java.util.UUID;
  * <ol>
  *   <li><b>Auto-detection</b> — the common case, and the only block here that runs queries. Every
  *       factory method probes the endpoint it is given with {@code INFO server}; if it reports
- *       {@code redis_mode:cluster}, the driver switches to cluster mode. Nothing needs configuring,
- *       and an endpoint that is an ordinary FalkorDB server is used directly exactly as in earlier
- *       releases.
+ *       {@code redis_mode:cluster} ({@code server_mode:cluster} on Valkey), the driver switches to
+ *       cluster mode. Nothing needs configuring, and an endpoint that is an ordinary FalkorDB server
+ *       is used directly exactly as in earlier releases.
  *   <li><b>Explicit startup nodes</b> — name several nodes so the driver still finds the cluster when
  *       one of them is down, and skip the probe.
  *   <li><b>Cluster-wide commands</b> — listing graphs covers every primary, not just one

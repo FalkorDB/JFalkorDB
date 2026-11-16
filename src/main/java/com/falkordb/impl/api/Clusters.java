@@ -19,7 +19,6 @@ final class Clusters {
     /** Number of hash slots in a Redis Cluster. */
     static final int SLOT_COUNT = 16384;
 
-    private static final String REDIS_MODE_FIELD = "redis_mode:";
     private static final String CLUSTER_MODE = "cluster";
 
     /** {@code CLUSTER SLOTS} reports this instead of an address when the endpoint is not known. */
@@ -28,7 +27,8 @@ final class Clusters {
     private Clusters() {}
 
     /**
-     * Probes {@code seed} and reports whether it is a Redis Cluster node ({@code redis_mode:cluster}).
+     * Probes {@code seed} and reports whether it is a cluster node ({@code redis_mode:cluster} on Redis,
+     * {@code server_mode:cluster} on Valkey).
      *
      * <p>Anything less than a positive identification — the endpoint is down, refuses the credentials
      * or {@code INFO}, or reports another mode — answers {@code false}, so the caller stays on the
@@ -48,25 +48,16 @@ final class Clusters {
     }
 
     /**
-     * Reads the {@code redis_mode} field of an {@code INFO server} reply. Parsed line-wise, like the
-     * Sentinel check, so a value merely appearing somewhere else in the reply — a {@code config_file}
-     * path containing the word, say — cannot be mistaken for the mode.
+     * Reads the mode field of an {@code INFO server} reply ({@code redis_mode} on Redis, {@code
+     * server_mode} on Valkey); see {@link ServerMode#of}. Parsed line-wise, like the Sentinel check,
+     * so a value merely appearing somewhere else in the reply — a {@code config_file} path containing
+     * the word, say — cannot be mistaken for the mode.
      *
      * @param info an {@code INFO server} reply, or {@code null}
-     * @return {@code true} if the reply reports {@code redis_mode:cluster}
+     * @return {@code true} if the reply reports cluster mode
      */
     static boolean isClusterInfo(@Nullable String info) {
-        if (info == null) {
-            return false;
-        }
-        for (String line : info.split("\r\n|\n|\r", -1)) {
-            String trimmed = line.trim();
-            if (trimmed.startsWith(REDIS_MODE_FIELD)) {
-                return CLUSTER_MODE.equalsIgnoreCase(
-                        trimmed.substring(REDIS_MODE_FIELD.length()).trim());
-            }
-        }
-        return false;
+        return CLUSTER_MODE.equalsIgnoreCase(ServerMode.of(info));
     }
 
     /**
