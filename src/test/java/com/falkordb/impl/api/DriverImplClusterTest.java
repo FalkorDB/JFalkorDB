@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.falkordb.Driver;
+import com.falkordb.exceptions.FalkorDBConnectionException;
 import com.falkordb.exceptions.GraphException;
 import java.time.Duration;
 import java.util.Arrays;
@@ -132,8 +133,8 @@ class DriverImplClusterTest {
 
         cluster.node(0).close();
 
-        JedisConnectionException e =
-                assertThrows(JedisConnectionException.class, () -> driver.graph(FakeCluster.lowGraph())
+        FalkorDBConnectionException e =
+                assertThrows(FalkorDBConnectionException.class, () -> driver.graph(FakeCluster.lowGraph())
                         .query("CREATE ()"));
         assertTrue(e.getSuppressed().length > 0, "the refresh failure is attached, not thrown instead");
     }
@@ -637,6 +638,25 @@ class DriverImplClusterTest {
     }
 
     @Test
+    void aConnectionFailureAlreadyMappedInAContextStillRelearnsTheTopology() {
+        // A command that runs in a GraphContext maps its connection failure before routed() sees it, so routed()
+        // must recognise the client's own type too, whatever that type extends.
+        RecordingConnections connections = new RecordingConnections(true);
+        DriverImpl driverImpl = new DriverImpl(connections);
+        AtomicInteger calls = new AtomicInteger();
+
+        assertThrows(
+                FalkorDBConnectionException.class,
+                () -> driverImpl.routed("g", route -> {
+                    calls.incrementAndGet();
+                    throw new FalkorDBConnectionException("node down");
+                }));
+
+        assertEquals(1, calls.get());
+        assertEquals(1, connections.topologyChanges.get());
+    }
+
+    @Test
     void otherFailuresPassThroughUntouched() {
         RecordingConnections connections = new RecordingConnections(true);
         DriverImpl driverImpl = new DriverImpl(connections);
@@ -714,7 +734,8 @@ class DriverImplClusterTest {
         });
         connectToSeed(cluster.node(0), ClusterOptions.autoDetect());
 
-        assertThrows(JedisDataException.class, () -> driver.udfLoad("lib", "script", false));
+        GraphException e = assertThrows(GraphException.class, () -> driver.udfLoad("lib", "script", false));
+        assertEquals("ERR library already exists", e.getMessage());
     }
 
     @Test

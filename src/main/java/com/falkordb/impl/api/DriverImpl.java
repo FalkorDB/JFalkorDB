@@ -1,6 +1,7 @@
 package com.falkordb.impl.api;
 
 import com.falkordb.Driver;
+import com.falkordb.exceptions.GraphException;
 import com.falkordb.impl.ConnectionUris;
 import java.net.URI;
 import java.time.Duration;
@@ -27,8 +28,6 @@ import redis.clients.jedis.Protocol;
 import redis.clients.jedis.SslOptions;
 import redis.clients.jedis.exceptions.InvalidURIException;
 import redis.clients.jedis.exceptions.JedisAskDataException;
-import redis.clients.jedis.exceptions.JedisConnectionException;
-import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.exceptions.JedisRedirectionException;
 import redis.clients.jedis.util.JedisURIHelper;
 import redis.clients.jedis.util.Pool;
@@ -880,7 +879,7 @@ public class DriverImpl implements Driver {
     @Deprecated
     @Override
     public Jedis getConnection() {
-        return pool().get(null);
+        return ExceptionMapping.mapped(() -> pool().get(null));
     }
 
     /**
@@ -892,7 +891,7 @@ public class DriverImpl implements Driver {
      * @return a connection to close after use
      */
     public Jedis getConnection(String graphId) {
-        return pool().get(graphId);
+        return ExceptionMapping.mapped(() -> pool().get(graphId));
     }
 
     /**
@@ -1008,7 +1007,9 @@ public class DriverImpl implements Driver {
                 }
                 askTarget = null;
                 boolean redirect = isRedirect(e);
-                if (!redirect && !(e instanceof JedisConnectionException)) {
+                // Not instanceof JedisConnectionException: a command run in a GraphContext has already mapped its
+                // connection failure to the client's own type, which need not stay a Jedis one.
+                if (!redirect && !ExceptionMapping.isConnectionFailure(e)) {
                     throw e;
                 }
                 try {
@@ -1058,11 +1059,14 @@ public class DriverImpl implements Driver {
     @Override
     public List<String> listGraphs() {
         // In a Redis Cluster each primary only knows the graphs it holds, so ask all of them.
-        Set<String> names = new LinkedHashSet<>();
-        for (List<String> part : pool().onEachPrimary(conn -> parseListResponse(conn.sendCommand(GraphCommand.LIST)))) {
-            names.addAll(part);
-        }
-        return new ArrayList<>(names);
+        return ExceptionMapping.mapped(() -> {
+            Set<String> names = new LinkedHashSet<>();
+            for (List<String> part :
+                    pool().onEachPrimary(conn -> parseListResponse(conn.sendCommand(GraphCommand.LIST)))) {
+                names.addAll(part);
+            }
+            return new ArrayList<>(names);
+        });
     }
 
     /**
@@ -1072,12 +1076,12 @@ public class DriverImpl implements Driver {
      * @param script The JavaScript code containing the UDF functions
      * @param replace Whether to replace an existing library with the same name
      * @return true if the library was loaded successfully
-     * @throws redis.clients.jedis.exceptions.JedisDataException if loading fails
+     * @throws GraphException if loading fails
      */
     @Override
     public boolean udfLoad(String libraryName, String script, boolean replace) {
         // Libraries are server-wide state, so a Redis Cluster needs the load on every primary.
-        return allTrue(pool().onEachPrimary(conn -> {
+        return ExceptionMapping.mapped(() -> allTrue(pool().onEachPrimary(conn -> {
             Object response;
             if (replace) {
                 response = conn.sendCommand(GraphCommand.UDF, "LOAD", "REPLACE", libraryName, script);
@@ -1085,7 +1089,7 @@ public class DriverImpl implements Driver {
                 response = conn.sendCommand(GraphCommand.UDF, "LOAD", libraryName, script);
             }
             return isOk(response);
-        }));
+        })));
     }
 
     private static boolean allTrue(List<Boolean> results) {
@@ -1118,7 +1122,8 @@ public class DriverImpl implements Driver {
     @Override
     public List<Object> udfList() {
         // Libraries are loaded on every primary, so any one can list them.
-        return pool().onAnyPrimary(conn -> asList(conn.sendCommand(GraphCommand.UDF, "LIST")));
+        return ExceptionMapping.mapped(
+                () -> pool().onAnyPrimary(conn -> asList(conn.sendCommand(GraphCommand.UDF, "LIST"))));
     }
 
     /**
@@ -1133,7 +1138,7 @@ public class DriverImpl implements Driver {
         if (libraryName == null && !withCode) {
             return udfList();
         }
-        return pool().onAnyPrimary(conn -> {
+        return ExceptionMapping.mapped(() -> pool().onAnyPrimary(conn -> {
             Object response;
             if (libraryName != null && withCode) {
                 response = conn.sendCommand(GraphCommand.UDF, "LIST", libraryName, "WITHCODE");
@@ -1143,7 +1148,7 @@ public class DriverImpl implements Driver {
                 response = conn.sendCommand(GraphCommand.UDF, "LIST", "WITHCODE");
             }
             return asList(response);
-        });
+        }));
     }
 
     /** Reads a {@code GRAPH.UDF LIST} reply; one that isn't a list reads as no libraries. */
@@ -1159,11 +1164,12 @@ public class DriverImpl implements Driver {
      * Flushes all loaded UDF libraries.
      *
      * @return true if libraries were flushed successfully
-     * @throws redis.clients.jedis.exceptions.JedisDataException if flushing fails
+     * @throws GraphException if flushing fails
      */
     @Override
     public boolean udfFlush() {
-        return allTrue(pool().onEachPrimary(conn -> isOk(conn.sendCommand(GraphCommand.UDF, "FLUSH"))));
+        return ExceptionMapping.mapped(
+                () -> allTrue(pool().onEachPrimary(conn -> isOk(conn.sendCommand(GraphCommand.UDF, "FLUSH")))));
     }
 
     /**
@@ -1171,12 +1177,12 @@ public class DriverImpl implements Driver {
      *
      * @param libraryName The name of the library to delete
      * @return true if the library was deleted successfully
-     * @throws redis.clients.jedis.exceptions.JedisDataException if deletion fails (e.g., library doesn't exist)
+     * @throws GraphException if deletion fails (e.g., library doesn't exist)
      */
     @Override
     public boolean udfDelete(String libraryName) {
-        return allTrue(pool().onEachPrimary(
-                        conn -> parseUdfDeleteResponse(conn.sendCommand(GraphCommand.UDF, "DELETE", libraryName))));
+        return ExceptionMapping.mapped(() -> allTrue(pool().onEachPrimary(
+                        conn -> parseUdfDeleteResponse(conn.sendCommand(GraphCommand.UDF, "DELETE", libraryName)))));
     }
 
     private static boolean parseUdfDeleteResponse(Object response) {
@@ -1208,7 +1214,7 @@ public class DriverImpl implements Driver {
      * @return The value of the configuration parameter as a String
      * @throws IllegalArgumentException if {@code name} is null or {@code "*"}, or the server answers with
      *     more than one parameter; {@link #configGetAll()} reads them all
-     * @throws redis.clients.jedis.exceptions.JedisDataException if the configuration parameter is invalid
+     * @throws GraphException if the configuration parameter is invalid
      */
     @Override
     public String configGet(String name) {
@@ -1218,7 +1224,8 @@ public class DriverImpl implements Driver {
             throw new IllegalArgumentException("configGet reads one configuration parameter, but \"*\" names all of"
                     + " them; use configGetAll() to read them all");
         }
-        return pool().onAnyPrimary(conn -> parseConfigGetResponse(conn.sendCommand(GraphCommand.CONFIG, "GET", name)));
+        return ExceptionMapping.mapped(() -> pool().onAnyPrimary(
+                        conn -> parseConfigGetResponse(conn.sendCommand(GraphCommand.CONFIG, "GET", name))));
     }
 
     /**
@@ -1226,12 +1233,12 @@ public class DriverImpl implements Driver {
      * {@link #configGet(String)} reads a single one.
      *
      * @return every configuration parameter's value, by its upper-case name, in the server's order
-     * @throws JedisDataException if the response format is unexpected
+     * @throws GraphException if the response format is unexpected
      */
     @Override
     public Map<String, String> configGetAll() {
-        return pool().onAnyPrimary(conn ->
-                parseConfigGetAllResponse(conn.sendCommand(GraphCommand.CONFIG, "GET", CONFIG_WILDCARD)));
+        return ExceptionMapping.mapped(() -> pool().onAnyPrimary(conn ->
+                parseConfigGetAllResponse(conn.sendCommand(GraphCommand.CONFIG, "GET", CONFIG_WILDCARD))));
     }
 
     /**
@@ -1241,14 +1248,14 @@ public class DriverImpl implements Driver {
      * @param value The value to set
      * @return true if the configuration was set successfully
      * @throws IllegalArgumentException if {@code name} is null
-     * @throws redis.clients.jedis.exceptions.JedisDataException if setting fails (e.g., invalid parameter)
+     * @throws GraphException if setting fails (e.g., invalid parameter)
      */
     @Override
     public boolean configSet(String name, Object value) {
         requireConfigName(name);
         // Configuration is per node, so a Redis Cluster needs it set on every primary.
-        return allTrue(pool().onEachPrimary(conn ->
-                parseConfigSetResponse(conn.sendCommand(GraphCommand.CONFIG, "SET", name, String.valueOf(value)))));
+        return ExceptionMapping.mapped(() -> allTrue(pool().onEachPrimary(conn ->
+                parseConfigSetResponse(conn.sendCommand(GraphCommand.CONFIG, "SET", name, String.valueOf(value))))));
     }
 
     private static void requireConfigName(@Nullable String name) {
@@ -1265,7 +1272,7 @@ public class DriverImpl implements Driver {
      * @return the configuration value as a String
      * @throws IllegalArgumentException if the response holds more than one parameter, which a wildcard
      *     name produces
-     * @throws JedisDataException if the response format is unexpected
+     * @throws GraphException if the response format is unexpected
      */
     String parseConfigGetResponse(Object response) {
         Map<String, String> parameters = parseConfigGetAllResponse(response);
@@ -1285,7 +1292,7 @@ public class DriverImpl implements Driver {
      *
      * @param response the raw response from Redis
      * @return an unmodifiable map of the configuration values, in the order of the response
-     * @throws JedisDataException if the response format is unexpected
+     * @throws GraphException if the response format is unexpected
      */
     Map<String, String> parseConfigGetAllResponse(Object response) {
         if (!(response instanceof List<?>)) {
@@ -1331,8 +1338,8 @@ public class DriverImpl implements Driver {
         throw unexpectedConfigGetResponse();
     }
 
-    private static JedisDataException unexpectedConfigGetResponse() {
-        return new JedisDataException("Unexpected response format from GRAPH.CONFIG GET");
+    private static GraphException unexpectedConfigGetResponse() {
+        return new GraphException("Unexpected response format from GRAPH.CONFIG GET");
     }
 
     /**
