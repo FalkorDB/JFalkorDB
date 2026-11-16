@@ -111,5 +111,10 @@ interface Connections {
         public void close() {
             pool.close();
         }
+
+        /** The pool this source borrows from; a test seam for checking how the driver configured it. */
+        Pool<Jedis> pool() {
+            return pool;
+        }
     }
 }

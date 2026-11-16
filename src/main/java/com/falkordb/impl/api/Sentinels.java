@@ -146,7 +146,7 @@ final class Sentinels {
             GenericObjectPoolConfig<Jedis> poolConfig,
             JedisClientConfig dataConfig,
             JedisClientConfig sentinelConfig) {
-        return new JedisSentinelPool(masterName, sentinels, poolConfig, dataConfig, sentinelConfig);
+        return JedisPools.sentinel(masterName, sentinels, poolConfig, dataConfig, sentinelConfig);
     }
 
     /**
