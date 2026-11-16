@@ -221,7 +221,7 @@ abstract class ContextBatch<B extends GraphBatch> {
         ProtocolCommand protocolCommand = new RawCommand(command);
         return queue(
                 () -> QueuedReply.queue(
-                        decode::apply, builder -> batch.appendWithResponse(protocolCommand, arguments, builder)),
+                        decode, builder -> batch.appendWithResponse(protocolCommand, arguments, builder)),
                 true);
     }
 
