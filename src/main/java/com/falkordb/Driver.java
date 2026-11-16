@@ -12,9 +12,12 @@ import redis.clients.jedis.Jedis;
  * <p>The methods of a driver, and of the graphs and contexts it creates, report a failed connection as a {@link
  * com.falkordb.exceptions.FalkorDBConnectionException} and a command the server rejects as a {@link
  * com.falkordb.exceptions.GraphException}. Both extend the Jedis exceptions earlier versions threw, so existing
- * {@code catch} clauses keep matching; a few failures are still Jedis' own, such as a pool that stays exhausted
- * ({@code JedisException}), a Redis Cluster that can't be reached ({@code JedisClusterOperationException}) and an
- * error Jedis has a subclass for, such as {@code JedisAccessControlException}.
+ * {@code catch} clauses keep matching. A few failures are still Jedis' own: a pool that stays exhausted ({@code
+ * JedisException}), a Redis Cluster whose topology can't be learned ({@code JedisClusterOperationException}), and,
+ * from a driver method, an error Jedis has a subclass for, such as {@code JedisAccessControlException} (a graph
+ * command wraps that in a {@code GraphException} as its cause). The methods of {@link GraphPipeline} and {@link
+ * GraphTransaction}, and commands on the {@code Jedis} that {@link #getConnection()} returns, report what Jedis
+ * raises.
  */
 public interface Driver extends Closeable {
 
@@ -30,10 +33,11 @@ public interface Driver extends Closeable {
      * Returns a underline connection to the database
      *
      * @return a underline connection to the database
-     * @throws com.falkordb.exceptions.GraphException if the server rejects the new connection, for example its
-     *     {@code AUTH}
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the new connection with a plain error,
+     *     for example its {@code AUTH}; a {@code WRONGPASS} or {@code NOPERM} is Jedis' {@code
+     *     JedisAccessControlException}
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     Jedis getConnection();
 
@@ -42,8 +46,8 @@ public interface Driver extends Closeable {
      *
      * @return a list of graph names
      * @throws com.falkordb.exceptions.GraphException if the server rejects the command
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     List<String> listGraphs();
 
@@ -55,8 +59,8 @@ public interface Driver extends Closeable {
      * @param replace Whether to replace an existing library with the same name
      * @return true if the library was loaded successfully
      * @throws com.falkordb.exceptions.GraphException if the server rejects the command
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     boolean udfLoad(String libraryName, String script, boolean replace);
 
@@ -65,8 +69,8 @@ public interface Driver extends Closeable {
      *
      * @return a list of UDF library information
      * @throws com.falkordb.exceptions.GraphException if the server rejects the command
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     List<Object> udfList();
 
@@ -77,8 +81,8 @@ public interface Driver extends Closeable {
      * @param withCode Whether to include the code in the response
      * @return a list of UDF library information
      * @throws com.falkordb.exceptions.GraphException if the server rejects the command
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     List<Object> udfList(@Nullable String libraryName, boolean withCode);
 
@@ -87,8 +91,8 @@ public interface Driver extends Closeable {
      *
      * @return true if libraries were flushed successfully
      * @throws com.falkordb.exceptions.GraphException if the server rejects the command
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     boolean udfFlush();
 
@@ -98,8 +102,8 @@ public interface Driver extends Closeable {
      * @param libraryName The name of the library to delete
      * @return true if the library was deleted successfully
      * @throws com.falkordb.exceptions.GraphException if the server rejects the command
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     boolean udfDelete(String libraryName);
 
@@ -115,8 +119,8 @@ public interface Driver extends Closeable {
      *     more than one parameter
      * @throws com.falkordb.exceptions.GraphException if the server rejects the name, for example because
      *     there is no such parameter
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      * @see <a href="https://docs.falkordb.com/commands/graph.config-get.html">GRAPH.CONFIG GET</a>
      */
     String configGet(String name);
@@ -136,8 +140,8 @@ public interface Driver extends Closeable {
      * @return every configuration parameter's value, by name
      * @throws UnsupportedOperationException if this driver does not implement it
      * @throws com.falkordb.exceptions.GraphException if the server rejects the command
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      * @see <a href="https://docs.falkordb.com/commands/graph.config-get.html">GRAPH.CONFIG GET</a>
      */
     default Map<String, String> configGetAll() {
@@ -152,8 +156,8 @@ public interface Driver extends Closeable {
      * @return true if the configuration was set successfully
      * @throws IllegalArgumentException if {@code name} is null
      * @throws com.falkordb.exceptions.GraphException if the server rejects the name or value
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      * @see <a href="https://docs.falkordb.com/commands/graph.config-set.html">GRAPH.CONFIG SET</a>
      */
     boolean configSet(String name, Object value);

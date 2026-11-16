@@ -1,7 +1,8 @@
 /**
- * Exceptions thrown by the FalkorDB client: {@link com.falkordb.exceptions.GraphException} when the server
- * rejects a command, and {@link com.falkordb.exceptions.FalkorDBConnectionException} when the client can't
- * talk to the server.
+ * Exceptions thrown by the FalkorDB client's {@code Driver}, {@code Graph}, {@code GraphContext} and {@code
+ * AsyncGraph}: {@link com.falkordb.exceptions.GraphException} when the server rejects a command, and {@link
+ * com.falkordb.exceptions.FalkorDBConnectionException} when the client can't talk to the server. A few failures
+ * are still reported as Jedis' own exceptions; {@link com.falkordb.Driver} lists them.
  *
  * <p>Both still extend the Jedis exceptions earlier versions threw in their place ({@code JedisDataException}
  * and {@code JedisConnectionException}), so existing {@code catch} clauses keep matching. A later release

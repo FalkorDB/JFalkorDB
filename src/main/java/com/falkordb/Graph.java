@@ -7,6 +7,11 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * An interface for a FalkorDB graph.
+ *
+ * <p>A command the server rejects throws a {@link com.falkordb.exceptions.GraphException}, and a connection that
+ * fails a {@link com.falkordb.exceptions.FalkorDBConnectionException}. The few failures that are still Jedis' own
+ * exceptions, such as a pool that stays exhausted or a Redis Cluster whose topology can't be learned, are listed
+ * on {@link Driver}.
  */
 public interface Graph extends Closeable {
 
@@ -15,8 +20,8 @@ public interface Graph extends Closeable {
      * @param query Cypher query
      * @return a result set
      * @throws com.falkordb.exceptions.GraphException if the server rejects the query
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     ResultSet query(String query);
 
@@ -25,8 +30,8 @@ public interface Graph extends Closeable {
      * @param query Cypher query
      * @return a result set
      * @throws com.falkordb.exceptions.GraphException if the server rejects the query
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     ResultSet readOnlyQuery(String query);
 
@@ -47,8 +52,8 @@ public interface Graph extends Closeable {
      * @throws IllegalArgumentException if {@code timeout} is negative
      * @throws com.falkordb.exceptions.GraphException if the server rejects the query, for instance when it
      *     runs out of time
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     ResultSet query(String query, long timeout);
 
@@ -60,8 +65,8 @@ public interface Graph extends Closeable {
      * @throws IllegalArgumentException if {@code timeout} is negative
      * @throws com.falkordb.exceptions.GraphException if the server rejects the query, for instance when it
      *     runs out of time
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     ResultSet readOnlyQuery(String query, long timeout);
 
@@ -88,8 +93,8 @@ public interface Graph extends Closeable {
      *     as Cypher {@code null}.
      * @return a result set.
      * @throws com.falkordb.exceptions.GraphException if the server rejects the query
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     ResultSet query(String query, Map<String, @Nullable Object> params);
 
@@ -99,8 +104,8 @@ public interface Graph extends Closeable {
      * @param params parameters map.
      * @return a result set.
      * @throws com.falkordb.exceptions.GraphException if the server rejects the query
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     ResultSet readOnlyQuery(String query, Map<String, @Nullable Object> params);
 
@@ -114,8 +119,8 @@ public interface Graph extends Closeable {
      * @throws IllegalArgumentException if {@code timeout} is negative
      * @throws com.falkordb.exceptions.GraphException if the server rejects the query, for instance when it
      *     runs out of time
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     ResultSet query(String query, Map<String, @Nullable Object> params, long timeout);
 
@@ -129,8 +134,8 @@ public interface Graph extends Closeable {
      * @throws IllegalArgumentException if {@code timeout} is negative
      * @throws com.falkordb.exceptions.GraphException if the server rejects the query, for instance when it
      *     runs out of time
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     ResultSet readOnlyQuery(String query, Map<String, @Nullable Object> params, long timeout);
 
@@ -141,8 +146,8 @@ public interface Graph extends Closeable {
      * @return result set with the procedure data
      * @throws IllegalArgumentException if {@code procedure} is null or not a valid procedure name
      * @throws com.falkordb.exceptions.GraphException if the server rejects the call
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     ResultSet callProcedure(String procedure);
 
@@ -152,8 +157,8 @@ public interface Graph extends Closeable {
      * @param query Cypher query
      * @return a result set with execution plan and performance metrics
      * @throws com.falkordb.exceptions.GraphException if the server rejects the query
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     ResultSet profile(String query);
 
@@ -164,8 +169,8 @@ public interface Graph extends Closeable {
      * @param params parameters map
      * @return a result set with execution plan and performance metrics
      * @throws com.falkordb.exceptions.GraphException if the server rejects the query
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     ResultSet profile(String query, Map<String, @Nullable Object> params);
 
@@ -178,8 +183,8 @@ public interface Graph extends Closeable {
      * @throws IllegalArgumentException if {@code procedure} is null or not a valid procedure name, or
      *     {@code args} or one of its elements is null
      * @throws com.falkordb.exceptions.GraphException if the server rejects the call
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     ResultSet callProcedure(String procedure, List<String> args);
 
@@ -196,8 +201,8 @@ public interface Graph extends Closeable {
      *     {@code args}, {@code kwargs} or an argument is null, or if a {@code YIELD} column is not a
      *     Cypher identifier
      * @throws com.falkordb.exceptions.GraphException if the server rejects the call
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     ResultSet callProcedure(String procedure, List<String> args, Map<String, List<String>> kwargs);
 
@@ -207,8 +212,8 @@ public interface Graph extends Closeable {
      * @return copy running time statistics
      * @throws com.falkordb.exceptions.GraphException if the server rejects the command, for instance because
      *     the graph does not exist
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     String copyGraph(String destinationGraphId);
 
@@ -217,8 +222,8 @@ public interface Graph extends Closeable {
      * @return delete running time statistics
      * @throws com.falkordb.exceptions.GraphException if the server rejects the command, for instance because
      *     the graph does not exist
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     String deleteGraph();
 
@@ -227,8 +232,8 @@ public interface Graph extends Closeable {
      * @param query Cypher query
      * @return execution plan as list of strings
      * @throws com.falkordb.exceptions.GraphException if the server rejects the query
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     List<String> explain(String query);
 
@@ -238,8 +243,8 @@ public interface Graph extends Closeable {
      * @param params parameters map
      * @return execution plan as list of strings
      * @throws com.falkordb.exceptions.GraphException if the server rejects the query
-     * @throws com.falkordb.exceptions.FalkorDBConnectionException if the server can't be reached or the connection
-     *     fails
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     List<String> explain(String query, Map<String, @Nullable Object> params);
 

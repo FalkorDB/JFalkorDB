@@ -79,7 +79,9 @@ final class ExceptionMapping {
      * @return {@code true} for a connection failure
      */
     static boolean isConnectionFailure(Throwable failure) {
-        return failure instanceof JedisConnectionException || failure instanceof FalkorDBConnectionException;
+        // The client's own type first: while it extends JedisConnectionException the second test alone would do,
+        // but this one is what keeps the answer right once it no longer does.
+        return failure instanceof FalkorDBConnectionException || failure instanceof JedisConnectionException;
     }
 
     private static <E extends RuntimeException> E copyInto(RuntimeException original, E copy) {

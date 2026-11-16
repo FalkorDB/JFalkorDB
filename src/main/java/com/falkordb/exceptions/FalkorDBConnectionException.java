@@ -22,8 +22,10 @@ import redis.clients.jedis.exceptions.JedisConnectionException;
  * <p>When the connection broke after a command was sent, whether the command ran is unknown, so retrying a
  * write may repeat it.
  *
- * <p>Catch this type rather than {@code JedisConnectionException}: a later release roots the client's
- * exceptions in a type of its own instead of Jedis', and code that catches this one keeps working.
+ * <p>Around those methods, and an {@link com.falkordb.AsyncGraph}'s, catch this type rather than {@code
+ * JedisConnectionException}: a later release roots the client's exceptions in a type of its own instead of
+ * Jedis', and code that catches this one keeps working. The methods of {@link com.falkordb.GraphPipeline} and
+ * {@link com.falkordb.GraphTransaction} still throw Jedis' {@code JedisConnectionException}.
  */
 public class FalkorDBConnectionException extends JedisConnectionException {
     private static final long serialVersionUID = 1L;

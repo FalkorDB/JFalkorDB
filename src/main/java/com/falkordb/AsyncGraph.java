@@ -25,9 +25,10 @@ import org.jspecify.annotations.Nullable;
  * a not-yet-started query, but cannot interrupt a query already on the wire — bound in-flight work with
  * a per-query/server timeout or a finite socket timeout (not {@code cancel()}). Failures surface as the
  * future completing exceptionally ({@code join()} throws {@link java.util.concurrent.CompletionException};
- * {@code get()} throws {@link java.util.concurrent.ExecutionException}), whose cause is what the synchronous
- * {@code Graph} method throws, such as a {@link com.falkordb.exceptions.GraphException} or a {@link
- * com.falkordb.exceptions.FalkorDBConnectionException}. The map/list arguments are read
+ * {@code get()} throws {@link java.util.concurrent.ExecutionException}). Once the operation runs, the cause is
+ * what the synchronous {@code Graph} method threw, such as a {@link com.falkordb.exceptions.GraphException} or a
+ * {@link com.falkordb.exceptions.FalkorDBConnectionException}; an executor that rejects the operation completes
+ * the future with its {@link java.util.concurrent.RejectedExecutionException} instead. The map/list arguments are read
  * later on the worker thread, so do not mutate them until the future completes.
  */
 public interface AsyncGraph {
