@@ -391,6 +391,50 @@ The check is about form only: it doesn't limit which procedure runs, and some ch
 as `db.idx.fulltext.drop`. If the procedure name comes from untrusted input, check it against a list
 of the procedures you allow.
 
+## Handling errors
+
+The client reports failures with two exception types from `com.falkordb.exceptions`:
+
+| Exception | Thrown when | Extends (until a later release re-roots it) |
+| --- | --- | --- |
+| `GraphException` | The server rejects a command: a query, a procedure call, `explain`, `profile`, `copyGraph`, `deleteGraph`, a `Driver` method such as `configGet` or `udfDelete`, `watch`, `unwatch`, or an `AUTH` rejected with a plain error while a connection opens. | `JedisDataException` |
+| `FalkorDBConnectionException` | A connection to the server can't be opened, or it breaks or times out while a command is sent or its reply read. | `JedisConnectionException` |
+
+This covers the methods of `Driver`, `Graph`, `GraphContextGenerator` (including `getContext()`) and
+`GraphContext`. An `AsyncGraph` future completes exceptionally with the same exceptions as the cause of the
+`CompletionException` that `join()` throws, or of the `ExecutionException` that `get()` throws. The exceptions
+listed further down still come out as Jedis raises them.
+
+```java
+try {
+    graph.query("MATCH (n) RETURN n");
+} catch (FalkorDBConnectionException e) {
+    // the server is unreachable or the connection broke; a write may or may not have run
+} catch (GraphException e) {
+    // the server rejected the command
+}
+```
+
+Each extends the Jedis exception that earlier versions threw in its place, so existing
+`catch (JedisConnectionException e)` and `catch (JedisDataException e)` clauses still match. A
+`FalkorDBConnectionException`, and a `GraphException` from a `Driver` method, `watch`, `unwatch` or a connection
+being opened, has the message, cause and suppressed exceptions of the Jedis one. A `GraphException` from a graph
+command is unchanged from earlier versions: it wraps the Jedis exception as its cause, and its message is the
+`toString()` of that cause. Code that compares `getClass()` with the Jedis classes, or that catches `GraphException`
+before `JedisDataException`, may notice the change. Prefer catching the two client types: a later release
+re-roots them in an exception of the client's own, and `catch` clauses for these two types keep working
+across that change.
+
+A few failures still come out as Jedis raises them:
+
+- A pool that stays exhausted for `poolMaxWait` throws a plain `JedisException` whose cause is a
+  `NoSuchElementException`.
+- A Redis Cluster none of whose nodes can be reached throws a `JedisClusterOperationException`.
+- An error Jedis has its own subclass for keeps that subclass when a `Driver` method gets it, such as
+  `JedisAccessControlException` for `NOPERM`. A graph command wraps it in a `GraphException` as its cause.
+- The methods of a `GraphPipeline` or `GraphTransaction`, and commands on the `Jedis` that `getConnection()`
+  returns, mostly report what Jedis raises.
+
 ## Configuring Connection Pool
 
 You can customize the connection pool to optimize performance and resource usage. JFalkorDB uses [Jedis](https://github.com/redis/jedis) internally, which provides comprehensive pool configuration options.

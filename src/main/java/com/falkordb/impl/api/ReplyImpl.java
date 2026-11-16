@@ -85,7 +85,9 @@ final class ReplyImpl<T extends @Nullable Object> implements Reply<T> {
         }
         GraphException error = serverError;
         if (error == null) {
-            error = new GraphException(e.getMessage(), e);
+            // as the rest of the client's API maps a server error; a subclass, such as a redirect, is the cause
+            RuntimeException mapped = ExceptionMapping.map(e);
+            error = mapped instanceof GraphException ? (GraphException) mapped : new GraphException(e.getMessage(), e);
             serverError = error;
         }
         return error;

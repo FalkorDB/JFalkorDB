@@ -2559,6 +2559,16 @@ com.falkordb.Statistics$Label
   method public static com.falkordb.Statistics$Label valueOf(java.lang.String)
   method public static com.falkordb.Statistics$Label[] values()
 
+com.falkordb.exceptions.FalkorDBConnectionException
+  type public class com.falkordb.exceptions.FalkorDBConnectionException
+  extends redis.clients.jedis.exceptions.JedisConnectionException
+  supertype java.lang.RuntimeException
+  supertype redis.clients.jedis.exceptions.JedisConnectionException
+  supertype redis.clients.jedis.exceptions.JedisException
+  constructor public com.falkordb.exceptions.FalkorDBConnectionException(java.lang.String)
+  constructor public com.falkordb.exceptions.FalkorDBConnectionException(java.lang.String, java.lang.Throwable)
+  constructor public com.falkordb.exceptions.FalkorDBConnectionException(java.lang.Throwable)
+
 com.falkordb.exceptions.GraphException
   type public class com.falkordb.exceptions.GraphException
   extends redis.clients.jedis.exceptions.JedisDataException

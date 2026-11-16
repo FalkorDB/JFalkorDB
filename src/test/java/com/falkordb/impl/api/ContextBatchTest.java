@@ -163,7 +163,7 @@ class ContextBatchTest {
 
         GraphException first = assertThrows(GraphException.class, failed::get);
         assertEquals("ERR failed on purpose", first.getMessage());
-        assertInstanceOf(JedisDataException.class, first.getCause());
+        assertEquals(GraphException.class, first.getClass(), "mapped as the rest of the API maps a server error");
         assertSame(first, assertThrows(GraphException.class, failed::get));
         assertSame(first, results.get(0));
     }
@@ -386,7 +386,7 @@ class ContextBatchTest {
         Reply<Object> set = pipeline.sendCommand("SET", "k", "v");
         server.dropClients();
 
-        assertThrows(RuntimeException.class, pipeline::sync);
+        assertThrows(com.falkordb.exceptions.FalkorDBConnectionException.class, pipeline::sync);
         IllegalStateException e = assertThrows(IllegalStateException.class, set::get);
         assertTrue(e.getMessage().contains("failed"), e.getMessage());
     }
@@ -461,7 +461,8 @@ class ContextBatchTest {
         GraphContext.Pipeline pipeline = context.pipeline();
         Reply<Object> set = pipeline.sendCommand("SET", "k", "v");
         server.dropClients();
-        RuntimeException failure = assertThrows(RuntimeException.class, pipeline::sync);
+        RuntimeException failure =
+                assertThrows(com.falkordb.exceptions.FalkorDBConnectionException.class, pipeline::sync);
 
         IllegalStateException unread = assertThrows(IllegalStateException.class, set::get);
         assertSame(failure, unread.getCause());
@@ -504,14 +505,14 @@ class ContextBatchTest {
     }
 
     @Test
-    void aRefusedTransactionKeepsTheServersErrorAsTheCause() {
+    void aRefusedTransactionsErrorIsTheCauseOfItsRepliesFailures() {
         GraphContext.Transaction transaction = context.transaction();
         Reply<Object> set = transaction.sendCommand("SET", "k", "v");
         connections.get(0).refuseExec = true;
 
         GraphException e = assertThrows(GraphException.class, transaction::exec);
-        JedisDataException cause = assertInstanceOf(JedisDataException.class, e.getCause());
-        assertSame(cause, assertThrows(IllegalStateException.class, set::get).getCause());
+        assertEquals(GraphException.class, e.getClass());
+        assertSame(e, assertThrows(IllegalStateException.class, set::get).getCause());
     }
 
     @Test

@@ -30,7 +30,7 @@ final class ContextTransaction extends ContextBatch<GraphTransactionImpl> implem
 
     private void checkOpen() {
         if (!batch.queuing()) {
-            throw new IllegalStateException("the transaction has ended: " + batch.unread(), batch.unreadCause());
+            throw new IllegalStateException("the transaction has ended: " + batch.unread(), unreadCause());
         }
     }
 
@@ -47,10 +47,10 @@ final class ContextTransaction extends ContextBatch<GraphTransactionImpl> implem
         List<Object> results;
         try {
             results = batch.exec();
-        } catch (JedisDataException e) {
+        } catch (RuntimeException e) {
             dropPending();
-            throw e instanceof GraphException ? e : new GraphException(e.getMessage(), e);
-        } catch (RuntimeException | Error e) {
+            throw asGraphException(failed(e));
+        } catch (Error e) {
             dropPending();
             throw e;
         }
@@ -66,11 +66,21 @@ final class ContextTransaction extends ContextBatch<GraphTransactionImpl> implem
         checkQueuing();
         try {
             batch.discard();
-        } catch (JedisDataException e) {
-            throw e instanceof GraphException ? e : new GraphException(e.getMessage(), e);
+        } catch (RuntimeException e) {
+            throw asGraphException(failed(e));
         } finally {
             dropPending();
         }
+    }
+
+    /**
+     * Returns a server error as a {@link GraphException}: {@link ExceptionMapping} makes a plain
+     * {@code JedisDataException} one, and leaves a subclass, such as a redirect, which becomes the cause of one here.
+     */
+    private static RuntimeException asGraphException(RuntimeException e) {
+        return e instanceof JedisDataException && !(e instanceof GraphException)
+                ? new GraphException(e.getMessage(), e)
+                : e;
     }
 
     /** Discards the transaction unless it has ended; nothing to do once the context is closed, which discarded it. */

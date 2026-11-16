@@ -77,7 +77,26 @@ abstract class ContextBatch<B extends GraphBatch> {
 
     /** The exception that made the batch fail, which is why a reply can't be read; null if none did. */
     final @Nullable Throwable unreadCause() {
-        return batch.unreadCause();
+        Throwable failure = failure();
+        return failure != null ? failure : batch.unreadCause();
+    }
+
+    /** What the caller got when the batch's read, exec or discard failed: the failure as {@link #failed} mapped it. */
+    private @Nullable RuntimeException failure;
+
+    private @Nullable RuntimeException failure() {
+        return failure;
+    }
+
+    /**
+     * Maps a failure of the batch's read, exec or discard as the rest of the client's API does (see
+     * {@link ExceptionMapping}), and keeps it as the cause of the {@link IllegalStateException} of a reply that can't be
+     * read because of it.
+     */
+    final RuntimeException failed(RuntimeException e) {
+        RuntimeException mapped = ExceptionMapping.map(e);
+        failure = mapped;
+        return mapped;
     }
 
     /** How many of the commands queued have had their replies read. */
@@ -116,7 +135,7 @@ abstract class ContextBatch<B extends GraphBatch> {
     final <T extends @Nullable Object> Reply<T> queue(Supplier<Response<T>> append, boolean nullable) {
         checkQueuing();
         long position = batch.appended();
-        Response<T> response = append.get();
+        Response<T> response = ExceptionMapping.mapped(append); // writing the command can fail
         context.hold(batch, replies); // not collected while it awaits the reply
         ReplyImpl<T> reply = new ReplyImpl<>(this, response, position, nullable);
         pending.add(reply);

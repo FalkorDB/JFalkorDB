@@ -42,6 +42,8 @@ public interface GraphContext extends Graph {
      * Returns a Redis transactional object, over the connection context, with graph API capabilities
      * @return Redis transactional object, over the connection context, with graph API capabilities
      * @throws IllegalStateException if the context is closed
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      * @deprecated Use {@link #transaction()}. Its {@link Transaction} has the same graph methods, returns
      *     JFalkorDB's own {@link Reply} instead of Jedis' {@code Response}, and queues other Redis commands with
      *     {@link Transaction#sendCommand(String, String...)}. This method and {@link GraphTransaction} are removed in
@@ -95,12 +97,18 @@ public interface GraphContext extends Graph {
      * Perform watch over given Redis keys (Graphs names)
      * @param keys Redis keys (Graphs names)
      * @return "OK"
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the command
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     String watch(String... keys);
 
     /**
      * Removes watch from all keys
      * @return "OK"
+     * @throws com.falkordb.exceptions.GraphException if the server rejects the command
+     * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
+     *     fails while the command is sent or its reply read
      */
     String unwatch();
 
@@ -123,8 +131,9 @@ public interface GraphContext extends Graph {
      *
      * <p>A graph reply is decoded when it is read, as for the deprecated {@link GraphPipeline}, which describes how
      * a {@link #deleteGraph()} affects the replies queued before it. A reply that fails to decode throws the same
-     * exception on every {@link Reply#get()}. The server's error replies are
-     * {@link com.falkordb.exceptions.GraphException}s.
+     * exception on every {@link Reply#get()}. As in the rest of the client's API, the server's error replies are
+     * {@link com.falkordb.exceptions.GraphException}s, and a connection that can't be opened, or fails, throws a
+     * {@link com.falkordb.exceptions.FalkorDBConnectionException}.
      *
      * <p>While the pipeline awaits replies, the context's connection is its own: the context runs none of its own
      * commands, and no other pipeline or transaction can be started or used on it, since what they sent would be
@@ -458,7 +467,7 @@ public interface GraphContext extends Graph {
          *
          * <p>Unlike {@link Closeable#close()}, this throws no checked exception. It can still throw an unchecked
          * one: an {@link IllegalStateException} if another pipeline or transaction on the context awaits replies,
-         * or, say, a {@code JedisConnectionException} if the connection fails.
+         * or a {@link com.falkordb.exceptions.FalkorDBConnectionException} if the connection fails.
          */
         @Override
         void close();
@@ -487,8 +496,9 @@ public interface GraphContext extends Graph {
      * <p>A transaction is used once: after {@link #exec()} or {@link #discard()} nothing can be queued on it. The
      * replies are decoded by {@code exec()}, as for the deprecated {@link GraphTransaction}, which describes how a
      * {@link #deleteGraph()} affects the replies queued before it. A reply that fails to decode throws the same
-     * exception on every {@link Reply#get()}. The server's error replies are
-     * {@link com.falkordb.exceptions.GraphException}s. {@code COPY} of the graph can't be queued in a transaction:
+     * exception on every {@link Reply#get()}. As in the rest of the client's API, the server's error replies are
+     * {@link com.falkordb.exceptions.GraphException}s, and a connection that can't be opened, or fails, throws a
+     * {@link com.falkordb.exceptions.FalkorDBConnectionException}. {@code COPY} of the graph can't be queued in a transaction:
      * FalkorDB doesn't support it there.
      *
      * <p>Until the transaction ends, the context's connection is its own: the context runs none of its own commands,

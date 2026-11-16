@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.exceptions.JedisRedirectionException;
 import redis.clients.jedis.util.SafeEncoder;
@@ -209,6 +210,11 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     /**
      * Sends {@code ASKING} before a graph command once {@link #askBeforeEachCommand()} was called, except before the
      * first command: the route sent its {@code ASKING} when it lent the connection.
+     *
+     * <p>It is called outside the commands' {@code try} on purpose. Only {@link GraphImpl} turns asking on, for a
+     * context it makes inside {@link DriverImpl#routed} and never hands out, and it maps what escapes that call (see
+     * {@link ExceptionMapping}), so a connection failure here still reaches the caller mapped. Inside the {@code try},
+     * an error reply to {@code ASKING} would be wrapped like a graph command's instead of mapped.
      */
     private void askIfImporting() {
         if (!asking) {
@@ -256,6 +262,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             throw rt;
         } catch (JedisDataException j) {
             throw new GraphException(j);
+        } catch (JedisConnectionException e) {
+            throw ExceptionMapping.map(e);
         }
     }
 
@@ -277,6 +285,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             throw ge;
         } catch (JedisDataException de) {
             throw new GraphException(de);
+        } catch (JedisConnectionException e) {
+            throw ExceptionMapping.map(e);
         }
     }
 
@@ -304,6 +314,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             throw rt;
         } catch (JedisDataException j) {
             throw new GraphException(j);
+        } catch (JedisConnectionException e) {
+            throw ExceptionMapping.map(e);
         }
     }
 
@@ -331,6 +343,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             throw ge;
         } catch (JedisDataException de) {
             throw new GraphException(de);
+        } catch (JedisConnectionException e) {
+            throw ExceptionMapping.map(e);
         }
     }
 
@@ -352,6 +366,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             throw ge;
         } catch (JedisDataException de) {
             throw new GraphException(de);
+        } catch (JedisConnectionException e) {
+            throw ExceptionMapping.map(e);
         }
     }
 
@@ -385,7 +401,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     public Transaction transaction() {
         checkOpen();
         checkConnectionFree(null);
-        GraphTransactionImpl transaction = newTransaction();
+        GraphTransactionImpl transaction = ExceptionMapping.mapped(this::newTransaction); // MULTI can fail
         strictUsers.add(transaction.replies());
         hold(transaction, transaction.replies()); // MULTI awaits its reply
         return new ContextTransaction(transaction, this);
@@ -428,7 +444,10 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
         checkOpen();
         GraphTransactionImpl transaction =
                 new GraphTransactionImpl(connection.getConnection(), this::decodeQueued, this.cache, this.graphId);
-        transaction.multi();
+        ExceptionMapping.mapped(() -> {
+            transaction.multi();
+            return null;
+        });
         connectionUsers.add(transaction.replies());
         track(transaction);
         return transaction;
@@ -482,7 +501,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     @Override
     public String watch(String... keys) {
         checkNoBatchAwaits();
-        return connection.watch(keys);
+        return ExceptionMapping.mapped(() -> connection.watch(keys));
     }
 
     /**
@@ -492,7 +511,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
     @Override
     public String unwatch() {
         checkNoBatchAwaits();
-        return connection.unwatch();
+        return ExceptionMapping.mapped(connection::unwatch);
     }
 
     /**
@@ -512,6 +531,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             throw ge;
         } catch (JedisDataException de) {
             throw new GraphException(de);
+        } catch (JedisConnectionException e) {
+            throw ExceptionMapping.map(e);
         }
         return SafeEncoder.encode((byte[]) response);
     }
@@ -533,6 +554,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             throw ge;
         } catch (JedisDataException de) {
             throw new GraphException(de);
+        } catch (JedisConnectionException e) {
+            throw ExceptionMapping.map(e);
         }
         // clear local state
         this.cache.clear();
@@ -555,6 +578,8 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             throw ge;
         } catch (JedisDataException de) {
             throw new GraphException(de);
+        } catch (JedisConnectionException e) {
+            throw ExceptionMapping.map(e);
         }
     }
 

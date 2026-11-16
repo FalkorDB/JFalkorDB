@@ -34,7 +34,7 @@ final class ContextPipeline extends ContextBatch<GraphPipelineImpl> implements G
         }
         if (batch.readFailed()) {
             throw new IllegalStateException(
-                    "a read of the pipeline's replies failed, so it can't be used any more", batch.unreadCause());
+                    "a read of the pipeline's replies failed, so it can't be used any more", unreadCause());
         }
     }
 
@@ -106,8 +106,11 @@ final class ContextPipeline extends ContextBatch<GraphPipelineImpl> implements G
         }
         try {
             batch.sync();
-        } catch (RuntimeException | Error e) {
+        } catch (RuntimeException e) {
             dropPending(); // they will never be read
+            throw failed(e);
+        } catch (Error e) {
+            dropPending();
             throw e;
         }
     }
@@ -130,7 +133,10 @@ final class ContextPipeline extends ContextBatch<GraphPipelineImpl> implements G
             if (!batch.readFailed() && batch.hasPipelinedResponse()) {
                 checkConnection();
             }
-            batch.close();
+            ExceptionMapping.mapped(() -> {
+                batch.close();
+                return null;
+            });
         } finally {
             dropPending(); // a reply the caller keeps holds the pipeline, which mustn't hold every other reply
         }
