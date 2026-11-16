@@ -27,7 +27,13 @@ public final class PipelineAndTransaction {
      */
     public static void main(String[] args) {
         String host = args.length > 0 ? args[0] : "localhost";
-        int port = args.length > 1 ? Integer.parseInt(args[1]) : 6379;
+        int port;
+        try {
+            port = args.length > 1 ? Integer.parseInt(args[1]) : 6379;
+        } catch (NumberFormatException e) {
+            System.err.println("Usage: PipelineAndTransaction [<host> [<port>]]; not a port: " + args[1]);
+            return;
+        }
 
         try (Driver driver = FalkorDB.builder().host(host).port(port).build()) {
             GraphContextGenerator graph = driver.graph("pipeline-example");
