@@ -106,9 +106,10 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
  label, property key or relationship type. <code>exec()</code> decodes the replies before it
  learns whether the delete succeeded, so it does the same for a delete that fails.
 
- <p>A <a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a> while decoding a reply becomes that reply's element of
- the list <code>exec()</code> returns, like an error reply. Jedis does not keep it, so reading the same
- <code>Response</code> afterwards returns <code>null</code>.</div>
+ <p>A graph reply that fails to decode, with a <a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a> or with the
+ failure of a lookup that decoding needed, becomes that reply's element of the list <code>exec()</code> returns, like
+ an error reply, and the other replies are still returned. Every <code>get()</code> of its <code>Response</code> throws
+ the same exception.</div>
 </section>
 <section class="summary">
 <ul class="summary-list">
@@ -664,7 +665,8 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
  <p>The list is <code>null</code> when the transaction was aborted, because a key it <code>WATCH</code>ed changed. An
  element is <code>null</code> where that command's reply is nil, such as a queued <code>get</code> of a missing key; a
  command that failed has its exception, a <code>JedisDataException</code> such as a
- <a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a>, as its element instead of throwing it.</div>
+ <a href="exceptions/GraphException.html" title="class in com.falkordb.exceptions"><code>GraphException</code></a>, as its element instead of throwing it. So does a graph reply
+ that failed to decode with a <code>RuntimeException</code>, such as the failure of a lookup that decoding needed.</div>
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>a list of the executed transaction commands answers, whose elements may be <code>null</code>, in case of
