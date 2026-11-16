@@ -445,7 +445,7 @@ master's address and listen for failovers, never have a read deadline.
 
 ### Connection Pool Configuration with SSL/TLS
 
-`ssl(true)` connects over TLS with the JVM's default trust store, and verifies the server's hostname:
+`ssl(true)` connects over TLS with the default trust store of the JVM, and verifies the server's hostname:
 
 ```java
 Driver driver = FalkorDB.builder()
