@@ -47,8 +47,9 @@
   extending those. For `AsyncGraph`, check the cause of the `CompletionException` /
   `ExecutionException`. A few failures are still Jedis types: an exhausted pool (`JedisException`),
   an unreachable Redis Cluster (`JedisClusterOperationException`), an error Jedis has a subclass for
-  from a `Driver` method (such as `JedisAccessControlException`), and `GraphPipeline` /
-  `GraphTransaction` methods.
+  from a `Driver` method (such as `JedisAccessControlException`), `GraphPipeline` /
+  `GraphTransaction` methods, and commands on the `Jedis` that `getConnection()` returns (only
+  borrowing it is mapped).
 - A `Driver` owns the connection pool: close it, ideally with try-with-resources. After 0.15.0 its
   `close()` throws no checked exception, so don't wrap it in `catch (IOException e)`: that no longer
   compiles. Up to 0.15.0 it declares `IOException`, which the enclosing method must catch or declare.
