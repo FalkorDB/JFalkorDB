@@ -94,8 +94,9 @@ try (GraphContext context = graph.getContext()) {
 The graph methods keep their names and arguments; only the return type changes. As before, a pipeline sends each
 command as it is queued, and reads the replies together in `sync()`, `syncAndReturnAll()` or `close()`;
 `get()` doesn't read the reply off the connection, but decoding a
-query reply can look up a label or property name the client hasn't cached: on the connection of the context, or,
-while a batch awaits replies, on a connection borrowed from the pool. What else differs:
+query reply can look up a label, relationship type or property name the client hasn't cached. It does so on the
+connection of the context, or on one borrowed from the pool once the context is closed or while a batch awaits
+replies. What else differs:
 
 | | `GraphPipeline` / `GraphTransaction` | `GraphContext.Pipeline` / `Transaction` |
 | --- | --- | --- |
