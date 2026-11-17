@@ -32,13 +32,16 @@ or `mvn compile -Dmaven.compiler.showDeprecation=true`.
 
 ### Pipelines: `pipelined()` to `pipeline()`
 
+The examples use a graph named `social`, so the other keys carry `{social}` as a hash tag and stay in
+the slot of the graph on a Redis Cluster ([below](#transactions-are-not-database-transactions)).
+
 ```java
 // Before (0.16.x)
 try (GraphContext context = graph.getContext()) {
     GraphPipeline pipeline = context.pipelined();
-    pipeline.set("visits", "0");
+    pipeline.set("{social}:visits", "0");
     Response<ResultSet> created = pipeline.query("CREATE (:Person {name: 'Alice'})");
-    Response<Long> visits = pipeline.incr("visits");
+    Response<Long> visits = pipeline.incr("{social}:visits");
     pipeline.sync();
     System.out.println(created.get().getStatistics().nodesCreated() + " node, " + visits.get() + " visits");
 }
@@ -48,9 +51,9 @@ try (GraphContext context = graph.getContext()) {
 // After (0.17.0)
 try (GraphContext context = graph.getContext()) {
     GraphContext.Pipeline pipeline = context.pipeline();
-    pipeline.sendCommand("SET", "visits", "0");
+    pipeline.sendCommand("SET", "{social}:visits", "0");
     Reply<ResultSet> created = pipeline.query("CREATE (:Person {name: 'Alice'})");
-    Reply<Object> visits = pipeline.sendCommand("INCR", "visits"); // a Long
+    Reply<Object> visits = pipeline.sendCommand("INCR", "{social}:visits"); // a Long
     pipeline.sync();
     System.out.println(created.get().getStatistics().nodesCreated() + " node, " + visits.get() + " visits");
 }
@@ -64,7 +67,7 @@ try (GraphContext context = graph.getContext()) {
     context.watch("social");
     GraphTransaction transaction = context.multi();
     Response<ResultSet> created = transaction.query("CREATE (:Person {name: 'Bob'})");
-    transaction.incr("people");
+    transaction.incr("{social}:people");
     List<Object> results = transaction.exec();
     if (results != null) { // null: "social" changed after watch(), and nothing ran
         System.out.println(created.get().getStatistics().nodesCreated());
@@ -78,7 +81,7 @@ try (GraphContext context = graph.getContext()) {
     context.watch("social");
     GraphContext.Transaction transaction = context.transaction();
     Reply<ResultSet> created = transaction.query("CREATE (:Person {name: 'Bob'})");
-    transaction.sendCommand("INCR", "people");
+    transaction.sendCommand("INCR", "{social}:people");
     List<Object> results = transaction.exec();
     if (results != null) { // null: "social" changed after watch(), and nothing ran
         System.out.println(created.get().getStatistics().nodesCreated());
@@ -94,7 +97,7 @@ The graph methods keep their names and arguments; only the return type changes. 
 | --- | --- | --- |
 | Reply type | Jedis `Response<T>` | `Reply<T>`, which extends `Supplier<T>` |
 | Other Redis commands | about a thousand typed Jedis methods, such as `hgetAll` | `sendCommand(name, args...)`, refused for some commands ([below](#stricter-rules-of-pipeline-and-transaction)) |
-| Reply to `sendCommand` | n/a | JDK types: `String` (`byte[]` from `sendBinaryCommand`), `Long`, `List`, or `null` for nil. `HGETALL` is a `List` of fields and values, not a `Map` |
+| Reply to `sendCommand` | n/a | JDK types. On the default RESP2 connection: `String` (`byte[]` from `sendBinaryCommand`), `Long`, `List`, or `null` for nil, so `HGETALL` is a `List` of fields and values. With `protocol=3` in the connection URI, a map is a `LinkedHashMap` (an empty one an empty `List`), and doubles, booleans and big numbers get their own types |
 | An error reply | `JedisDataException` | `GraphException`, the same instance on every `get()` and in the returned list |
 | `EXECABORT` from `exec()` | `JedisDataException` | `GraphException` |
 | Connection failure | `JedisConnectionException` | `FalkorDBConnectionException` |
@@ -158,7 +161,7 @@ These compile unchanged and act differently.
 
 | Change | 0.16.x | 0.17.0 | What to do |
 | --- | --- | --- | --- |
-| FalkorDB on Valkey reports `server_mode:cluster` or `server_mode:sentinel` in `INFO`, not `redis_mode:`, unless `extended-redis-compatibility` is on ([#532](https://github.com/FalkorDB/JFalkorDB/pull/532)) | Not detected: a plain direct connection | Detected, as for Redis: driven as a cluster (`listGraphs`, `configSet` and the `udf*` methods run on every primary; `CLUSTER SLOTS` must be allowed; every node must be reachable at the address it announces), or through the Sentinel, which throws `IllegalStateException` if it monitors no master or several | Nothing, if you want detection. Otherwise build the driver with `FalkorDB.builder()` and `autoDetectCluster(false)` or `autoDetectSentinel(false)`; the `FalkorDB.driver(...)` factories always detect |
+| FalkorDB on Valkey reports `server_mode:cluster` or `server_mode:sentinel` in `INFO`, not `redis_mode:`, unless `extended-redis-compatibility` is on ([#532](https://github.com/FalkorDB/JFalkorDB/pull/532)) | Not detected: a plain direct connection | Detected, as for Redis: driven as a cluster (`listGraphs`, `configSet`, `udfLoad`, `udfDelete` and `udfFlush` run on every primary, `configGet` and `udfList` on any one; `CLUSTER SLOTS` must be allowed; every node must be reachable at the address it announces), or through the Sentinel, which throws `IllegalStateException` if it monitors no master or several | Nothing, if you want detection. Otherwise build the driver with `FalkorDB.builder()` and `autoDetectCluster(false)` or `autoDetectSentinel(false)`; the `FalkorDB.driver(...)` factories always detect |
 | `multi()` or `pipelined()` on a closed context ([#530](https://github.com/FalkorDB/JFalkorDB/pull/530)) | Returned a batch on a connection that may already be lent to someone else | Throws `IllegalStateException` | Start batches before you close the context |
 | Closing a context with a batch still open ([#530](https://github.com/FalkorDB/JFalkorDB/pull/530)) | The connection went back to the pool still inside `MULTI`, or with unread replies, and the next borrower read them as its own | An open transaction is discarded, and the replies a pipeline awaits are read, so `close()` waits for them. If several batches await replies, or ending one fails, the connection is closed instead of pooled | End each batch yourself, with `exec()`, `discard()`, `sync()` or `close()`. A reply of a transaction that closing discarded can't be read |
 | Exception classes ([#535](https://github.com/FalkorDB/JFalkorDB/pull/535)) | `JedisConnectionException`; a plain `JedisDataException` from `Driver` methods, `watch` and `unwatch` | `FalkorDBConnectionException` and `GraphException`, which extend those | `catch` clauses keep matching. Replace `getClass() ==` checks with `instanceof`, and check the catch order (see [Exceptions](#exceptions)). Logs show the new class names |
@@ -176,7 +179,7 @@ corrupt the connection or run a command outside the batch:
 | Queuing after `exec()` or `discard()` | The command ran at once, outside the transaction | `IllegalStateException`. A transaction is used once |
 | Queuing after the pipeline is closed, or after one of its reads failed | Allowed | `IllegalStateException`. After a failed read, closing the context closes its connection |
 | Queuing after the context is closed | Allowed | `IllegalStateException` |
-| A command that would break the batch, the connection or the schema cache | Allowed | `sendCommand` throws `IllegalArgumentException` and sends nothing |
+| A command listed below, which would break the batch, the connection or the schema cache | Allowed | `sendCommand` throws `IllegalArgumentException` and sends nothing |
 | Reading a reply of a transaction that was discarded, aborted by `WATCH` or refused | `IllegalStateException`: "Please close pipeline or multi block" | `IllegalStateException` saying why, with the failure as its cause when there is one |
 
 `sendCommand` refuses, ignoring case:
@@ -192,6 +195,9 @@ corrupt the connection or run a command outside the batch:
   `PSYNC`, `REPLCONF`;
 - blocking commands: `BLPOP`, `BRPOP`, `BRPOPLPUSH`, `BLMOVE`, `BLMPOP`, `BZPOPMIN`, `BZPOPMAX`, `BZMPOP`,
   `WAITAOF`, `DEBUG SLEEP`, and `XREAD` or `XREADGROUP` with `BLOCK`.
+
+Other commands are sent as they are. A write to the graph key that isn't listed, such as a `SET` of it or
+its expiry, leaves the schema cache as it was, as a change by another client would.
 
 The [`sendCommand` Javadoc](https://falkordb.github.io/JFalkorDB/dev/api/com/falkordb/GraphContext.Pipeline.html#sendCommand(java.lang.String,java.lang.String...))
 has the details. Some of these may be allowed in a later release.
@@ -259,8 +265,9 @@ FalkorDB has no transactions of its own. `transaction()`, like `multi()` before 
   ones after it still run; the failure is its element of the list `exec()` returns. Only a command rejected
   while it is queued aborts everything (`EXECABORT`).
 - Replies arrive only at `exec()`. Use `watch(...)` for optimistic concurrency.
-- In a Redis Cluster every key must be in the hash slot of the graph: give the keys the graph name as a hash
-  tag.
+- In a Redis Cluster every key must be in the hash slot of the graph. Tag the keys with the graph name,
+  `{social}:people` for a graph named `social`; if the graph name already has a hash tag, as `tenant:{social}`
+  does, reuse that tag. `CLUSTER KEYSLOT` shows the slot of a key.
 
 For changes to a graph that must apply all together or not at all, use one Cypher query:
 
