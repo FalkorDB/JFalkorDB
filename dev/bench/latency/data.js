@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794834989236,
+  "lastUpdate": 1794893121724,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -21155,6 +21155,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 53324.225,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "374b0d4bd24efcf48685f39b88e9322b148aedcf",
+          "message": "feat: add GraphContext.pipeline() and transaction(), whose replies are JFalkorDB's own Reply (#537)\n\n* feat: add GraphContext.pipeline() and transaction(), whose replies are JFalkorDB's own Reply\n\nGraphContext.Pipeline and GraphContext.Transaction have the graph methods of\nGraphPipeline and GraphTransaction, return Reply<T> (a Supplier<T>) instead of\nJedis' Response<T>, and queue other Redis commands with a guarded\nsendCommand/sendBinaryCommand instead of inheriting Jedis' command interfaces.\nNo signature or supertype of the new types names a Jedis type.\n\nGraphPipeline, GraphTransaction, pipelined() and multi() are deprecated, for\nremoval in 0.18.0. The new types are views over the same implementation\n(GraphPipelineImpl / GraphTransactionImpl), so the context's close handling\nand the decode-failure handling apply to both.\n\nPart of #400.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* build: update the API surface snapshot for GraphContext.Pipeline, Transaction and Reply\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* refactor: pass the raw-reply decoder without a method reference\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: a decode failure that is a JedisDataException is thrown as it is\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: reword the README's new section for the spellchecker\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: report a malformed port in the pipeline example instead of throwing\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: address review: SCRIPT DEBUG, MIGRATE AUTH, dropped batches awaiting replies, Error identity, docs\n\n- refuse SCRIPT DEBUG, which puts the connection in Lua debugger mode\n- skip MIGRATE's AUTH/AUTH2 operands when looking for KEYS\n- hold a new pipeline or transaction strongly while it awaits replies, so a\n  dropped one can't be collected and look done\n- rethrow an Error from decoding on every get(), and forget the replies of a\n  read whose decoding threw one\n- docs: WAIT is a blocking command in a transaction, hash-tagged keys in the\n  README and example, RESP3 maps, Reply's identity guarantee scoped\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: MIGRATE's AUTH and AUTH2 operands aren't taken for its KEYS option\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* refactor: declare the held batches as an IdentityHashMap\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: address review: close() lets go of pending replies, DEBUG SLEEP refused, docs\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: a server error in a reply is mapped as the rest of the API maps one\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: say what GraphContext.Transaction is: MULTI/EXEC on graph commands, not a database transaction\n\nFalkorDB has no transactions of its own. The Javadoc of GraphContext.Transaction,\nthe README and the deprecated GraphTransaction now say so: commands run back to\nback at EXEC, nothing is rolled back (a query that fails while it runs leaves the\nothers applied), only EXECABORT runs nothing, replies arrive at EXEC (use WATCH),\nkeys must share the graph's hash slot in a cluster, and all-or-nothing graph\nchanges belong in one Cypher query.\n\nContextTransactionIT.aQueryThatFailsWhileItRunsRollsNothingBack pins the\nno-rollback statement against a real server.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: check that close() lets go of the pending replies without relying on garbage collection\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: the Jedis-free gate checks type-parameter bounds, and fixtures prove each check finds a Jedis type\n\nAlso reword the README's \"Valkey's\" for the spellchecker.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: keep close()'s mapped failure for the replies, and let a closed context's views go of their replies\n\n- ContextPipeline.close() keeps the mapped failure (failed(e)), so a saved\n  reply's IllegalStateException has the exception the caller got as its cause\n- closing the context tells the pipeline and transaction views it created, which\n  drop their pending replies: a reply the caller keeps no longer keeps the others\n- JedisFreeApiTest's cycle guard compares type variables by equality\n- Javadoc: the MULTI/EXEC of Redis (or Valkey)\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: say what reading a reply does after its context closed, for pipelines and transactions\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-17T07:22:49+02:00",
+          "tree_id": "84200f960e6b45f8649a0547dcb2c3643138988c",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/374b0d4bd24efcf48685f39b88e9322b148aedcf"
+        },
+        "date": 1794893120216,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 106.761,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 128.966,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 142.636,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 136.658,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 170.129,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 201.837,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 200.664,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 304.821,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 369.751,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 335.588,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 558.617,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 700.976,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 392.325,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 3601.106,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 7938.289,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 413.902,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 10239.609,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 22647.112,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 411.633,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 22255.403,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 50207.463,
             "unit": "us"
           }
         ]
