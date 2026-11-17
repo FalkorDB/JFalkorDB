@@ -91,7 +91,9 @@ try (GraphContext context = graph.getContext()) {
 
 ### `Response<T>` to `Reply<T>`
 
-The graph methods keep their names and arguments; only the return type changes. What else differs:
+The graph methods keep their names and arguments; only the return type changes. As before, a pipeline sends each
+command as it is queued, and reads the replies together in `sync()`, `syncAndReturnAll()` or `close()`;
+`get()` doesn't read from the connection. What else differs:
 
 | | `GraphPipeline` / `GraphTransaction` | `GraphContext.Pipeline` / `Transaction` |
 | --- | --- | --- |
@@ -161,11 +163,11 @@ These compile unchanged and act differently.
 
 | Change | 0.16.x | 0.17.0 | What to do |
 | --- | --- | --- | --- |
-| FalkorDB on Valkey reports `server_mode:cluster` or `server_mode:sentinel` in `INFO`, not `redis_mode:`, unless `extended-redis-compatibility` is on ([#532](https://github.com/FalkorDB/JFalkorDB/pull/532)) | Not detected: a plain direct connection | Detected, as for Redis: driven as a cluster (`listGraphs`, `configSet`, `udfLoad`, `udfDelete` and `udfFlush` run on every primary, `configGet` and `udfList` on any one; `CLUSTER SLOTS` must be allowed; every node must be reachable at the address it announces), or through the Sentinel, which throws `IllegalStateException` if it monitors no master or several | Nothing, if you want detection. Otherwise build the driver with `FalkorDB.builder()` and `autoDetectCluster(false)` or `autoDetectSentinel(false)`; the `FalkorDB.driver(...)` factories always detect |
+| FalkorDB on Valkey reports `server_mode:cluster` or `server_mode:sentinel` in `INFO`, not `redis_mode:`, unless `extended-redis-compatibility` is on ([#532](https://github.com/FalkorDB/JFalkorDB/pull/532)) | Not detected: a plain direct connection | Detected, as for Redis: driven as a cluster (`listGraphs`, `configSet`, `udfLoad`, `udfDelete` and `udfFlush` run on every primary, `configGet`, `configGetAll` and `udfList` on any one; `CLUSTER SLOTS` must be allowed; every node must be reachable at the address it announces), or through the Sentinel, which throws `IllegalStateException` if it monitors no master or several | Nothing, if you want detection. Otherwise build the driver with `FalkorDB.builder()` and `autoDetectCluster(false)` or `autoDetectSentinel(false)`; the `FalkorDB.driver(...)` factories always detect |
 | `multi()` or `pipelined()` on a closed context ([#530](https://github.com/FalkorDB/JFalkorDB/pull/530)) | Returned a batch on a connection that may already be lent to someone else | Throws `IllegalStateException` | Start batches before you close the context |
 | Closing a context with a batch still open ([#530](https://github.com/FalkorDB/JFalkorDB/pull/530)) | The connection went back to the pool still inside `MULTI`, or with unread replies, and the next borrower read them as its own | An open transaction is discarded, and the replies a pipeline awaits are read, so `close()` waits for them. If several batches await replies, or ending one fails, the connection is closed instead of pooled | End each batch yourself, with `exec()`, `discard()`, `sync()` or `close()`. A reply of a transaction that closing discarded can't be read |
 | Exception classes ([#535](https://github.com/FalkorDB/JFalkorDB/pull/535)) | `JedisConnectionException`; a plain `JedisDataException` from `Driver` methods, `watch` and `unwatch` | `FalkorDBConnectionException` and `GraphException`, which extend those | `catch` clauses keep matching. Replace `getClass() ==` checks with `instanceof`, and check the catch order (see [Exceptions](#exceptions)). Logs show the new class names |
-| A reply in a batch that fails to decode ([#529](https://github.com/FalkorDB/JFalkorDB/pull/529)) | The first `get()` threw, later ones returned `null`. A failed schema lookup, such as an exhausted pool, escaped `syncAndReturnAll()` or `exec()` and lost every other reply | Every `get()` throws the same exception. The failure is that reply's element of the returned list, and the other replies are returned | Check list elements with `instanceof Exception`, as for error replies |
+| A reply in a batch that fails to decode ([#529](https://github.com/FalkorDB/JFalkorDB/pull/529)) | The first `get()` threw, later ones returned `null`. A failed schema lookup, such as an exhausted pool, escaped `syncAndReturnAll()` or `exec()` and lost every other reply | Every `get()` throws the same exception, or, if decoding threw an `Error` inside the read of the batch, an `IllegalStateException` saying the reply couldn't be decoded. The failure is that reply's element of the returned list, and the other replies are returned | Check list elements with `instanceof Exception`, as for error replies |
 
 ### Stricter rules of `pipeline()` and `transaction()`
 
@@ -184,8 +186,9 @@ corrupt the connection or run a command outside the batch:
 
 `sendCommand` refuses, ignoring case:
 
-- commands the API runs itself: `MULTI`, `EXEC`, `DISCARD`, `WATCH`, `UNWATCH`, `WAIT` (use
-  `Pipeline.waitReplicas`), and every `GRAPH.*` command;
+- commands the API runs itself: `MULTI`, `EXEC`, `DISCARD`, `WATCH`, `UNWATCH`, and every `GRAPH.*` command;
+  `WAIT` too: on a pipeline use `Pipeline.waitReplicas`, and in a transaction it is refused as a blocking
+  command, with no replacement;
 - commands that delete or replace the graph key behind the schema cache: `DEL`, `UNLINK`, `GETDEL`, `RENAME`,
   `RENAMENX`, `MOVE`, `RESTORE` and `MIGRATE` of the graph key, `COPY` onto it, `FLUSHALL`, `FLUSHDB` and
   `SWAPDB` (use `deleteGraph()`);
@@ -208,14 +211,16 @@ has the details. Some of these may be allowed in a later release.
 | --- | --- | --- |
 | A connection can't be opened, breaks or times out, in a `Driver`, `Graph`, `GraphContextGenerator` (including `getContext()`) or `GraphContext` method | `JedisConnectionException` | `FalkorDBConnectionException`, which extends it |
 | The server rejects a graph command: a query, a procedure call, `explain`, `profile`, `copyGraph`, `deleteGraph` | `GraphException` | `GraphException`, unchanged |
-| The server rejects a `Driver` method (such as `configGet` of an unknown parameter), `watch`, `unwatch`, or an `AUTH` or `SELECT` while a connection opens, with a plain error | `JedisDataException` | `GraphException`, which extends it |
-| An error Jedis has a subclass for, from a `Driver` method, such as `JedisAccessControlException` for `NOPERM` | that subclass | unchanged |
+| The server rejects a `Driver` method (such as `configGet` of an unknown parameter), `watch`, `unwatch`, or an `AUTH` or `SELECT` while a connection opens, with a plain error (Jedis throws `JedisDataException` itself, not a subclass) | `JedisDataException` | `GraphException`, which extends it |
+| An error Jedis has a subclass for, from a `Driver` method or while a connection opens, such as `JedisAccessControlException` for `WRONGPASS` or `NOPERM` | that subclass | unchanged |
 | A pool that stays exhausted for `poolMaxWait` | `JedisException` | unchanged |
 | A Redis Cluster none of whose nodes can be reached | `JedisClusterOperationException` | unchanged |
 | Methods of the deprecated `GraphPipeline` and `GraphTransaction`, and commands on the `Jedis` from `getConnection()` | Jedis exceptions | mostly unchanged |
 | Methods of `GraphContext.Pipeline` and `Transaction` | n/a | `GraphException` and `FalkorDBConnectionException` |
 
-An `AsyncGraph` future fails with the same exceptions as its cause. A mapped exception keeps the message,
+An `AsyncGraph` future completes exceptionally: `join()` throws `CompletionException` and `get()` throws
+`ExecutionException`, whose cause is the exception above once the operation runs. If the executor rejects
+the operation, the future fails with its `RejectedExecutionException` instead. A mapped exception keeps the message,
 cause, suppressed exceptions and stack trace of the Jedis one; only its class changes.
 
 How existing code behaves:
