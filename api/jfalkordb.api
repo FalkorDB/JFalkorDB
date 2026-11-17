@@ -120,8 +120,9 @@ com.falkordb.GraphContext
   method public abstract java.lang.String deleteGraph()
   method public abstract java.util.List<java.lang.String> explain(java.lang.String)
   method public abstract java.util.List<java.lang.String> explain(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>)
-  method public abstract com.falkordb.GraphTransaction multi()
-  method public abstract com.falkordb.GraphPipeline pipelined()
+  method @Deprecated public abstract com.falkordb.GraphTransaction multi()
+  method public default com.falkordb.GraphContext$Pipeline pipeline()
+  method @Deprecated public abstract com.falkordb.GraphPipeline pipelined()
   method public abstract com.falkordb.ResultSet profile(java.lang.String)
   method public abstract com.falkordb.ResultSet profile(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>)
   method public abstract com.falkordb.ResultSet query(java.lang.String)
@@ -132,8 +133,63 @@ com.falkordb.GraphContext
   method public abstract com.falkordb.ResultSet readOnlyQuery(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>)
   method public abstract com.falkordb.ResultSet readOnlyQuery(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, long)
   method public abstract com.falkordb.ResultSet readOnlyQuery(java.lang.String, long)
+  method public default com.falkordb.GraphContext$Transaction transaction()
   method public abstract java.lang.String unwatch()
   method public abstract java.lang.String watch(java.lang.String...)
+
+com.falkordb.GraphContext$Pipeline
+  type public interface com.falkordb.GraphContext$Pipeline
+  extends java.io.Closeable
+  supertype java.io.Closeable
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> callProcedure(java.lang.String)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> callProcedure(java.lang.String, java.util.List<java.lang.String>)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> callProcedure(java.lang.String, java.util.List<java.lang.String>, java.util.Map<java.lang.String, java.util.List<java.lang.String>>)
+  method public abstract void close()
+  method public abstract com.falkordb.Reply<java.lang.String> copyGraph(java.lang.String)
+  method public abstract com.falkordb.Reply<java.lang.String> deleteGraph()
+  method public abstract com.falkordb.Reply<java.util.List<java.lang.String>> explain(java.lang.String)
+  method public abstract com.falkordb.Reply<java.util.List<java.lang.String>> explain(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> profile(java.lang.String)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> profile(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> query(java.lang.String)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> query(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> query(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, long)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> query(java.lang.String, long)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> readOnlyQuery(java.lang.String)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> readOnlyQuery(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> readOnlyQuery(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, long)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> readOnlyQuery(java.lang.String, long)
+  method public abstract com.falkordb.Reply<java.lang.Object> sendBinaryCommand(java.lang.String, byte[]...)
+  method public abstract com.falkordb.Reply<java.lang.Object> sendCommand(java.lang.String, java.lang.String...)
+  method public abstract void sync()
+  method public abstract java.util.List<java.lang.Object> syncAndReturnAll()
+  method public abstract com.falkordb.Reply<java.lang.Long> waitReplicas(int, long)
+
+com.falkordb.GraphContext$Transaction
+  type public interface com.falkordb.GraphContext$Transaction
+  extends java.io.Closeable
+  supertype java.io.Closeable
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> callProcedure(java.lang.String)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> callProcedure(java.lang.String, java.util.List<java.lang.String>)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> callProcedure(java.lang.String, java.util.List<java.lang.String>, java.util.Map<java.lang.String, java.util.List<java.lang.String>>)
+  method public abstract void close()
+  method public abstract com.falkordb.Reply<java.lang.String> deleteGraph()
+  method public abstract void discard()
+  method public abstract java.util.List<java.lang.Object> exec()
+  method public abstract com.falkordb.Reply<java.util.List<java.lang.String>> explain(java.lang.String)
+  method public abstract com.falkordb.Reply<java.util.List<java.lang.String>> explain(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> profile(java.lang.String)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> profile(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> query(java.lang.String)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> query(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> query(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, long)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> query(java.lang.String, long)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> readOnlyQuery(java.lang.String)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> readOnlyQuery(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> readOnlyQuery(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, long)
+  method public abstract com.falkordb.Reply<com.falkordb.ResultSet> readOnlyQuery(java.lang.String, long)
+  method public abstract com.falkordb.Reply<java.lang.Object> sendBinaryCommand(java.lang.String, byte[]...)
+  method public abstract com.falkordb.Reply<java.lang.Object> sendCommand(java.lang.String, java.lang.String...)
 
 com.falkordb.GraphContextGenerator
   type public interface com.falkordb.GraphContextGenerator
@@ -161,7 +217,7 @@ com.falkordb.GraphContextGenerator
   method public abstract com.falkordb.ResultSet readOnlyQuery(java.lang.String, long)
 
 com.falkordb.GraphPipeline
-  type public interface com.falkordb.GraphPipeline
+  type @Deprecated public interface com.falkordb.GraphPipeline
   extends java.io.Closeable
   extends redis.clients.jedis.commands.PipelineBinaryCommands
   extends redis.clients.jedis.commands.PipelineCommands
@@ -1299,7 +1355,7 @@ com.falkordb.GraphPipeline
   method public abstract redis.clients.jedis.Response<java.lang.Long> zunionstore(java.lang.String, redis.clients.jedis.params.ZParams, java.lang.String...)
 
 com.falkordb.GraphTransaction
-  type public interface com.falkordb.GraphTransaction
+  type @Deprecated public interface com.falkordb.GraphTransaction
   extends java.io.Closeable
   extends redis.clients.jedis.commands.PipelineBinaryCommands
   extends redis.clients.jedis.commands.PipelineCommands
@@ -2463,6 +2519,12 @@ com.falkordb.Record
   method public abstract java.util.List<java.lang.String> keys()
   method public abstract int size()
   method public abstract java.util.List<java.lang.Object> values()
+
+com.falkordb.Reply
+  type public interface com.falkordb.Reply<T>
+  extends java.util.function.Supplier<T>
+  supertype java.util.function.Supplier<T>
+  method public abstract T get()
 
 com.falkordb.ResultSet
   type public interface com.falkordb.ResultSet

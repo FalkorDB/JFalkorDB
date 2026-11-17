@@ -66,7 +66,7 @@ import com.falkordb.graph_entities.Path;
 import com.falkordb.Graph;
 import com.falkordb.GraphContext;
 import com.falkordb.GraphContextGenerator;
-import com.falkordb.GraphTransaction;
+import com.falkordb.Reply;
 import com.falkordb.Record;
 import com.falkordb.ResultSet;
 import com.falkordb.FalkorDB;
@@ -121,17 +121,28 @@ public class GraphExample {
             try(GraphContext context = contextGraph.getContext()) {
                 context.query("CREATE (:person{name:'roi',age:32})");
                 context.query("MATCH (a:person), (b:person) WHERE (a.name = 'roi' AND b.name='amit') CREATE (a)-[:knows]->(b)");
-                // WATCH/MULTI/EXEC
+                // WATCH/MULTI/EXEC: the transaction doesn't run if the graph changed since watch()
                 context.watch("contextSocial");
 
-                GraphTransaction t = context.multi();
-                t.query("MATCH (a:person)-[r:knows]->(b:person{name:$name,age:$age}) RETURN a, r, b", params);
-                // support for Redis/Jedis native commands in transaction
-                t.set("x", "1");
-                t.get("x");
-                // get multi/exec results
-                List<Object> execResults =  t.exec();
-                System.out.println(execResults.toString());
+                GraphContext.Transaction t = context.transaction();
+                Reply<ResultSet> matched =
+                        t.query("MATCH (a:person)-[r:knows]->(b:person{name:$name,age:$age}) RETURN a, r, b", params);
+                // other Redis commands go in with sendCommand; in a cluster, a key needs the graph's name as a
+                // hash tag to be on the graph's node
+                t.sendCommand("SET", "{contextSocial}x", "1");
+                Reply<Object> x = t.sendCommand("GET", "{contextSocial}x");
+                // run the transaction; null if it was aborted
+                List<Object> execResults = t.exec();
+                if (execResults != null) {
+                    System.out.println(matched.get().size() + " matches, x = " + x.get());
+                }
+
+                // a pipeline sends each command as it is queued, and reads the replies together
+                GraphContext.Pipeline p = context.pipeline();
+                Reply<ResultSet> created = p.query("CREATE (:person{name:'dana',age:28})");
+                Reply<Object> visits = p.sendCommand("INCR", "{contextSocial}visits");
+                p.sync();
+                System.out.println(created.get().getStatistics().nodesCreated() + " node, " + visits.get() + " visits");
 
                 context.deleteGraph();
             }
@@ -139,6 +150,49 @@ public class GraphExample {
     }
 }
 ```
+
+## Pipelines and transactions
+
+`GraphContext.pipeline()` and `GraphContext.transaction()` queue graph commands, and other Redis commands through
+`sendCommand`, on the context's connection. Each command returns a `Reply<T>`, read with `get()` once
+`sync()` or `exec()` has read it. Their API names no Jedis type, so it doesn't change when Jedis does.
+
+A transaction is the `MULTI`/`EXEC` of Redis (or Valkey) applied to graph commands; FalkorDB itself has no
+transactions, so it is not a database transaction:
+
+- The queued commands run back to back at `EXEC`, with no other client's command in between.
+- Nothing is rolled back. If a queued graph query fails while it runs, the commands before it stay applied and the
+  ones after it still run; the failure is that command's element of what `exec()` returns. Only a command the server
+  rejects while it is queued aborts the whole transaction (`EXECABORT`), and then nothing runs.
+- Replies arrive only at `EXEC`, so you can't read inside the transaction and decide on what you read. For
+  optimistic concurrency, `watch(...)` the keys first: `exec()` then runs nothing, and returns `null`, if one changed.
+- In a Redis Cluster every key must be in the graph's hash slot: give the keys the graph's name as a hash tag.
+- For changes to a graph that must apply all together or not at all, put them in a single Cypher query.
+
+They replace `pipelined()` and `multi()`, whose `GraphPipeline` and `GraphTransaction` return Jedis'
+`Response<T>` and inherit about a thousand Jedis methods each. Those are deprecated, and removed in 0.18.0:
+
+| Before | After |
+| --- | --- |
+| `GraphPipeline p = context.pipelined();` | `GraphContext.Pipeline p = context.pipeline();` |
+| `GraphTransaction t = context.multi();` | `GraphContext.Transaction t = context.transaction();` |
+| `Response<ResultSet> r = p.query(...);` | `Reply<ResultSet> r = p.query(...);` |
+| `p.set("x", "1"); p.incr("x"); p.get("x");` | `p.sendCommand("SET", "x", "1"); p.sendCommand("INCR", "x"); p.sendCommand("GET", "x");` |
+| `t.discard()` returns `"OK"` | `t.discard()` returns nothing |
+
+The differences to look out for:
+
+- A reply to `sendCommand` comes back raw: a string as a `String` (`sendBinaryCommand` keeps it as `byte[]`), an
+  integer as a `Long`, an array or a set as a `List`, nil as `null`. So `HGETALL` gives a `List` of fields and
+  values, not the `Map` Jedis' `hgetAll` built. On a connection that asks for RESP3 (`protocol=3` in its URI), a
+  map reply is a `LinkedHashMap` instead, except an empty one, which is an empty `List`.
+- An error reply is a `GraphException`, where it was a `JedisDataException` (which `GraphException` still extends).
+- `sendCommand` refuses what would break the batch, the connection or the client's schema cache, such as
+  `MULTI`, `SELECT`, `CLIENT`, blocking commands, `GRAPH.*` commands and `DEL` of the graph's key. The full list is in the documentation of `sendCommand`.
+- While a pipeline awaits replies, or a transaction is open, the context runs no other command, and no other
+  pipeline or transaction starts on it: each throws `IllegalStateException` instead of reading a reply that belongs to another batch.
+- A transaction is used once: nothing can be queued after `exec()` or `discard()`. A pipeline can't be used after
+  `close()`, or after a `sync()` that failed.
 
 ## Configuring the driver from the environment
 

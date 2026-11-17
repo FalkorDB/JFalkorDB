@@ -10,7 +10,8 @@ import redis.clients.jedis.commands.PipelineCommands;
 import redis.clients.jedis.commands.RedisModulePipelineCommands;
 
 /**
- * An interface which aligned to Jedis transactional interface
+ * The {@code MULTI}/{@code EXEC} of Redis (or Valkey) applied to graph commands, not a database transaction: see
+ * {@link GraphContext.Transaction}, which replaces it, for what that does and doesn't guarantee.
  *
  * <p>{@link #exec()} decodes every graph reply before it returns. {@link #deleteGraph()} clears the client's
  * schema cache when {@code exec()} has run the delete: not when it is queued, and not at all if the
@@ -26,7 +27,13 @@ import redis.clients.jedis.commands.RedisModulePipelineCommands;
  * failure of a lookup that decoding needed, becomes that reply's element of the list {@code exec()} returns, like
  * an error reply, and the other replies are still returned. Every {@code get()} of its {@code Response} throws
  * the same exception.
+ *
+ * @deprecated Use {@link GraphContext.Transaction}, from {@link GraphContext#transaction()}. It has the same graph methods,
+ *     returns JFalkorDB's own {@link Reply} instead of Jedis' {@code Response}, and queues other Redis commands
+ *     with {@code sendCommand}, or {@code sendBinaryCommand} for binary arguments, instead of inheriting Jedis' command interfaces, so its API doesn't change when
+ *     Jedis does. This interface, with the thousand-odd methods it inherits from Jedis, is removed in 0.18.0.
  */
+@Deprecated
 public interface GraphTransaction
         extends PipelineCommands, PipelineBinaryCommands, RedisModulePipelineCommands, Closeable {
 

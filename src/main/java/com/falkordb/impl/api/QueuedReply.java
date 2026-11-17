@@ -79,6 +79,14 @@ final class QueuedReply<T> extends Response<T> {
         return reply;
     }
 
+    /**
+     * Whether decoding the reply failed: then {@link #get()} throws what decoding threw, rather than the server's
+     * error.
+     */
+    boolean failedToDecode() {
+        return builder.failure != null;
+    }
+
     @Override
     public void set(Object data) {
         queued.set(data);
