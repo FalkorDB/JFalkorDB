@@ -53,7 +53,33 @@ loadScripts(document, 'script');</script>
 </div>
 <h2 title="Contents">Contents</h2>
 <ul class="contents-list">
+<li id="contents-interface"><a href="#interface">Interfaces</a></li>
 <li id="contents-method"><a href="#method">Methods</a></li>
+</ul>
+<ul class="block-list">
+<li>
+<div id="interface">
+<div class="caption"><span>Deprecated Interfaces</span></div>
+<div class="summary-table two-column-summary">
+<div class="table-header col-first">Interface</div>
+<div class="table-header col-last">Description</div>
+<div class="col-summary-item-name even-row-color"><a href="com/falkordb/GraphPipeline.html" title="interface in com.falkordb">com.falkordb.GraphPipeline</a></div>
+<div class="col-last even-row-color">
+<div class="block">Use <a href="com/falkordb/GraphContext.Pipeline.html" title="interface in com.falkordb"><code>GraphContext.Pipeline</code></a>, from <a href="com/falkordb/GraphContext.html#pipeline()"><code>GraphContext.pipeline()</code></a>. It has the same graph methods,
+     returns JFalkorDB's own <a href="com/falkordb/Reply.html" title="interface in com.falkordb"><code>Reply</code></a> instead of Jedis' <code>Response</code>, and queues other Redis commands
+     with <code>sendCommand</code>, or <code>sendBinaryCommand</code> for binary arguments, instead of inheriting Jedis' command interfaces, so its API doesn't change when
+     Jedis does. This interface, with the thousand-odd methods it inherits from Jedis, is removed in 0.18.0.</div>
+</div>
+<div class="col-summary-item-name odd-row-color"><a href="com/falkordb/GraphTransaction.html" title="interface in com.falkordb">com.falkordb.GraphTransaction</a></div>
+<div class="col-last odd-row-color">
+<div class="block">Use <a href="com/falkordb/GraphContext.Transaction.html" title="interface in com.falkordb"><code>GraphContext.Transaction</code></a>, from <a href="com/falkordb/GraphContext.html#transaction()"><code>GraphContext.transaction()</code></a>. It has the same graph methods,
+     returns JFalkorDB's own <a href="com/falkordb/Reply.html" title="interface in com.falkordb"><code>Reply</code></a> instead of Jedis' <code>Response</code>, and queues other Redis commands
+     with <code>sendCommand</code>, or <code>sendBinaryCommand</code> for binary arguments, instead of inheriting Jedis' command interfaces, so its API doesn't change when
+     Jedis does. This interface, with the thousand-odd methods it inherits from Jedis, is removed in 0.18.0.</div>
+</div>
+</div>
+</div>
+</li>
 </ul>
 <ul class="block-list">
 <li>
@@ -68,6 +94,20 @@ loadScripts(document, 'script');</script>
      graph commands through <a href="com/falkordb/Driver.html#graph(java.lang.String)"><code>Driver.graph(String)</code></a>. Configure the connection pool, connection checks,
      database and TLS with <a href="com/falkordb/FalkorDB.html#builder()"><code>FalkorDB.builder()</code></a>. Run non-graph Redis commands with a Redis client
      of your own.</div>
+</div>
+<div class="col-summary-item-name odd-row-color"><a href="com/falkordb/GraphContext.html#multi()">com.falkordb.GraphContext.multi()</a></div>
+<div class="col-last odd-row-color">
+<div class="block">Use <a href="com/falkordb/GraphContext.html#transaction()"><code>GraphContext.transaction()</code></a>. Its <a href="com/falkordb/GraphContext.Transaction.html" title="interface in com.falkordb"><code>GraphContext.Transaction</code></a> has the same graph methods, returns
+     JFalkorDB's own <a href="com/falkordb/Reply.html" title="interface in com.falkordb"><code>Reply</code></a> instead of Jedis' <code>Response</code>, and queues other Redis commands with
+     <a href="com/falkordb/GraphContext.Transaction.html#sendCommand(java.lang.String,java.lang.String...)"><code>GraphContext.Transaction.sendCommand(String, String...)</code></a>. This method and <a href="com/falkordb/GraphTransaction.html" title="interface in com.falkordb"><code>GraphTransaction</code></a> are removed in
+     0.18.0.</div>
+</div>
+<div class="col-summary-item-name even-row-color"><a href="com/falkordb/GraphContext.html#pipelined()">com.falkordb.GraphContext.pipelined()</a></div>
+<div class="col-last even-row-color">
+<div class="block">Use <a href="com/falkordb/GraphContext.html#pipeline()"><code>GraphContext.pipeline()</code></a>. Its <a href="com/falkordb/GraphContext.Pipeline.html" title="interface in com.falkordb"><code>GraphContext.Pipeline</code></a> has the same graph methods, returns JFalkorDB's own
+     <a href="com/falkordb/Reply.html" title="interface in com.falkordb"><code>Reply</code></a> instead of Jedis' <code>Response</code>, and queues other Redis commands with
+     <a href="com/falkordb/GraphContext.Pipeline.html#sendCommand(java.lang.String,java.lang.String...)"><code>GraphContext.Pipeline.sendCommand(String, String...)</code></a>. This method and <a href="com/falkordb/GraphPipeline.html" title="interface in com.falkordb"><code>GraphPipeline</code></a> are removed in
+     0.18.0.</div>
 </div>
 <div class="col-summary-item-name odd-row-color"><a href="com/falkordb/Record.html#getValue(int)">com.falkordb.Record.getValue<wbr>(int)</a></div>
 <div class="col-last odd-row-color">

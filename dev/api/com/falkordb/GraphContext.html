@@ -39,7 +39,7 @@ loadScripts(document, 'script');</script>
 <li>
 <p>Summary:</p>
 <ul>
-<li>Nested</li>
+<li><a href="#nested-class-summary">Nested</a></li>
 <li>Field</li>
 <li>Constr</li>
 <li><a href="#method-summary">Method</a></li>
@@ -59,7 +59,7 @@ loadScripts(document, 'script');</script>
 <div id="navbar-sub-list">
 <ul class="sub-nav-list">
 <li>Summary:&nbsp;</li>
-<li>Nested&nbsp;|&nbsp;</li>
+<li><a href="#nested-class-summary">Nested</a>&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
 <li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method-summary">Method</a></li>
@@ -110,37 +110,80 @@ extends <a href="Graph.html" title="interface in com.falkordb">Graph</a></span><
 
  <p>Closing the context also ends what its transactions and pipelines left on the connection, so the next user
  of the connection gets it clean: a transaction still open is discarded, and the replies a pipeline still awaits
- are read, which waits for them to arrive. A <code>Response</code> of a transaction discarded this way can't be read.
- If more than one transaction or pipeline still awaits replies, or ending one fails, the connection is closed
- instead of being returned to the pool, and the <code>Response</code>s still waiting for its replies can't be read
- either. The same happens when a pipeline's last <code>sync()</code> or <code>syncAndReturnAll()</code> failed, and when a
+ are read, which waits for them to arrive. A <a href="Reply.html" title="interface in com.falkordb"><code>Reply</code></a>, or a deprecated <code>Response</code>, of a transaction
+ discarded this way can't be read. If more than one transaction or pipeline still awaits replies, or ending one
+ fails, the connection is closed instead of being returned to the pool, and a reply still waiting to be read can't
+ be read either. The same happens when a pipeline's last <code>sync()</code> or <code>syncAndReturnAll()</code> failed, and when a
  transaction or pipeline the caller dropped was garbage-collected before the context closed. The context holds
  its latest 128 transactions and pipelines, so only an older one can be collected; what it left on the connection
  is then unknown, and the graph's schema cache is cleared too, in case it deleted the graph. Like every other call
- on the context, close it on the thread that uses the context.</div>
+ on the context, close it on the thread that uses the context.
+
+ <p>While a <a href="#pipeline()"><code>pipeline()</code></a> awaits replies, or a <a href="#transaction()"><code>transaction()</code></a> is open, the context's connection is
+ theirs: the context's own commands, <a href="#watch(java.lang.String...)"><code>watch(String...)</code></a> and <a href="#unwatch()"><code>unwatch()</code></a> included, throw an
+ <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link"><code>IllegalStateException</code></a> rather than read one of their replies as their own, or be queued inside the
+ transaction. The deprecated <a href="#pipelined()"><code>pipelined()</code></a> and <a href="#multi()"><code>multi()</code></a> don't do that.</div>
 </section>
 <section class="summary">
 <ul class="summary-list">
+<!-- ======== NESTED CLASS SUMMARY ======== -->
+<li>
+<section class="nested-class-summary" id="nested-class-summary">
+<h2>Nested Class Summary</h2>
+<div class="caption"><span>Nested Classes</span></div>
+<div class="summary-table three-column-summary">
+<div class="table-header col-first">Modifier and Type</div>
+<div class="table-header col-second">Interface</div>
+<div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>static interface&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="GraphContext.Pipeline.html" class="type-name-link" title="interface in com.falkordb">GraphContext.Pipeline</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">A pipeline on a <a href="GraphContext.html" title="interface in com.falkordb"><code>GraphContext</code></a>'s connection: commands are sent as they are queued, and their replies are
+ read together, by <a href="GraphContext.Pipeline.html#sync()"><code>GraphContext.Pipeline.sync()</code></a>, <a href="GraphContext.Pipeline.html#syncAndReturnAll()"><code>GraphContext.Pipeline.syncAndReturnAll()</code></a> or <a href="GraphContext.Pipeline.html#close()"><code>GraphContext.Pipeline.close()</code></a>.</div>
+</div>
+<div class="col-first odd-row-color"><code>static interface&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="GraphContext.Transaction.html" class="type-name-link" title="interface in com.falkordb">GraphContext.Transaction</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">A transaction on a <a href="GraphContext.html" title="interface in com.falkordb"><code>GraphContext</code></a>'s connection: <code>MULTI</code> is sent when it starts, the commands are
+ queued on the server, and <a href="GraphContext.Transaction.html#exec()"><code>GraphContext.Transaction.exec()</code></a> runs them all at once.</div>
+</div>
+</div>
+</section>
+</li>
 <!-- ========== METHOD SUMMARY =========== -->
 <li>
 <section class="method-summary" id="method-summary">
 <h2>Method Summary</h2>
 <div id="method-summary-table">
-<div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">All Methods</button><button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="table-tab">Instance Methods</button><button id="method-summary-table-tab3" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab3', 3)" class="table-tab">Abstract Methods</button></div>
+<div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">All Methods</button><button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="table-tab">Instance Methods</button><button id="method-summary-table-tab3" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab3', 3)" class="table-tab">Abstract Methods</button><button id="method-summary-table-tab5" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab5', 3)" class="table-tab">Default Methods</button><button id="method-summary-table-tab6" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab6', 3)" class="table-tab">Deprecated Methods</button></div>
 <div id="method-summary-table.tabpanel" role="tabpanel" aria-labelledby="method-summary-table-tab0">
 <div class="summary-table three-column-summary">
 <div class="table-header col-first">Modifier and Type</div>
 <div class="table-header col-second">Method</div>
 <div class="table-header col-last">Description</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="GraphTransaction.html" title="interface in com.falkordb">GraphTransaction</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#multi()" class="member-name-link">multi</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
-<div class="block">Returns a Redis transactional object, over the connection context, with graph API capabilities</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="GraphTransaction.html" title="interface in com.falkordb">GraphTransaction</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#multi()" class="member-name-link">multi</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span>
+<div class="deprecation-comment">Use <a href="#transaction()"><code>transaction()</code></a>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="GraphPipeline.html" title="interface in com.falkordb">GraphPipeline</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#pipelined()" class="member-name-link">pipelined</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
-<div class="block">Returns a Redis pipeline object, over the connection context, with graph API capabilities</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="GraphContext.Pipeline.html" title="interface in com.falkordb">GraphContext.Pipeline</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#pipeline()" class="member-name-link">pipeline</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
+<div class="block">Starts a pipeline on this context's connection.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="GraphPipeline.html" title="interface in com.falkordb">GraphPipeline</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#pipelined()" class="member-name-link">pipelined</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span>
+<div class="deprecation-comment">Use <a href="#pipeline()"><code>pipeline()</code></a>.</div>
+</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="GraphContext.Transaction.html" title="interface in com.falkordb">GraphContext.Transaction</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#transaction()" class="member-name-link">transaction</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
+<div class="block">Starts a transaction on this context's connection, and sends <code>MULTI</code>.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#unwatch()" class="member-name-link">unwatch</a>()</code></div>
@@ -172,7 +215,14 @@ extends <a href="Graph.html" title="interface in com.falkordb">Graph</a></span><
 <li>
 <section class="detail" id="multi()">
 <h3>multi</h3>
-<div class="member-signature"><span class="return-type"><a href="GraphTransaction.html" title="interface in com.falkordb">GraphTransaction</a></span>&nbsp;<span class="element-name">multi</span>()</div>
+<div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Deprecated.html" title="class or interface in java.lang" class="external-link">@Deprecated</a>
+</span><span class="return-type"><a href="GraphTransaction.html" title="interface in com.falkordb">GraphTransaction</a></span>&nbsp;<span class="element-name">multi</span>()</div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+<div class="deprecation-comment">Use <a href="#transaction()"><code>transaction()</code></a>. Its <a href="GraphContext.Transaction.html" title="interface in com.falkordb"><code>GraphContext.Transaction</code></a> has the same graph methods, returns
+     JFalkorDB's own <a href="Reply.html" title="interface in com.falkordb"><code>Reply</code></a> instead of Jedis' <code>Response</code>, and queues other Redis commands with
+     <a href="GraphContext.Transaction.html#sendCommand(java.lang.String,java.lang.String...)"><code>GraphContext.Transaction.sendCommand(String, String...)</code></a>. This method and <a href="GraphTransaction.html" title="interface in com.falkordb"><code>GraphTransaction</code></a> are removed in
+     0.18.0.</div>
+</div>
 <div class="block">Returns a Redis transactional object, over the connection context, with graph API capabilities</div>
 <dl class="notes">
 <dt>Returns:</dt>
@@ -187,13 +237,55 @@ extends <a href="Graph.html" title="interface in com.falkordb">Graph</a></span><
 <li>
 <section class="detail" id="pipelined()">
 <h3>pipelined</h3>
-<div class="member-signature"><span class="return-type"><a href="GraphPipeline.html" title="interface in com.falkordb">GraphPipeline</a></span>&nbsp;<span class="element-name">pipelined</span>()</div>
+<div class="member-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Deprecated.html" title="class or interface in java.lang" class="external-link">@Deprecated</a>
+</span><span class="return-type"><a href="GraphPipeline.html" title="interface in com.falkordb">GraphPipeline</a></span>&nbsp;<span class="element-name">pipelined</span>()</div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+<div class="deprecation-comment">Use <a href="#pipeline()"><code>pipeline()</code></a>. Its <a href="GraphContext.Pipeline.html" title="interface in com.falkordb"><code>GraphContext.Pipeline</code></a> has the same graph methods, returns JFalkorDB's own
+     <a href="Reply.html" title="interface in com.falkordb"><code>Reply</code></a> instead of Jedis' <code>Response</code>, and queues other Redis commands with
+     <a href="GraphContext.Pipeline.html#sendCommand(java.lang.String,java.lang.String...)"><code>GraphContext.Pipeline.sendCommand(String, String...)</code></a>. This method and <a href="GraphPipeline.html" title="interface in com.falkordb"><code>GraphPipeline</code></a> are removed in
+     0.18.0.</div>
+</div>
 <div class="block">Returns a Redis pipeline object, over the connection context, with graph API capabilities</div>
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>Redis pipeline object, over the connection context, with graph API capabilities</dd>
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link">IllegalStateException</a></code> - if the context is closed</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="transaction()">
+<h3>transaction</h3>
+<div class="member-signature"><span class="modifiers">default</span>&nbsp;<span class="return-type"><a href="GraphContext.Transaction.html" title="interface in com.falkordb">GraphContext.Transaction</a></span>&nbsp;<span class="element-name">transaction</span>()</div>
+<div class="block">Starts a transaction on this context's connection, and sends <code>MULTI</code>. To have it abort if a key changes
+ before it runs, <a href="#watch(java.lang.String...)"><code>watch</code></a> the key first.
+
+ <p>The default implementation throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/UnsupportedOperationException.html" title="class or interface in java.lang" class="external-link"><code>UnsupportedOperationException</code></a>; the context the driver creates
+ implements it.</div>
+<dl class="notes">
+<dt>Returns:</dt>
+<dd>the transaction</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link">IllegalStateException</a></code> - if the context is closed, or a pipeline or transaction on it awaits replies</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/UnsupportedOperationException.html" title="class or interface in java.lang" class="external-link">UnsupportedOperationException</a></code> - if this implementation doesn't support it</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="pipeline()">
+<h3>pipeline</h3>
+<div class="member-signature"><span class="modifiers">default</span>&nbsp;<span class="return-type"><a href="GraphContext.Pipeline.html" title="interface in com.falkordb">GraphContext.Pipeline</a></span>&nbsp;<span class="element-name">pipeline</span>()</div>
+<div class="block">Starts a pipeline on this context's connection.
+
+ <p>The default implementation throws <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/UnsupportedOperationException.html" title="class or interface in java.lang" class="external-link"><code>UnsupportedOperationException</code></a>; the context the driver creates
+ implements it.</div>
+<dl class="notes">
+<dt>Returns:</dt>
+<dd>the pipeline</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link">IllegalStateException</a></code> - if the context is closed, or a pipeline or transaction on it awaits replies</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/UnsupportedOperationException.html" title="class or interface in java.lang" class="external-link">UnsupportedOperationException</a></code> - if this implementation doesn't support it</dd>
 </dl>
 </section>
 </li>

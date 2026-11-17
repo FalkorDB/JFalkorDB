@@ -92,8 +92,15 @@ loadScripts(document, 'script');</script>
 <dd><code>redis.clients.jedis.commands.ArrayPipelineBinaryCommands</code>, <code>redis.clients.jedis.commands.ArrayPipelineCommands</code>, <code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/AutoCloseable.html" title="class or interface in java.lang" class="external-link">AutoCloseable</a></code>, <code>redis.clients.jedis.commands.BitPipelineBinaryCommands</code>, <code>redis.clients.jedis.commands.BitPipelineCommands</code>, <code>redis.clients.jedis.bloom.commands.BloomFilterPipelineCommands</code>, <code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Closeable.html" title="class or interface in java.io" class="external-link">Closeable</a></code>, <code>redis.clients.jedis.bloom.commands.CountMinSketchPipelineCommands</code>, <code>redis.clients.jedis.bloom.commands.CuckooFilterPipelineCommands</code>, <code>redis.clients.jedis.commands.FunctionPipelineBinaryCommands</code>, <code>redis.clients.jedis.commands.FunctionPipelineCommands</code>, <code>redis.clients.jedis.commands.GeoPipelineBinaryCommands</code>, <code>redis.clients.jedis.commands.GeoPipelineCommands</code>, <code>redis.clients.jedis.commands.HashPipelineBinaryCommands</code>, <code>redis.clients.jedis.commands.HashPipelineCommands</code>, <code>redis.clients.jedis.commands.HyperLogLogPipelineBinaryCommands</code>, <code>redis.clients.jedis.commands.HyperLogLogPipelineCommands</code>, <code>redis.clients.jedis.commands.KeyPipelineBinaryCommands</code>, <code>redis.clients.jedis.commands.KeyPipelineCommands</code>, <code>redis.clients.jedis.commands.ListPipelineBinaryCommands</code>, <code>redis.clients.jedis.commands.ListPipelineCommands</code>, <code>redis.clients.jedis.commands.PipelineBinaryCommands</code>, <code>redis.clients.jedis.commands.PipelineCommands</code>, <code>redis.clients.jedis.bloom.commands.RedisBloomPipelineCommands</code>, <code>redis.clients.jedis.search.RediSearchPipelineCommands</code>, <code>redis.clients.jedis.json.commands.RedisJsonPipelineCommands</code>, <code>redis.clients.jedis.json.commands.RedisJsonV1PipelineCommands</code>, <code>redis.clients.jedis.json.commands.RedisJsonV2PipelineCommands</code>, <code>redis.clients.jedis.commands.RedisModulePipelineCommands</code>, <code>redis.clients.jedis.timeseries.RedisTimeSeriesPipelineCommands</code>, <code>redis.clients.jedis.commands.SampleBinaryKeyedPipelineCommands</code>, <code>redis.clients.jedis.commands.SampleKeyedPipelineCommands</code>, <code>redis.clients.jedis.commands.ScriptingKeyPipelineBinaryCommands</code>, <code>redis.clients.jedis.commands.ScriptingKeyPipelineCommands</code>, <code>redis.clients.jedis.commands.SetPipelineBinaryCommands</code>, <code>redis.clients.jedis.commands.SetPipelineCommands</code>, <code>redis.clients.jedis.commands.SortedSetPipelineBinaryCommands</code>, <code>redis.clients.jedis.commands.SortedSetPipelineCommands</code>, <code>redis.clients.jedis.commands.StreamPipelineBinaryCommands</code>, <code>redis.clients.jedis.commands.StreamPipelineCommands</code>, <code>redis.clients.jedis.commands.StringPipelineBinaryCommands</code>, <code>redis.clients.jedis.commands.StringPipelineCommands</code>, <code>redis.clients.jedis.bloom.commands.TDigestSketchPipelineCommands</code>, <code>redis.clients.jedis.bloom.commands.TopKFilterPipelineCommands</code>, <code>redis.clients.jedis.commands.VectorSetPipelineBinaryCommands</code>, <code>redis.clients.jedis.commands.VectorSetPipelineCommands</code></dd>
 </dl>
 <hr>
-<div class="type-signature"><span class="modifiers">public interface </span><span class="element-name type-name-label">GraphPipeline</span><span class="extends-implements">
+<div class="type-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Deprecated.html" title="class or interface in java.lang" class="external-link">@Deprecated</a>
+</span><span class="modifiers">public interface </span><span class="element-name type-name-label">GraphPipeline</span><span class="extends-implements">
 extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.commands.PipelineBinaryCommands, redis.clients.jedis.commands.RedisModulePipelineCommands, <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/io/Closeable.html" title="class or interface in java.io" class="external-link">Closeable</a></span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span>
+<div class="deprecation-comment">Use <a href="GraphContext.Pipeline.html" title="interface in com.falkordb"><code>GraphContext.Pipeline</code></a>, from <a href="GraphContext.html#pipeline()"><code>GraphContext.pipeline()</code></a>. It has the same graph methods,
+     returns JFalkorDB's own <a href="Reply.html" title="interface in com.falkordb"><code>Reply</code></a> instead of Jedis' <code>Response</code>, and queues other Redis commands
+     with <code>sendCommand</code>, or <code>sendBinaryCommand</code> for binary arguments, instead of inheriting Jedis' command interfaces, so its API doesn't change when
+     Jedis does. This interface, with the thousand-odd methods it inherits from Jedis, is removed in 0.18.0.</div>
+</div>
 <div class="block">An interface which aligned to Jedis Pipeline interface
 
  <p>A graph reply is decoded when it is read: by <a href="#syncAndReturnAll()"><code>syncAndReturnAll()</code></a>, or by <code>Response.get()</code>
@@ -134,131 +141,152 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <section class="method-summary" id="method-summary">
 <h2>Method Summary</h2>
 <div id="method-summary-table">
-<div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">All Methods</button><button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="table-tab">Instance Methods</button><button id="method-summary-table-tab3" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab3', 3)" class="table-tab">Abstract Methods</button></div>
+<div class="table-tabs" role="tablist" aria-orientation="horizontal"><button id="method-summary-table-tab0" role="tab" aria-selected="true" aria-controls="method-summary-table.tabpanel" tabindex="0" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table', 3)" class="active-table-tab">All Methods</button><button id="method-summary-table-tab2" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab2', 3)" class="table-tab">Instance Methods</button><button id="method-summary-table-tab3" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab3', 3)" class="table-tab">Abstract Methods</button><button id="method-summary-table-tab6" role="tab" aria-selected="false" aria-controls="method-summary-table.tabpanel" tabindex="-1" onkeydown="switchTab(event)" onclick="show('method-summary-table', 'method-summary-table-tab6', 3)" class="table-tab">Deprecated Methods</button></div>
 <div id="method-summary-table.tabpanel" role="tabpanel" aria-labelledby="method-summary-table-tab0">
 <div class="summary-table three-column-summary">
 <div class="table-header col-first">Modifier and Type</div>
 <div class="table-header col-second">Method</div>
 <div class="table-header col-last">Description</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#callProcedure(java.lang.String)" class="member-name-link">callProcedure</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;procedure)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#callProcedure(java.lang.String)" class="member-name-link">callProcedure</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;procedure)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Invokes stored procedures without arguments</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#callProcedure(java.lang.String,java.util.List)" class="member-name-link">callProcedure</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;procedure,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#callProcedure(java.lang.String,java.util.List)" class="member-name-link">callProcedure</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;procedure,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;args)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Invokes stored procedure with arguments</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#callProcedure(java.lang.String,java.util.List,java.util.Map)" class="member-name-link">callProcedure</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;procedure,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#callProcedure(java.lang.String,java.util.List,java.util.Map)" class="member-name-link">callProcedure</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;procedure,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;args,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&gt;&nbsp;kwargs)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Invoke a stored procedure</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>void</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#close()" class="member-name-link">close</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#close()" class="member-name-link">close</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Sends the queued commands and reads their replies, as <a href="#sync()"><code>sync()</code></a> does.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#copyGraph(java.lang.String)" class="member-name-link">copyGraph</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;destinationGraphId)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>redis.clients.jedis.Response<wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#copyGraph(java.lang.String)" class="member-name-link">copyGraph</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;destinationGraphId)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Copies the graph</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#deleteGraph()" class="member-name-link">deleteGraph</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>redis.clients.jedis.Response<wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#deleteGraph()" class="member-name-link">deleteGraph</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Deletes the entire graph.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#explain(java.lang.String)" class="member-name-link">explain</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>redis.clients.jedis.Response<wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#explain(java.lang.String)" class="member-name-link">explain</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Get the execution plan for a given query.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#explain(java.lang.String,java.util.Map)" class="member-name-link">explain</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>redis.clients.jedis.Response<wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#explain(java.lang.String,java.util.Map)" class="member-name-link">explain</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr>@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;&nbsp;params)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Get the execution plan for a given query with parameters.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#profile(java.lang.String)" class="member-name-link">profile</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#profile(java.lang.String)" class="member-name-link">profile</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Execute a Cypher query and produce an execution plan augmented with metrics
  for each operation's execution.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#profile(java.lang.String,java.util.Map)" class="member-name-link">profile</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#profile(java.lang.String,java.util.Map)" class="member-name-link">profile</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr>@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;&nbsp;params)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Execute a Cypher query with parameters and produce an execution plan augmented with metrics
  for each operation's execution.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#query(java.lang.String)" class="member-name-link">query</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#query(java.lang.String)" class="member-name-link">query</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Execute a Cypher query.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#query(java.lang.String,long)" class="member-name-link">query</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#query(java.lang.String,long)" class="member-name-link">query</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  long&nbsp;timeout)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Execute a Cypher query with timeout.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#query(java.lang.String,java.util.Map)" class="member-name-link">query</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#query(java.lang.String,java.util.Map)" class="member-name-link">query</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr>@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;&nbsp;params)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Executes a cypher query with parameters.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#query(java.lang.String,java.util.Map,long)" class="member-name-link">query</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#query(java.lang.String,java.util.Map,long)" class="member-name-link">query</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr>@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;&nbsp;params,
  long&nbsp;timeout)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Executes a cypher query with parameters and timeout.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#readOnlyQuery(java.lang.String)" class="member-name-link">readOnlyQuery</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#readOnlyQuery(java.lang.String)" class="member-name-link">readOnlyQuery</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Execute a Cypher read-only query.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#readOnlyQuery(java.lang.String,long)" class="member-name-link">readOnlyQuery</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#readOnlyQuery(java.lang.String,long)" class="member-name-link">readOnlyQuery</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  long&nbsp;timeout)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Execute a Cypher read-only query with timeout.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#readOnlyQuery(java.lang.String,java.util.Map)" class="member-name-link">readOnlyQuery</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#readOnlyQuery(java.lang.String,java.util.Map)" class="member-name-link">readOnlyQuery</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr>@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;&nbsp;params)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Executes a cypher read-only query with parameters.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#readOnlyQuery(java.lang.String,java.util.Map,long)" class="member-name-link">readOnlyQuery</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>redis.clients.jedis.Response<wbr>&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#readOnlyQuery(java.lang.String,java.util.Map,long)" class="member-name-link">readOnlyQuery</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr>@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;&nbsp;params,
  long&nbsp;timeout)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Executes a cypher read-only query with parameters and timeout.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#sync()" class="member-name-link">sync</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>void</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#sync()" class="member-name-link">sync</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Synchronize pipeline by reading all responses.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a><wbr>&lt;@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#syncAndReturnAll()" class="member-name-link">syncAndReturnAll</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a><wbr>&lt;@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#syncAndReturnAll()" class="member-name-link">syncAndReturnAll</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Synchronize pipeline by reading and decoding all responses.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>redis.clients.jedis.Response<wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html" title="class or interface in java.lang" class="external-link">Long</a>&gt;</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#waitReplicas(int,long)" class="member-name-link">waitReplicas</a><wbr>(int&nbsp;replicas,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code>redis.clients.jedis.Response<wbr>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html" title="class or interface in java.lang" class="external-link">Long</a>&gt;</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6"><code><a href="#waitReplicas(int,long)" class="member-name-link">waitReplicas</a><wbr>(int&nbsp;replicas,
  long&nbsp;timeout)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3 method-summary-table-tab6">
+<div class="block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Blocks until all the previous write commands are successfully transferred and acknowledged by
  at least the specified number of replicas.</div>
 </div>
@@ -397,6 +425,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <section class="detail" id="query(java.lang.String)">
 <h3>query</h3>
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">query</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Execute a Cypher query.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
@@ -410,6 +439,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <section class="detail" id="readOnlyQuery(java.lang.String)">
 <h3>readOnlyQuery</h3>
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">readOnlyQuery</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Execute a Cypher read-only query.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
@@ -424,6 +454,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <h3>query</h3>
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">query</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  long&nbsp;timeout)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Execute a Cypher query with timeout.
 
  <p>The timeout is sent with the query and limits how long the server runs it; <code>0</code> sets none, so
@@ -446,6 +477,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <h3>readOnlyQuery</h3>
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">readOnlyQuery</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  long&nbsp;timeout)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Execute a Cypher read-only query with timeout. The timeout works as for <a href="#query(java.lang.String,long)"><code>query(String, long)</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
@@ -463,6 +495,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <h3>query</h3>
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">query</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr>@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;&nbsp;params)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Executes a cypher query with parameters.
 
  <p>Parameter <em>values</em> are safely encoded as Cypher literals, so caller-supplied values
@@ -490,6 +523,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <h3>readOnlyQuery</h3>
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">readOnlyQuery</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr>@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;&nbsp;params)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Executes a cypher read-only query with parameters.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
@@ -506,6 +540,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">query</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr>@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;&nbsp;params,
  long&nbsp;timeout)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Executes a cypher query with parameters and timeout. The timeout works as for <a href="#query(java.lang.String,long)"><code>query(String, long)</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
@@ -525,6 +560,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">readOnlyQuery</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr>@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;&nbsp;params,
  long&nbsp;timeout)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Executes a cypher read-only query with parameters and timeout. The timeout works as for <a href="#query(java.lang.String,long)"><code>query(String, long)</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
@@ -542,6 +578,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <section class="detail" id="callProcedure(java.lang.String)">
 <h3>callProcedure</h3>
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">callProcedure</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;procedure)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Invokes stored procedures without arguments
 
  <p>The call is checked before it is queued, so a rejected call queues nothing.</div>
@@ -561,6 +598,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <h3>callProcedure</h3>
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">callProcedure</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;procedure,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;args)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Invokes stored procedure with arguments
 
  <p>The call is checked before it is queued, so a rejected call queues nothing.</div>
@@ -583,6 +621,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">callProcedure</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;procedure,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;args,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&gt;&nbsp;kwargs)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Invoke a stored procedure
 
  <p>The call is checked before it is queued, so a rejected call queues nothing.</div>
@@ -607,6 +646,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <section class="detail" id="profile(java.lang.String)">
 <h3>profile</h3>
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">profile</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Execute a Cypher query and produce an execution plan augmented with metrics
  for each operation's execution.</div>
 <dl class="notes">
@@ -622,6 +662,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <h3>profile</h3>
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a>&gt;</span>&nbsp;<span class="element-name">profile</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr>@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;&nbsp;params)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Execute a Cypher query with parameters and produce an execution plan augmented with metrics
  for each operation's execution.</div>
 <dl class="notes">
@@ -637,6 +678,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <section class="detail" id="copyGraph(java.lang.String)">
 <h3>copyGraph</h3>
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">copyGraph</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;destinationGraphId)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Copies the graph</div>
 <dl class="notes">
 <dt>Parameters:</dt>
@@ -650,6 +692,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <section class="detail" id="deleteGraph()">
 <h3>deleteGraph</h3>
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;</span>&nbsp;<span class="element-name">deleteGraph</span>()</div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Deletes the entire graph. The client's schema cache is cleared once the delete has run; see the class
  documentation for how replies queued before it are decoded.</div>
 <dl class="notes">
@@ -662,6 +705,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <section class="detail" id="explain(java.lang.String)">
 <h3>explain</h3>
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&gt;</span>&nbsp;<span class="element-name">explain</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Get the execution plan for a given query.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
@@ -678,6 +722,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <h3>explain</h3>
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&gt;</span>&nbsp;<span class="element-name">explain</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;query,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Map.html" title="class or interface in java.util" class="external-link">Map</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>,<wbr>@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;&nbsp;params)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Get the execution plan for a given query with parameters.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
@@ -694,6 +739,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <section class="detail" id="syncAndReturnAll()">
 <h3>syncAndReturnAll</h3>
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;</span>&nbsp;<span class="element-name">syncAndReturnAll</span>()</div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Synchronize pipeline by reading and decoding all responses. The pipeline can be used again afterwards.
  Whenever possible try to avoid using this version and use Pipeline.sync() as it won't go through all the
  responses and generate the right response type (usually it is a waste of time).
@@ -711,6 +757,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <section class="detail" id="sync()">
 <h3>sync</h3>
 <div class="member-signature"><span class="return-type">void</span>&nbsp;<span class="element-name">sync</span>()</div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Synchronize pipeline by reading all responses. The pipeline can be used again afterwards. In order to
  get return values from pipelined commands, capture the different Response&lt;?&gt; of the
  commands you execute; each is decoded when it is read.</div>
@@ -721,6 +768,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <h3>waitReplicas</h3>
 <div class="member-signature"><span class="return-type">redis.clients.jedis.Response&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Long.html" title="class or interface in java.lang" class="external-link">Long</a>&gt;</span>&nbsp;<span class="element-name">waitReplicas</span><wbr><span class="parameters">(int&nbsp;replicas,
  long&nbsp;timeout)</span></div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Blocks until all the previous write commands are successfully transferred and acknowledged by
  at least the specified number of replicas. If the timeout, specified in milliseconds, is
  reached, the command returns even if the specified number of replicas were not yet reached.</div>
@@ -739,6 +787,7 @@ extends redis.clients.jedis.commands.PipelineCommands, redis.clients.jedis.comma
 <section class="detail" id="close()">
 <h3>close</h3>
 <div class="member-signature"><span class="return-type">void</span>&nbsp;<span class="element-name">close</span>()</div>
+<div class="deprecation-block"><span class="deprecated-label">Deprecated.</span></div>
 <div class="block">Sends the queued commands and reads their replies, as <a href="#sync()"><code>sync()</code></a> does. The connection of the context
  that created the pipeline stays open.
 

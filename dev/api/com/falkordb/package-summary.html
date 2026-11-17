@@ -135,17 +135,27 @@ loadScripts(document, 'script');</script>
 <div class="col-last even-row-color class-summary class-summary-tab1">
 <div class="block">An interface for a FalkorDB graph with context.</div>
 </div>
+<div class="col-first odd-row-color class-summary class-summary-tab1"><a href="GraphContext.Pipeline.html" title="interface in com.falkordb">GraphContext.Pipeline</a></div>
+<div class="col-last odd-row-color class-summary class-summary-tab1">
+<div class="block">A pipeline on a <a href="GraphContext.html" title="interface in com.falkordb"><code>GraphContext</code></a>'s connection: commands are sent as they are queued, and their replies are
+ read together, by <a href="GraphContext.Pipeline.html#sync()"><code>GraphContext.Pipeline.sync()</code></a>, <a href="GraphContext.Pipeline.html#syncAndReturnAll()"><code>GraphContext.Pipeline.syncAndReturnAll()</code></a> or <a href="GraphContext.Pipeline.html#close()"><code>GraphContext.Pipeline.close()</code></a>.</div>
+</div>
+<div class="col-first even-row-color class-summary class-summary-tab1"><a href="GraphContext.Transaction.html" title="interface in com.falkordb">GraphContext.Transaction</a></div>
+<div class="col-last even-row-color class-summary class-summary-tab1">
+<div class="block">A transaction on a <a href="GraphContext.html" title="interface in com.falkordb"><code>GraphContext</code></a>'s connection: <code>MULTI</code> is sent when it starts, the commands are
+ queued on the server, and <a href="GraphContext.Transaction.html#exec()"><code>GraphContext.Transaction.exec()</code></a> runs them all at once.</div>
+</div>
 <div class="col-first odd-row-color class-summary class-summary-tab1"><a href="GraphContextGenerator.html" title="interface in com.falkordb">GraphContextGenerator</a></div>
 <div class="col-last odd-row-color class-summary class-summary-tab1">
 <div class="block">An interface for generating a FalkorDB graph with context.</div>
 </div>
 <div class="col-first even-row-color class-summary class-summary-tab1"><a href="GraphPipeline.html" title="interface in com.falkordb">GraphPipeline</a></div>
-<div class="col-last even-row-color class-summary class-summary-tab1">
-<div class="block">An interface which aligned to Jedis Pipeline interface</div>
+<div class="col-last even-row-color class-summary class-summary-tab1">Deprecated.
+<div class="deprecation-comment">Use <a href="GraphContext.Pipeline.html" title="interface in com.falkordb"><code>GraphContext.Pipeline</code></a>, from <a href="GraphContext.html#pipeline()"><code>GraphContext.pipeline()</code></a>.</div>
 </div>
 <div class="col-first odd-row-color class-summary class-summary-tab1"><a href="GraphTransaction.html" title="interface in com.falkordb">GraphTransaction</a></div>
-<div class="col-last odd-row-color class-summary class-summary-tab1">
-<div class="block">An interface which aligned to Jedis transactional interface</div>
+<div class="col-last odd-row-color class-summary class-summary-tab1">Deprecated.
+<div class="deprecation-comment">Use <a href="GraphContext.Transaction.html" title="interface in com.falkordb"><code>GraphContext.Transaction</code></a>, from <a href="GraphContext.html#transaction()"><code>GraphContext.transaction()</code></a>.</div>
 </div>
 <div class="col-first even-row-color class-summary class-summary-tab1"><a href="Header.html" title="interface in com.falkordb">Header</a></div>
 <div class="col-last even-row-color class-summary class-summary-tab1">
@@ -159,16 +169,20 @@ loadScripts(document, 'script');</script>
 <div class="col-last even-row-color class-summary class-summary-tab1">
 <div class="block">Container for Graph result values.</div>
 </div>
-<div class="col-first odd-row-color class-summary class-summary-tab1"><a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a></div>
+<div class="col-first odd-row-color class-summary class-summary-tab1"><a href="Reply.html" title="interface in com.falkordb">Reply</a>&lt;T extends @Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;</div>
 <div class="col-last odd-row-color class-summary class-summary-tab1">
+<div class="block">The reply to a command queued in a <a href="GraphContext.Pipeline.html" title="interface in com.falkordb"><code>GraphContext.Pipeline</code></a> or a <a href="GraphContext.Transaction.html" title="interface in com.falkordb"><code>GraphContext.Transaction</code></a>.</div>
+</div>
+<div class="col-first even-row-color class-summary class-summary-tab1"><a href="ResultSet.html" title="interface in com.falkordb">ResultSet</a></div>
+<div class="col-last even-row-color class-summary class-summary-tab1">
 <div class="block">Hold a query result</div>
 </div>
-<div class="col-first even-row-color class-summary class-summary-tab1"><a href="Statistics.html" title="interface in com.falkordb">Statistics</a></div>
-<div class="col-last even-row-color class-summary class-summary-tab1">
+<div class="col-first odd-row-color class-summary class-summary-tab1"><a href="Statistics.html" title="interface in com.falkordb">Statistics</a></div>
+<div class="col-last odd-row-color class-summary class-summary-tab1">
 <div class="block">An interface for the statistics of a result set.</div>
 </div>
-<div class="col-first odd-row-color class-summary class-summary-tab3"><a href="Statistics.Label.html" title="enum in com.falkordb">Statistics.Label</a></div>
-<div class="col-last odd-row-color class-summary class-summary-tab3">
+<div class="col-first even-row-color class-summary class-summary-tab3"><a href="Statistics.Label.html" title="enum in com.falkordb">Statistics.Label</a></div>
+<div class="col-last even-row-color class-summary class-summary-tab3">
 <div class="block">Different Statistics labels</div>
 </div>
 </div>
