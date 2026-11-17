@@ -30,6 +30,9 @@ FalkorDB Java client
   </dependencies>
 ```
 
+Upgrading from 0.16.x? The [0.17.0 migration guide](docs/migrating-to-0.17.md) lists what is deprecated, and
+removed in 0.18.0, and the runtime changes to check.
+
 ## Snapshots
 
 ```xml
