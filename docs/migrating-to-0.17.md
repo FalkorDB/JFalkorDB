@@ -93,7 +93,9 @@ try (GraphContext context = graph.getContext()) {
 
 The graph methods keep their names and arguments; only the return type changes. As before, a pipeline sends each
 command as it is queued, and reads the replies together in `sync()`, `syncAndReturnAll()` or `close()`;
-`get()` doesn't read from the connection. What else differs:
+`get()` doesn't read the reply off the connection, but decoding a
+query reply can look up a label or property name the client hasn't cached: on the context's connection, or,
+while a batch awaits replies, on a connection borrowed from the pool. What else differs:
 
 | | `GraphPipeline` / `GraphTransaction` | `GraphContext.Pipeline` / `Transaction` |
 | --- | --- | --- |
@@ -167,7 +169,7 @@ These compile unchanged and act differently.
 | `multi()` or `pipelined()` on a closed context ([#530](https://github.com/FalkorDB/JFalkorDB/pull/530)) | Returned a batch on a connection that may already be lent to someone else | Throws `IllegalStateException` | Start batches before you close the context |
 | Closing a context with a batch still open ([#530](https://github.com/FalkorDB/JFalkorDB/pull/530)) | The connection went back to the pool still inside `MULTI`, or with unread replies, and the next borrower read them as its own | An open transaction is discarded, and the replies a pipeline awaits are read, so `close()` waits for them. If several batches await replies, or ending one fails, the connection is closed instead of pooled | End each batch yourself, with `exec()`, `discard()`, `sync()` or `close()`. A reply of a transaction that closing discarded can't be read |
 | Exception classes ([#535](https://github.com/FalkorDB/JFalkorDB/pull/535)) | `JedisConnectionException`; a plain `JedisDataException` from `Driver` methods, `watch` and `unwatch` | `FalkorDBConnectionException` and `GraphException`, which extend those | `catch` clauses keep matching. Replace `getClass() ==` checks with `instanceof`, and check the catch order (see [Exceptions](#exceptions)). Logs show the new class names |
-| A reply in a batch that fails to decode ([#529](https://github.com/FalkorDB/JFalkorDB/pull/529)) | The first `get()` threw, later ones returned `null`. A failed schema lookup, such as an exhausted pool, escaped `syncAndReturnAll()` or `exec()` and lost every other reply | Every `get()` throws the same exception, or, if decoding threw an `Error` inside the read of the batch, an `IllegalStateException` saying the reply couldn't be decoded. The failure is that reply's element of the returned list, and the other replies are returned | Check list elements with `instanceof Exception`, as for error replies |
+| A reply in a batch that fails to decode ([#529](https://github.com/FalkorDB/JFalkorDB/pull/529)) | The first `get()` threw, later ones returned `null`. A failed schema lookup, such as an exhausted pool, escaped `syncAndReturnAll()` or `exec()` and lost every other reply | Every `get()` throws the same exception. The failure is that reply's element of the returned list, and the other replies are returned. This holds for a `RuntimeException`: an `Error` thrown while decoding escapes the read of the batch, and a `Reply` then throws that `Error`, or an `IllegalStateException` saying the reply couldn't be decoded | Check list elements with `instanceof Exception`, as for error replies |
 
 ### Stricter rules of `pipeline()` and `transaction()`
 
