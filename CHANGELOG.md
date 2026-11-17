@@ -2,6 +2,9 @@
 
 ## [0.17.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.16.0...v0.17.0) (2026-11-17)
 
+Upgrading from 0.16.x? See the [0.17.0 migration guide](docs/migrating-to-0.17.md): it shows the
+replacement for each API deprecated in this release, all of which are removed in 0.18.0, and the runtime
+changes to check.
 
 ### ⚠ BREAKING CHANGES
 
