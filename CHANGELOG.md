@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.17.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.16.0...v0.17.0) (2026-11-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* getClass() comparisons with JedisConnectionException or JedisDataException, and catch blocks that catch GraphException before JedisDataException, can see the new types. catch (JedisConnectionException) and catch (JedisDataException) still match.
+* GraphContext.multi() and pipelined() on a closed context now throw IllegalStateException instead of building a batch on a connection that may already be lent to another borrower.
+* an endpoint that reports server_mode:cluster or server_mode:sentinel is now auto-detected as a cluster node or a Sentinel and routed accordingly, where it used to get a plain direct connection. Pass autoDetectCluster(false) / autoDetectSentinel(false) to keep the old behaviour.
+
+### Features
+
+* add GraphContext.pipeline() and transaction(), whose replies are JFalkorDB's own Reply ([#537](https://github.com/FalkorDB/JFalkorDB/issues/537)) ([374b0d4](https://github.com/FalkorDB/JFalkorDB/commit/374b0d4bd24efcf48685f39b88e9322b148aedcf))
+* builder pool checks, minIdle, database and TLS hook; deprecate getConnection() and DriverImpl(Pool) ([#536](https://github.com/FalkorDB/JFalkorDB/issues/536)) ([42d4060](https://github.com/FalkorDB/JFalkorDB/commit/42d4060efbb86db40235b9f4473398d0c19b9fe6))
+* report connection failures as FalkorDBConnectionException and Driver server errors as GraphException ([#535](https://github.com/FalkorDB/JFalkorDB/issues/535)) ([aaded10](https://github.com/FalkorDB/JFalkorDB/commit/aaded1072c37d4af08ea5d82d89baa7ced58c0d6))
+
+
+### Bug Fixes
+
+* detect Sentinel and cluster on Valkey, which reports server_mode ([#532](https://github.com/FalkorDB/JFalkorDB/issues/532)) ([09f8921](https://github.com/FalkorDB/JFalkorDB/commit/09f8921b84d39227a0cd91468365ba72c43b8a27))
+* discard open transactions and drain pipelines when a context closes ([#530](https://github.com/FalkorDB/JFalkorDB/issues/530)) ([1998bb2](https://github.com/FalkorDB/JFalkorDB/commit/1998bb23902bfaaee495a2f58f8aa6517e0eac7d))
+* keep a reply that fails to decode in the batch result, and rethrow it on every get() ([#529](https://github.com/FalkorDB/JFalkorDB/issues/529)) ([f495c2e](https://github.com/FalkorDB/JFalkorDB/commit/f495c2e9a32f34fac42a9cca0a5dd564e9757c4b))
+
+
+### Documentation
+
+* add a migration guide for 0.17.0 ([#539](https://github.com/FalkorDB/JFalkorDB/issues/539)) ([33ae028](https://github.com/FalkorDB/JFalkorDB/commit/33ae028b2fffd921c1da1eaeb93bc00a1255e3d7))
+
 ## [0.16.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.15.0...v0.16.0) (2026-11-11)
 
 
