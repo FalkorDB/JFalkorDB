@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794893121724,
+  "lastUpdate": 1794897996889,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -21284,6 +21284,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 50207.463,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "33ae028b2fffd921c1da1eaeb93bc00a1255e3d7",
+          "message": "docs: add a migration guide for 0.17.0 (#539)\n\n* docs: add a migration guide for 0.17.0\n\ndocs/migrating-to-0.17.md walks a 0.16.x user through 0.17.0: the\ndeprecated API and its replacements (pipeline(), transaction(), Reply,\nFalkorDB.builder() for getConnection() and DriverImpl(Pool)), all removed\nin 0.18.0; the runtime behavior changes; the exception types; and what a\ntransaction does and doesn't guarantee. The README links it next to the\nrelease version. \"Javadoc\" joins the spellcheck wordlist.\n\nRefs #400\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: address review of the 0.17.0 migration guide\n\nSame-slot keys in the examples, RESP3 reply types, which cluster methods\nfan out, the limit of the schema-cache refusals, and reusing a graph's\nexisting hash tag.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: address the second review of the 0.17.0 migration guide\n\nWhen a pipeline sends and reads, WAIT in a transaction, the IllegalStateException\nfallback for an Error during a batch read, which AUTH errors stay Jedis\nsubclasses, AsyncGraph wrapper exceptions, and configGetAll in a cluster.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: say when get() decodes on the server, and what an Error does\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: reword a possessive the spellcheck rejects\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* docs: say that decoding borrows a connection after the context closes\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-17T08:44:15+02:00",
+          "tree_id": "0819051ad6c529538fab6a0deb1b1233831863e6",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/33ae028b2fffd921c1da1eaeb93bc00a1255e3d7"
+        },
+        "date": 1794897996063,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 111.318,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 142.044,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 168.785,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 148.69,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 196.626,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 279.532,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 206.817,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 330.088,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 425.782,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 357.168,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 603.149,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 759.564,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 423.458,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 3497.818,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 8113.35,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 420.644,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 9506.96,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 21630.852,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 422.997,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 24433.208,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 54160.152,
             "unit": "us"
           }
         ]
