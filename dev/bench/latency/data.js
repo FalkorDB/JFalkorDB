@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794898789113,
+  "lastUpdate": 1795417416911,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -21542,6 +21542,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 76986.873,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "890df9df001becc839ac9af62cd7e6723b30a693",
+          "message": "build(deps): combine Dependabot bumps (setup-java 6.3.0, create-github-app-token 3.4.0, error_prone 2.53.0) (#545)\n\n* build(deps): bump actions/setup-java from 6.2.0 to 6.3.0\n\nBumps [actions/setup-java](https://github.com/actions/setup-java) from 6.2.0 to 6.3.0.\n- [Release notes](https://github.com/actions/setup-java/releases)\n- [Commits](https://github.com/actions/setup-java/compare/77dd5b2ce225ea11469928ac317850245a74ae78...d1374f8ac74474200d16ef8ecee22c7ae7a51880)\n\n---\nupdated-dependencies:\n- dependency-name: actions/setup-java\n  dependency-version: 6.3.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n\n* fix(deps): bump com.google.errorprone:error_prone_core\n\nBumps [com.google.errorprone:error_prone_core](https://github.com/google/error-prone) from 2.52.0 to 2.53.0.\n- [Release notes](https://github.com/google/error-prone/releases)\n- [Commits](https://github.com/google/error-prone/compare/v2.52.0...v2.53.0)\n\n---\nupdated-dependencies:\n- dependency-name: com.google.errorprone:error_prone_core\n  dependency-version: 2.53.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n\n* build(deps): bump actions/create-github-app-token from 3.3.0 to 3.4.0\n\nBumps [actions/create-github-app-token](https://github.com/actions/create-github-app-token) from 3.3.0 to 3.4.0.\n- [Release notes](https://github.com/actions/create-github-app-token/releases)\n- [Changelog](https://github.com/actions/create-github-app-token/blob/main/CHANGELOG.md)\n- [Commits](https://github.com/actions/create-github-app-token/compare/64ab729a6294000f5aa4a4bc0b73d1f32bc45510...f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc)\n\n---\nupdated-dependencies:\n- dependency-name: actions/create-github-app-token\n  dependency-version: 3.4.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n\n---------\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-11-23T09:01:42+02:00",
+          "tree_id": "7fb28782afed2fd03cab7079023451d12fc15d8d",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/890df9df001becc839ac9af62cd7e6723b30a693"
+        },
+        "date": 1795417416082,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 184.304,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 232.203,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 265.205,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 207.638,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 263.111,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 313.023,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 296.724,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 455.602,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 548.694,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 491.506,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 816.213,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 1021.266,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 566.848,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 5296.914,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 11200.121,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 586.364,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 15010.201,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 32007.842,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 572.469,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 34052.181,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 73397.962,
             "unit": "us"
           }
         ]
