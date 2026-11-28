@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795860632499,
+  "lastUpdate": 1795864272018,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -10029,6 +10029,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 12963.667,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "307409954+falkordb-release-please[bot]@users.noreply.github.com",
+            "name": "falkordb-release-please[bot]",
+            "username": "falkordb-release-please[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6555942f0966355086de98489d762851f40d5173",
+          "message": "chore(master): release 0.17.1-SNAPSHOT (#540)\n\nCo-authored-by: falkordb-release-please[bot] <307409954+falkordb-release-please[bot]@users.noreply.github.com>",
+          "timestamp": "2026-11-28T13:08:47+02:00",
+          "tree_id": "688eb45b00395dc9781fef570f59dfb179f9f350",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/6555942f0966355086de98489d762851f40d5173"
+        },
+        "date": 1795864271975,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 6019.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 10507.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 16097.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 20296.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 20016.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 19375.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 19295,
             "unit": "ops/s"
           }
         ]
