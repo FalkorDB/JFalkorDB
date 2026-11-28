@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.18.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.17.0...v0.18.0) (2026-11-28)
+
+
+### Features
+
+* send SCHEMA_HASH so replies decode with the right names on FalkorDB 6.2+ ([#551](https://github.com/FalkorDB/JFalkorDB/issues/551)) ([b7952d2](https://github.com/FalkorDB/JFalkorDB/commit/b7952d2896654f66577ae99edc07189341bf8b25))
+
+
+### Bug Fixes
+
+* decode RESP3 replies, and test FalkorDB 4.x, 6.0.x and 6.x over RESP2 and RESP3 ([#552](https://github.com/FalkorDB/JFalkorDB/issues/552)) ([e0af57d](https://github.com/FalkorDB/JFalkorDB/commit/e0af57d18d25a0257d4bb5a5987a977b637894de))
+
 ## [0.17.0](https://github.com/FalkorDB/JFalkorDB/compare/v0.16.0...v0.17.0) (2026-11-17)
 
 Upgrading from 0.16.x? See the [0.17.0 migration guide](docs/migrating-to-0.17.md): it shows the
