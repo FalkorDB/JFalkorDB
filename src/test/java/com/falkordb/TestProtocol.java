@@ -1,6 +1,7 @@
 package com.falkordb;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Locale;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.RedisProtocol;
@@ -63,7 +64,19 @@ public final class TestProtocol {
 
     /** A {@code redis://} URI for the server that asks for the suite's protocol. */
     public static URI uri(String host, int port) {
-        return URI.create("redis://" + host + ":" + port + (isResp3() ? "?protocol=3" : ""));
+        return uri(host, port, PROTOCOL);
+    }
+
+    /**
+     * A {@code redis://} URI for the server that asks for {@code protocol}. Built from its parts, so an IPv6 host
+     * such as {@code ::1} gets the brackets a URI needs ({@code redis://[::1]:6379}).
+     */
+    public static URI uri(String host, int port, RedisProtocol protocol) {
+        try {
+            return new URI("redis", null, host, port, null, "protocol=" + protocol.version(), null);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("not a valid host for a redis:// URI: " + host, e);
+        }
     }
 
     /**
@@ -75,11 +88,7 @@ public final class TestProtocol {
         try {
             assertSpeaks(driver, PROTOCOL);
         } catch (RuntimeException | AssertionError e) {
-            try {
-                driver.close();
-            } catch (Exception suppressed) {
-                e.addSuppressed(suppressed);
-            }
+            closeQuietly(driver, e);
             throw e;
         }
         return driver;
@@ -90,8 +99,22 @@ public final class TestProtocol {
      * RESP2: such a test covers RESP2 only, under either value of {@code FALKORDB_PROTOCOL}.
      */
     public static Driver assertResp2(Driver driver) {
-        assertSpeaks(driver, RedisProtocol.RESP2);
+        try {
+            assertSpeaks(driver, RedisProtocol.RESP2);
+        } catch (RuntimeException | AssertionError e) {
+            // the caller never gets the driver to close
+            closeQuietly(driver, e);
+            throw e;
+        }
         return driver;
+    }
+
+    private static void closeQuietly(Driver driver, Throwable failure) {
+        try {
+            driver.close();
+        } catch (Exception suppressed) {
+            failure.addSuppressed(suppressed);
+        }
     }
 
     @SuppressWarnings("deprecation") // getConnection() is the only way to see the negotiated protocol

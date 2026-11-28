@@ -113,7 +113,8 @@ jobs:
     - name: Resolve the FalkorDB image (via just)
       run: |
         if [ "$FALKORDB_LINE" = 6 ] && [ -n "$DISPATCH_TAG" ] && [ "$DISPATCH_TAG" != latest ]; then
-          if ! [[ "$DISPATCH_TAG" =~ ^[A-Za-z0-9._-]+$ ]]; then
+          # Docker's tag grammar: a word character, then at most 127 word characters, dots or dashes
+          if ! [[ "$DISPATCH_TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
             echo "::error::falkordb_image_tag is not a Docker tag: $DISPATCH_TAG"
             exit 1
           fi

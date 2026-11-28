@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.falkordb.graph_entities.Node;
 import com.falkordb.graph_entities.Path;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -158,8 +157,7 @@ public class ProtocolIT {
 
     /** A driver for the test server speaking {@code protocol}, checked. */
     private Driver driver(RedisProtocol protocol) {
-        Driver driver = FalkorDB.driver(URI.create(
-                "redis://" + TestServer.host() + ":" + TestServer.port() + "?protocol=" + protocol.version()));
+        Driver driver = FalkorDB.driver(TestProtocol.uri(TestServer.host(), TestServer.port(), protocol));
         drivers.add(driver);
         assertSpeaks(protocol, driver);
         return driver;
