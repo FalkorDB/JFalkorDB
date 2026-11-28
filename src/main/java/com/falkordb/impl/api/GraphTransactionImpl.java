@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 import redis.clients.jedis.*;
@@ -64,17 +63,17 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      * @param graphId the graph ID to use
      */
     public GraphTransactionImpl(Connection connection, Graph graph, GraphCache cache, String graphId) {
-        this(connection, (reply, replyCache) -> new ResultSetImpl(reply, graph, replyCache), cache, graphId);
+        this(
+                connection,
+                (reply, replyCache, sent) -> new ResultSetImpl(reply, graph, replyCache, sent),
+                cache,
+                graphId);
     }
 
     /**
      * Creates a new transaction whose replies {@code decoder} decodes, given the cache each one is decoded with.
      */
-    GraphTransactionImpl(
-            Connection connection,
-            BiFunction<List<Object>, GraphCache, ResultSet> decoder,
-            GraphCache cache,
-            String graphId) {
+    GraphTransactionImpl(Connection connection, ReplyDecoder decoder, GraphCache cache, String graphId) {
         // init as in Jedis
         super(connection, false);
         this.graphId = graphId;
@@ -139,7 +138,11 @@ public class GraphTransactionImpl extends Transaction implements com.falkordb.Gr
      * every read of its response with the same exception (see {@link QueuedReply}).
      */
     private Response<ResultSet> queueResultSet(ProtocolCommand command, List<Object> arguments) {
-        return replies.queueResultSet(builder -> appendWithResponse(command, arguments, builder));
+        // a PROFILE reply carries no schema element, and needs none: its rows are plan lines
+        return replies.queueResultSet(
+                command != GraphCommand.PROFILE,
+                arguments,
+                (sentArguments, builder) -> appendWithResponse(command, sentArguments, builder));
     }
 
     /**

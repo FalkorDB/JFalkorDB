@@ -8,6 +8,8 @@ import com.falkordb.Statistics;
 import com.falkordb.exceptions.GraphException;
 import com.falkordb.graph_entities.*;
 import com.falkordb.impl.graph_cache.GraphCache;
+import com.falkordb.impl.graph_cache.SchemaNames;
+import com.falkordb.impl.graph_cache.SchemaReply;
 import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,26 +30,49 @@ public final class ResultSetImpl implements ResultSet {
     private final GraphCache cache;
 
     /**
-     * Creates a result set from a raw query response.
+     * Creates a result set from a raw query response, for a query sent without {@code SCHEMA_HASH}. A reply that
+     * nonetheless ends with a schema element is decoded with the names it carries, and one that carries the hash
+     * only is reported, since no names were sent that it could confirm.
      *
      * @param rawResponse the raw representation of response is at most 3 lists of
      *                    objects. The last list is the statistics list.
      * @param graph       the graph connection
      * @param cache       the graph local cache
      */
-    @SuppressWarnings("unchecked")
     public ResultSetImpl(List<Object> rawResponse, Graph graph, GraphCache cache) {
+        this(rawResponse, graph, cache, null);
+    }
+
+    /**
+     * Creates a result set from a raw query response.
+     *
+     * <p>A reply from FalkorDB 6.2 or later to a query sent with {@code SCHEMA_HASH} ends with a schema element. It
+     * is taken off before the rest is read, and the reply is decoded with the names it carries, or with
+     * {@code sent} when it confirms their hash (see {@link GraphCache#decodeWith}), never with a lookup. A reply
+     * without one is decoded with {@code cache}, which looks up the ids it doesn't hold.
+     *
+     * @param rawResponse the raw representation of response is at most 3 lists of
+     *                    objects, then the schema element, if any. The last list is the statistics list.
+     * @param graph       the graph connection
+     * @param cache       the graph local cache
+     * @param sent        the names whose hash the query sent as {@code SCHEMA_HASH}, or null when it sent none
+     */
+    @SuppressWarnings("unchecked")
+    public ResultSetImpl(List<Object> rawResponse, Graph graph, GraphCache cache, @Nullable SchemaNames sent) {
         this.graph = graph;
-        this.cache = cache;
 
         // If a run-time error occurred, the last member of the rawResponse will be a
         // JedisDataException. An empty reply has no such member, and must fall through to the
         // empty-result-set branch below rather than index past the start of the list.
-        if (!rawResponse.isEmpty()) {
-            Object last = rawResponse.get(rawResponse.size() - 1);
-            if (last instanceof JedisDataException) {
-                throw new GraphException((Throwable) last);
-            }
+        throwIfError(rawResponse);
+        SchemaReply schema = rawResponse.isEmpty() ? null : SchemaReply.parse(rawResponse.get(rawResponse.size() - 1));
+        if (schema != null) {
+            // a view, not an edit: a reply can be decoded more than once (see GraphContextImpl.decodeQueued)
+            rawResponse = rawResponse.subList(0, rawResponse.size() - 1);
+            throwIfError(rawResponse);
+            this.cache = cache.decodeWith(schema, sent);
+        } else {
+            this.cache = cache;
         }
 
         // Check if this is a profile response (all elements are byte arrays)
@@ -72,6 +97,16 @@ public final class ResultSetImpl implements ResultSet {
             header = parseHeader((List<List<Object>>) rawResponse.get(0));
             results = parseResult((List<List<Object>>) rawResponse.get(1));
             statistics = parseStatistics(rawResponse.get(2));
+        }
+    }
+
+    /** Throws the run-time error a reply ends with, if it ends with one. */
+    private static void throwIfError(List<Object> rawResponse) {
+        if (!rawResponse.isEmpty()) {
+            Object last = rawResponse.get(rawResponse.size() - 1);
+            if (last instanceof JedisDataException) {
+                throw new GraphException((Throwable) last);
+            }
         }
     }
 

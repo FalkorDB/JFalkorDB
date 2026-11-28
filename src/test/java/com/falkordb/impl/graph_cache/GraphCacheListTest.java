@@ -38,7 +38,7 @@ class GraphCacheListTest {
     @Test
     void returnsProcedureValuesAndRefreshesOnce() {
         CountingGraph graph = new CountingGraph("a", "b", "c");
-        GraphCacheList cache = new GraphCacheList("db.labels", "label");
+        GraphCacheList cache = new GraphCacheList(SchemaNames.Kind.LABEL);
 
         assertEquals("a", cache.getCachedData(0, graph));
         assertEquals("b", cache.getCachedData(1, graph));
@@ -49,7 +49,7 @@ class GraphCacheListTest {
     @Test
     void concurrentGetForAFreshIndexRefreshesExactlyOnce() throws InterruptedException {
         CountingGraph graph = new CountingGraph("a", "b", "c");
-        GraphCacheList cache = new GraphCacheList("db.labels", "label");
+        GraphCacheList cache = new GraphCacheList(SchemaNames.Kind.LABEL);
 
         int threads = 16;
         CountDownLatch ready = new CountDownLatch(threads);
@@ -87,7 +87,7 @@ class GraphCacheListTest {
     @Test
     void warmsTheCacheWithAReadOnlyQuerySoReplicasAcceptIt() {
         CountingGraph graph = new CountingGraph("a", "b", "c");
-        GraphCacheList cache = new GraphCacheList("db.labels", "label");
+        GraphCacheList cache = new GraphCacheList(SchemaNames.Kind.LABEL);
 
         assertEquals("a", cache.getCachedData(0, graph));
 
@@ -101,7 +101,7 @@ class GraphCacheListTest {
     @Test
     void clearForcesARefreshOnNextGet() {
         CountingGraph graph = new CountingGraph("a", "b", "c");
-        GraphCacheList cache = new GraphCacheList("db.labels", "label");
+        GraphCacheList cache = new GraphCacheList(SchemaNames.Kind.LABEL);
 
         assertEquals("a", cache.getCachedData(0, graph));
         assertEquals(1, graph.calls.get());
@@ -117,7 +117,7 @@ class GraphCacheListTest {
         // cache) with different labels. A refresh used to append only the entries past the cached ones,
         // so id 0 kept decoding to the old graph's label.
         CountingGraph graph = new CountingGraph("Old0");
-        GraphCacheList cache = new GraphCacheList("db.labels", "label");
+        GraphCacheList cache = new GraphCacheList(SchemaNames.Kind.LABEL);
         assertEquals("Old0", cache.getCachedData(0, graph));
 
         graph.values = Arrays.asList("New0", "New1");
@@ -129,7 +129,7 @@ class GraphCacheListTest {
     @Test
     void anIdTheGraphDoesNotListThrowsAGraphException() {
         CountingGraph graph = new CountingGraph("a");
-        GraphCacheList cache = new GraphCacheList("db.labels", "label");
+        GraphCacheList cache = new GraphCacheList(SchemaNames.Kind.LABEL);
 
         GraphException e = assertThrows(GraphException.class, () -> cache.getCachedData(5, graph));
         assertTrue(e.getMessage().contains("label id 5"), e.getMessage());
@@ -143,7 +143,7 @@ class GraphCacheListTest {
     @Test
     void aNegativeIdThrowsAGraphExceptionWithoutQuerying() {
         CountingGraph graph = new CountingGraph("a");
-        GraphCacheList cache = new GraphCacheList("db.labels", "label");
+        GraphCacheList cache = new GraphCacheList(SchemaNames.Kind.LABEL);
 
         GraphException e = assertThrows(GraphException.class, () -> cache.getCachedData(-1, graph));
         assertEquals("Invalid label id -1", e.getMessage());
@@ -157,7 +157,7 @@ class GraphCacheListTest {
         // and its get() threw IndexOutOfBoundsException for an id that was cached a moment earlier.
         CountingGraph graph = new CountingGraph("a", "b", "c");
         graph.recordQueries = false;
-        GraphCacheList cache = new GraphCacheList("db.labels", "label");
+        GraphCacheList cache = new GraphCacheList(SchemaNames.Kind.LABEL);
         AtomicBoolean clearing = new AtomicBoolean();
         AtomicBoolean stop = new AtomicBoolean();
         AtomicReference<Throwable> failure = new AtomicReference<>();

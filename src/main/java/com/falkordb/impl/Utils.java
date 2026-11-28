@@ -1,13 +1,16 @@
 package com.falkordb.impl;
 
+import com.falkordb.impl.graph_cache.SchemaNames;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Utilities for encoding queries and parameters for FalkorDB.
@@ -36,11 +39,55 @@ public class Utils {
      * The timeout string.
      */
     public static final String TIMEOUT_STRING = "TIMEOUT";
+    /**
+     * The argument a query sends the hash of its cached schema names with, last. FalkorDB 6.2 and later then add the
+     * schema to the reply; older servers ignore it. Only {@code --COMPACT} queries take it: the server rejects it
+     * on {@code GRAPH.EXPLAIN}, and adds nothing to a {@code GRAPH.PROFILE} reply.
+     */
+    public static final String SCHEMA_HASH_STRING = "SCHEMA_HASH";
 
     /** A Cypher identifier: used for bare (unquoted) map keys and YIELD columns. */
     private static final Pattern IDENTIFIER = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
 
     private Utils() {}
+
+    /**
+     * Returns a compact query's arguments with {@code SCHEMA_HASH} and the hash of {@code sent} appended, last, or
+     * the arguments unchanged when {@code sent} is null. With {@code TIMEOUT}, the longest such command is
+     * {@code GRAPH.QUERY g q --COMPACT TIMEOUT ms SCHEMA_HASH h}: the eight words the server accepts at most.
+     *
+     * @param sent      the names whose hash to send, or null to send none
+     * @param arguments the arguments after the command name
+     * @return the arguments to send
+     */
+    public static String[] withSchemaHash(@Nullable SchemaNames sent, String... arguments) {
+        if (sent == null) {
+            return arguments;
+        }
+        String[] withHash = new String[arguments.length + 2];
+        System.arraycopy(arguments, 0, withHash, 0, arguments.length);
+        withHash[arguments.length] = SCHEMA_HASH_STRING;
+        withHash[arguments.length + 1] = Long.toString(sent.hashToSend());
+        return withHash;
+    }
+
+    /**
+     * {@link #withSchemaHash(SchemaNames, String...)} for the argument lists pipelines and transactions queue.
+     *
+     * @param sent      the names whose hash to send, or null to send none
+     * @param arguments the arguments after the command name
+     * @return the arguments to send
+     */
+    public static List<Object> withSchemaHash(@Nullable SchemaNames sent, List<Object> arguments) {
+        if (sent == null) {
+            return arguments;
+        }
+        List<Object> withHash = new ArrayList<>(arguments.size() + 2);
+        withHash.addAll(arguments);
+        withHash.add(SCHEMA_HASH_STRING);
+        withHash.add(Long.toString(sent.hashToSend()));
+        return withHash;
+    }
 
     /**
      * Rejects a negative query timeout. The server would otherwise accept it and silently apply its

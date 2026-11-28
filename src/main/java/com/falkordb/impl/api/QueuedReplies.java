@@ -1,7 +1,9 @@
 package com.falkordb.impl.api;
 
 import com.falkordb.ResultSet;
+import com.falkordb.impl.Utils;
 import com.falkordb.impl.graph_cache.GraphCache;
+import com.falkordb.impl.graph_cache.SchemaNames;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -38,7 +40,7 @@ final class QueuedReplies {
 
     private static final GraphCache EMPTY = new GraphCache().snapshot();
 
-    private final BiFunction<List<Object>, GraphCache, ResultSet> decoder;
+    private final ReplyDecoder decoder;
     private final GraphCache cache;
     private final BooleanSupplier awaitingReplies;
 
@@ -127,10 +129,7 @@ final class QueuedReplies {
      * @param awaitingReplies whether the pipeline or transaction has sent commands whose replies are still
      *     unread on the connection
      */
-    QueuedReplies(
-            BiFunction<List<Object>, GraphCache, ResultSet> decoder,
-            GraphCache cache,
-            BooleanSupplier awaitingReplies) {
+    QueuedReplies(ReplyDecoder decoder, GraphCache cache, BooleanSupplier awaitingReplies) {
         this.decoder = decoder;
         this.cache = cache;
         this.awaitingReplies = awaitingReplies;
@@ -146,13 +145,26 @@ final class QueuedReplies {
      * reply that fails to decode fails every read of the returned response with the same exception, and is kept in
      * place of the reply by {@code syncAndReturnAll()} and {@code exec()} (see {@link QueuedReply}).
      *
-     * @param append queues the command with the builder it is given, and returns Jedis' response
+     * <p>A query that takes {@code SCHEMA_HASH} sends the hash of the names the live cache holds when it is queued.
+     *
+     * @param schemaHash whether the command takes {@code SCHEMA_HASH}: a query does, a profile doesn't
+     * @param arguments  the command's arguments, to which the schema hash is appended
+     * @param append     queues the command with the arguments and builder it is given, and returns Jedis' response
      * @return the response to hand to the caller
      */
     @SuppressWarnings("unchecked")
-    Response<ResultSet> queueResultSet(Function<Builder<ResultSet>, Response<ResultSet>> append) {
+    Response<ResultSet> queueResultSet(
+            boolean schemaHash,
+            List<Object> arguments,
+            BiFunction<List<Object>, Builder<ResultSet>, Response<ResultSet>> append) {
         Segment segment = current;
-        return QueuedReply.queue(reply -> decoder.apply((List<Object>) reply, segment.cache()), append);
+        // The hash of the names cached now, when the command is written: a reply that confirms it is decoded with
+        // these names, whatever the cache holds by the time it is read.
+        @Nullable SchemaNames sent = schemaHash ? cache.request() : null;
+        List<Object> sentArguments = Utils.withSchemaHash(sent, arguments);
+        return QueuedReply.queue(
+                reply -> decoder.decode((List<Object>) reply, segment.cache(), sent),
+                builder -> append.apply(sentArguments, builder));
     }
 
     /**

@@ -14,7 +14,8 @@ import redis.clients.jedis.Response;
 /**
  * The client-side schema cache against a real server. Compact replies name labels by their position in
  * {@code db.labels()}, and every {@code driver.graph(name)} handle keeps its own cache, so a graph that
- * another handle deletes and recreates changes those positions under this handle.
+ * another handle deletes and recreates changes those positions under this handle. FalkorDB 6.2+ sends the
+ * names with a reply whose query's cached names were stale (see {@code SchemaHashIT}).
  */
 public class GraphCacheIT {
 
@@ -53,7 +54,7 @@ public class GraphCacheIT {
     }
 
     @Test
-    public void aReplyNamingALabelTheGraphNoLongerListsFailsWithAGraphException() {
+    public void aReplyNamingALabelTheGraphNoLongerListsIsDecodedWithItsOwnNamesOrFails() {
         writer.query("CREATE (:L0)");
         writer.query("CREATE (:L1)");
         writer.query("CREATE (:L2)");
@@ -66,8 +67,14 @@ public class GraphCacheIT {
 
             recreateWith("Only");
 
-            GraphException e = assertThrows(GraphException.class, reply::get);
-            assertTrue(e.getMessage().contains("label id 2"), e.getMessage());
+            if (TestServer.sendsSchemaHash()) {
+                // FalkorDB 6.2+ sent the names with the reply, so it needs no lookup
+                assertEquals("L2", onlyNode(reply.get()).getLabel(0));
+            } else {
+                // the lookup finds the recreated graph, which has no label 2
+                GraphException e = assertThrows(GraphException.class, reply::get);
+                assertTrue(e.getMessage().contains("label id 2"), e.getMessage());
+            }
         }
     }
 

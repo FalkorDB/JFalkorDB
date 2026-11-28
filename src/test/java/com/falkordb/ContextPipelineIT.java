@@ -150,7 +150,9 @@ public class ContextPipelineIT {
     }
 
     @Test
-    public void aColdCacheReplyQueuedBeforeADeleteIsReportedRatherThanMisread() {
+    public void aColdCacheReplyQueuedBeforeADeleteIsDecodedOrReportedRatherThanMisread() {
+        // FalkorDB 6.2+ sends the reply's names with it, so it decodes as the graph was; with an older server the
+        // id can only be looked up in the recreated graph, so the reply is reported.
         api.query("CREATE (:Person {name:'a'})");
         GraphContextGenerator cold = TestServer.graph("social"); // its own, empty cache
         try (GraphContext c = cold.getContext()) {
@@ -160,9 +162,15 @@ public class ContextPipelineIT {
             Reply<ResultSet> after = pipeline.query("CREATE (n:Animal {kind:'cat'}) RETURN n");
             List<Object> results = pipeline.syncAndReturnAll();
 
-            GraphException e = Assertions.assertThrows(GraphException.class, before::get);
-            Assertions.assertSame(e, results.get(0));
-            Assertions.assertSame(e, Assertions.assertThrows(GraphException.class, before::get));
+            if (TestServer.sendsSchemaHash()) {
+                Node person = before.get().iterator().next().getValue(0, Node.class);
+                Assertions.assertEquals("Person", person.getLabel(0));
+                Assertions.assertSame(before.get(), results.get(0));
+            } else {
+                GraphException e = Assertions.assertThrows(GraphException.class, before::get);
+                Assertions.assertSame(e, results.get(0));
+                Assertions.assertSame(e, Assertions.assertThrows(GraphException.class, before::get));
+            }
             Node animal = after.get().iterator().next().getValue(0, Node.class);
             Assertions.assertEquals("Animal", animal.getLabel(0));
         } finally {

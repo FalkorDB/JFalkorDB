@@ -66,14 +66,14 @@ class QueuedRepliesTest {
 
     /** The commands {@link #queueEveryQuery} sends, in order. */
     private static final List<List<String>> EVERY_QUERY_SENT = Arrays.asList(
-            Arrays.asList("GRAPH.QUERY", "g", QUERY, "--COMPACT"),
-            Arrays.asList("GRAPH.RO_QUERY", "g", QUERY, "--COMPACT"),
-            Arrays.asList("GRAPH.QUERY", "g", QUERY, "--COMPACT", "TIMEOUT", "1000"),
-            Arrays.asList("GRAPH.RO_QUERY", "g", QUERY, "--COMPACT", "TIMEOUT", "1000"),
-            Arrays.asList("GRAPH.QUERY", "g", PREPARED, "--COMPACT"),
-            Arrays.asList("GRAPH.RO_QUERY", "g", PREPARED, "--COMPACT"),
-            Arrays.asList("GRAPH.QUERY", "g", PREPARED, "--COMPACT", "TIMEOUT", "1000"),
-            Arrays.asList("GRAPH.RO_QUERY", "g", PREPARED, "--COMPACT", "TIMEOUT", "1000"));
+            Arrays.asList("GRAPH.QUERY", "g", QUERY, "--COMPACT", "SCHEMA_HASH", "0"),
+            Arrays.asList("GRAPH.RO_QUERY", "g", QUERY, "--COMPACT", "SCHEMA_HASH", "0"),
+            Arrays.asList("GRAPH.QUERY", "g", QUERY, "--COMPACT", "TIMEOUT", "1000", "SCHEMA_HASH", "0"),
+            Arrays.asList("GRAPH.RO_QUERY", "g", QUERY, "--COMPACT", "TIMEOUT", "1000", "SCHEMA_HASH", "0"),
+            Arrays.asList("GRAPH.QUERY", "g", PREPARED, "--COMPACT", "SCHEMA_HASH", "0"),
+            Arrays.asList("GRAPH.RO_QUERY", "g", PREPARED, "--COMPACT", "SCHEMA_HASH", "0"),
+            Arrays.asList("GRAPH.QUERY", "g", PREPARED, "--COMPACT", "TIMEOUT", "1000", "SCHEMA_HASH", "0"),
+            Arrays.asList("GRAPH.RO_QUERY", "g", PREPARED, "--COMPACT", "TIMEOUT", "1000", "SCHEMA_HASH", "0"));
 
     private Server handler;
     /** Serves the context's own connection. */

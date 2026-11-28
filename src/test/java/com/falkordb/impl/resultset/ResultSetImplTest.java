@@ -9,13 +9,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.falkordb.Record;
 import com.falkordb.ResultSet;
 import com.falkordb.exceptions.GraphException;
+import com.falkordb.graph_entities.Node;
 import com.falkordb.impl.graph_cache.GraphCache;
+import com.falkordb.impl.graph_cache.SchemaNames;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import redis.clients.jedis.exceptions.JedisDataException;
+import redis.clients.jedis.util.KeyValue;
 import redis.clients.jedis.util.SafeEncoder;
 
 public class ResultSetImplTest {
@@ -103,5 +107,145 @@ public class ResultSetImplTest {
         GraphException e =
                 assertThrows(GraphException.class, () -> new ResultSetImpl(rawResponse, null, new GraphCache()));
         assertEquals("Invalid " + entryName + " id " + id, e.getMessage());
+    }
+
+    // ---- the schema element FalkorDB 6.2+ appends to a reply to a query sent with SCHEMA_HASH ----
+
+    private static final long HASH = 42L;
+
+    /** The RESP2 schema element: the hash, and the names when {@code labels} is not null. */
+    private static List<Object> schemaElement(long hash, String... labels) {
+        List<Object> element = new ArrayList<>(Arrays.asList(SafeEncoder.encode("hash"), hash));
+        if (labels.length > 0) {
+            element.addAll(Arrays.asList(
+                    SafeEncoder.encode("labels"), bytesList(labels),
+                    SafeEncoder.encode("relationshipTypes"), bytesList(),
+                    SafeEncoder.encode("propertyKeys"), bytesList("name")));
+        }
+        return element;
+    }
+
+    private static List<Object> bytesList(String... names) {
+        List<Object> list = new ArrayList<>();
+        for (String name : names) {
+            list.add(SafeEncoder.encode(name));
+        }
+        return list;
+    }
+
+    /** {@code [header, rows, stats]} with one node of label id 0 and property key id 0 = "Alice". */
+    private static List<Object> nodeReply() {
+        List<Object> column = Arrays.asList(1L, SafeEncoder.encode("n"));
+        List<Object> property = Arrays.asList(0L, 2L, SafeEncoder.encode("Alice")); // key 0, VALUE_STRING
+        List<Object> node = Arrays.asList(7L, Collections.singletonList(0L), Collections.singletonList(property));
+        List<Object> cell = Arrays.asList(8L, node); // VALUE_NODE
+        List<Object> reply = new ArrayList<>();
+        reply.add(Collections.singletonList(column));
+        reply.add(Collections.singletonList(Collections.singletonList(cell)));
+        reply.add(Collections.singletonList(SafeEncoder.encode("Cached execution: 0")));
+        return reply;
+    }
+
+    private static Node onlyNode(ResultSet resultSet) {
+        assertEquals(1, resultSet.size());
+        return resultSet.iterator().next().getValue(0, Node.class);
+    }
+
+    @Test
+    public void aReplyWithNamesIsDecodedWithThemWithoutALookup() {
+        // the graph is never asked: the reply names what its ids mean
+        GraphCache cache = new GraphCache();
+        List<Object> reply = nodeReply();
+        reply.add(schemaElement(HASH, "Person"));
+
+        Node node = onlyNode(new ResultSetImpl(reply, null, cache, cache.request()));
+
+        assertEquals("Person", node.getLabel(0));
+        assertEquals("Alice", node.getProperty("name").getValue());
+        assertEquals(Long.valueOf(HASH), cache.request().hash(), "the names are kept for the next query");
+        assertEquals(4, reply.size(), "the reply itself is left as it was, so it can be decoded again");
+    }
+
+    @Test
+    public void aReplyWithNamesInResp3IsDecodedWithThem() {
+        GraphCache cache = new GraphCache();
+        List<Object> reply = nodeReply();
+        List<Object> element = schemaElement(HASH, "Person");
+        List<Object> map = new ArrayList<>();
+        for (int i = 0; i < element.size(); i += 2) {
+            map.add(new KeyValue<>(element.get(i), element.get(i + 1)));
+        }
+        reply.add(map);
+
+        assertEquals(
+                "Person",
+                onlyNode(new ResultSetImpl(reply, null, cache, cache.request())).getLabel(0));
+    }
+
+    @Test
+    public void aHashOnlyReplyIsDecodedWithTheNamesTheQuerySent() {
+        GraphCache cache = new GraphCache();
+        List<Object> first = nodeReply();
+        first.add(schemaElement(HASH, "Person"));
+        new ResultSetImpl(first, null, cache, cache.request());
+        SchemaNames sent = cache.request();
+
+        // the cache moves on (another reply brought a recreated graph's names) before this reply is read
+        List<Object> other = nodeReply();
+        other.add(schemaElement(7L, "Movie"));
+        new ResultSetImpl(other, null, cache, cache.request());
+
+        List<Object> confirmed = nodeReply();
+        confirmed.add(schemaElement(HASH));
+        assertEquals(
+                "Person",
+                onlyNode(new ResultSetImpl(confirmed, null, cache, sent)).getLabel(0));
+    }
+
+    @Test
+    public void aWriteReplyWithOnlyStatisticsAndTheElementHasNoRows() {
+        GraphCache cache = new GraphCache();
+        List<Object> reply = new ArrayList<>();
+        reply.add(Collections.singletonList(SafeEncoder.encode("Nodes created: 1")));
+        reply.add(schemaElement(HASH, "Person"));
+
+        ResultSet resultSet = new ResultSetImpl(reply, null, cache, cache.request());
+
+        assertEquals(0, resultSet.size());
+        assertEquals(1, resultSet.getStatistics().nodesCreated(), "the element is not read as statistics");
+    }
+
+    @Test
+    public void anErrorBeforeTheElementIsStillReported() {
+        GraphCache cache = new GraphCache();
+        List<Object> reply = new ArrayList<>();
+        reply.add(new JedisDataException("ERR boom"));
+        reply.add(schemaElement(HASH));
+
+        GraphException e =
+                assertThrows(GraphException.class, () -> new ResultSetImpl(reply, null, cache, cache.request()));
+        assertTrue(e.getMessage().contains("boom"), e.getMessage());
+    }
+
+    @Test
+    public void anIdTheReplysNamesLackIsReportedNotLookedUp() {
+        GraphCache cache = new GraphCache();
+        List<Object> reply = nodeReply();
+        List<Object> element = schemaElement(HASH, "Person");
+        element.set(element.size() - 1, bytesList()); // no property keys
+        reply.add(element);
+
+        GraphException e =
+                assertThrows(GraphException.class, () -> new ResultSetImpl(reply, null, cache, cache.request()));
+        assertTrue(e.getMessage().startsWith("Cannot decode property key id 0:"), e.getMessage());
+    }
+
+    @Test
+    public void aHashOnlyReplyToAQueryThatSentNoHashIsReported() {
+        List<Object> reply = nodeReply();
+        reply.add(schemaElement(HASH));
+
+        GraphException e = assertThrows(GraphException.class, () -> new ResultSetImpl(reply, null, new GraphCache()));
+        assertTrue(e.getMessage().startsWith("The query ran"), e.getMessage());
     }
 }

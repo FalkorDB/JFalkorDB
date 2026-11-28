@@ -32,6 +32,9 @@ public final class TestServer {
     // One driver/pool shared by all graph() callers, closed once at JVM shutdown (see graph()).
     private static Driver sharedDriver;
 
+    // The graph module's version, read once (see moduleVersion()).
+    private static int moduleVersion;
+
     static {
         String envHost = System.getenv("FALKORDB_HOST");
         String envPort = System.getenv("FALKORDB_PORT");
@@ -80,6 +83,23 @@ public final class TestServer {
     /** {@code true} when tests run against an external (env-override) server rather than a container. */
     public static boolean isExternal() {
         return external;
+    }
+
+    /**
+     * The version of the graph module the test server runs, as {@code MODULE LIST} reports it: {@code 42204} for
+     * v4.22.4, {@code 60201} for 6.2.1. A test whose result depends on the server version asserts each version's
+     * result with it, rather than skipping a version.
+     */
+    public static synchronized int moduleVersion() {
+        if (moduleVersion == 0) {
+            moduleVersion = ServerVersion.moduleVersion(host, port);
+        }
+        return moduleVersion;
+    }
+
+    /** Whether the server sends the schema with a reply to a query that carries {@code SCHEMA_HASH} (6.2.0+). */
+    public static boolean sendsSchemaHash() {
+        return moduleVersion() >= ServerVersion.SCHEMA_HASH;
     }
 
     /** A new driver connected to the shared test server; the caller is responsible for closing it. */

@@ -84,6 +84,39 @@ public class ClusterIT {
     }
 
     @Test
+    public void aGraphAnotherClientRecreatedIsDecodedOnTheNodeThatOwnsIt() throws Exception {
+        // FalkorDB 6.2+ sends a reply's names when the cached ones are stale, so the reader decodes the recreated
+        // graph's names; an older server doesn't, and the reader decodes its ids with the names it cached.
+        // ServerVersion, not TestServer, which would start a standalone container this test doesn't use
+        boolean sendsSchemaHash =
+                ServerVersion.sendsSchemaHash(ClusterTestServer.seedHost(), ClusterTestServer.seedPort());
+        try (Driver writerDriver = FalkorDB.driver(ClusterTestServer.seedHost(), ClusterTestServer.seedPort())) {
+            for (int i = 0; i < GRAPHS; i++) {
+                GraphContextGenerator reader = driver.graph(PREFIX + i);
+                GraphContextGenerator writer = writerDriver.graph(PREFIX + i);
+                writer.query("CREATE (:Person {name: 'Alice'})");
+                assertEquals(
+                        "Person", onlyNode(reader.query("MATCH (n) RETURN n")).getLabel(0));
+
+                writer.deleteGraph();
+                writer.query("CREATE (:Movie {title: 'Heat'})");
+
+                Node node = onlyNode(reader.readOnlyQuery("MATCH (n) RETURN n"));
+                assertEquals(sendsSchemaHash ? "Movie" : "Person", node.getLabel(0), PREFIX + i);
+                assertEquals(
+                        "Heat",
+                        node.getProperty(sendsSchemaHash ? "title" : "name").getValue(),
+                        PREFIX + i);
+            }
+        }
+    }
+
+    private static Node onlyNode(ResultSet resultSet) {
+        assertEquals(1, resultSet.size());
+        return resultSet.iterator().next().getValue(0, Node.class);
+    }
+
+    @Test
     public void queriesReachTheNodeThatOwnsTheGraphWhateverTheSeedIs() {
         for (int i = 0; i < GRAPHS; i++) {
             GraphContextGenerator graph = driver.graph(PREFIX + i);
