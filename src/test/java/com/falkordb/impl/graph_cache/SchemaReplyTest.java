@@ -155,7 +155,7 @@ class SchemaReplyTest {
     static List<Object> resp2(Object... pairs) {
         requirePairs(pairs);
         List<Object> element = new ArrayList<>(pairs.length);
-        for (int i = 0; i < pairs.length; i += 2) {
+        for (int i = 0; i + 1 < pairs.length; i += 2) {
             element.add(bytes((String) pairs[i]));
             element.add(pairs[i + 1]);
         }
@@ -166,7 +166,7 @@ class SchemaReplyTest {
     static List<Object> resp3(Object... pairs) {
         requirePairs(pairs);
         List<Object> element = new ArrayList<>(pairs.length / 2);
-        for (int i = 0; i < pairs.length; i += 2) {
+        for (int i = 0; i + 1 < pairs.length; i += 2) {
             element.add(new KeyValue<>(bytes((String) pairs[i]), pairs[i + 1]));
         }
         return element;
