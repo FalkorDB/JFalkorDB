@@ -281,12 +281,12 @@ public class ContextTransactionIT {
 
     /** A driver whose pool has one connection, so the next context gets the connection the last one closed. */
     private static Driver poolOfOne() {
-        return FalkorDB.builder()
+        return TestProtocol.assertResp2(FalkorDB.builder()
                 .host(TestServer.host())
                 .port(TestServer.port())
                 .poolMaxTotal(1)
                 .poolMaxIdle(1)
                 .poolMaxWait(Duration.ofSeconds(5))
-                .build();
+                .build());
     }
 }

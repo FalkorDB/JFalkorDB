@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.falkordb.graph_entities.Edge;
 import com.falkordb.graph_entities.Node;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -71,8 +70,8 @@ public class SchemaHashIT {
     @Test
     @SuppressWarnings("deprecation") // getConnection() is the only way to see the negotiated protocol
     public void aClientDecodesARecreatedGraphOverResp3() {
-        Driver resp3 = track(
-                FalkorDB.driver(URI.create("redis://" + TestServer.host() + ":" + TestServer.port() + "?protocol=3")));
+        Driver resp3 =
+                track(FalkorDB.driver(TestProtocol.uri(TestServer.host(), TestServer.port(), RedisProtocol.RESP3)));
         try (Jedis connection = resp3.getConnection()) {
             // RESP3 sends the schema element as a map rather than a flat list
             assertEquals(RedisProtocol.RESP3, connection.getConnection().getRedisProtocol());
@@ -98,11 +97,11 @@ public class SchemaHashIT {
 
     @Test
     public void switchedOffTheClientKeepsItsCachedNamesOnEveryServer() {
-        Driver withoutHash = track(FalkorDB.builder()
+        Driver withoutHash = track(TestProtocol.assertResp2(FalkorDB.builder()
                 .host(TestServer.host())
                 .port(TestServer.port())
                 .schemaHash(false)
-                .build());
+                .build()));
         assertDecodesTheRecreatedGraph(graph(withoutHash), graph(driver()), false);
     }
 

@@ -248,4 +248,87 @@ public class ResultSetImplTest {
         GraphException e = assertThrows(GraphException.class, () -> new ResultSetImpl(reply, null, new GraphCache()));
         assertTrue(e.getMessage().startsWith("The query ran"), e.getMessage());
     }
+
+    // ---- RESP3: values a protocol sends differently ----
+
+    /** {@code [header, rows, stats]} with one scalar column holding {@code cell}. */
+    private static List<Object> scalarReply(List<Object> cell) {
+        List<Object> column = Arrays.asList(1L, SafeEncoder.encode("v"));
+        List<Object> reply = new ArrayList<>();
+        reply.add(Collections.singletonList(column));
+        reply.add(Collections.singletonList(Collections.singletonList(cell)));
+        reply.add(Collections.singletonList(SafeEncoder.encode("Cached execution: 0")));
+        return reply;
+    }
+
+    @Test
+    public void aVectorReadsTheSameAsTextOverResp2AndAsDoublesOverResp3() {
+        // RESP2 sends each vecf32 element as text, inf and nan spelled the C way; RESP3 as a native double
+        List<Object> resp2 = Arrays.asList(
+                12L,
+                Arrays.asList( // VALUE_VECTORF32
+                        SafeEncoder.encode("1.5"), SafeEncoder.encode("inf"), SafeEncoder.encode("nan")));
+        List<Object> resp3 = Arrays.asList(12L, Arrays.asList(1.5d, Double.POSITIVE_INFINITY, Double.NaN));
+
+        for (List<Object> cell : Arrays.asList(resp2, resp3)) {
+            List<?> vector = new ResultSetImpl(scalarReply(cell), null, null)
+                    .iterator()
+                    .next()
+                    .getValue(0, List.class);
+            assertEquals(Arrays.asList(1.5f, Float.POSITIVE_INFINITY, Float.NaN), vector);
+        }
+    }
+
+    @Test
+    public void aNodeWithAResp3VectorPropertyDecodes() {
+        GraphCache cache = new GraphCache();
+        List<Object> property = Arrays.asList(0L, 12L, Arrays.asList(0.25d, 2d)); // key 0, VALUE_VECTORF32
+        List<Object> node = Arrays.asList(1L, Collections.emptyList(), Collections.singletonList(property));
+        List<Object> reply = scalarReply(Arrays.asList(8L, node)); // VALUE_NODE
+        List<Object> element = new ArrayList<>(Arrays.asList(SafeEncoder.encode("hash"), 1L));
+        element.addAll(Arrays.asList(
+                SafeEncoder.encode("labels"), bytesList(),
+                SafeEncoder.encode("relationshipTypes"), bytesList(),
+                SafeEncoder.encode("propertyKeys"), bytesList("embedding")));
+        reply.add(element);
+
+        Node decoded = onlyNode(new ResultSetImpl(reply, null, cache, cache.request()));
+
+        assertEquals(Arrays.asList(0.25f, 2f), decoded.getProperty("embedding").getValue());
+    }
+
+    @Test
+    public void nativeResp3BooleansAndDoublesReadAsTheirTextForms() {
+        // VALUE_BOOLEAN (4) and VALUE_DOUBLE (5), as text (what FalkorDB sends today) and as native RESP3 values
+        assertEquals(true, scalar(Arrays.asList(4L, SafeEncoder.encode("true"))));
+        assertEquals(true, scalar(Arrays.asList(4L, Boolean.TRUE)));
+        assertEquals(1.5d, scalar(Arrays.asList(5L, SafeEncoder.encode("1.5"))));
+        assertEquals(1.5d, scalar(Arrays.asList(5L, 1.5d)));
+        assertEquals(Double.POSITIVE_INFINITY, scalar(Arrays.asList(5L, Double.POSITIVE_INFINITY)));
+    }
+
+    private static Object scalar(List<Object> cell) {
+        return new ResultSetImpl(scalarReply(cell), null, null)
+                .iterator()
+                .next()
+                .getValue(0, Object.class);
+    }
+
+    @Test
+    public void aValueOfAnUnexpectedTypeIsAGraphExceptionNotAClassCastException() {
+        // a VALUE_INTEGER whose value isn't a Long, as a protocol that sends it differently would
+        List<Object> cell = Arrays.asList(3L, Collections.singletonList(1L));
+
+        GraphException e = assertThrows(GraphException.class, () -> new ResultSetImpl(scalarReply(cell), null, null));
+        assertTrue(e.getCause() instanceof ClassCastException, String.valueOf(e.getCause()));
+        assertTrue(e.getMessage().contains("Long"), "names the type: " + e.getMessage());
+    }
+
+    @Test
+    public void aVectorElementOfAnUnexpectedTypeIsAGraphException() {
+        List<Object> cell = Arrays.asList(12L, Collections.singletonList(Boolean.TRUE));
+
+        GraphException e = assertThrows(GraphException.class, () -> new ResultSetImpl(scalarReply(cell), null, null));
+        assertTrue(e.getMessage().contains("Boolean"), e.getMessage());
+    }
 }

@@ -58,6 +58,16 @@ public final class TestServer {
             host = container.getHost();
             port = container.getMappedPort(6379);
         }
+        // Once per run, so a CI log shows which server and protocol a failure came from.
+        System.out.println("[TestServer] FalkorDB at " + host + ":" + port + " ("
+                + (external ? "external" : "image " + imageName()) + "): graph module "
+                + ServerVersion.moduleVersion(host, port) + ", protocol " + TestProtocol.protocol());
+    }
+
+    private static String imageName() {
+        return FalkorDbImage.resolve(FalkorDbImage.pickOverride(
+                        System.getProperty("FALKORDB_IMAGE"), () -> System.getenv("FALKORDB_IMAGE")))
+                .asCanonicalNameString();
     }
 
     private TestServer() {}
@@ -102,9 +112,12 @@ public final class TestServer {
         return moduleVersion() >= ServerVersion.SCHEMA_HASH;
     }
 
-    /** A new driver connected to the shared test server; the caller is responsible for closing it. */
+    /**
+     * A new driver connected to the shared test server, speaking the suite's protocol (see {@link TestProtocol}); the
+     * caller is responsible for closing it.
+     */
     public static Driver driver() {
-        return FalkorDB.driver(host, port);
+        return TestProtocol.driver(host, port);
     }
 
     /**
@@ -119,7 +132,7 @@ public final class TestServer {
 
     private static synchronized Driver sharedDriver() {
         if (sharedDriver == null) {
-            sharedDriver = FalkorDB.driver(host, port);
+            sharedDriver = TestProtocol.driver(host, port);
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 try {
                     sharedDriver.close();

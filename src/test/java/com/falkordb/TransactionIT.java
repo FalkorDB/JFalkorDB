@@ -181,13 +181,13 @@ public class TransactionIT {
         // exec() decodes every reply, so reading one after its context is closed sends nothing. By then the
         // context's connection is back in the pool; lent out again and put in pipeline mode, it makes Jedis
         // refuse any stray command sent on it.
-        try (Driver driver = FalkorDB.builder()
+        try (Driver driver = TestProtocol.assertResp2(FalkorDB.builder()
                 .host(TestServer.host())
                 .port(TestServer.port())
                 .poolMaxTotal(1)
                 .poolMaxIdle(1)
                 .poolMaxWait(Duration.ofMillis(100))
-                .build()) {
+                .build())) {
             GraphContextGenerator graph = driver.graph("social"); // its own, empty cache
             Response<ResultSet> reply;
             try (GraphContext c = graph.getContext()) {
@@ -253,13 +253,13 @@ public class TransactionIT {
 
     /** A driver whose pool has one connection, so the next context gets the connection the last one closed. */
     private static Driver poolOfOne() {
-        return FalkorDB.builder()
+        return TestProtocol.assertResp2(FalkorDB.builder()
                 .host(TestServer.host())
                 .port(TestServer.port())
                 .poolMaxTotal(1)
                 .poolMaxIdle(1)
                 .poolMaxWait(Duration.ofSeconds(5))
-                .build();
+                .build());
     }
 
     @Test

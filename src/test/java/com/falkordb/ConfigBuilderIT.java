@@ -15,10 +15,10 @@ public class ConfigBuilderIT {
 
     @Test
     public void buildAndQuery() {
-        driver = FalkorDB.builder()
+        driver = TestProtocol.assertResp2(FalkorDB.builder()
                 .host(TestServer.host())
                 .port(TestServer.port())
-                .build();
+                .build());
         client = driver.graph("g");
         ResultSet resultSet = client.query("CREATE ({name:'bsb'})");
         Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());
@@ -26,13 +26,13 @@ public class ConfigBuilderIT {
 
     @Test
     public void buildWithCustomPoolAndTimeouts() {
-        driver = FalkorDB.builder()
+        driver = TestProtocol.assertResp2(FalkorDB.builder()
                 .host(TestServer.host())
                 .port(TestServer.port())
                 .poolMaxTotal(4)
                 .poolMaxIdle(2)
                 .connectionTimeout(java.time.Duration.ofSeconds(2))
-                .build();
+                .build());
         client = driver.graph("g");
         ResultSet resultSet = client.query("CREATE ({name:'bsb'})");
         Assertions.assertEquals(1, resultSet.getStatistics().nodesCreated());

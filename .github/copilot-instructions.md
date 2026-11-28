@@ -19,6 +19,8 @@ recipe; recipes call the pinned Maven Wrapper (`./mvnw`).
 | --- | --- |
 | `just verify` | Build + tests + coverage (the CI `build` gate). Auto-starts FalkorDB via Testcontainers (Docker). |
 | `just verify-local` | Run `verify` against a `just db-up` server (reused via `FALKORDB_HOST/PORT`), then tear it down — handy when Testcontainers can't reach your Docker. |
+| `just verify-matrix` | Run `verify` on every server line × protocol: the pinned minimum (v4.20.1), the newest 4.x, 6.0.x and 6.x, each over RESP2 and RESP3, on servers of its own. CI runs the same eight legs as `build` (min/RESP2) and the **`verify-servers`** matrix (the other seven). Slow; run it before a PR that changes how the client talks to the server. |
+| `just falkordb-image <line>` | Print the image of a release line (`min`, `4`, `6.0`, `6`, `edge`, `latest`) for `FALKORDB_IMAGE`: the newest release from Docker Hub, with a pinned fallback. `just falkordb-image-test` unit-tests the resolver. |
 | `just build` / `just test` | Compile-only / fast **unit** tests only (`*Test`, no server). |
 | `just fmt` / `just fmt-check` | Apply / check palantir-java-format (runs in the `-Pquality` profile). |
 | `just lint` | Static analysis (the CI `lint` gate): format check + **SpotBugs/FindSecBugs** + **Error Prone**, all in the off-by-default `-Pquality` profile. |
@@ -41,6 +43,16 @@ automatically via **Testcontainers** (Docker required) — no manual server setu
 `FALKORDB_HOST`/`FALKORDB_PORT` (or use `just verify-local`) to reuse an existing server instead.
 Pure **unit tests are `*Test`** (Surefire, no server) and run in `just test`. Name new tests
 accordingly, and use the `TestServer` helper for server access.
+
+The suite runs against **several servers and both protocols**. `FALKORDB_IMAGE` picks the server
+(`just falkordb-image` resolves a release line), and `FALKORDB_PROTOCOL=resp3` makes the drivers
+`TestServer` hands out speak RESP3 (the default is `resp2`). CI's **`verify-servers`** matrix runs
+every combination. So get drivers from `TestServer` / `TestProtocol` rather than `FalkorDB.driver(host,
+port)`, which always speaks RESP2. Only `FalkorDB.driver(URI)` with `?protocol=3` can choose RESP3: a test
+that needs a `FalkorDB.builder()` option covers RESP2 only. A test whose result depends on the server
+version asserts **each** version's result with `TestServer.moduleVersion()` / `ServerVersion`, and one
+whose subject is the wire format runs both protocols itself (see `ProtocolIT`). Never skip a version or a
+protocol.
 
 ## Definition of done
 

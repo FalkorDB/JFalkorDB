@@ -41,7 +41,7 @@ public class ClusterIT {
 
     @BeforeEach
     public void setUp() {
-        driver = FalkorDB.driver(ClusterTestServer.seedHost(), ClusterTestServer.seedPort());
+        driver = TestProtocol.driver(ClusterTestServer.seedHost(), ClusterTestServer.seedPort());
     }
 
     @AfterEach
@@ -90,7 +90,7 @@ public class ClusterIT {
         // ServerVersion, not TestServer, which would start a standalone container this test doesn't use
         boolean sendsSchemaHash =
                 ServerVersion.sendsSchemaHash(ClusterTestServer.seedHost(), ClusterTestServer.seedPort());
-        try (Driver writerDriver = FalkorDB.driver(ClusterTestServer.seedHost(), ClusterTestServer.seedPort())) {
+        try (Driver writerDriver = TestProtocol.driver(ClusterTestServer.seedHost(), ClusterTestServer.seedPort())) {
             for (int i = 0; i < GRAPHS; i++) {
                 GraphContextGenerator reader = driver.graph(PREFIX + i);
                 GraphContextGenerator writer = writerDriver.graph(PREFIX + i);
@@ -129,8 +129,8 @@ public class ClusterIT {
 
     @Test
     public void explicitStartupNodesBehaveLikeAutoDetection() throws Exception {
-        try (Driver explicit =
-                FalkorDB.builder().cluster(ClusterTestServer.nodes()).build()) {
+        try (Driver explicit = TestProtocol.assertResp2(
+                FalkorDB.builder().cluster(ClusterTestServer.nodes()).build())) {
             for (int i = 0; i < GRAPHS; i++) {
                 explicit.graph(PREFIX + i).query("CREATE (:Person {id: " + i + "})");
             }
@@ -155,11 +155,11 @@ public class ClusterIT {
     public void autoDetectionCanBeSwitchedOff() throws Exception {
         // With detection off the driver is a plain single-node client, so a graph that the seed node
         // does not own is answered with a redirect, surfaced as a GraphException.
-        try (Driver direct = FalkorDB.builder()
+        try (Driver direct = TestProtocol.assertResp2(FalkorDB.builder()
                 .host(ClusterTestServer.seedHost())
                 .port(ClusterTestServer.seedPort())
                 .autoDetectCluster(false)
-                .build()) {
+                .build())) {
             boolean redirected = false;
             for (int i = 0; i < GRAPHS && !redirected; i++) {
                 try {

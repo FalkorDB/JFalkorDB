@@ -195,7 +195,7 @@
 					<dependency>
 						<groupId>org.codehaus.mojo</groupId>
 						<artifactId>extra-enforcer-rules</artifactId>
-						<version>1.12.1</version>
+						<version>1.13.0</version>
 					</dependency>
 				</dependencies>
 				<executions>
@@ -224,7 +224,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>animal-sniffer-maven-plugin</artifactId>
-				<version>1.29.1</version>
+				<version>1.29.2</version>
 				<configuration>
 					<signature>
 						<groupId>org.codehaus.mojo.signature</groupId>
@@ -379,7 +379,7 @@
 					<plugin>
 						<groupId>com.diffplug.spotless</groupId>
 						<artifactId>spotless-maven-plugin</artifactId>
-						<version>3.11.0</version>
+						<version>3.12.0</version>
 						<configuration>
 							<java>
 								<palantirJavaFormat>

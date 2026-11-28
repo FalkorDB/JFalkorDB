@@ -27,6 +27,9 @@ Common recipes:
 ```bash
 just verify-local   # spin up FalkorDB (Docker), run the full build + tests, then tear it down
 just verify         # same build + tests; auto-starts FalkorDB via Testcontainers (Docker)
+FALKORDB_PROTOCOL=resp3 just verify          # the same suite over RESP3
+FALKORDB_IMAGE=$(just falkordb-image 4) just verify   # against the newest FalkorDB 4.x release
+just verify-matrix  # every server line x protocol CI runs (slow)
 just build          # compile + package, no tests
 just test           # fast unit tests only (no server); system tests are *IT, run by just verify
 just fmt            # apply palantir-java-format
@@ -45,6 +48,9 @@ just bench          # client load-sweep benchmark (client latency vs throughput;
 ## Before opening a PR
 
 - Run `just verify-local` and keep documentation in sync with your change.
+- If your change touches how the client talks to the server (commands, replies, connections), run
+  `just verify-matrix`: CI runs the suite on the newest 4.x, 6.0.x and 6.x releases, each over RESP2
+  and RESP3, and a reply can differ between them.
 - If you changed the public API, run `just api-surface-update` and commit `api/jfalkordb.api` with it.
   The snapshot lists every public member, including the ones `GraphPipeline` and `GraphTransaction`
   inherit from Jedis, so the PR diff shows exactly what callers gain or lose. A Jedis bump that

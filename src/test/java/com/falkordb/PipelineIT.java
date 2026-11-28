@@ -120,12 +120,12 @@ public class PipelineIT {
         // A reply is decoded when it is read, after its context is closed here. Decoding needs the label and
         // the property key, but the context's connection is back in the pool. Lent out again and put in
         // pipeline mode, it makes Jedis refuse any stray command sent on it.
-        try (Driver driver = FalkorDB.builder()
+        try (Driver driver = TestProtocol.assertResp2(FalkorDB.builder()
                 .host(TestServer.host())
                 .port(TestServer.port())
                 .poolMaxTotal(2)
                 .poolMaxIdle(2)
-                .build()) {
+                .build())) {
             GraphContextGenerator graph = driver.graph("social"); // its own, empty cache
             Response<ResultSet> reply;
             try (GraphContext c = graph.getContext()) {
@@ -147,12 +147,12 @@ public class PipelineIT {
 
     @Test
     public void testClosingAContextWithAnUnsyncedPipelineReturnsACleanConnection() {
-        try (Driver driver = FalkorDB.builder()
+        try (Driver driver = TestProtocol.assertResp2(FalkorDB.builder()
                 .host(TestServer.host())
                 .port(TestServer.port())
                 .poolMaxTotal(1)
                 .poolMaxIdle(1)
-                .build()) {
+                .build())) {
             GraphContextGenerator graph = driver.graph("social");
             Response<ResultSet> created;
             try (GraphContext c = graph.getContext()) {
@@ -241,10 +241,10 @@ public class PipelineIT {
         api.query("CREATE (:Person {name:'a'})");
         // A driver of its own: a lookup sent on the connection by mistake would leave it out of step, and the
         // shared pool would hand that connection to the next test.
-        try (Driver driver = FalkorDB.builder()
+        try (Driver driver = TestProtocol.assertResp2(FalkorDB.builder()
                 .host(TestServer.host())
                 .port(TestServer.port())
-                .build()) {
+                .build())) {
             GraphContextGenerator cold = driver.graph("social"); // its own, empty cache
             try (GraphContext c = cold.getContext()) {
                 GraphPipeline pipeline = c.pipelined();

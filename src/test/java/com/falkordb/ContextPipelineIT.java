@@ -325,13 +325,13 @@ public class ContextPipelineIT {
     }
 
     private static Driver poolOf(int connections) {
-        return FalkorDB.builder()
+        return TestProtocol.assertResp2(FalkorDB.builder()
                 .host(TestServer.host())
                 .port(TestServer.port())
                 .poolMaxTotal(connections)
                 .poolMaxIdle(connections)
                 .poolMaxWait(Duration.ofSeconds(5))
-                .build();
+                .build());
     }
 
     private static byte[] bytes(String s) {

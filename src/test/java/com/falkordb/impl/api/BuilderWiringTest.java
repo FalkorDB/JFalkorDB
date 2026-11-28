@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.falkordb.Driver;
 import com.falkordb.FalkorDB;
+import java.net.URI;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,6 +21,7 @@ import javax.net.ssl.SSLParameters;
 import org.junit.jupiter.api.Test;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.RedisProtocol;
 import redis.clients.jedis.exceptions.JedisException;
 import redis.clients.jedis.util.Pool;
 
@@ -229,6 +231,24 @@ class BuilderWiringTest {
             assertNotNull(config.getSslOptions());
             assertSame(ACCEPT_ALL, config.getHostnameVerifier());
         }
+    }
+
+    @Test
+    void aClusterKeepsTheUrisProtocolOnItsDataConnectionsOnly() {
+        // driver(URI) with ?protocol=3 asks for RESP3; a cluster's node connections carry the graph commands, so
+        // they keep it. The probes and the topology refresh read INFO and CLUSTER SLOTS as RESP2 replies.
+        DefaultJedisClientConfig data = DriverImpl.uriClientConfig(URI.create("redis://localhost:7001?protocol=3"));
+        assertEquals(RedisProtocol.RESP3, data.getRedisProtocol());
+
+        assertEquals(RedisProtocol.RESP3, DriverImpl.clusterNodeConfig(data).getRedisProtocol());
+        assertNull(DriverImpl.clusterProbeConfig(data).getRedisProtocol());
+        // ClusterConnections derives its topology config from the node config.
+        assertNull(DriverImpl.clusterProbeConfig(DriverImpl.clusterNodeConfig(data))
+                .getRedisProtocol());
+
+        DefaultJedisClientConfig noProtocol = DriverImpl.uriClientConfig(URI.create("redis://localhost:7001"));
+        assertNull(DriverImpl.clusterNodeConfig(noProtocol).getRedisProtocol());
+        assertFalse(DriverImpl.clusterNodeConfig(data).isAutoNegotiateProtocol());
     }
 
     // --- database -----------------------------------------------------------------------------------------

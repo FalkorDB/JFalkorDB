@@ -75,8 +75,8 @@ public class ReplicaReadIT {
         redisCli(replicaContainer, "REPLICAOF", PRIMARY_NETWORK_ALIAS, "6379");
         awaitReplicationLink();
 
-        primaryDriver = FalkorDB.driver(primaryContainer.getHost(), primaryContainer.getMappedPort(6379));
-        replicaDriver = FalkorDB.driver(replicaContainer.getHost(), replicaContainer.getMappedPort(6379));
+        primaryDriver = TestProtocol.driver(primaryContainer.getHost(), primaryContainer.getMappedPort(6379));
+        replicaDriver = TestProtocol.driver(replicaContainer.getHost(), replicaContainer.getMappedPort(6379));
 
         primaryDriver
                 .graph(GRAPH_NAME)
