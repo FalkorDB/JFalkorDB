@@ -273,7 +273,11 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <section class="detail" id="udfList()">
 <h3>udfList</h3>
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;</span>&nbsp;<span class="element-name">udfList</span>()</div>
-<div class="block">Lists all loaded UDF libraries.</div>
+<div class="block">Lists all loaded UDF libraries.
+
+ <p>Each library is a flat list of alternating keys and values, such as <code>library_name</code>, its name,
+ <code>functions</code> and a list of their names, with strings as byte arrays. The shape is the same on every
+ server version and protocol: a library FalkorDB 4.x sends as a RESP3 map is turned into that list.</div>
 <dl class="notes">
 <dt>Returns:</dt>
 <dd>a list of UDF library information</dd>
@@ -289,7 +293,8 @@ extends <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/ja
 <h3>udfList</h3>
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&gt;</span>&nbsp;<span class="element-name">udfList</span><wbr><span class="parameters">(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;libraryName,
  boolean&nbsp;withCode)</span></div>
-<div class="block">Lists UDF libraries with optional filters.</div>
+<div class="block">Lists UDF libraries with optional filters. Each library has the shape <a href="#udfList()"><code>udfList()</code></a> describes, plus the
+ code when <code>withCode</code> asks for it.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>libraryName</code> - Optional library name to filter results</dd>
