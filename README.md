@@ -53,7 +53,7 @@ and
     <dependency>
       <groupId>com.falkordb</groupId>
       <artifactId>jfalkordb</artifactId>
-      <version>0.18.0</version> <!-- x-release-please-version -->
+      <version>0.18.1-SNAPSHOT</version> <!-- x-release-please-version -->
     </dependency>
   </dependencies>
 ```
