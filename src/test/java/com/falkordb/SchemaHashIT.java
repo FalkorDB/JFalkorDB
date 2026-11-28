@@ -7,17 +7,23 @@ import com.falkordb.graph_entities.Edge;
 import com.falkordb.graph_entities.Node;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisMonitor;
 import redis.clients.jedis.RedisProtocol;
+import redis.clients.jedis.util.SafeEncoder;
 
 /**
  * The schema hash FalkorDB 6.2 and later sends with a reply. Compact replies name labels, relationship types and
@@ -97,6 +103,37 @@ public class SchemaHashIT {
                 .schemaHash(false)
                 .build());
         assertDecodesTheRecreatedGraph(graph(withoutHash), graph(driver()), false);
+    }
+
+    @Test
+    public void aGraphRecreatedWithAPrefixOfItsNamesIsCachedAgain() throws Exception {
+        // The recreated graph's names start like the old ones ([Person] / [name] after [Person] / [name, age]), as a
+        // replica that is behind would send. A cache that kept the old names then would send their hash, and get
+        // the names back, on every query from then on; the replies still decode, so only the hashes show it.
+        Graph reader = graph(driver());
+        Graph writer = graph(driver());
+        writer.query("CREATE (:Person {name: 'a', age: 1})");
+        reader.query("MATCH (n) RETURN n");
+        writer.deleteGraph();
+        writer.query("CREATE (:Person {name: 'b'})");
+
+        List<String> sent = schemaHashesSentBy(() -> {
+            for (int i = 0; i < 3; i++) {
+                Node node = onlyNode(reader.query("MATCH (n) RETURN n"));
+                assertEquals("Person", node.getLabel(0));
+                assertEquals("b", node.getProperty("name").getValue());
+            }
+        });
+
+        assertEquals(3, sent.size(), sent.toString());
+        if (TestServer.sendsSchemaHash()) {
+            // the old graph's hash once, then the recreated graph's, which the server confirms with the hash alone
+            assertTrue(!sent.get(0).equals(sent.get(1)) && sent.get(1).equals(sent.get(2)), sent.toString());
+            assertEquals(2, hashOnlyReply(sent.get(2)).size(), "the hash alone: the cache holds the current names");
+        } else {
+            // an older server sends no hash, so the client never has one to send
+            assertEquals(Arrays.asList("0", "0", "0"), sent);
+        }
     }
 
     @Test
@@ -248,6 +285,69 @@ public class SchemaHashIT {
             // the ids of (:Movie {title}) decoded with the cached names of (:Person {name})
             assertEquals("Person", node.getLabel(0));
             assertEquals("Heat", node.getProperty("name").getValue());
+        }
+    }
+
+    /** The {@code SCHEMA_HASH} values the graph queries {@code run} sends to {@link #GRAPH}, as MONITOR sees them. */
+    private static List<String> schemaHashesSentBy(Runnable run) throws Exception {
+        List<String> commands = new CopyOnWriteArrayList<>();
+        CountDownLatch watching = new CountDownLatch(1);
+        String marker = "schema-hash-it-monitor-" + System.nanoTime();
+        Jedis monitor = new Jedis(TestServer.host(), TestServer.port());
+        Thread thread = new Thread(() -> {
+            try {
+                monitor.monitor(new JedisMonitor() {
+                    @Override
+                    public void onCommand(String command) {
+                        if (command.contains(marker)) {
+                            watching.countDown();
+                        }
+                        commands.add(command);
+                    }
+                });
+            } catch (RuntimeException closed) {
+                // the test closed the connection to stop watching
+            }
+        });
+        thread.setDaemon(true);
+        thread.start();
+        try (Jedis jedis = new Jedis(TestServer.host(), TestServer.port())) {
+            // MONITOR shows only what runs after it started: wait until it sees a marker
+            do {
+                jedis.echo(marker);
+            } while (!watching.await(100, TimeUnit.MILLISECONDS));
+            run.run();
+            String done = marker + "-done";
+            jedis.echo(done);
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+            while (commands.stream().noneMatch(c -> c.contains(done)) && System.nanoTime() < deadline) {
+                Thread.sleep(10);
+            }
+        } finally {
+            monitor.close();
+        }
+        Pattern hash = Pattern.compile("\"SCHEMA_HASH\" \"(-?[0-9]+)\"");
+        List<String> sent = new ArrayList<>();
+        for (String command : commands) {
+            if (command.contains("\"" + GRAPH + "\"") && command.contains("MATCH (n) RETURN n")) {
+                Matcher matcher = hash.matcher(command);
+                sent.add(matcher.find() ? matcher.group(1) : "none");
+            }
+        }
+        return sent;
+    }
+
+    /** The schema element the server answers a read sent with {@code hash} with. */
+    private static List<?> hashOnlyReply(String hash) {
+        try (Jedis jedis = new Jedis(TestServer.host(), TestServer.port())) {
+            List<?> reply = (List<?>) jedis.sendCommand(
+                    () -> SafeEncoder.encode("GRAPH.RO_QUERY"),
+                    GRAPH,
+                    "MATCH (n) RETURN n",
+                    "--compact",
+                    "SCHEMA_HASH",
+                    hash);
+            return (List<?>) reply.get(reply.size() - 1);
         }
     }
 

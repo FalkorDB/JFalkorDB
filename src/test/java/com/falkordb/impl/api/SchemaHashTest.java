@@ -85,6 +85,26 @@ class SchemaHashTest {
     }
 
     @Test
+    void aGraphRecreatedWithAPrefixOfItsNamesIsCachedAgain() throws Exception {
+        // The recreated graph's names start like the old ones, as a replica that is behind would send. A rule that
+        // kept the cached names then would send the old hash, and get the names back, on every query from then on.
+        try (FakeSchemaServer server = new FakeSchemaServer(true, 42L, "Person", "name", "age");
+                Driver driver = driver(server, true)) {
+            GraphContextGenerator graph = driver.graph("g");
+            assertNode(graph.query(MATCH), "Person", "name");
+
+            server.recreate(7L, "Person", "name");
+
+            for (int i = 0; i < 3; i++) {
+                assertNode(graph.query(MATCH), "Person", "name");
+            }
+            assertEquals(Arrays.asList("0", "42", "7", "7"), server.sentHashes());
+            assertEquals(Arrays.asList(true, true, false, false), server.sentNames());
+            assertEquals(0, server.lookups());
+        }
+    }
+
+    @Test
     void aPipelineDecodesWithTheHashItSent() throws Exception {
         try (FakeSchemaServer server = new FakeSchemaServer(true, 42L, "Person", "name");
                 Driver driver = driver(server, true)) {
@@ -205,21 +225,22 @@ class SchemaHashTest {
         private final boolean sendsSchema;
         private volatile long hash;
         private volatile String label;
-        private volatile String key;
+        /** The property keys, in id order; the node has the first one. */
+        private volatile List<String> keys;
         /** Answers with the graph's hash alone, even when the query sent another, as a server with a bug would. */
         volatile boolean neverSendsNames;
 
         private final List<Boolean> sentNames = Collections.synchronizedList(new ArrayList<>());
 
-        FakeSchemaServer(boolean sendsSchema, long hash, String label, String key) {
+        FakeSchemaServer(boolean sendsSchema, long hash, String label, String... keys) {
             this.sendsSchema = sendsSchema;
-            recreate(hash, label, key);
+            recreate(hash, label, keys);
         }
 
-        void recreate(long newHash, String newLabel, String newKey) {
+        void recreate(long newHash, String newLabel, String... newKeys) {
             hash = newHash;
             label = newLabel;
-            key = newKey;
+            keys = Arrays.asList(newKeys);
         }
 
         int port() {
@@ -250,8 +271,10 @@ class SchemaHashTest {
             String header;
             if (query.startsWith("CALL db.")) {
                 header = array(array(integer(1), bulk("name")));
-                String name = query.startsWith("CALL db.labels") ? label : key;
-                rows = array(array(array(integer(2), bulk(name))));
+                List<String> names = query.startsWith("CALL db.labels") ? Collections.singletonList(label) : keys;
+                rows = array(names.stream()
+                        .map(name -> array(array(integer(2), bulk(name))))
+                        .toArray(String[]::new));
             } else {
                 header = array(array(integer(1), bulk("n")));
                 String property = array(integer(0), integer(2), bulk("v")); // key 0, VALUE_STRING
@@ -268,10 +291,14 @@ class SchemaHashTest {
             sentNames.add(names);
             String element = names
                     ? array(
-                            bulk("hash"), integer(hash),
-                            bulk("labels"), array(bulk(label)),
-                            bulk("relationshipTypes"), array(),
-                            bulk("propertyKeys"), array(bulk(key)))
+                            bulk("hash"),
+                            integer(hash),
+                            bulk("labels"),
+                            array(bulk(label)),
+                            bulk("relationshipTypes"),
+                            array(),
+                            bulk("propertyKeys"),
+                            array(keys.stream().map(FakeRedisServer::bulk).toArray(String[]::new)))
                     : array(bulk("hash"), integer(hash));
             return array(header, rows, stats, element);
         }
