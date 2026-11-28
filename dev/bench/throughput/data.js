@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795417418560,
+  "lastUpdate": 1795853046954,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Throughput": [
@@ -9911,6 +9911,65 @@ window.BENCHMARK_DATA = {
           {
             "name": "throughput @load=64",
             "value": 11750,
+            "unit": "ops/s"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b7952d2896654f66577ae99edc07189341bf8b25",
+          "message": "feat: send SCHEMA_HASH so replies decode with the right names on FalkorDB 6.2+ (#551)\n\n* feat: send SCHEMA_HASH so replies decode with the right names on FalkorDB 6.2+\n\nCompact replies name labels, relationship types and property keys by id,\nand a graph that is deleted and recreated reuses the ids for other names.\nThe client refreshed its cache only on an unknown id, so after another\nclient recreated a graph it silently decoded the new graph's ids with the\nold names.\n\nEvery compact query now sends SCHEMA_HASH with the hash of the names it\nhas cached (0 when none), last. FalkorDB 6.2+ ends the reply with a schema\nelement: the hash alone when it still matches, or the graph's names when\nit doesn't. Each reply is decoded with the names it carries, or with the\nsnapshot whose hash the query sent, never with a lookup. Detection is per\nreply, so older servers, which ignore the argument, keep the db.* refresh\npath unchanged. PROFILE and EXPLAIN don't send it.\n\nThe cache is now one atomic SchemaNames snapshot (hash + three lists);\nnames a reply brings replace it unless the hash is the same (last reply\nwins). FalkorDB.builder().schemaHash(false) switches the argument off.\n\nCloses #549\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: cover a graph recreated with a prefix of its old names\n\nA graph recreated with names that start like the old ones ([Person] /\n[name] after [Person] / [name, age]) looks like an older version of the\nsame graph. A cache rule that keeps the cached names when a reply's are\na prefix of them then never recovers: every query sends the old hash\nand gets the names back. falkordb-rs has that rule (FalkorDB/falkordb-rs#443).\n\nSchemaHashTest checks the hashes sent against the fake 6.2 server, and\nSchemaHashIT checks them against a real server through MONITOR, so both\nfail if the prefix rule comes back.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* fix: address review of the schema-hash change\n\n- SchemaReply: recognize a RESP2 schema element with `hash` at any key\n  position, as the class documents, not only first.\n- GraphCache: the frozen-cache constructor takes the shared list it\n  stands in with, instead of an unused parameter.\n- ClusterIT: read the server version through a new ServerVersion test\n  helper, so an external-cluster run doesn't start TestServer's\n  standalone container.\n- SchemaHashIT: bound the MONITOR startup wait and report a worker that\n  failed before it started watching; fail clearly on an unexpected label.\n- SchemaHashTest: the fake answers an unreadable hash as the server\n  does; the pipeline test moves the live cache on before decoding, so it\n  proves the queue-time snapshot is used.\n- SchemaReplyTest: the pair helpers reject an odd number of items.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: bound the pair helpers' loops explicitly for static analysis\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-28T10:01:22+02:00",
+          "tree_id": "24ee0dcad9ac6f4beaa11fa6c8cc2e63832c208d",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/b7952d2896654f66577ae99edc07189341bf8b25"
+        },
+        "date": 1795853046903,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "throughput @load=1",
+            "value": 3972,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=2",
+            "value": 6635,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=4",
+            "value": 9950.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=8",
+            "value": 12213,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=16",
+            "value": 11631.667,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=32",
+            "value": 11564.333,
+            "unit": "ops/s"
+          },
+          {
+            "name": "throughput @load=64",
+            "value": 11547,
             "unit": "ops/s"
           }
         ]
