@@ -164,56 +164,61 @@ loadScripts(document, 'script');</script>
 <div class="block">Sets the server port (default <code>6379</code>).</div>
 </div>
 <div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#sentinel(java.lang.String,java.lang.String...)" class="member-name-link">sentinel</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;masterName,
- <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>...&nbsp;sentinels)</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#schemaHash(boolean)" class="member-name-link">schemaHash</a><wbr>(boolean&nbsp;schemaHash)</code></div>
 <div class="col-last odd-row-color">
-<div class="block">Connects through a Redis Sentinel deployment, naming the monitored master explicitly.</div>
+<div class="block">Sets whether queries send the hash of the schema names the client has cached (default <code>true</code>).</div>
 </div>
 <div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#sentinel(java.lang.String,java.util.Collection)" class="member-name-link">sentinel</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;masterName,
- <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;sentinels)</code></div>
+<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#sentinel(java.lang.String,java.lang.String...)" class="member-name-link">sentinel</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;masterName,
+ <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>...&nbsp;sentinels)</code></div>
 <div class="col-last even-row-color">
 <div class="block">Connects through a Redis Sentinel deployment, naming the monitored master explicitly.</div>
 </div>
 <div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#sentinelCredentials(java.lang.String)" class="member-name-link">sentinelCredentials</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#sentinel(java.lang.String,java.util.Collection)" class="member-name-link">sentinel</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;masterName,
+ <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;sentinels)</code></div>
 <div class="col-last odd-row-color">
+<div class="block">Connects through a Redis Sentinel deployment, naming the monitored master explicitly.</div>
+</div>
+<div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#sentinelCredentials(java.lang.String)" class="member-name-link">sentinelCredentials</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</code></div>
+<div class="col-last even-row-color">
 <div class="block">Sets a password for password-only (<code>default</code> user) authentication to the Sentinels,
  clearing any previously set Sentinel username.</div>
 </div>
-<div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#sentinelCredentials(java.lang.String,java.lang.String)" class="member-name-link">sentinelCredentials</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;user,
+<div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#sentinelCredentials(java.lang.String,java.lang.String)" class="member-name-link">sentinelCredentials</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;user,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</code></div>
-<div class="col-last even-row-color">
+<div class="col-last odd-row-color">
 <div class="block">Sets the username and password used to authenticate to the Sentinels themselves, which
  commonly carry ACLs of their own.</div>
 </div>
-<div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#socketTimeout(java.time.Duration)" class="member-name-link">socketTimeout</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;socketTimeout)</code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#socketTimeout(java.time.Duration)" class="member-name-link">socketTimeout</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;socketTimeout)</code></div>
+<div class="col-last even-row-color">
 <div class="block">Sets the socket (read) timeout (default <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html#ZERO" title="class or interface in java.time" class="external-link"><code>Duration.ZERO</code></a> = no read deadline, so a
  long-running server query is never cut off client-side).</div>
 </div>
-<div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#ssl(boolean)" class="member-name-link">ssl</a><wbr>(boolean&nbsp;ssl)</code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#ssl(boolean)" class="member-name-link">ssl</a><wbr>(boolean&nbsp;ssl)</code></div>
+<div class="col-last odd-row-color">
 <div class="block">Enables or disables TLS.</div>
 </div>
-<div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#sslContext(javax.net.ssl.SSLContext)" class="member-name-link">sslContext</a><wbr>(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLContext.html" title="class or interface in javax.net.ssl" class="external-link">SSLContext</a>&nbsp;sslContext)</code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#sslContext(javax.net.ssl.SSLContext)" class="member-name-link">sslContext</a><wbr>(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLContext.html" title="class or interface in javax.net.ssl" class="external-link">SSLContext</a>&nbsp;sslContext)</code></div>
+<div class="col-last even-row-color">
 <div class="block">Connects over TLS with sockets from this <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLContext.html" title="class or interface in javax.net.ssl" class="external-link"><code>SSLContext</code></a>, which carries the trust material that
  authenticates the server and, for mutual TLS, the key material that authenticates the client.</div>
 </div>
-<div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#sslHostnameVerifier(javax.net.ssl.HostnameVerifier)" class="member-name-link">sslHostnameVerifier</a><wbr>(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/HostnameVerifier.html" title="class or interface in javax.net.ssl" class="external-link">HostnameVerifier</a>&nbsp;sslHostnameVerifier)</code></div>
-<div class="col-last even-row-color">
+<div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#sslHostnameVerifier(javax.net.ssl.HostnameVerifier)" class="member-name-link">sslHostnameVerifier</a><wbr>(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/HostnameVerifier.html" title="class or interface in javax.net.ssl" class="external-link">HostnameVerifier</a>&nbsp;sslHostnameVerifier)</code></div>
+<div class="col-last odd-row-color">
 <div class="block">Checks the server's identity with this <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/HostnameVerifier.html" title="class or interface in javax.net.ssl" class="external-link"><code>HostnameVerifier</code></a> once each TLS handshake has
  completed, and refuses the connection if it returns <code>false</code>.</div>
 </div>
-<div class="col-first odd-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#sslParameters(javax.net.ssl.SSLParameters)" class="member-name-link">sslParameters</a><wbr>(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLParameters.html" title="class or interface in javax.net.ssl" class="external-link">SSLParameters</a>&nbsp;sslParameters)</code></div>
-<div class="col-last odd-row-color">
+<div class="col-first even-row-color"><code><a href="../FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color"><span class="type-name-label">FalkorDB.Builder.</span><code><a href="../FalkorDB.Builder.html#sslParameters(javax.net.ssl.SSLParameters)" class="member-name-link">sslParameters</a><wbr>(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLParameters.html" title="class or interface in javax.net.ssl" class="external-link">SSLParameters</a>&nbsp;sslParameters)</code></div>
+<div class="col-last even-row-color">
 <div class="block">Applies these <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLParameters.html" title="class or interface in javax.net.ssl" class="external-link"><code>SSLParameters</code></a> to every TLS socket: protocols, cipher suites, SNI server names
  and the endpoint identification algorithm, which decides whether the server's hostname is verified.</div>
 </div>

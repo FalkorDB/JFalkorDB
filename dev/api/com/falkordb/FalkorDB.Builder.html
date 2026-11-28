@@ -208,56 +208,61 @@ loadScripts(document, 'script');</script>
 <div class="block">Sets the server port (default <code>6379</code>).</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sentinel(java.lang.String,java.lang.String...)" class="member-name-link">sentinel</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;masterName,
- <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>...&nbsp;sentinels)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#schemaHash(boolean)" class="member-name-link">schemaHash</a><wbr>(boolean&nbsp;schemaHash)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Connects through a Redis Sentinel deployment, naming the monitored master explicitly.</div>
+<div class="block">Sets whether queries send the hash of the schema names the client has cached (default <code>true</code>).</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sentinel(java.lang.String,java.util.Collection)" class="member-name-link">sentinel</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;masterName,
- <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;sentinels)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sentinel(java.lang.String,java.lang.String...)" class="member-name-link">sentinel</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;masterName,
+ <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>...&nbsp;sentinels)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Connects through a Redis Sentinel deployment, naming the monitored master explicitly.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sentinelCredentials(java.lang.String)" class="member-name-link">sentinelCredentials</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sentinel(java.lang.String,java.util.Collection)" class="member-name-link">sentinel</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;masterName,
+ <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/Collection.html" title="class or interface in java.util" class="external-link">Collection</a>&lt;<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&gt;&nbsp;sentinels)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Connects through a Redis Sentinel deployment, naming the monitored master explicitly.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sentinelCredentials(java.lang.String)" class="member-name-link">sentinelCredentials</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets a password for password-only (<code>default</code> user) authentication to the Sentinels,
  clearing any previously set Sentinel username.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sentinelCredentials(java.lang.String,java.lang.String)" class="member-name-link">sentinelCredentials</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;user,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sentinelCredentials(java.lang.String,java.lang.String)" class="member-name-link">sentinelCredentials</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;user,
  <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;password)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets the username and password used to authenticate to the Sentinels themselves, which
  commonly carry ACLs of their own.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#socketTimeout(java.time.Duration)" class="member-name-link">socketTimeout</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;socketTimeout)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#socketTimeout(java.time.Duration)" class="member-name-link">socketTimeout</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html" title="class or interface in java.time" class="external-link">Duration</a>&nbsp;socketTimeout)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets the socket (read) timeout (default <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/Duration.html#ZERO" title="class or interface in java.time" class="external-link"><code>Duration.ZERO</code></a> = no read deadline, so a
  long-running server query is never cut off client-side).</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#ssl(boolean)" class="member-name-link">ssl</a><wbr>(boolean&nbsp;ssl)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#ssl(boolean)" class="member-name-link">ssl</a><wbr>(boolean&nbsp;ssl)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Enables or disables TLS.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sslContext(javax.net.ssl.SSLContext)" class="member-name-link">sslContext</a><wbr>(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLContext.html" title="class or interface in javax.net.ssl" class="external-link">SSLContext</a>&nbsp;sslContext)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sslContext(javax.net.ssl.SSLContext)" class="member-name-link">sslContext</a><wbr>(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLContext.html" title="class or interface in javax.net.ssl" class="external-link">SSLContext</a>&nbsp;sslContext)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Connects over TLS with sockets from this <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLContext.html" title="class or interface in javax.net.ssl" class="external-link"><code>SSLContext</code></a>, which carries the trust material that
  authenticates the server and, for mutual TLS, the key material that authenticates the client.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sslHostnameVerifier(javax.net.ssl.HostnameVerifier)" class="member-name-link">sslHostnameVerifier</a><wbr>(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/HostnameVerifier.html" title="class or interface in javax.net.ssl" class="external-link">HostnameVerifier</a>&nbsp;sslHostnameVerifier)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sslHostnameVerifier(javax.net.ssl.HostnameVerifier)" class="member-name-link">sslHostnameVerifier</a><wbr>(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/HostnameVerifier.html" title="class or interface in javax.net.ssl" class="external-link">HostnameVerifier</a>&nbsp;sslHostnameVerifier)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Checks the server's identity with this <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/HostnameVerifier.html" title="class or interface in javax.net.ssl" class="external-link"><code>HostnameVerifier</code></a> once each TLS handshake has
  completed, and refuses the connection if it returns <code>false</code>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sslParameters(javax.net.ssl.SSLParameters)" class="member-name-link">sslParameters</a><wbr>(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLParameters.html" title="class or interface in javax.net.ssl" class="external-link">SSLParameters</a>&nbsp;sslParameters)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#sslParameters(javax.net.ssl.SSLParameters)" class="member-name-link">sslParameters</a><wbr>(@Nullable <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLParameters.html" title="class or interface in javax.net.ssl" class="external-link">SSLParameters</a>&nbsp;sslParameters)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Applies these <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLParameters.html" title="class or interface in javax.net.ssl" class="external-link"><code>SSLParameters</code></a> to every TLS socket: protocols, cipher suites, SNI server names
  and the endpoint identification algorithm, which decides whether the server's hostname is verified.</div>
 </div>
@@ -723,6 +728,29 @@ loadScripts(document, 'script');</script>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>autoDetectCluster</code> - whether to probe the endpoint for cluster mode</dd>
+<dt>Returns:</dt>
+<dd>this builder</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="schemaHash(boolean)">
+<h3>schemaHash</h3>
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="FalkorDB.Builder.html" title="class in com.falkordb">FalkorDB.Builder</a></span>&nbsp;<span class="element-name">schemaHash</span><wbr><span class="parameters">(boolean&nbsp;schemaHash)</span></div>
+<div class="block">Sets whether queries send the hash of the schema names the client has cached (default <code>true</code>).
+
+ <p>Compact replies name labels, relationship types and property keys by number, and a graph that is
+ deleted and recreated, by this client or any other, reuses the numbers for other names. With the hash,
+ FalkorDB 6.2 and later add the graph's current names to a reply whenever the cached ones are stale, so
+ every reply is decoded with the right names, and the client never has to ask for them separately. Older
+ servers ignore the hash, and a client connected to one fetches names it doesn't have, as before; until
+ then, a name it cached before such a recreation can still be decoded in place of the new one.
+
+ <p>Switch it off only if something between the client and the server rejects the extra
+ <code>SCHEMA_HASH</code> argument; the client then decodes every reply as it does with an older server.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>schemaHash</code> - whether queries send the schema hash</dd>
 <dt>Returns:</dt>
 <dd>this builder</dd>
 </dl>
