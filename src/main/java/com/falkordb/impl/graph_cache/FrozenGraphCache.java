@@ -1,39 +1,59 @@
 package com.falkordb.impl.graph_cache;
 
 import com.falkordb.Graph;
-import com.falkordb.exceptions.GraphException;
-import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 /**
- * A copy of a {@link GraphCache} that never asks the server: an id it doesn't hold is reported instead of
- * looked up. See {@link GraphCache#snapshot()}.
+ * Names that never change and are never looked up: an id they don't hold is reported instead. Used for a copy of a
+ * {@link GraphCache} (see {@link GraphCache#snapshot()}), and for the names a reply's schema element sent or
+ * confirmed (see {@link GraphCache#decodeWith}).
  */
 final class FrozenGraphCache extends GraphCache {
 
-    private final List<String> labels;
-    private final List<String> propertyNames;
-    private final List<String> relationshipTypes;
+    /** Why a copy taken by {@link GraphCache#snapshot()} lacks an id. */
+    static final String DELETED = "deleteGraph() was queued after this command in the same pipeline or transaction,"
+            + " so the id can no longer be looked up, and the client had not cached it";
 
-    FrozenGraphCache(List<String> labels, List<String> propertyNames, List<String> relationshipTypes) {
-        this.labels = labels;
-        this.propertyNames = propertyNames;
-        this.relationshipTypes = relationshipTypes;
+    private final SchemaNames names;
+    private final String missing;
+
+    /**
+     * @param names   the names
+     * @param missing why an id they lack is missing, for the error
+     */
+    FrozenGraphCache(SchemaNames names, String missing) {
+        super(null);
+        this.names = names;
+        this.missing = missing;
     }
 
     @Override
     public String getLabel(int index, Graph graph) {
-        return lookup(labels, index, "label");
+        return names.name(SchemaNames.Kind.LABEL, index, missing);
     }
 
     @Override
     public String getRelationshipType(int index, Graph graph) {
-        return lookup(relationshipTypes, index, "relationship type");
+        return names.name(SchemaNames.Kind.RELATIONSHIP_TYPE, index, missing);
     }
 
     @Override
     public String getPropertyName(int index, Graph graph) {
-        return lookup(propertyNames, index, "property key");
+        return names.name(SchemaNames.Kind.PROPERTY_KEY, index, missing);
     }
+
+    /** A copy is only ever decoded with, never sent with. */
+    @Override
+    public @Nullable SchemaNames request() {
+        return null;
+    }
+
+    /**
+     * A copy never changes. Names a reply decoded with a copy carried aren't kept: the copy decodes the replies
+     * queued before a {@code deleteGraph()}, so they are the deleted graph's.
+     */
+    @Override
+    void offer(SchemaNames offered) {}
 
     /** A copy never changes, so it is its own snapshot. */
     @Override
@@ -44,14 +64,4 @@ final class FrozenGraphCache extends GraphCache {
     /** A copy is never refreshed, so there is nothing to clear. */
     @Override
     public void clear() {}
-
-    /** Returns the name with the given id, or throws a {@link GraphException} for an id the copy doesn't hold. */
-    private static String lookup(List<String> entries, int index, String entryName) {
-        if (index < 0 || index >= entries.size()) {
-            throw new GraphException("Cannot decode " + entryName + " id " + index + ": deleteGraph() was queued after"
-                    + " this command in the same pipeline or transaction, so the id can no longer be looked up, and the"
-                    + " client had not cached it");
-        }
-        return entries.get(index);
-    }
 }

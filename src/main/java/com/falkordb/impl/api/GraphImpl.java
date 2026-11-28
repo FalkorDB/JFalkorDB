@@ -24,7 +24,7 @@ public class GraphImpl extends AbstractGraph implements GraphContextGenerator {
     public GraphImpl(DriverImpl driver, String graphId) {
         this.driver = driver;
         this.graphId = graphId;
-        this.cache = new GraphCache();
+        this.cache = new GraphCache(driver.schemaHash());
     }
 
     /**

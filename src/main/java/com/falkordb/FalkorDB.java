@@ -173,6 +173,7 @@ public final class FalkorDB {
         private boolean autoDetectSentinel = true;
         private @Nullable List<String> clusterNodes;
         private boolean autoDetectCluster = true;
+        private boolean schemaHash = true;
 
         private Builder() {}
 
@@ -586,6 +587,27 @@ public final class FalkorDB {
         }
 
         /**
+         * Sets whether queries send the hash of the schema names the client has cached (default {@code true}).
+         *
+         * <p>Compact replies name labels, relationship types and property keys by number, and a graph that is
+         * deleted and recreated, by this client or any other, reuses the numbers for other names. With the hash,
+         * FalkorDB 6.2 and later add the graph's current names to a reply whenever the cached ones are stale, so
+         * every reply is decoded with the right names, and the client never has to ask for them separately. Older
+         * servers ignore the hash, and a client connected to one fetches names it doesn't have, as before; until
+         * then, a name it cached before such a recreation can still be decoded in place of the new one.
+         *
+         * <p>Switch it off only if something between the client and the server rejects the extra
+         * {@code SCHEMA_HASH} argument; the client then decodes every reply as it does with an older server.
+         *
+         * @param schemaHash whether queries send the schema hash
+         * @return this builder
+         */
+        public Builder schemaHash(boolean schemaHash) {
+            this.schemaHash = schemaHash;
+            return this;
+        }
+
+        /**
          * Connects to a Redis Cluster through the given startup nodes, without probing.
          *
          * <p>Use this when {@linkplain #autoDetectCluster(boolean) auto-detection} is not enough: it
@@ -658,7 +680,8 @@ public final class FalkorDB {
                     socketMillis,
                     PoolOptions.of(maxTotal, maxIdle, poolMinIdle, maxWait, poolTestOnBorrow, poolTestWhileIdle),
                     sentinelOptions(),
-                    clusterOptions());
+                    clusterOptions(),
+                    schemaHash);
         }
 
         /**

@@ -1,8 +1,12 @@
 package com.falkordb;
 
+import java.util.List;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Protocol;
+import redis.clients.jedis.util.SafeEncoder;
 
 /**
  * Test-only endpoint factory for a FalkorDB server.
@@ -31,6 +35,9 @@ public final class TestServer {
 
     // One driver/pool shared by all graph() callers, closed once at JVM shutdown (see graph()).
     private static Driver sharedDriver;
+
+    // The graph module's version, read once (see moduleVersion()).
+    private static int moduleVersion;
 
     static {
         String envHost = System.getenv("FALKORDB_HOST");
@@ -80,6 +87,46 @@ public final class TestServer {
     /** {@code true} when tests run against an external (env-override) server rather than a container. */
     public static boolean isExternal() {
         return external;
+    }
+
+    /**
+     * The version of the graph module the test server runs, as {@code MODULE LIST} reports it: {@code 42204} for
+     * v4.22.4, {@code 60201} for 6.2.1. A test whose result depends on the server version asserts each version's
+     * result with it, rather than skipping a version.
+     */
+    public static synchronized int moduleVersion() {
+        if (moduleVersion == 0) {
+            moduleVersion = moduleVersion(host, port);
+        }
+        return moduleVersion;
+    }
+
+    /** Whether the server sends the schema with a reply to a query that carries {@code SCHEMA_HASH} (6.2.0+). */
+    public static boolean sendsSchemaHash() {
+        return moduleVersion() >= 60200;
+    }
+
+    /** The graph module's version on the given server. */
+    static int moduleVersion(String host, int port) {
+        try (Jedis jedis = new Jedis(host, port)) {
+            for (Object module : (List<?>) jedis.sendCommand(Protocol.Command.MODULE, "LIST")) {
+                List<?> fields = (List<?>) module;
+                Object name = null;
+                Object version = null;
+                for (int i = 0; i + 1 < fields.size(); i += 2) {
+                    String key = SafeEncoder.encode((byte[]) fields.get(i));
+                    if (key.equals("name")) {
+                        name = SafeEncoder.encode((byte[]) fields.get(i + 1));
+                    } else if (key.equals("ver")) {
+                        version = fields.get(i + 1);
+                    }
+                }
+                if ("graph".equals(name) && version instanceof Long) {
+                    return ((Long) version).intValue();
+                }
+            }
+        }
+        throw new IllegalStateException("the server at " + host + ":" + port + " runs no graph module");
     }
 
     /** A new driver connected to the shared test server; the caller is responsible for closing it. */

@@ -74,6 +74,7 @@ com.falkordb.FalkorDB$Builder
   method public com.falkordb.FalkorDB$Builder poolTestOnBorrow(boolean)
   method public com.falkordb.FalkorDB$Builder poolTestWhileIdle(boolean)
   method public com.falkordb.FalkorDB$Builder port(int)
+  method public com.falkordb.FalkorDB$Builder schemaHash(boolean)
   method public com.falkordb.FalkorDB$Builder sentinel(java.lang.String, java.lang.String...)
   method public com.falkordb.FalkorDB$Builder sentinel(java.lang.String, java.util.Collection<java.lang.String>)
   method public com.falkordb.FalkorDB$Builder sentinelCredentials(java.lang.String)

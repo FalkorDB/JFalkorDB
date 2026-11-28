@@ -407,6 +407,25 @@ The check is about form only: it doesn't limit which procedure runs, and some ch
 as `db.idx.fulltext.drop`. If the procedure name comes from untrusted input, check it against a list
 of the procedures you allow.
 
+## Labels and property names after a graph is recreated
+
+Replies name labels, relationship types and property keys by number, and the client caches the names
+behind the numbers for each graph. A graph that is deleted and recreated, by this client or another,
+reuses the numbers for other names. On FalkorDB 6.2 and later each query sends a hash of the names the
+client has cached, and the server adds the graph's current names to the reply whenever they differ, so
+results always carry the right names and the client never fetches names separately.
+
+Older servers ignore the hash. A client connected to one fetches the names it doesn't have yet, but a
+name it cached before the graph was recreated can still decode a number of the new graph. Use one name per
+graph, or upgrade the server, if your application recreates graphs that other clients read.
+
+Sending the hash is on by default. Switch it off only if something between the client and the server
+rejects the extra `SCHEMA_HASH` argument:
+
+```java
+Driver driver = FalkorDB.builder().host("localhost").schemaHash(false).build();
+```
+
 ## Handling errors
 
 The client reports failures with two exception types from `com.falkordb.exceptions`:

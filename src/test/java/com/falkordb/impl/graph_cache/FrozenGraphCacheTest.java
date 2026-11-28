@@ -1,6 +1,7 @@
 package com.falkordb.impl.graph_cache;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,7 +18,12 @@ class FrozenGraphCacheTest {
     private static final Graph NO_GRAPH = null;
 
     private final GraphCache copy = new FrozenGraphCache(
-            Collections.singletonList("Person"), Collections.singletonList("name"), Collections.singletonList("KNOWS"));
+            new SchemaNames(
+                    null,
+                    Collections.singletonList("Person"),
+                    Collections.singletonList("KNOWS"),
+                    Collections.singletonList("name")),
+            FrozenGraphCache.DELETED);
 
     @Test
     void looksEachKindOfIdUpInWhatItHolds() {
@@ -33,6 +39,20 @@ class FrozenGraphCacheTest {
 
         GraphException negative = assertThrows(GraphException.class, () -> copy.getLabel(-1, NO_GRAPH));
         assertTrue(negative.getMessage().startsWith("Cannot decode label id -1:"), negative.getMessage());
+    }
+
+    @Test
+    void neverSendsAndNeverKeepsNamesAReplyCarried() {
+        assertNull(copy.request());
+        GraphCache decoded = copy.decodeWith(
+                SchemaReply.parse(SchemaReplyTest.resp2(
+                        "hash", 9L,
+                        "labels", SchemaReplyTest.strings("Other"),
+                        "relationshipTypes", SchemaReplyTest.strings(),
+                        "propertyKeys", SchemaReplyTest.strings())),
+                null);
+        assertEquals("Other", decoded.getLabel(0, NO_GRAPH));
+        assertEquals("Person", copy.getLabel(0, NO_GRAPH));
     }
 
     @Test

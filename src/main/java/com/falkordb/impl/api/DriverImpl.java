@@ -117,6 +117,8 @@ public class DriverImpl implements Driver {
 
     /** Set by {@link #close()}, so a closed driver never silently rebuilds its pool. */
     private final AtomicBoolean closed = new AtomicBoolean();
+    // Whether the graphs of this driver send SCHEMA_HASH with their queries; see FalkorDB.Builder.schemaHash.
+    private final boolean schemaHash;
 
     /**
      * Creates a client running on the specific host/port
@@ -579,6 +581,57 @@ public class DriverImpl implements Driver {
 
     /**
      * Creates a driver from already-resolved connection settings, including the database, custom TLS and the
+     * full pool options, whose graphs send the schema hash. The {@linkplain #create(String, int, String, String,
+     * int, boolean, TlsOptions, int, int, PoolOptions, SentinelOptions, ClusterOptions, boolean) overload with
+     * the schema-hash switch} documents the parameters.
+     *
+     * @param host                     server host
+     * @param port                     server port
+     * @param user                     username, or {@code null} for none
+     * @param password                 password, or {@code null} for none
+     * @param database                 database index; must be {@code 0} for a Redis Cluster
+     * @param ssl                      whether to connect over TLS
+     * @param tls                      custom TLS settings, or {@code null} for the defaults; requires
+     *                                 {@code ssl}
+     * @param connectionTimeoutMillis  connection (connect) timeout in milliseconds
+     * @param socketTimeoutMillis      socket (read) timeout in milliseconds ({@code 0} = no deadline)
+     * @param pool                     pool sizing and connection checks
+     * @param sentinel                 how to treat the endpoint with respect to Sentinel
+     * @param cluster                  how to treat the endpoint with respect to Redis Cluster
+     * @return a new driver backed by the assembled connection source
+     * @throws IllegalArgumentException as the overload with the schema-hash switch does
+     */
+    public static Driver create(
+            String host,
+            int port,
+            @Nullable String user,
+            @Nullable String password,
+            int database,
+            boolean ssl,
+            @Nullable TlsOptions tls,
+            int connectionTimeoutMillis,
+            int socketTimeoutMillis,
+            PoolOptions pool,
+            SentinelOptions sentinel,
+            ClusterOptions cluster) {
+        return create(
+                host,
+                port,
+                user,
+                password,
+                database,
+                ssl,
+                tls,
+                connectionTimeoutMillis,
+                socketTimeoutMillis,
+                pool,
+                sentinel,
+                cluster,
+                true);
+    }
+
+    /**
+     * Creates a driver from already-resolved connection settings, including the database, custom TLS and the
      * full pool options. This is the overload {@code FalkorDB.builder()} actually calls; the shorter ones
      * delegate here with the defaults for whatever they leave out.
      *
@@ -597,6 +650,8 @@ public class DriverImpl implements Driver {
      *                                 separately
      * @param sentinel                 how to treat the endpoint with respect to Sentinel
      * @param cluster                  how to treat the endpoint with respect to Redis Cluster
+     * @param schemaHash               whether the driver's graphs send {@code SCHEMA_HASH} with their queries
+     *                                 (see {@code FalkorDB.Builder.schemaHash(boolean)})
      * @return a new driver backed by the assembled connection source
      * @throws IllegalArgumentException if {@code host} is null/blank, {@code port} is outside
      *                                  {@code [1, 65535]}, {@code database} is negative, or non-zero with
@@ -616,7 +671,8 @@ public class DriverImpl implements Driver {
             int socketTimeoutMillis,
             PoolOptions pool,
             SentinelOptions sentinel,
-            ClusterOptions cluster) {
+            ClusterOptions cluster,
+            boolean schemaHash) {
         if (host == null || host.trim().isEmpty()) {
             throw new IllegalArgumentException("host must not be null or blank");
         }
@@ -661,7 +717,7 @@ public class DriverImpl implements Driver {
                         user, password, ssl, tls, connectionTimeoutMillis, socketTimeoutMillis)
                 .database(database)
                 .build();
-        return new DriverImpl(() -> resolveConnections(seed, poolConfig, dataConfig, sentinel, cluster));
+        return new DriverImpl(() -> resolveConnections(seed, poolConfig, dataConfig, sentinel, cluster), schemaHash);
     }
 
     /**
@@ -788,6 +844,7 @@ public class DriverImpl implements Driver {
         Connections connections = new Connections.Single(pool);
         this.poolFactory = () -> connections;
         this.resolvedPool.set(connections);
+        this.schemaHash = true;
     }
 
     /**
@@ -799,6 +856,7 @@ public class DriverImpl implements Driver {
     DriverImpl(Connections connections) {
         this.poolFactory = () -> connections;
         this.resolvedPool.set(connections);
+        this.schemaHash = true;
     }
 
     /**
@@ -808,7 +866,12 @@ public class DriverImpl implements Driver {
      * @param poolFactory builds the pool the first time a connection is borrowed
      */
     private DriverImpl(Supplier<Connections> poolFactory) {
+        this(poolFactory, true);
+    }
+
+    private DriverImpl(Supplier<Connections> poolFactory, boolean schemaHash) {
         this.poolFactory = poolFactory;
+        this.schemaHash = schemaHash;
     }
 
     /**
@@ -867,6 +930,11 @@ public class DriverImpl implements Driver {
     @Override
     public GraphImpl graph(String graphId) {
         return new GraphImpl(this, graphId);
+    }
+
+    /** Returns whether this driver's graphs send {@code SCHEMA_HASH} with their queries. */
+    boolean schemaHash() {
+        return schemaHash;
     }
 
     /**

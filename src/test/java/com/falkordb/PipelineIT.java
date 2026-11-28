@@ -208,9 +208,10 @@ public class PipelineIT {
     }
 
     @Test
-    public void testAColdCacheReplyQueuedBeforeDeleteGraphIsReportedRatherThanMisread() {
-        // The issue's example, with nothing cached: the reply before the delete can't be decoded any more.
-        // Looking its label id up after the batch would find the recreated graph's label, so it is reported.
+    public void testAColdCacheReplyQueuedBeforeDeleteGraphIsDecodedOrReportedRatherThanMisread() {
+        // The issue's example, with nothing cached. FalkorDB 6.2+ sends the reply's names with it, so it decodes
+        // as the graph was. An older server doesn't, and the reply before the delete can't be decoded any more:
+        // looking its label id up after the batch would find the recreated graph's label, so it is reported.
         api.query("CREATE (:Person {name:'a'})");
         GraphContextGenerator cold = TestServer.graph("social"); // its own, empty cache
         try (GraphContext c = cold.getContext()) {
@@ -220,7 +221,14 @@ public class PipelineIT {
             pipeline.query("CREATE (n:Animal {kind:'cat'}) RETURN n");
             List<Object> results = pipeline.syncAndReturnAll();
 
-            Assertions.assertTrue(results.get(0) instanceof GraphException, String.valueOf(results.get(0)));
+            if (TestServer.sendsSchemaHash()) {
+                Node person =
+                        (Node) ((ResultSet) results.get(0)).iterator().next().getValue(0);
+                Assertions.assertEquals("Person", person.getLabel(0));
+                Assertions.assertEquals("a", person.getProperty("name").getValue());
+            } else {
+                Assertions.assertTrue(results.get(0) instanceof GraphException, String.valueOf(results.get(0)));
+            }
             Node animal = (Node) ((ResultSet) results.get(2)).iterator().next().getValue(0);
             Assertions.assertEquals("Animal", animal.getLabel(0));
         } finally {

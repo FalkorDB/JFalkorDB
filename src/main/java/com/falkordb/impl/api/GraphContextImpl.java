@@ -8,6 +8,7 @@ import com.falkordb.ResultSet;
 import com.falkordb.exceptions.GraphException;
 import com.falkordb.impl.Utils;
 import com.falkordb.impl.graph_cache.GraphCache;
+import com.falkordb.impl.graph_cache.SchemaNames;
 import com.falkordb.impl.resultset.ResultSetImpl;
 import java.io.Closeable;
 import java.io.IOException;
@@ -134,15 +135,16 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      * @throws GraphException if the reply needs a lookup that can't run on this context's connection and this
      *     context was built without a graph to borrow another from
      */
-    ResultSet decodeQueued(List<Object> reply, GraphCache replyCache) {
+    ResultSet decodeQueued(List<Object> reply, GraphCache replyCache, @Nullable SchemaNames sent) {
         boolean isClosed = closed.get();
         if (!(isClosed || connectionAwaitsReplies())) {
-            return new ResultSetImpl(reply, this, replyCache);
+            return new ResultSetImpl(reply, this, replyCache, sent);
         }
         try {
             // Most replies need no lookup, so try without one first: then only a reply that does borrows a
-            // connection. A context holding its pool's only connection can't borrow another.
-            return new ResultSetImpl(reply, NoLookups.GRAPH, replyCache);
+            // connection. A context holding its pool's only connection can't borrow another. A reply with a schema
+            // element never needs one.
+            return new ResultSetImpl(reply, NoLookups.GRAPH, replyCache, sent);
         } catch (NoLookups.Needed lookupNeeded) {
             GraphContextGenerator pool = poolGraph;
             if (pool == null) {
@@ -151,7 +153,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
                         + ", and it was built without a graph to borrow another connection from");
             }
             try (GraphContext own = pool.getContext()) {
-                return new ResultSetImpl(reply, own, replyCache);
+                return new ResultSetImpl(reply, own, replyCache, sent);
             }
         }
     }
@@ -234,9 +236,9 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
      * is redirected, the command has still run: the failure is reported as a {@link ReplyDecodeException}, which
      * {@link DriverImpl#routed} doesn't retry, rather than as a redirect it would.
      */
-    private ResultSet decodeRan(List<Object> reply) {
+    private ResultSet decodeRan(List<Object> reply, @Nullable SchemaNames sent) {
         try {
-            return new ResultSetImpl(reply, this, this.cache);
+            return new ResultSetImpl(reply, this, this.cache, sent);
         } catch (GraphException e) {
             JedisRedirectionException redirect = DriverImpl.redirectIn(e);
             if (redirect != null) {
@@ -256,10 +258,11 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
         checkNoBatchAwaits();
         askIfImporting();
         try {
+            @Nullable SchemaNames sent = cache.request();
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>)
-                    connection.sendCommand(GraphCommand.QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
-            return decodeRan(rawResponse);
+            List<Object> rawResponse = (List<Object>) connection.sendCommand(
+                    GraphCommand.QUERY, Utils.withSchemaHash(sent, graphId, preparedQuery, Utils.COMPACT_STRING));
+            return decodeRan(rawResponse, sent);
         } catch (GraphException rt) {
             throw rt;
         } catch (JedisDataException j) {
@@ -279,10 +282,11 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
         checkNoBatchAwaits();
         askIfImporting();
         try {
+            @Nullable SchemaNames sent = cache.request();
             @SuppressWarnings("unchecked")
-            List<Object> rawResponse = (List<Object>)
-                    connection.sendCommand(GraphCommand.RO_QUERY, graphId, preparedQuery, Utils.COMPACT_STRING);
-            return new ResultSetImpl(rawResponse, this, this.cache);
+            List<Object> rawResponse = (List<Object>) connection.sendCommand(
+                    GraphCommand.RO_QUERY, Utils.withSchemaHash(sent, graphId, preparedQuery, Utils.COMPACT_STRING));
+            return new ResultSetImpl(rawResponse, this, this.cache, sent);
         } catch (GraphException ge) {
             throw ge;
         } catch (JedisDataException de) {
@@ -303,15 +307,18 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
         checkNoBatchAwaits();
         askIfImporting();
         try {
+            @Nullable SchemaNames sent = cache.request();
             @SuppressWarnings("unchecked")
             List<Object> rawResponse = (List<Object>) connection.sendCommand(
                     GraphCommand.QUERY,
-                    graphId,
-                    preparedQuery,
-                    Utils.COMPACT_STRING,
-                    Utils.TIMEOUT_STRING,
-                    Long.toString(timeout));
-            return decodeRan(rawResponse);
+                    Utils.withSchemaHash(
+                            sent,
+                            graphId,
+                            preparedQuery,
+                            Utils.COMPACT_STRING,
+                            Utils.TIMEOUT_STRING,
+                            Long.toString(timeout)));
+            return decodeRan(rawResponse, sent);
         } catch (GraphException rt) {
             throw rt;
         } catch (JedisDataException j) {
@@ -332,15 +339,18 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
         checkNoBatchAwaits();
         askIfImporting();
         try {
+            @Nullable SchemaNames sent = cache.request();
             @SuppressWarnings("unchecked")
             List<Object> rawResponse = (List<Object>) connection.sendCommand(
                     GraphCommand.RO_QUERY,
-                    graphId,
-                    preparedQuery,
-                    Utils.COMPACT_STRING,
-                    Utils.TIMEOUT_STRING,
-                    Long.toString(timeout));
-            return new ResultSetImpl(rawResponse, this, this.cache);
+                    Utils.withSchemaHash(
+                            sent,
+                            graphId,
+                            preparedQuery,
+                            Utils.COMPACT_STRING,
+                            Utils.TIMEOUT_STRING,
+                            Long.toString(timeout)));
+            return new ResultSetImpl(rawResponse, this, this.cache, sent);
         } catch (GraphException ge) {
             throw ge;
         } catch (JedisDataException de) {
@@ -363,7 +373,7 @@ public class GraphContextImpl extends AbstractGraph implements GraphContext {
             @SuppressWarnings("unchecked")
             List<Object> rawResponse = (List<Object>)
                     connection.sendCommand(GraphCommand.PROFILE, graphId, preparedQuery, Utils.COMPACT_STRING);
-            return decodeRan(rawResponse);
+            return decodeRan(rawResponse, null);
         } catch (GraphException ge) {
             throw ge;
         } catch (JedisDataException de) {
