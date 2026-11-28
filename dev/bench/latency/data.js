@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795853045005,
+  "lastUpdate": 1795860629956,
   "repoUrl": "https://github.com/FalkorDB/JFalkorDB",
   "entries": {
     "Client latency": [
@@ -21800,6 +21800,135 @@ window.BENCHMARK_DATA = {
           {
             "name": "client_p99 @load=64",
             "value": 71397.592,
+            "unit": "us"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "barak.bar@gmail.com",
+            "name": "Barak Bar Orion",
+            "username": "barakb"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e0af57d18d25a0257d4bb5a5987a977b637894de",
+          "message": "fix: decode RESP3 replies, and test FalkorDB 4.x, 6.0.x and 6.x over RESP2 and RESP3 (#552)\n\n* build(deps-dev): bump com.diffplug.spotless:spotless-maven-plugin\n\nBumps [com.diffplug.spotless:spotless-maven-plugin](https://github.com/diffplug/spotless) from 3.11.0 to 3.12.0.\n- [Release notes](https://github.com/diffplug/spotless/releases)\n- [Changelog](https://github.com/diffplug/spotless/blob/main/CHANGES.md)\n- [Commits](https://github.com/diffplug/spotless/compare/maven/3.11.0...maven/3.12.0)\n\n---\nupdated-dependencies:\n- dependency-name: com.diffplug.spotless:spotless-maven-plugin\n  dependency-version: 3.12.0\n  dependency-type: direct:development\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n\n* build(deps-dev): bump org.codehaus.mojo:animal-sniffer-maven-plugin\n\nBumps [org.codehaus.mojo:animal-sniffer-maven-plugin](https://github.com/mojohaus/animal-sniffer) from 1.29.1 to 1.29.2.\n- [Release notes](https://github.com/mojohaus/animal-sniffer/releases)\n- [Commits](https://github.com/mojohaus/animal-sniffer/compare/1.29.1...1.29.2)\n\n---\nupdated-dependencies:\n- dependency-name: org.codehaus.mojo:animal-sniffer-maven-plugin\n  dependency-version: 1.29.2\n  dependency-type: direct:development\n  update-type: version-update:semver-patch\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n\n* fix(deps): bump org.codehaus.mojo:extra-enforcer-rules\n\nBumps [org.codehaus.mojo:extra-enforcer-rules](https://github.com/mojohaus/extra-enforcer-rules) from 1.12.1 to 1.13.0.\n- [Release notes](https://github.com/mojohaus/extra-enforcer-rules/releases)\n- [Commits](https://github.com/mojohaus/extra-enforcer-rules/compare/1.12.1...1.13.0)\n\n---\nupdated-dependencies:\n- dependency-name: org.codehaus.mojo:extra-enforcer-rules\n  dependency-version: 1.13.0\n  dependency-type: direct:production\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] <support@github.com>\n\n* fix: decode RESP3 replies, and test FalkorDB 4.x, 6.0.x and 6.x over RESP2 and RESP3\n\nFalkorDB.driver(URI) negotiates RESP3 for ?protocol=3, but nothing tested\nit. Running the suite over RESP3 found:\n\n- vecf32 elements arrive as native doubles; the decoder cast them to\n  byte[], and the ClassCastException escaped instead of a GraphException.\n  Vector elements, compact booleans and doubles now accept native values,\n  and any ClassCastException while decoding a reply is a GraphException.\n- FalkorDB 4.x sends ASYNC_DELETE, CMD_INFO and DELAY_INDEXING as RESP3\n  booleans; configGet/configGetAll read them as \"1\"/\"0\", as over RESP2.\n- FalkorDB 4.x sends each UDF library as a RESP3 map; udfList() turns it\n  into the flat [key, value, ...] list RESP2 and 6.x send.\n- A cluster driver from redis://seed?protocol=3 spoke RESP2: the cluster\n  node config dropped the URI's protocol. It now keeps it; the probes and\n  the topology refresh stay on RESP2.\n\nThe suite now runs over FALKORDB_PROTOCOL=resp2|resp3 (TestProtocol,\nwhich asserts the negotiated protocol), ProtocolIT checks the wire-format\ncases over both protocols in every run, and TestServer prints the server\nand protocol once. CI's verify-latest becomes verify-servers: the pinned\nminimum, the newest 4.x, 6.0.x and 6.x (just falkordb-image) x resp2,\nresp3, less min/resp2, which is the build job. version-canary gains the\nprotocol axis, and just verify-matrix runs every leg locally.\n\nCloses #550\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n* test: address review of the RESP3 and server-matrix change\n\n- TestProtocol.uri builds the redis:// URI from its parts, so an IPv6\n  host such as ::1 gets its brackets; ProtocolIT and SchemaHashIT use it\n  instead of concatenating the host. TestProtocolTest covers it and the\n  FALKORDB_PROTOCOL parsing.\n- TestProtocol.assertResp2 closes the driver when the check fails, as\n  TestProtocol.driver does: the caller never gets it to close.\n- maven.yml: a dispatched image tag must match Docker's tag grammar.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n\n---------\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>\nCo-authored-by: Claude Opus 5.5 <noreply@anthropic.com>",
+          "timestamp": "2026-11-28T12:08:00+02:00",
+          "tree_id": "00283b45d126a673f4ceaac640275dd4d3ac2523",
+          "url": "https://github.com/FalkorDB/JFalkorDB/commit/e0af57d18d25a0257d4bb5a5987a977b637894de"
+        },
+        "date": 1795860628736,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "client_p50 @load=1",
+            "value": 144.099,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=1",
+            "value": 187.453,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=1",
+            "value": 223.758,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=2",
+            "value": 175.785,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=2",
+            "value": 218.345,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=2",
+            "value": 240.884,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=4",
+            "value": 262.687,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=4",
+            "value": 412.272,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=4",
+            "value": 515.128,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=8",
+            "value": 436.719,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=8",
+            "value": 730.263,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=8",
+            "value": 916.015,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=16",
+            "value": 506.475,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=16",
+            "value": 4774.328,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=16",
+            "value": 10175.044,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=32",
+            "value": 516.75,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=32",
+            "value": 13369.33,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=32",
+            "value": 30059.659,
+            "unit": "us"
+          },
+          {
+            "name": "client_p50 @load=64",
+            "value": 515.778,
+            "unit": "us"
+          },
+          {
+            "name": "client_p95 @load=64",
+            "value": 31180.689,
+            "unit": "us"
+          },
+          {
+            "name": "client_p99 @load=64",
+            "value": 68147.774,
             "unit": "us"
           }
         ]
