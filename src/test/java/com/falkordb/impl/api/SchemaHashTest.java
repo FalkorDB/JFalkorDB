@@ -105,7 +105,7 @@ class SchemaHashTest {
     }
 
     @Test
-    void aPipelineDecodesWithTheHashItSent() throws Exception {
+    void aPipelineDecodesWithTheNamesCachedWhenItsQueriesWereQueued() throws Exception {
         try (FakeSchemaServer server = new FakeSchemaServer(true, 42L, "Person", "name");
                 Driver driver = driver(server, true)) {
             GraphContextGenerator graph = driver.graph("g");
@@ -114,11 +114,19 @@ class SchemaHashTest {
                 GraphContext.Pipeline pipeline = context.pipeline();
                 Reply<ResultSet> first = pipeline.query(MATCH);
                 Reply<ResultSet> second = pipeline.readOnlyQuery(MATCH);
+                // sync() reads the replies, hash-only ones, without decoding them
                 pipeline.sync();
+
+                // the live cache moves on before they are decoded: the graph is recreated, and a query caches its names
+                server.recreate(7L, "Movie", "title");
+                assertNode(context.query(MATCH), "Movie", "title");
+
+                // still decoded with the names whose hash they were sent with
                 assertNode(first.get(), "Person", "name");
                 assertNode(second.get(), "Person", "name");
             }
-            assertEquals(Arrays.asList("0", "42", "42"), server.sentHashes());
+            assertEquals(Arrays.asList("0", "42", "42", "42"), server.sentHashes());
+            assertEquals(Arrays.asList(true, false, false, true), server.sentNames());
             assertEquals(0, server.lookups());
         }
     }
@@ -286,7 +294,13 @@ class SchemaHashTest {
             if (!sendsSchema || at < 0) {
                 return array(header, rows, stats);
             }
-            long sent = Long.parseLong(command.get(at + 1));
+            long sent;
+            try {
+                sent = Long.parseLong(command.get(at + 1));
+            } catch (NumberFormatException e) {
+                // as the server answers a hash it can't read
+                return FakeRedisServer.error("ERR Failed to parse schema hash value");
+            }
             boolean names = sent != hash && !neverSendsNames;
             sentNames.add(names);
             String element = names

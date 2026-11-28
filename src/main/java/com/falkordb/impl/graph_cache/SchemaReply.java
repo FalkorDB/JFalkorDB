@@ -68,10 +68,11 @@ public final class SchemaReply {
             // RESP3: no other top-level element of a graph reply is a map.
             return hasHashEntry(items) ? fromEntries(items) : null;
         }
-        // RESP2: no other last element of a graph reply starts with the bare string "hash": statistics hold only
-        // "Name: value" strings. So a list that does is a schema element, and a value of the wrong type in it is an
-        // error rather than a reason to read it as statistics.
-        if (!isHashKey(items.get(0))) {
+        // RESP2: no other last element of a graph reply has the bare string "hash" at a key position: statistics
+        // hold only "Name: value" strings, and a header or rows hold lists. So a list that does is a schema element,
+        // whatever the order of its keys, and a value of the wrong type in it is an error rather than a reason to
+        // read it as statistics.
+        if (!hasHashKey(items)) {
             return null;
         }
         if (items.size() % 2 != 0) {
@@ -83,6 +84,16 @@ public final class SchemaReply {
             fields.put(items.get(i), items.get(i + 1));
         }
         return fields.toReply();
+    }
+
+    /** Whether a RESP2 flat list has the key {@code hash} at a key position: 0, 2, 4, ... */
+    private static boolean hasHashKey(List<?> items) {
+        for (int i = 0; i < items.size(); i += 2) {
+            if (isHashKey(items.get(i))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean hasHashEntry(List<?> items) {

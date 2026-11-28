@@ -22,7 +22,7 @@ final class FrozenGraphCache extends GraphCache {
      * @param missing why an id they lack is missing, for the error
      */
     FrozenGraphCache(SchemaNames names, String missing) {
-        super(null);
+        super(GraphCache.UNUSED);
         this.names = names;
         this.missing = missing;
     }

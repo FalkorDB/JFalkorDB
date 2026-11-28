@@ -87,8 +87,9 @@ public class ClusterIT {
     public void aGraphAnotherClientRecreatedIsDecodedOnTheNodeThatOwnsIt() throws Exception {
         // FalkorDB 6.2+ sends a reply's names when the cached ones are stale, so the reader decodes the recreated
         // graph's names; an older server doesn't, and the reader decodes its ids with the names it cached.
+        // ServerVersion, not TestServer, which would start a standalone container this test doesn't use
         boolean sendsSchemaHash =
-                TestServer.moduleVersion(ClusterTestServer.seedHost(), ClusterTestServer.seedPort()) >= 60200;
+                ServerVersion.sendsSchemaHash(ClusterTestServer.seedHost(), ClusterTestServer.seedPort());
         try (Driver writerDriver = FalkorDB.driver(ClusterTestServer.seedHost(), ClusterTestServer.seedPort())) {
             for (int i = 0; i < GRAPHS; i++) {
                 GraphContextGenerator reader = driver.graph(PREFIX + i);

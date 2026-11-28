@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterEach;
@@ -237,7 +238,12 @@ public class SchemaHashIT {
                         Node node = record.getValue(0, Node.class);
                         // node i has label Li and one property, pi = i
                         String label = node.getLabel(0);
-                        long i = Long.parseLong(label.substring(1));
+                        long i;
+                        try {
+                            i = Long.parseLong(label.substring(1));
+                        } catch (NumberFormatException e) {
+                            throw new AssertionError("a label the test didn't create: " + label, e);
+                        }
                         assertEquals(i, node.getProperty("p" + i).getValue(), label);
                         checked++;
                     }
@@ -292,6 +298,7 @@ public class SchemaHashIT {
     private static List<String> schemaHashesSentBy(Runnable run) throws Exception {
         List<String> commands = new CopyOnWriteArrayList<>();
         CountDownLatch watching = new CountDownLatch(1);
+        AtomicReference<RuntimeException> failure = new AtomicReference<>();
         String marker = "schema-hash-it-monitor-" + System.nanoTime();
         Jedis monitor = new Jedis(TestServer.host(), TestServer.port());
         Thread thread = new Thread(() -> {
@@ -305,15 +312,26 @@ public class SchemaHashIT {
                         commands.add(command);
                     }
                 });
-            } catch (RuntimeException closed) {
-                // the test closed the connection to stop watching
+            } catch (RuntimeException e) {
+                // Once watching, the test closes the connection to stop it, which ends here too. A failure before
+                // that is kept, so the wait below reports it rather than waiting for a marker that never comes.
+                if (watching.getCount() > 0) {
+                    failure.set(e);
+                }
             }
         });
         thread.setDaemon(true);
         thread.start();
         try (Jedis jedis = new Jedis(TestServer.host(), TestServer.port())) {
-            // MONITOR shows only what runs after it started: wait until it sees a marker
+            // MONITOR shows only what runs after it started: wait until it sees a marker, within a deadline
+            long started = System.nanoTime();
             do {
+                if (failure.get() != null) {
+                    throw new AssertionError("MONITOR failed before it started watching", failure.get());
+                }
+                if (System.nanoTime() - started > TimeUnit.SECONDS.toNanos(10)) {
+                    throw new AssertionError("MONITOR did not start watching within 10 seconds");
+                }
                 jedis.echo(marker);
             } while (!watching.await(100, TimeUnit.MILLISECONDS));
             run.run();

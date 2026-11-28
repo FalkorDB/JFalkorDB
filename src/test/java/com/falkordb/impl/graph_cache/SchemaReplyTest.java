@@ -69,6 +69,23 @@ class SchemaReplyTest {
     }
 
     @Test
+    void readsResp2KeysInAnyOrderWithTheHashNotFirst() {
+        // the RESP2 element is a flat list, so a key other than hash may come first
+        SchemaReply reply = SchemaReply.parse(resp2(
+                "labels", strings("Person"),
+                "hash", 1L,
+                "relationshipTypes", strings(),
+                "propertyKeys", strings("name")));
+        assertNotNull(reply);
+        assertEquals(1L, reply.hash());
+        assertEquals(Collections.singletonList("Person"), reply.names().labels());
+
+        SchemaReply hashLast = SchemaReply.parse(resp2("future", strings("x"), "hash", 7L));
+        assertEquals(7L, hashLast.hash());
+        assertNull(hashLast.names());
+    }
+
+    @Test
     void ignoresAKeyALaterServerMayAdd() {
         for (Object element :
                 Arrays.asList(resp2("hash", 7L, "future", strings("x")), resp3("future", 1L, "hash", 7L))) {
@@ -136,6 +153,7 @@ class SchemaReplyTest {
 
     /** RESP2: the pairs as one flat list, keys as bulk strings. */
     static List<Object> resp2(Object... pairs) {
+        requirePairs(pairs);
         List<Object> element = new ArrayList<>(pairs.length);
         for (int i = 0; i < pairs.length; i += 2) {
             element.add(bytes((String) pairs[i]));
@@ -146,11 +164,18 @@ class SchemaReplyTest {
 
     /** RESP3: the pairs as Jedis reads a map, a list of key-value pairs. */
     static List<Object> resp3(Object... pairs) {
+        requirePairs(pairs);
         List<Object> element = new ArrayList<>(pairs.length / 2);
         for (int i = 0; i < pairs.length; i += 2) {
             element.add(new KeyValue<>(bytes((String) pairs[i]), pairs[i + 1]));
         }
         return element;
+    }
+
+    private static void requirePairs(Object[] pairs) {
+        if (pairs.length % 2 != 0) {
+            throw new IllegalArgumentException("key-value pairs expected, but got " + pairs.length + " items");
+        }
     }
 
     static List<Object> strings(String... names) {

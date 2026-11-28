@@ -31,7 +31,7 @@ public class GraphCache {
     private static final String NOT_CONFIRMED = "the schema the server confirmed for the reply has no such id";
 
     /** What every {@link FrozenGraphCache} shares in place of state of its own, which it never uses. */
-    private static final GraphCacheList UNUSED = new GraphCacheList(SchemaNames.Kind.LABEL);
+    static final GraphCacheList UNUSED = new GraphCacheList(SchemaNames.Kind.LABEL);
 
     private final AtomicReference<SchemaNames> names;
     private final boolean schemaHash;
@@ -63,14 +63,17 @@ public class GraphCache {
 
     /**
      * For {@link FrozenGraphCache}, which overrides every method that would use this cache's own state, so it is
-     * given none: a reply decoded with names its schema element sent allocates nothing else.
+     * given {@code shared}, the one {@link #UNUSED} list every frozen cache shares: a reply decoded with names its
+     * schema element sent allocates nothing else.
+     *
+     * @param shared the list to stand in for all three
      */
-    GraphCache(@Nullable FrozenGraphCache unused) {
+    GraphCache(GraphCacheList shared) {
         this.schemaHash = false;
         this.names = new AtomicReference<>(SchemaNames.EMPTY);
-        this.labels = UNUSED;
-        this.propertyNames = UNUSED;
-        this.relationshipTypes = UNUSED;
+        this.labels = shared;
+        this.propertyNames = shared;
+        this.relationshipTypes = shared;
     }
 
     /**
