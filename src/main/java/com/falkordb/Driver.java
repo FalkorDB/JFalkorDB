@@ -72,6 +72,10 @@ public interface Driver extends Closeable {
     /**
      * Lists all loaded UDF libraries.
      *
+     * <p>Each library is a flat list of alternating keys and values, such as {@code library_name}, its name,
+     * {@code functions} and a list of their names, with strings as byte arrays. The shape is the same on every
+     * server version and protocol: a library FalkorDB 4.x sends as a RESP3 map is turned into that list.
+     *
      * @return a list of UDF library information
      * @throws com.falkordb.exceptions.GraphException if the server rejects the command
      * @throws com.falkordb.exceptions.FalkorDBConnectionException if a connection to the server can't be opened, or
@@ -80,7 +84,8 @@ public interface Driver extends Closeable {
     List<Object> udfList();
 
     /**
-     * Lists UDF libraries with optional filters.
+     * Lists UDF libraries with optional filters. Each library has the shape {@link #udfList()} describes, plus the
+     * code when {@code withCode} asks for it.
      *
      * @param libraryName Optional library name to filter results
      * @param withCode Whether to include the code in the response

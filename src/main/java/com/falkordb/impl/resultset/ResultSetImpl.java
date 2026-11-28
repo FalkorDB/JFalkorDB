@@ -75,28 +75,35 @@ public final class ResultSetImpl implements ResultSet {
             this.cache = cache;
         }
 
-        // Check if this is a profile response (all elements are byte arrays)
-        boolean isProfileResponse =
-                !rawResponse.isEmpty() && rawResponse.stream().allMatch(item -> item instanceof byte[]);
+        // A reply element of a type the decoding doesn't expect, such as one a protocol sends differently, is reported
+        // as the GraphException the API documents rather than as the ClassCastException it would otherwise be.
+        try {
+            // Check if this is a profile response (all elements are byte arrays)
+            boolean isProfileResponse =
+                    !rawResponse.isEmpty() && rawResponse.stream().allMatch(item -> item instanceof byte[]);
 
-        if (isProfileResponse) {
-            // Handle profile response: each byte array is a line of execution plan
-            header = parseProfileHeader();
-            results = parseProfileResult(rawResponse);
-            statistics = parseStatistics(new ArrayList<>());
-        } else if (rawResponse.size() != 3) {
+            if (isProfileResponse) {
+                // Handle profile response: each byte array is a line of execution plan
+                header = parseProfileHeader();
+                results = parseProfileResult(rawResponse);
+                statistics = parseStatistics(new ArrayList<>());
+            } else if (rawResponse.size() != 3) {
 
-            header = parseHeader(new ArrayList<>());
-            results = new ArrayList<>();
-            statistics = rawResponse.isEmpty()
-                    ? parseStatistics(new ArrayList<>())
-                    : parseStatistics(rawResponse.get(rawResponse.size() - 1));
+                header = parseHeader(new ArrayList<>());
+                results = new ArrayList<>();
+                statistics = rawResponse.isEmpty()
+                        ? parseStatistics(new ArrayList<>())
+                        : parseStatistics(rawResponse.get(rawResponse.size() - 1));
 
-        } else {
+            } else {
 
-            header = parseHeader((List<List<Object>>) rawResponse.get(0));
-            results = parseResult((List<List<Object>>) rawResponse.get(1));
-            statistics = parseStatistics(rawResponse.get(2));
+                header = parseHeader((List<List<Object>>) rawResponse.get(0));
+                results = parseResult((List<List<Object>>) rawResponse.get(1));
+                statistics = parseStatistics(rawResponse.get(2));
+            }
+        } catch (ClassCastException e) {
+            throw new GraphException(
+                    "Cannot decode the reply: it holds a value of an unexpected type (" + e.getMessage() + ")", e);
         }
     }
 
@@ -340,10 +347,14 @@ public final class ResultSetImpl implements ResultSet {
         switch (type) {
             case VALUE_NULL:
                 return null;
+            // FalkorDB sends compact booleans and doubles as text over both protocols today; a native RESP3
+            // value, as the protocol allows, reads the same.
             case VALUE_BOOLEAN:
-                return Boolean.parseBoolean(SafeEncoder.encode((byte[]) obj));
+                return obj instanceof Boolean ? obj : Boolean.parseBoolean(SafeEncoder.encode((byte[]) obj));
             case VALUE_DOUBLE:
-                return parseDouble(SafeEncoder.encode((byte[]) obj));
+                return obj instanceof Number
+                        ? (Object) ((Number) obj).doubleValue()
+                        : parseDouble(SafeEncoder.encode((byte[]) obj));
             case VALUE_INTEGER:
                 return (Long) obj;
             case VALUE_STRING:
@@ -437,18 +448,29 @@ public final class ResultSetImpl implements ResultSet {
     }
 
     private List<Float> deserializeVector(Object rawScalarData) {
-        List<byte[]> array = (List<byte[]>) rawScalarData;
-        return array.stream()
-                .map(val -> {
-                    try {
-                        return parseFloat(SafeEncoder.encode(val));
-                    } catch (NumberFormatException e) {
-                        // parseFloat already maps FalkorDB's C spellings of the non-finite values, so
-                        // anything still failing here is genuinely malformed.
-                        throw new GraphException("Invalid float value in vector data", e);
-                    }
-                })
-                .collect(Collectors.toList());
+        List<?> array = (List<?>) rawScalarData;
+        return array.stream().map(ResultSetImpl::vectorElement).collect(Collectors.toList());
+    }
+
+    /**
+     * One {@code vecf32} element. RESP2 sends it as text; RESP3 as a native double, which Jedis reads as a
+     * {@link Double}, its non-finite values included.
+     */
+    private static float vectorElement(@Nullable Object raw) {
+        if (raw instanceof Number) {
+            return ((Number) raw).floatValue();
+        }
+        if (raw instanceof byte[]) {
+            try {
+                return parseFloat(SafeEncoder.encode((byte[]) raw));
+            } catch (NumberFormatException e) {
+                // parseFloat already maps FalkorDB's C spellings of the non-finite values, so
+                // anything still failing here is genuinely malformed.
+                throw new GraphException("Invalid float value in vector data", e);
+            }
+        }
+        throw new GraphException("Invalid float value in vector data: "
+                + (raw == null ? "nil" : raw.getClass().getSimpleName()));
     }
 
     @SuppressWarnings("unchecked")

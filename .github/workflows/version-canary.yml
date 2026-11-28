@@ -1,11 +1,12 @@
 name: FalkorDB version canary
 
 # Non-blocking early warning that the client still works against the moving FalkorDB `edge` and
-# `latest` images. Runs daily (and on demand) — NOT on pushes/PRs — so upstream breakage never
-# gates a merge: the required `build`/`smoke-jdk8`/`smoke-jdk` jobs pin the digest (v4.20.1), which is
-# also the current minimum supported version, while `verify-latest` in `maven.yml` covers `latest` on
-# every PR. The daily `edge` run is what catches bugs in unreleased FalkorDB builds early. Uses the
-# `FALKORDB_IMAGE` override so Testcontainers runs the full `just verify` suite against each tag.
+# `latest` images, over RESP2 and RESP3. Runs daily (and on demand) — NOT on pushes/PRs — so upstream
+# breakage never gates a merge: the required `build`/`smoke-jdk8`/`smoke-jdk` jobs pin the digest
+# (v4.20.1), which is also the current minimum supported version, while the `verify-servers` matrix in
+# `maven.yml` covers the newest 4.x, 6.0.x and 6.x releases over both protocols on every PR. The daily
+# `edge` run is what catches bugs in unreleased FalkorDB builds early. Uses the `FALKORDB_IMAGE` and
+# `FALKORDB_PROTOCOL` overrides so Testcontainers runs the full `just verify` suite against each leg.
 
 on:
   schedule:
@@ -28,12 +29,17 @@ jobs:
     # runner all morning and then reports `cancelled` rather than failing.
     timeout-minutes: 30
 
+    name: canary (${{ matrix.falkordb_version }}, ${{ matrix.protocol }})
+
     strategy:
       fail-fast: false
       matrix:
         falkordb_version:
           - edge
           - latest
+        protocol:
+          - resp2
+          - resp3
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -53,9 +59,10 @@ jobs:
       run: just fetch-deps
     # FALKORDB_IMAGE is read by the TestServer harness (FalkorDbImage.resolve) so the whole suite runs
     # against this tag instead of the pinned default digest.
-    - name: Build & test against falkordb/falkordb:${{ matrix.falkordb_version }} (via just)
+    - name: Build & test against falkordb/falkordb:${{ matrix.falkordb_version }} over ${{ matrix.protocol }} (via just)
       env:
         FALKORDB_IMAGE: falkordb/falkordb:${{ matrix.falkordb_version }}
+        FALKORDB_PROTOCOL: ${{ matrix.protocol }}
       run: just verify
 
   # A cron job has nobody watching it: GitHub only emails whoever last touched

@@ -105,10 +105,50 @@ build:
 test:
     ./mvnw -B -Dgpg.skip=true test
 
+# FALKORDB_IMAGE picks the server (see `just falkordb-image`), and FALKORDB_PROTOCOL=resp3 runs the
+# suite over RESP3.
 # Full build + tests + coverage (JaCoCo) — the aggregate gate CI runs. Tests start a FalkorDB
 # automatically via Testcontainers (Docker required); no manual server needed.
 verify:
     ./mvnw -B -Dgpg.skip=true verify
+
+# Lines: `min` (prints nothing: the suite's pinned minimum version), `4` / `6.0` / `6` (the newest
+# release of that line, from Docker Hub, with a pinned fallback when it can't be reached), `edge` or
+# `latest`. The CI server matrix resolves its legs with this, e.g.
+# `FALKORDB_IMAGE=$(just falkordb-image 4) just verify`.
+# Print the FalkorDB image of a release line (min, 4, 6.0, 6, edge, latest), for FALKORDB_IMAGE.
+falkordb-image line:
+    @python3 scripts/falkordb_image.py {{ quote(line) }}
+
+# Unit tests of the image resolver behind `just falkordb-image` (no network, no server).
+falkordb-image-test:
+    python3 -m unittest discover -s scripts -v
+
+# Each leg starts its own container via Testcontainers (FALKORDB_HOST/PORT and
+# FALKORDB_CLUSTER_NODES are ignored), so it never touches a `just db-up` server. CI runs min/resp2
+# as the `build` job and the other seven legs as `verify-servers`. Slow: run it before a PR that
+# changes how the client talks to the server.
+# `just verify` on every server line x protocol: min, 4, 6.0, 6 x resp2, resp3.
+verify-matrix:
+    #!/usr/bin/env bash
+    set -uo pipefail
+    unset FALKORDB_HOST FALKORDB_PORT FALKORDB_CLUSTER_NODES
+    failed=()
+    for line in min 4 6.0 6; do
+        image="$(just falkordb-image "$line")" || exit 1
+        for protocol in resp2 resp3; do
+            echo "=== verify: line=$line image=${image:-pinned default} protocol=$protocol"
+            # every leg runs, as in CI (fail-fast: false); the failures are listed at the end
+            if ! FALKORDB_IMAGE="$image" FALKORDB_PROTOCOL="$protocol" just verify; then
+                failed+=("$line/$protocol")
+            fi
+        done
+    done
+    if [ "${#failed[@]}" -gt 0 ]; then
+        echo "=== verify-matrix: failed legs: ${failed[*]}"
+        exit 1
+    fi
+    echo "=== verify-matrix: every leg passed"
 
 # Prove the PUBLISHED artifact runs on a given JDK runtime: build+install the jar on the build JDK,
 # then compile (with `release 8`) + run the standalone runtime smoke against it on the JDK at

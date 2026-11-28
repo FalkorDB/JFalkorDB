@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisDataException;
+import redis.clients.jedis.util.KeyValue;
 import redis.clients.jedis.util.SafeEncoder;
 
 /**
@@ -133,6 +134,64 @@ public class DriverImplConfigTest {
         expected.put("CMD_INFO", "yes");
         Assertions.assertEquals(expected, parameters);
         Assertions.assertEquals(new ArrayList<>(expected.keySet()), new ArrayList<>(parameters.keySet()));
+    }
+
+    @Test
+    public void testParseConfigGetResponsesReadResp3BooleansAsTheirResp2Integers() {
+        // FalkorDB 4.x sends its on/off parameters as :1 / :0 over RESP2 and as #t / #f over RESP3, which Jedis
+        // reads as Boolean; both read the same, so a value doesn't depend on the protocol.
+        Assertions.assertEquals("1", driverImpl.parseConfigGetResponse(pair("ASYNC_DELETE", Boolean.TRUE)));
+        Assertions.assertEquals("0", driverImpl.parseConfigGetResponse(pair("DELAY_INDEXING", Boolean.FALSE)));
+
+        List<Object> response = Arrays.asList(
+                pair("TIMEOUT", 1000L),
+                pair("ASYNC_DELETE", Boolean.TRUE),
+                pair("IMPORT_FOLDER", SafeEncoder.encode("/var/lib/FalkorDB/import/")),
+                pair("DELAY_INDEXING", Boolean.FALSE));
+        Map<String, String> expected = new LinkedHashMap<>();
+        expected.put("TIMEOUT", "1000");
+        expected.put("ASYNC_DELETE", "1");
+        expected.put("IMPORT_FOLDER", "/var/lib/FalkorDB/import/");
+        expected.put("DELAY_INDEXING", "0");
+        Assertions.assertEquals(expected, driverImpl.parseConfigGetAllResponse(response));
+    }
+
+    @Test
+    public void testUdfListRepliesHaveOneShapeWhateverTheProtocol() {
+        // RESP2, and FalkorDB 6.x over RESP3: each library is a flat [key, value, ...] list
+        List<Object> functions = Collections.singletonList(SafeEncoder.encode("f"));
+        List<Object> flat = Arrays.asList(
+                SafeEncoder.encode("library_name"),
+                SafeEncoder.encode("lib"),
+                SafeEncoder.encode("functions"),
+                functions);
+        // FalkorDB 4.x over RESP3: each library is a map, which Jedis reads as key-value pairs
+        List<Object> map = Arrays.asList(
+                new KeyValue<>(SafeEncoder.encode("library_name"), SafeEncoder.encode("lib")),
+                new KeyValue<>(SafeEncoder.encode("functions"), functions));
+
+        List<Object> fromFlat = DriverImpl.asList(Collections.singletonList(flat));
+        List<Object> fromMap = DriverImpl.asList(Collections.singletonList(map));
+
+        Assertions.assertEquals(texts(fromFlat), texts(fromMap));
+        Assertions.assertEquals(
+                Arrays.asList(Arrays.asList("library_name", "lib", "functions", Arrays.asList("f"))), texts(fromMap));
+        Assertions.assertEquals(Collections.emptyList(), DriverImpl.asList(SafeEncoder.encode("OK")));
+    }
+
+    /** A reply with its bulk strings decoded, for comparing. */
+    private static Object texts(Object reply) {
+        if (reply instanceof byte[]) {
+            return SafeEncoder.encode((byte[]) reply);
+        }
+        if (reply instanceof List<?>) {
+            List<Object> decoded = new ArrayList<>();
+            for (Object item : (List<?>) reply) {
+                decoded.add(texts(item));
+            }
+            return decoded;
+        }
+        return reply;
     }
 
     @Test

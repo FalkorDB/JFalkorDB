@@ -98,11 +98,11 @@ public class SchemaHashIT {
 
     @Test
     public void switchedOffTheClientKeepsItsCachedNamesOnEveryServer() {
-        Driver withoutHash = track(FalkorDB.builder()
+        Driver withoutHash = track(TestProtocol.assertResp2(FalkorDB.builder()
                 .host(TestServer.host())
                 .port(TestServer.port())
                 .schemaHash(false)
-                .build());
+                .build()));
         assertDecodesTheRecreatedGraph(graph(withoutHash), graph(driver()), false);
     }
 

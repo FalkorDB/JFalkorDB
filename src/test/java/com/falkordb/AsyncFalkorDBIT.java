@@ -41,12 +41,12 @@ public class AsyncFalkorDBIT {
     private ExecutorService executor;
 
     private AsyncGraph asyncClient() {
-        driver = FalkorDB.builder()
+        driver = TestProtocol.assertResp2(FalkorDB.builder()
                 .host(TestServer.host())
                 .port(TestServer.port())
                 .poolMaxTotal(POOL)
                 .poolMaxWait(Duration.ofSeconds(20))
-                .build();
+                .build());
         client = driver.graph("async-it");
         executor = newExecutor();
         return AsyncFalkorDB.wrap(client, executor);

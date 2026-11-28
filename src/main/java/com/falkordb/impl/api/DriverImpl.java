@@ -25,6 +25,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisSentinelPool;
 import redis.clients.jedis.Protocol;
+import redis.clients.jedis.RedisProtocol;
 import redis.clients.jedis.SslOptions;
 import redis.clients.jedis.exceptions.InvalidURIException;
 import redis.clients.jedis.exceptions.JedisAskDataException;
@@ -333,13 +334,24 @@ public class DriverImpl implements Driver {
     }
 
     /**
-     * The config used for connections to cluster nodes: the data connections' credentials, TLS and
-     * timeouts, without the database index. A cluster has a single database and Jedis issues {@code
+     * The config used for connections to cluster nodes: the data connections' credentials, TLS, timeouts
+     * and protocol, without the database index. A cluster has a single database and Jedis issues {@code
      * SELECT} for any non-zero index on every connection it opens, which the cluster would reject.
+     *
+     * <p>The protocol is kept, unlike in the probe configs: a {@code ?protocol=3} URI asks for RESP3 on the
+     * connections that carry the graph commands, whatever the deployment. The probes and the topology
+     * refresh ({@link #clusterProbeConfig}) keep speaking RESP2, the replies their parsers read.
      */
     static DefaultJedisClientConfig clusterNodeConfig(DefaultJedisClientConfig dataConfig) {
-        return derivedConfig(
+        DefaultJedisClientConfig derived = derivedConfig(
                 dataConfig, dataConfig.getUser(), dataConfig.getPassword(), dataConfig.getSocketTimeoutMillis());
+        RedisProtocol protocol = dataConfig.getRedisProtocol();
+        return protocol == null
+                ? derived
+                : DefaultJedisClientConfig.builder()
+                        .from(derived)
+                        .protocol(protocol)
+                        .build();
     }
 
     /**
@@ -1219,13 +1231,42 @@ public class DriverImpl implements Driver {
         }));
     }
 
-    /** Reads a {@code GRAPH.UDF LIST} reply; one that isn't a list reads as no libraries. */
-    @SuppressWarnings("unchecked")
-    private static List<Object> asList(Object response) {
+    /**
+     * Reads a {@code GRAPH.UDF LIST} reply; one that isn't a list reads as no libraries.
+     *
+     * <p>FalkorDB 4.x sends each library over RESP3 as a map, which Jedis reads as a list of key-value pairs, where
+     * RESP2 and FalkorDB 6.x send a flat {@code [key, value, ...]} list. Maps are turned into that flat list, at
+     * any depth, so the reply has the same shape whatever the server and protocol.
+     */
+    static List<Object> asList(@Nullable Object response) {
         if (response instanceof List<?>) {
-            return (List<Object>) response;
+            List<Object> libraries = new ArrayList<>();
+            for (Object library : (List<?>) response) {
+                libraries.add(flattenMaps(library));
+            }
+            return libraries;
         }
         return new ArrayList<>();
+    }
+
+    /** Turns every RESP3 map in {@code reply} into the flat {@code [key, value, ...]} list RESP2 sends. */
+    private static @Nullable Object flattenMaps(@Nullable Object reply) {
+        if (!(reply instanceof List<?>)) {
+            return reply;
+        }
+        List<?> items = (List<?>) reply;
+        boolean map = !items.isEmpty() && items.stream().allMatch(item -> item instanceof Map.Entry);
+        List<Object> flat = new ArrayList<>(map ? items.size() * 2 : items.size());
+        for (Object item : items) {
+            if (map) {
+                Map.Entry<?, ?> entry = (Map.Entry<?, ?>) item;
+                flat.add(flattenMaps(entry.getKey()));
+                flat.add(flattenMaps(entry.getValue()));
+            } else {
+                flat.add(flattenMaps(item));
+            }
+        }
+        return flat;
     }
 
     /**
@@ -1395,13 +1436,20 @@ public class DriverImpl implements Driver {
      * Reads a name or value from a GRAPH.CONFIG GET response. Only the types a reply can hold are
      * accepted, so anything else, such as an error Jedis nested in the list, is never mistaken for a
      * value.
+     *
+     * <p>FalkorDB 4.x sends its on/off parameters ({@code ASYNC_DELETE}, {@code CMD_INFO},
+     * {@code DELAY_INDEXING}) as {@code :1} / {@code :0} over RESP2 but as booleans over RESP3; both read
+     * as {@code "1"} / {@code "0"}, so a value doesn't depend on the protocol.
      */
-    private static String configText(@Nullable Object item) {
+    static String configText(@Nullable Object item) {
         if (item instanceof byte[]) {
             return SafeEncoder.encode((byte[]) item);
         }
         if (item instanceof Long || item instanceof String) {
             return item.toString();
+        }
+        if (item instanceof Boolean) {
+            return (Boolean) item ? "1" : "0";
         }
         throw unexpectedConfigGetResponse();
     }

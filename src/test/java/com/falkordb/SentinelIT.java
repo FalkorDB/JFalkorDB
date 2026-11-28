@@ -130,7 +130,7 @@ public class SentinelIT {
 
         // No Sentinel configuration at all: just the address of a Sentinel, which is the whole point of
         // auto-detection and matches how falkordb-py, falkordb-go and falkordb-ts behave.
-        try (Driver driver = FalkorDB.driver(sentinelHost, sentinelPort)) {
+        try (Driver driver = TestProtocol.driver(sentinelHost, sentinelPort)) {
             assertWritesReachTheMaster(driver, "sentinel-it-auto");
         }
     }
@@ -139,9 +139,9 @@ public class SentinelIT {
     public void anExplicitlyConfiguredSentinelFindsTheMaster() throws Exception {
         assumeMasterIsReachableFromHere();
 
-        try (Driver driver = FalkorDB.builder()
+        try (Driver driver = TestProtocol.assertResp2(FalkorDB.builder()
                 .sentinel(MASTER_NAME, sentinelHost + ":" + sentinelPort)
-                .build()) {
+                .build())) {
             assertWritesReachTheMaster(driver, "sentinel-it-explicit");
         }
     }
